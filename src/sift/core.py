@@ -30,6 +30,11 @@ _SIGNALS = re.compile(
     r"must|todo|fix|regression|warning|path|file|test)\b",
     re.IGNORECASE,
 )
+_TEST_FAILURE = re.compile(
+    r"^\s*(?:tool_result\s+\S+\s+)?(?:ERROR|FAIL|FAILED)\s*:?\s+"
+    r"(?:test_[A-Za-z0-9_]+|\S+::test_[A-Za-z0-9_]+)",
+    re.IGNORECASE,
+)
 _MAX_PIECE_CHARS = 360
 _MAX_CANDIDATES = 512
 _DEDUP_WINDOW = 65_536
@@ -278,6 +283,40 @@ def _linked_candidates(old: list[dict[str, Any]], query: str) -> list[_Candidate
     return output
 
 
+def _diagnostic_candidates(old: list[dict[str, Any]], offset: int,
+                           *, limit: int | None = None) -> list[_Candidate]:
+    """Keep a small verbatim index of named failed tests from each old tool group."""
+    output: list[_Candidate] = []
+    for index, message in enumerate(old):
+        content = message.get("content")
+        if message.get("role") != "tool" and not (
+            message.get("role") == "user" and isinstance(content, list) and any(
+                isinstance(block, dict) and block.get("type") == "tool_result"
+                for block in content
+            )
+        ):
+            continue
+        lines: list[str] = []
+        seen: set[str] = set()
+        total_chars = 0
+        for raw_line in _render(message).splitlines():
+            line = raw_line.strip()[:_MAX_PIECE_CHARS]
+            if not _TEST_FAILURE.match(line) or line in seen:
+                continue
+            if len(lines) == 8 or total_chars + len(line) > 640:
+                break
+            seen.add(line)
+            lines.append(line)
+            total_chars += len(line)
+        if lines:
+            excerpt = "\n".join(lines)
+            output.append(_Candidate(index + offset, -1, str(message["role"]),
+                                     excerpt, 0, excerpt))
+            if limit is not None and len(output) == limit:
+                break
+    return output
+
+
 def _summary(candidates: list[_Candidate]) -> dict[str, str]:
     header = (
         "Earlier conversation, lossily excerpted and extractively compacted by Sift. "
@@ -369,6 +408,9 @@ def compact_messages(
             tail_start = barrier_start
             retained_cycles = len(cycle_starts) - barrier_index
         task_query = _render(messages[latest_user])
+        baseline = _diagnostic_candidates(
+            messages[latest_user + 1:tail_start], latest_user + 1, limit=1)
+        baseline_message = _summary(baseline) if baseline else None
         old_before = messages[instruction_end:latest_user]
         prior_options = [
             _Candidate(item.message_index + instruction_end, item.part_index,
@@ -377,7 +419,12 @@ def compact_messages(
         ]
         task_prefix = messages[:instruction_end] + [messages[latest_user]]
         task_count = _count(count_tokens, task_prefix)
-        base = task_prefix + messages[tail_start:]
+        if baseline_message and _count(
+            count_tokens, task_prefix + [baseline_message] + messages[tail_start:]
+        ) >= target - 256:
+            baseline = []
+            baseline_message = None
+        base = task_prefix + ([baseline_message] if baseline_message else []) + messages[tail_start:]
         available = max(0, target - _count(count_tokens, base) - 256)
         prior_quota = min(target // 8, available // 4) if not stable_barrier else target // 8
         low, high = 0, len(prior_options)
@@ -410,13 +457,18 @@ def compact_messages(
         completed = completed[-32:]
         epochs: list[list[_Candidate]] = []
         for start, end in completed:
-            epochs.append([
+            diagnostics = _diagnostic_candidates(messages[start:end], start)
+            if baseline:
+                diagnostics = [item for item in diagnostics
+                               if item.message_index != baseline[0].message_index]
+            task_options = [
                 _Candidate(item.message_index + start, item.part_index,
                            item.role, item.text, item.score, item.center)
                 for item in _linked_candidates(messages[start:end], task_query)[:per_epoch]
-            ])
+            ]
+            epochs.append((diagnostics + task_options)[:per_epoch])
         query = task_query + "\n" + _render(messages[-1])
-        dynamic_options = [
+        dynamic_options = _diagnostic_candidates(messages[epoch_start:tail_start], epoch_start) + [
             _Candidate(item.message_index + epoch_start, item.part_index,
                        item.role, item.text, item.score, item.center)
             for item in _linked_candidates(messages[epoch_start:tail_start], query)
@@ -428,6 +480,8 @@ def compact_messages(
             if prior_selected:
                 output += [_summary(prior_selected)]
             output += [messages[latest_user]]
+            if baseline_message:
+                output.append(baseline_message)
             after = stable + dynamic_options[:number]
             if after:
                 output += [_summary(after)]
@@ -440,6 +494,8 @@ def compact_messages(
             if prior_selected:
                 output += [_summary(prior_selected)]
             output += [messages[latest_user]]
+            if baseline_message:
+                output.append(baseline_message)
             if stable:
                 output += [_summary(stable)]
             return _count(count_tokens, output)
@@ -463,7 +519,7 @@ def compact_messages(
             # as much of the newest completed epoch as the hard target allows.
             dynamic_options = epochs[-1]
         stable_count = sum(len(group) for group in epochs[drop_epochs:])
-        if not prior_selected and not stable_count and not dynamic_options:
+        if not prior_selected and not baseline and not stable_count and not dynamic_options:
             raise CompactionError("no extractable historical content", code="active_too_large")
         low, high = 0, len(dynamic_options)
         best: tuple[list[dict[str, Any]], int] | None = None
@@ -473,7 +529,7 @@ def compact_messages(
             trial = build_tool_history(drop_epochs, middle)
             if trial[1] <= target:
                 best = trial
-                selected_count = prior_count + stable_count + middle
+                selected_count = prior_count + len(baseline) + stable_count + middle
                 low = middle + 1
             else:
                 high = middle - 1

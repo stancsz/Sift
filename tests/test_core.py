@@ -168,6 +168,30 @@ class CompactionTests(unittest.TestCase):
             self.assertEqual(later.messages[:len(earlier.messages)], earlier.messages)
         self.assertEqual(results[-1].messages[-1], cycles[-1])
 
+    def test_named_test_failures_survive_a_fixed_tool_epoch(self):
+        task = message("user", "Implement the incremental build planner")
+        cycles = []
+        failures = ("ERROR: test_diamond_rebuild", "FAIL: test_rejects_cycle",
+                    "FAILED tests/test_build.py::test_missing_input")
+        for index in range(20):
+            log = "build planner routine output " * 20
+            if index == 5:
+                log = "\n".join(failures)
+            cycles.extend([
+                message("assistant", [{"type": "tool_use", "id": f"x{index}",
+                                       "name": "PowerShell", "input": {"command": "test"}}]),
+                message("user", [{"type": "tool_result", "tool_use_id": f"x{index}",
+                                  "content": log}]),
+            ])
+        results = [compact_messages([task, *cycles[:2 * count]], estimate,
+                                    target=3_000, protocol="anthropic")
+                   for count in (18, 19, 20)]
+        for result in results:
+            self.assertTrue(all(failure in str(result.messages) for failure in failures))
+            self.assertLessEqual(result.audit["forwarded_tokens"], 3_000)
+        for earlier, later in zip(results, results[1:]):
+            self.assertEqual(later.messages[:len(earlier.messages)], earlier.messages)
+
     def test_limits_and_unsupported_media_fail_closed(self):
         source = [message("user", "old " * 1000), message("assistant", "old"),
                   message("user", "new " * 1000)]
