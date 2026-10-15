@@ -6,7 +6,7 @@ new facts, changes instruction roles, or removes the active user/tool turn.
 
 from __future__ import annotations
 
-from collections import deque
+from collections import Counter, deque
 from copy import deepcopy
 from dataclasses import dataclass
 import hashlib
@@ -18,7 +18,8 @@ from typing import Any, Callable, Literal
 
 Protocol = Literal["openai", "anthropic"]
 TokenCounter = Callable[[list[dict[str, Any]]], int]
-_TERMS = re.compile(r"\w{3,}", re.UNICODE)
+_TERMS = re.compile(r"[^\W_]{3,}", re.UNICODE)
+_LINK_IDS = re.compile(r"\b[A-Za-z][A-Za-z0-9_-]*\d+[A-Za-z0-9_-]*\b")
 _STOPWORDS = frozenset({
     "about", "after", "and", "are", "did", "exact", "for", "from", "how",
     "into", "latest", "please", "tell", "that", "the", "this", "was",
@@ -58,6 +59,7 @@ class _Candidate:
     role: str
     text: str
     score: float
+    center: str = ""
 
 
 def _count(counter: TokenCounter, messages: list[dict[str, Any]]) -> int:
@@ -161,9 +163,25 @@ def _pieces(text: str):
         offset = len(text) if newline < 0 else newline + 1
 
 
-def _candidates(old: list[dict[str, Any]], query: str) -> list[_Candidate]:
-    terms = {term.lower() for term in _TERMS.findall(query)
-             if term.lower() not in _STOPWORDS}
+def _query_terms(query: str) -> set[str]:
+    return {term.lower() for term in _TERMS.findall(query)
+            if term.lower() not in _STOPWORDS}
+
+
+def _term_frequencies(old: list[dict[str, Any]], terms: set[str]) -> Counter[str]:
+    frequencies: Counter[str] = Counter()
+    if terms:
+        for message in old:
+            for piece in _pieces(_render(message)):
+                frequencies.update(terms.intersection(
+                    term.lower() for term in _TERMS.findall(piece)))
+    return frequencies
+
+
+def _candidates(old: list[dict[str, Any]], terms: set[str],
+                frequencies: Counter[str], bridge_ids: tuple[str, ...] = ()) -> list[_Candidate]:
+    bridge_match = (re.compile(r"\b(?:" + "|".join(map(re.escape, bridge_ids)) + r")\b", re.IGNORECASE)
+                    if bridge_ids else None)
     heap: list[tuple[float, int, _Candidate]] = []
     seen: set[bytes] = set()
     recent_hashes: deque[bytes] = deque()
@@ -187,15 +205,18 @@ def _candidates(old: list[dict[str, Any]], query: str) -> list[_Candidate]:
                 seen.remove(recent_hashes.popleft())
             recent_hashes.append(digest)
             seen.add(digest)
-            overlap = len(terms.intersection(term.lower() for term in _TERMS.findall(piece)))
-            score = 100 * overlap + 8 * bool(_SIGNALS.search(piece))
+            matching = terms.intersection(term.lower() for term in _TERMS.findall(piece))
+            score = sum(100 + 80 / (1 + frequencies[term]) for term in matching)
+            score += 8 * bool(_SIGNALS.search(piece))
+            if bridge_match is not None and bridge_match.search(piece):
+                score += 120
             score += 2 * (message_index + 1) / max(1, len(old))
             if serial == 0:
                 score += 3
             # Keep the neighboring source text that explains a selected line.
             # Rank the center only, so surrounding noise does not win selection.
             span = "\n".join(part for part in (previous, piece, following) if part)
-            candidate = _Candidate(message_index, part_index, role, span, score)
+            candidate = _Candidate(message_index, part_index, role, span, score, piece)
             item = (score, serial, candidate)
             if len(heap) < _MAX_CANDIDATES:
                 heapq.heappush(heap, item)
@@ -208,6 +229,53 @@ def _candidates(old: list[dict[str, Any]], query: str) -> list[_Candidate]:
     selected = [item[2] for item in heap]
     selected.sort(key=lambda item: (-item.score, item.message_index, item.part_index))
     return selected
+
+
+def _linked_candidates(old: list[dict[str, Any]], query: str) -> list[_Candidate]:
+    """Reserve a few excerpts joined by IDs in high-ranked source evidence."""
+    terms = _query_terms(query)
+    frequencies = _term_frequencies(old, terms)
+    primary = _candidates(old, terms, frequencies)
+    if not primary:
+        return primary
+    bridge_ids: list[str] = []
+    query_ids = {identifier.lower() for identifier in _LINK_IDS.findall(query)}
+    bridge_seen: set[str] = set()
+    for candidate in primary[:8]:
+        for identifier in _LINK_IDS.findall(candidate.center):
+            normalized = identifier.lower()
+            if normalized not in query_ids and normalized not in bridge_seen:
+                bridge_ids.append(identifier)
+                bridge_seen.add(normalized)
+                if len(bridge_ids) == 4:
+                    break
+        if len(bridge_ids) == 4:
+            break
+    if not bridge_ids:
+        return primary
+    second_pass = _candidates(old, terms, frequencies, tuple(bridge_ids))
+    matched = re.compile(r"\b(?:" + "|".join(map(re.escape, bridge_ids)) + r")\b", re.IGNORECASE)
+    output: list[_Candidate] = []
+    seen: set[tuple[int, int]] = set()
+
+    def add(candidate: _Candidate) -> None:
+        key = (candidate.message_index, candidate.part_index)
+        if key not in seen:
+            seen.add(key)
+            output.append(candidate)
+
+    for candidate in primary[:2]:
+        add(candidate)
+    for candidate in second_pass:
+        if matched.search(candidate.center):
+            add(candidate)
+            if len(output) == 5:
+                break
+    for candidate in primary:
+        add(candidate)
+        if len(output) == _MAX_CANDIDATES:
+            break
+    return output
 
 
 def _summary(candidates: list[_Candidate]) -> dict[str, str]:
@@ -304,8 +372,8 @@ def compact_messages(
         old_before = messages[instruction_end:latest_user]
         prior_options = [
             _Candidate(item.message_index + instruction_end, item.part_index,
-                       item.role, item.text, item.score)
-            for item in _candidates(old_before, task_query)
+                       item.role, item.text, item.score, item.center)
+            for item in _linked_candidates(old_before, task_query)
         ]
         task_prefix = messages[:instruction_end] + [messages[latest_user]]
         task_count = _count(count_tokens, task_prefix)
@@ -344,14 +412,14 @@ def compact_messages(
         for start, end in completed:
             epochs.append([
                 _Candidate(item.message_index + start, item.part_index,
-                           item.role, item.text, item.score)
-                for item in _candidates(messages[start:end], task_query)[:per_epoch]
+                           item.role, item.text, item.score, item.center)
+                for item in _linked_candidates(messages[start:end], task_query)[:per_epoch]
             ])
         query = task_query + "\n" + _render(messages[-1])
         dynamic_options = [
             _Candidate(item.message_index + epoch_start, item.part_index,
-                       item.role, item.text, item.score)
-            for item in _candidates(messages[epoch_start:tail_start], query)
+                       item.role, item.text, item.score, item.center)
+            for item in _linked_candidates(messages[epoch_start:tail_start], query)
         ]
 
         def build_tool_history(drop_epochs: int, number: int) -> tuple[list[dict[str, Any]], int]:
@@ -439,7 +507,7 @@ def compact_messages(
     old = messages[instruction_end:recent_start]
     preserved = messages[recent_start:]
     query = _render(messages[latest_user])
-    options = _candidates(old, query)
+    options = _linked_candidates(old, query)
     if not options:
         raise CompactionError("no extractable historical content", code="active_too_large")
     prefix = messages[:instruction_end]
