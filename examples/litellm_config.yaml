@@ -4,6 +4,8 @@ model_list:
       model: openai/local-chat
       api_base: http://127.0.0.1:8088/v1
       api_key: none
+      # LiteLLM serves Responses clients through this Chat-only backend.
+      use_chat_completions_api: true
     model_info:
       max_input_tokens: 28672
       max_output_tokens: 4096

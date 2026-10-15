@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import asyncio
 from copy import deepcopy
+import json
+import logging
 import threading
 from typing import Any, Mapping
 
@@ -62,34 +64,90 @@ def compact_proxy_request(
     Uses the proxy router's deployed pre-call counter so tools and route
     metadata count against the same budget as LiteLLM's own capacity check.
     """
-    protocol = _PROTOCOLS.get(call_type)
+    response_input = call_type in {"responses", "aresponses"}
+    protocol = "openai" if response_input else _PROTOCOLS.get(call_type)
     if protocol is None:
-        raise HTTPException(422, detail="Sift supports Chat Completions and Anthropic Messages only")
-    messages = data.get("messages")
+        raise HTTPException(422, detail="Sift supports Chat Completions, Anthropic Messages and stateless text Responses only")
+    restore = None
+    if response_input:
+        from .litellm_responses import response_selection_view
+
+        messages, restore = response_selection_view(data)
+    else:
+        messages = data.get("messages")
     if not isinstance(messages, list) or not all(isinstance(msg, dict) for msg in messages):
         raise HTTPException(400, detail="Sift requires chat messages")
     counting_data = data
+    if response_input and data.get("tools"):
+        from litellm.responses.litellm_completion_transformation.transformation import (
+            LiteLLMCompletionResponsesConfig,
+        )
+
+        # The deployed route counter ignores Responses namespace wrappers and
+        # custom-tool descriptions. Count LiteLLM's actual Chat tool shape in
+        # a private copy; preserve the caller's definitions in the request.
+        tools = data["tools"]
+        if not isinstance(tools, list) or any(
+            not isinstance(tool, dict) or tool.get("type") not in {"function", "custom", "namespace"}
+            for tool in tools
+        ):
+            raise HTTPException(422, detail="Sift Responses supports function, custom and namespace tools only")
+        for tool in tools:
+            if tool["type"] == "namespace" and (
+                not isinstance(tool.get("tools"), list) or any(
+                    not isinstance(child, dict) or child.get("type") != "function"
+                    for child in tool["tools"]
+                )
+            ):
+                raise HTTPException(422, detail="Sift requires function definitions inside Responses namespaces")
+        try:
+            chat_tools, _ = LiteLLMCompletionResponsesConfig.transform_responses_api_tools_to_chat_completion_tools(tools)
+        except (TypeError, ValueError, KeyError) as error:
+            raise HTTPException(422, detail="Sift cannot count these Responses tools") from error
+        counting_data = {**data, "tools": chat_tools}
     repaired_tool_count = False
+    tool_floor_adjustment: int | None = None
 
     def count(candidate: list[dict[str, Any]]) -> int:
-        nonlocal counting_data, repaired_tool_count
+        nonlocal counting_data, repaired_tool_count, tool_floor_adjustment
+        counted_input = restore(candidate) if restore else data.get("input")
+        request_kwargs = {**counting_data, "input": counted_input} if restore else {**counting_data, "messages": candidate}
         try:
-            return router._count_pre_call_check_tokens(
-                messages=candidate, input=data.get("input"),
-                request_kwargs={**counting_data, "messages": candidate},
+            counted = router._count_pre_call_check_tokens(
+                messages=None if restore else candidate, input=counted_input,
+                request_kwargs=request_kwargs,
             )
         except KeyError as error:
             if error.args != ("items",) or repaired_tool_count:
                 raise
-            tools = _countable_tools(data.get("tools"))
+            tools = _countable_tools(counting_data.get("tools"))
             if tools is None:
                 raise
             counting_data = {**data, "tools": tools}
             repaired_tool_count = True
-            return router._count_pre_call_check_tokens(
-                messages=candidate, input=data.get("input"),
-                request_kwargs={**counting_data, "messages": candidate},
+            request_kwargs["tools"] = tools
+            counted = router._count_pre_call_check_tokens(
+                messages=None if restore else candidate, input=counted_input,
+                request_kwargs=request_kwargs,
             )
+        if tool_floor_adjustment is None:
+            tool_floor_adjustment = 0
+            if counting_data.get("tools"):
+                from litellm import token_counter
+
+                # LiteLLM 1.103.0's formatter skips JSON Schema branches such
+                # as $defs/anyOf. A conservative serialized-schema floor keeps
+                # their text from consuming uncounted provider context. Charge
+                # the larger footprint, rather than double-counting tools.
+                schema_tokens = token_counter(text=json.dumps(counting_data["tools"], ensure_ascii=False))
+                with_tools = router._count_pre_call_check_tokens(
+                    messages=[], input=None, request_kwargs=counting_data,
+                )
+                without_tools = router._count_pre_call_check_tokens(
+                    messages=[], input=None, request_kwargs={**counting_data, "tools": None},
+                )
+                tool_floor_adjustment = max(0, schema_tokens - max(0, with_tools - without_tools))
+        return counted + tool_floor_adjustment
 
     try:
         result = compact_messages(
@@ -102,11 +160,22 @@ def compact_proxy_request(
             "late_instruction": 422,
         }.get(error.code, 400)
         raise HTTPException(status, detail=f"Sift: {error}") from error
-    output = {**data, "messages": result.messages if result.audit["compacted"] else messages}
+    if restore:
+        output = {**data, "input": restore(result.messages) if result.audit["compacted"] else data["input"]}
+    else:
+        output = {**data, "messages": result.messages if result.audit["compacted"] else messages}
     key, metadata = get_or_create_metadata_bucket(output)
     output[key] = {**metadata, "sift": {
         **result.audit, "counting_tool_schema_items_filled": repaired_tool_count,
+        "counting_responses_tools_translated": response_input and bool(data.get("tools")),
+        "counting_tool_floor_adjustment": tool_floor_adjustment or 0,
     }}
+    output_limit = data.get("max_output_tokens", data.get("max_completion_tokens", data.get("max_tokens")))
+    logging.getLogger("LiteLLM Proxy").info(
+        "sift_request protocol=%s compacted=%s input_tokens=%d forwarded_tokens=%d target=%d output_limit=%d",
+        call_type, str(result.audit["compacted"]).lower(), result.audit["input_tokens"],
+        result.audit["forwarded_tokens"], target, output_limit if type(output_limit) is int else -1,
+    )
     return output
 
 

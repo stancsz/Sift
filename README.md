@@ -1,37 +1,51 @@
+<p align="center">
+  <img src="assets/sift-logo.png" alt="A hand holding a sieve, the Sift logo" width="240">
+</p>
+
 # Sift
 
-Sift is a small, CPU-only library for **query-aware extractive context compaction**. It accepts a long chat history and a caller-owned token counter, then returns a shorter history that fits an exact input budget. It does not call another model, invent a prose summary, or claim that a 32K model can attend to a million tokens.
+**Keep useful evidence. Send less context. Reuse the prefix.**
 
-The first use case is a local 32,768-token Qwen server behind Subroute. The gateway may accept up to 1,000,000 estimated input tokens, but forwards at most 24,576 after compaction, leaving room for generation and protocol overhead. Sift itself has no gateway or model dependency.
+[![Tests](https://github.com/stancsz/Sift/actions/workflows/test.yml/badge.svg)](https://github.com/stancsz/Sift/actions/workflows/test.yml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](pyproject.toml)
+[![MIT license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Release](https://img.shields.io/github/v/tag/stancsz/Sift?label=release)](https://github.com/stancsz/Sift/tags)
 
-## What it keeps
+Sift is a CPU-only Python library and **LiteLLM Proxy callback for extractive context compaction**. It selects evidence from long chat histories and tool logs to fit a caller-owned input budget, preserving instructions and exact active work. It uses deterministic selection, with no extra model request or generated summary.
 
-1. Leading system and developer messages remain exact and in their original roles.
-2. The latest real user request remains exact. When its tool loop fits, all following assistant/tool messages remain exact. When one long tool loop exceeds the target, Sift keeps the original request and newest tool cycle exact, retains up to three more recent cycles if they fit, and extracts older cycles as historical data. It reserves a small extractive index of the first named test failures found in old tool output when space permits, and keeps bounded failure identifiers in completed groups. The index quotes exact failure prefixes and test names rather than full error details. Completed groups of four tool cycles use fixed, task-anchored excerpts. When the current group fits its reserved share, its tool cycles append verbatim until the next group boundary.
-3. Up to four recent complete prior turns remain exact when they fit a bounded share of the target.
-4. Older text becomes quoted excerpts with original message index and role labels. Query term overlap, term rarity within the history, failure/decision signals, and recency rank candidates. A bounded second pass follows identifiers found in the best source lines to related lines, such as a delivery's policy ID and that policy's deadline. Each selected piece carries its immediate neighbors to retain local diagnostic context. Duplicate center pieces are suppressed in a bounded window. The selected excerpts stay in chronological order, and the caller's token budget determines how many fit.
-5. A caller-supplied token counter checks the final serialized messages. If the active work cannot fit, Sift raises an explicit error rather than trimming it or claiming success.
+It is for people running agents through LiteLLM who face growing tool transcripts, slow prompt prefill, and limited context or KV-cache capacity. Sift reduces the text sent to inference and keeps a stable historical prefix between tool-cycle boundaries so supported backends can reuse cached work.
 
-```python
-from sift import compact_messages
+**Status: experimental, with live gateway validation.** Token reduction, cache reuse, and lower cold-prefill latency have been measured in selected workloads. General task-quality preservation, dollar savings, and whole-task performance remain open acceptance gates. [See the evidence](docs/evaluation.md) and [the maturity roadmap](ROADMAP.md).
 
-# Use the tokenizer/counting path that will actually enforce your model route.
-result = compact_messages(
-    messages,
-    count_tokens=lambda candidate: router.count_tokens(candidate),
-    target=24_576,
-    raw_limit=1_000_000,
-    protocol="anthropic",  # or "openai"
-)
-forwarded_messages = result.messages
-audit = result.audit
+## The problem
+
+An agent may need an old failure, a decision, or a policy ID hidden in thousands of routine lines. Sending everything spends context capacity and prompt-processing work. Keeping only the beginning and end can lose the evidence needed to finish.
+
+Sift retains exact recent work, ranks older excerpts against the current task, carries neighboring diagnostic lines, and follows bounded identifier links to related facts. Completed groups of four tool cycles use fixed excerpts; the current group appends exactly while its reserved budget permits. This limits unnecessary prefix changes during a tool loop.
+
+For example, a gateway can accept a history of up to **1,000,000 estimated tokens** in CPU memory and select at most **24,576 estimated input tokens** for a **32,768-token model**. The model attends only to the selected context. The remaining capacity must cover output and any difference between estimated and provider token counts.
+
+## Install and use with LiteLLM
+
+Install the tagged release from GitHub. Sift is not currently published to PyPI.
+
+```sh
+python -m pip install "sift-context[litellm] @ git+https://github.com/stancsz/Sift.git@v0.9.0"
 ```
 
-`audit` reports input and forwarded token counts, omitted estimated tokens, retained prior turns, selected excerpts, and the method. The supplied counter owns token accounting. The defaults are not a guarantee of compatibility with every model or request schema.
+Put a callback instance beside your LiteLLM configuration:
 
-## LiteLLM Proxy callback
+```python
+# litellm_callback.py
+from sift.litellm_proxy import SiftLiteLLMHook
 
-Sift includes an optional native LiteLLM Proxy callback. Install from this checkout with `python -m pip install -e '.[litellm]'`. Copy [the callback instance](examples/litellm_callback.py) beside your LiteLLM config and list its dotted instance path under `litellm_settings.callbacks`:
+sift_callback = SiftLiteLLMHook(
+    {"local-chat": 24_576},
+    raw_limit=1_000_000,
+)
+```
+
+Register it through LiteLLM's callback configuration:
 
 ```yaml
 litellm_settings:
@@ -39,16 +53,83 @@ litellm_settings:
     - litellm_callback.sift_callback
 ```
 
-Set the callback's `model_targets` to the **resolved public model name** and its input budget. If another callback changes model aliases, list that routing callback before Sift. The hook runs for Chat Completions and Anthropic Messages, uses LiteLLM Proxy's route counter, and records a server-owned `sift` audit in internal request metadata. For configured models, responses report `x-sift-compacted` and estimated input/forwarded counts. Requests already under target retain their original messages and tools. On LiteLLM 1.103.0, the hook repairs missing array `items` only in a counting copy because that version's counter otherwise raises `KeyError('items')`. CPU work runs off the event loop with at most two concurrent compactions. The callback is explicitly scoped to LiteLLM Proxy 1.103.0 in the optional dependency; reevaluate its private route-counter call when upgrading LiteLLM. See [LiteLLM's Proxy callback guide](https://docs.litellm.ai/docs/proxy/call_hooks) and [the example config](examples/litellm_config.yaml).
+`local-chat` is the resolved public model name in your proxy configuration. Set a target for each model you want compacted. If a routing callback changes the model name, place it before Sift. The [complete example](examples/litellm_config.yaml) includes a local OpenAI-compatible route; [the callback file](examples/litellm_callback.py) can be copied alongside it.
 
-## Safety and limits
+The callback supports **Chat Completions, Anthropic Messages, and stateless text Responses** on **LiteLLM Proxy 1.103.0**, pinned by the optional dependency. It uses the proxy's route counter, runs CPU work off the event loop with at most two concurrent compactions, and adds a server-owned `sift` audit to internal metadata. Configured routes return `x-sift-compacted` and estimated input/forwarded token headers. Requests below target keep their original messages or input and tools.
 
-Sift only compacts supported text and tool records. Unsupported media and late instruction messages fail closed when compaction is needed. It copies rather than mutating caller messages. Historical excerpts are wrapped as quoted **user-role data**, not elevated to system instructions. Quoting reduces accidental role confusion but does not make untrusted text harmless to a language model. Prior Anthropic thinking blocks are omitted from extracted evidence, while the current and retained tool cycles remain exact, including any thinking blocks. This is a deliberate lossy translation of older reasoning.
+The integration uses private LiteLLM counting/conversion methods, so upgrading LiteLLM requires compatibility testing. Counting copies repair missing array `items` and account for tool schema text that this version's formatter skips. Original provider definitions stay exact. Sift leaves provider transport, streaming, retries, and public protocols to LiteLLM. [LiteLLM callback reference](https://docs.litellm.ai/docs/proxy/call_hooks).
 
-Extractive selection is lossy. A fact with no lexical overlap or recognizable signal can be omitted. Completed tool-cycle excerpts and the exact current group can preserve a provider cache prefix until the next group boundary. An oversized current group or budget pressure can trigger earlier eviction and invalidate that prefix. In a staging 34/35/36-cycle probe, llama.cpp reported 0/20,765/23,045 cached tokens and 17.22/4.15/3.86-second responses. These are one synthetic sequence, not a general speed guarantee. Sift has no persistent session memory, semantic model, multimodal compression, or guarantee that the downstream model answers correctly. The one-million-token value is an intake limit, not a model attention window.
+Responses input must include complete history. Text messages, function/custom tools, function namespaces, and plain reasoning summaries are supported; stateful references, encrypted reasoning, media, built-in tools, and incomplete tool batches are rejected. For a Chat-only backend, enable LiteLLM's `use_chat_completions_api: true` on that deployment to let its native adapter serve Responses clients. [Adapter contract and audit logging](docs/algorithm.md#litellm-responses-selection-adapter).
 
-## Verify
+## Use the library directly
 
-Install locally with `python -m pip install -e .`, then run `python -m unittest discover -s tests -q`. The 29 tests cover hard budgets, OpenAI and Anthropic single-request tool loops, fixed-boundary prompt reuse, the native LiteLLM callback, old thinking blocks, named test-failure retention, local diagnostic context, middle-of-history retrieval across five domains, contradictory facts, distant identifier joins, repetitive log noise, unsupported media, and 100 seeded placements of a needed fact. The reproducible `python benchmarks/compare.py` deliberately places facts in the middle: Sift retained 100/100 while a small head/tail baseline retained 0/100. A synthetic 966K estimated-token case with 76K distinct log lines retained two distant, joined policy facts in 1.86 seconds on a Windows desktop, forwarding 22,579 estimated tokens under a 24,576-token target. These are authored CPU-only examples, not natural-conversation quality or end-to-end latency guarantees. At a forced 5K budget, six private Claude Code traces retained a selected initial test-failure line in 74/74 compacted tool-result turns, up from 14/74 on 0.6.0; this is a retrospective span check, not an agent success rate. The raw traces are not distributed with this package. See [algorithm notes](docs/algorithm.md) and the [evaluation record](docs/evaluation.md).
+The core has no gateway or model dependency. Supply your route's token-counting function and supported messages:
 
-Sift is informed by work on [question-aware long-context compression](https://arxiv.org/abs/2310.06839), [extractive prompt compression](https://arxiv.org/abs/2403.12968), and [middle-position retrieval failures](https://arxiv.org/abs/2307.03172). Its implementation is a deterministic heuristic, not a reproduction of those trained methods.
+```python
+from sift import compact_messages
+
+result = compact_messages(
+    messages,
+    count_tokens=count_request_tokens,
+    target=24_576,
+    raw_limit=1_000_000,
+    protocol="anthropic",  # or "openai"
+)
+
+forwarded_messages = result.messages
+audit = result.audit
+```
+
+The hard bound is `forwarded_tokens <= target` according to your supplied counter. The audit includes raw and forwarded counts, omitted estimated tokens, retained prior turns, and selected excerpts. **Reserve output separately.** A 24,576-token estimate is not a guarantee of 24,576 provider tokens, and Sift does not allocate or manage KV cache.
+
+## What is measured
+
+| Check | Observed result | What it establishes |
+|---|---|---|
+| Authored history with distant identifier links | 966,253 estimated tokens became 22,579 under a 24,576 target; both required facts survived; 1.86 seconds on one Windows desktop | Large input reduction and bounded CPU work in one synthetic case |
+| Seeded middle-fact benchmark | Sift retained 100/100 facts; an 800-character head/tail reference retained 0/100 | Retrieval on this intentionally query-oriented corpus |
+| Six private Claude Code trace replays, forced 5K target | Distinct failed-test retention rose from 24/28 on v0.7.0 to 28/28 on v0.8.0 | A specific diagnostic-retention improvement |
+| Live 34/35/36-cycle Chat Completions sequence | 19,475 / 21,464 / 23,453 estimated forwarded tokens; 21,362 / 23,642 provider-cached tokens on appended turns | Cache reuse inside one fixed group boundary, with correct newest and earliest failure answers |
+| Controlled cold-prefill comparison | Mean input 13,215 to 7,433 tokens; mean TTFT 8.96 to 5.49 seconds; Sift and full context each correct 6/6 | Lower latency on three authored cases repeated twice; head/tail also scored 6/6 |
+| Native Codex build-planner task | Six visible and five original holdouts passed; broader post-run contract probes and reporting checks failed | Existing test passes did not establish the full artifact contract |
+| Native Claude Code incident investigation | All required records were cited exactly; elapsed-time calculation failed the gold check | Evidence availability did not ensure correct reasoning |
+
+The [evaluation record](docs/evaluation.md) includes methods, earlier regressions, provider counts, timing observations, and failed tasks. Private trace labels were selected retrospectively; raw traces are not distributed. The older 800-character head/tail reference is not a protocol-preserving competing gateway; the new cold-prefill baseline preserves message structure. These results do not establish a general recall or task-success rate.
+
+**Does this make AI cheaper and faster?** Fewer forwarded tokens can reduce uncached prefill and input charges; a reusable prefix can avoid repeated prompt processing. The selected cold comparison measured 43.8% fewer input tokens, 38.7% lower mean TTFT, and 19.8% lower preparation-plus-response time, including Sift's CPU work. Actual billed savings depend on cache pricing, output length, retries, and extra agent turns. Sift generated more output in this comparison, and the local model has no per-token bill. Whole-task dollar savings remain unproven. [Methods, full results, and the failed first attempt](docs/evaluation.md#controlled-cold-prefill-comparison-2026-10-15).
+
+## Preservation and limits
+
+- Leading system/developer messages and the latest real user request stay exact and retain their roles. Active tool work stays exact when it fits; oversized loops keep the newest cycle and extract older cycles. If essential active work cannot fit, Sift raises a capacity error.
+- Older excerpts carry source message indices and role labels as quoted user-role historical data. Inputs are copied, and unsupported media or late instructions fail closed when compaction is required. Quoting does not eliminate prompt-injection risk.
+- Extraction is lossy. Facts without recognizable lexical or identifier signals can disappear. The bounded failed-test index preserves identifiers, while error details depend on other excerpts or recent exact cycles. Old Anthropic thinking and Responses reasoning summaries are omitted from extracted evidence; retained current cycles remain exact.
+- A changed query, group rollover, oversized tool result, or budget eviction can change the prefix. Cache reuse depends on the inference backend as well as the rendered prompt. Sift has no persistent session memory or multimodal compression.
+
+Read [the algorithm and acceptance contract](docs/algorithm.md) for selection rules, limits, and complexity.
+
+## Reproduce and contribute
+
+```sh
+git clone --branch v0.9.0 https://github.com/stancsz/Sift.git
+cd Sift
+python -m pip install -e .
+python -m unittest discover -s tests -q
+python benchmarks/compare.py
+```
+
+The tests cover hard budgets, protocol preservation, active tool loops, append-only behavior inside fixed boundaries, diagnostic context, identifier joins, contradictory facts, unsupported inputs, and the optional LiteLLM callback. Install `.[litellm]` to exercise the integration with its pinned dependency.
+
+Useful contributions include reproducible failure cases, consented agent traces with spans labeled before tuning, and controlled measurements of accepted task quality, total cost, and time to first token. [Open an issue](https://github.com/stancsz/Sift/issues) with the smallest redacted reproduction. See [ROADMAP.md](ROADMAP.md) for the gates toward a mature release.
+
+### Controlled prefill benchmark
+
+With `.[litellm]` installed and a local OpenAI-compatible gateway running, set `SIFT_BENCH_API_KEY` in your environment, then run:
+
+```sh
+python benchmarks/make_prefill_cases.py tmp/prefill-cases.jsonl
+python benchmarks/prefill.py --cases tmp/prefill-cases.jsonl --base-url http://127.0.0.1:4005/v1 --model qwen3.8-27b --target 6000 --repeats 2 --max-output-tokens 768 --output tmp/prefill-results.json
+```
+
+This opt-in benchmark makes 18 sequential model calls across three authored cases. It compares full context, Sift, and protocol-preserving head/tail trimming, with deterministic shuffled order and no scripted retries. The gateway must preserve the prepared requests. Its local-backend `cache_prompt: false` request must be honored and cached-token usage reported for a verified cold comparison. Native finish/usage inspection is pinned to LiteLLM 1.103.0; unsupported versions fail before calls. Results retain failed samples, separate SDK-estimated usage, and only qualify complete, correct, normally terminated cold samples for comparison. Output budgets include reasoning. These cases do not estimate general task quality or dollar savings.
+
+Sift is informed by [question-aware compression](https://arxiv.org/abs/2310.06839), [extractive prompt compression](https://arxiv.org/abs/2403.12968), and [middle-position retrieval failures](https://arxiv.org/abs/2307.03172). Its deterministic heuristic is a separate implementation. Released under the [MIT license](LICENSE).
