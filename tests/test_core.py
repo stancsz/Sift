@@ -150,6 +150,24 @@ class CompactionTests(unittest.TestCase):
         self.assertEqual(early_lines(first), early_lines(second))
         self.assertLessEqual(second.audit["forwarded_tokens"], 4_000)
 
+    def test_tool_cycles_append_without_rewriting_prefix_inside_barrier(self):
+        task = message("user", "Find the newest failing test")
+        cycles = []
+        for index in range(20):
+            cycles.extend([
+                message("assistant", None, tool_calls=[{"id": f"x{index}", "type": "function",
+                    "function": {"name": "Read", "arguments": "{}"}}]),
+                message("tool", f"FAILED test_{index} " + "log output " * 80,
+                        tool_call_id=f"x{index}"),
+            ])
+        results = [compact_messages([task, *cycles[:2 * count]], estimate, target=3_000)
+                   for count in (18, 19, 20)]
+        for earlier, later in zip(results, results[1:]):
+            self.assertTrue(earlier.audit["compacted"])
+            self.assertLessEqual(later.audit["forwarded_tokens"], 3_000)
+            self.assertEqual(later.messages[:len(earlier.messages)], earlier.messages)
+        self.assertEqual(results[-1].messages[-1], cycles[-1])
+
     def test_limits_and_unsupported_media_fail_closed(self):
         source = [message("user", "old " * 1000), message("assistant", "old"),
                   message("user", "new " * 1000)]

@@ -288,6 +288,18 @@ def compact_messages(
             retained_cycles += 1
             if retained_cycles == 4:
                 break
+        # Start the exact tail at a fixed four-cycle boundary when it fits.
+        # Its messages can then append without altering the compacted prefix
+        # until the next boundary is reached.
+        barrier_index = ((len(cycle_starts) - 1) // 4) * 4
+        barrier_start = cycle_starts[barrier_index]
+        stable_barrier = _count(
+            count_tokens,
+            messages[:instruction_end] + [messages[latest_user]] + messages[barrier_start:],
+        ) < target - 256
+        if stable_barrier:
+            tail_start = barrier_start
+            retained_cycles = len(cycle_starts) - barrier_index
         task_query = _render(messages[latest_user])
         old_before = messages[instruction_end:latest_user]
         prior_options = [
@@ -299,7 +311,7 @@ def compact_messages(
         task_count = _count(count_tokens, task_prefix)
         base = task_prefix + messages[tail_start:]
         available = max(0, target - _count(count_tokens, base) - 256)
-        prior_quota = min(target // 6, available // 4)
+        prior_quota = min(target // 8, available // 4) if not stable_barrier else target // 8
         low, high = 0, len(prior_options)
         prior_count = 0
         while low <= high:
@@ -354,16 +366,30 @@ def compact_messages(
             output += messages[tail_start:]
             return output, _count(count_tokens, output)
 
-        reserve = min(1_024, available // 4)
+        def stable_prefix_count(drop_epochs: int) -> int:
+            stable = [item for group in epochs[drop_epochs:] for item in group]
+            output = messages[:instruction_end]
+            if prior_selected:
+                output += [_summary(prior_selected)]
+            output += [messages[latest_user]]
+            if stable:
+                output += [_summary(stable)]
+            return _count(count_tokens, output)
+
+        reserve = target // 3 if stable_barrier else min(1_024, available // 4)
         low, high = 0, len(epochs)
         drop_epochs = len(epochs)
         while low <= high:
             middle = (low + high) // 2
-            if build_tool_history(middle, 0)[1] <= target - reserve:
+            count = (stable_prefix_count(middle) if stable_barrier
+                     else build_tool_history(middle, 0)[1])
+            if count <= target - reserve - (256 if stable_barrier else 0):
                 drop_epochs = middle
                 high = middle - 1
             else:
                 low = middle + 1
+        while drop_epochs < len(epochs) and build_tool_history(drop_epochs, 0)[1] > target:
+            drop_epochs += 1
         if drop_epochs == len(epochs) and not dynamic_options and epochs:
             # At a very tight budget, even one whole epoch may not fit. Keep
             # as much of the newest completed epoch as the hard target allows.
