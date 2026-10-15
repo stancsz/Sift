@@ -1,0 +1,439 @@
+{
+  "status": "Completed descriptive authored development pilot. All four delivered artifacts rejected by predeclared acceptance. No accepted-task cost or speed advantage established.",
+  "plan": "native-build-pilot-revision-2026-10-15.json",
+  "rows": [
+    {
+      "client": "claude",
+      "arm": "sift",
+      "case": "build_planner",
+      "native_client_version": "2.1.251 (Claude Code)",
+      "native_seconds": 392.47926630009897,
+      "mean_client_reported_ttft_ms": 2650.4375,
+      "client_ttft_samples": 16,
+      "engine_weighted_decode_tps": 43.574521035022556,
+      "gateway_requests": 17,
+      "engine_completions": 17,
+      "engine_generated_tokens_including_auxiliary_calls": 15016,
+      "client_reported_usage": {
+        "input_tokens": 32843,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 179228,
+        "output_tokens": 14890,
+        "output_tokens_details": {
+          "thinking_tokens": 0
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "",
+        "iterations": [],
+        "speed": "standard"
+      },
+      "selector_total_wall_ms": 171.10399999999998,
+      "selector_total_thread_cpu_ms": 168.629,
+      "compacted_requests": 1,
+      "max_forwarded_estimate": 24162,
+      "sum_raw_input_estimates": 210424,
+      "sum_forwarded_input_estimates": 202820,
+      "native_terminal_success": true,
+      "observed_test_loop": true,
+      "test_tool_calls": 4,
+      "visible_methods": 6,
+      "visible_passed": true,
+      "visible_plus_gold_methods": 13,
+      "accepted": false,
+      "gold_passed": false,
+      "gold_failure_lines": [
+        "FAIL: test_malformed_direct_targets_are_rejected (test_postrun_contract.AdditionalContractTests.test_malformed_direct_targets_are_rejected) (target=Target(name='bad name', command='build', sources=(), deps=()))",
+        "FAIL: test_malformed_direct_targets_are_rejected (test_postrun_contract.AdditionalContractTests.test_malformed_direct_targets_are_rejected) (target=Target(name='root', command='build', sources=('../escape',), deps=()))",
+        "FAIL: test_malformed_direct_targets_are_rejected (test_postrun_contract.AdditionalContractTests.test_malformed_direct_targets_are_rejected) (target=Target(name='root', command='build', sources=('source', 'source'), deps=()))",
+        "FAILED (failures=3)"
+      ],
+      "scope_clean": true,
+      "artifact_sha256": {
+        "build_manifest.py": "9dc357dcd9bc3a84aed9c40f931fdb2f324730a313186cbe1cda47d1df708c71",
+        "incremental.py": "f7500a9bacfac025511ab5303934558d8dc35983cfa670a9c87cc9782e82c682"
+      },
+      "source_hashes": {
+        "src/sift/__init__.py": "74b30a8090226747751229da906315ae3319605cf7dd71ee51adab234eb0f159",
+        "src/sift/core.py": "b290fde061dc28016f2bcd3d65e25ab9820b43e5eec5103056c5adeab2db5238",
+        "src/sift/litellm_proxy.py": "64c7ec7840242cabffc8c0e5f7bba690ee400f2001d324763cb1db1352fd39ae",
+        "src/sift/litellm_responses.py": "ff446f39476645c0d81f502a207213d36c6e34b21b97610549dba1eec2326edd",
+        "benchmarks/agents.py": "f2a15917864c5ed96545845d188ce0c9feb9a0846a9527a3cc8063a6aa340a7e",
+        "benchmarks/native_callback.py": "fbc35d8cd24a54d3bd051b3d8621d09950210ce8485788864103dbbf86bbe6c2",
+        "benchmarks/native_litellm.yaml": "05bb2f30752aeb53ccffdb90e6227ade1a761e6fa24e4ce41d8058c88abadd8b",
+        "benchmarks/recency.py": "4cc6f30d4bf8762b2ee291a621ffe3a595e0c2cbfa7c6b3a25a23cc46e88fd8d"
+      },
+      "utc_window": {
+        "start": "2026-10-15T21:50:03.565697+00:00",
+        "end": "2026-10-15T21:56:38.013753+00:00"
+      },
+      "compaction_chronology": {
+        "last_edit_request_utc": "2026-10-15T21:55:40.258Z",
+        "final_test_request_utc": "2026-10-15T21:55:52.863Z",
+        "first_compaction_utc": "2026-10-15T21:55:53.557093837Z",
+        "edits_after_first_compaction": 0,
+        "interpretation": "Artifacts and passing final visible tests existed before the only compaction. The artifact defects cannot be attributed to Sift compaction; this is not evidence of successful artifact construction under compression."
+      },
+      "rejection": "One predeclared gold method failed three malformed direct-target subcases: invalid target name, noncanonical source path, duplicate sources. All six visible tests passed.",
+      "posthoc_engine_accounting": {
+        "classification": "Inferred from matched untruncated engine logs, reconciled with client aggregates; not provider wire usage or billed cost.",
+        "formulas": {
+          "full_prompt": "release_n_tokens - generated_tokens + 1",
+          "cached_prompt": "full_prompt - prompt_eval_tokens"
+        },
+        "matched_tasks": 17,
+        "truncated_tasks": 0,
+        "inferred_totals": {
+          "new_prompt": 34313,
+          "generated": 15016,
+          "full_prompt": 213541,
+          "cached_prompt": 179228
+        },
+        "client_reconciliation": {
+          "model_wide_exact": true,
+          "main_usage_excludes_first_engine_task": {
+            "slot": 0,
+            "task": 0,
+            "new_prompt": 1470,
+            "generated": 126,
+            "cached_prompt": 0
+          },
+          "auxiliary_identity_note": "The exact offset is consistent with the known native auxiliary call; timing/count reconciliation alone is not a request-ID join to the client."
+        },
+        "private_evidence_sha256": {
+          "engine.log": "1f4b61fdc7e990829ad9b08c348bec5d3566512c7deb6a71b7997fee93420c5f",
+          "observations.json": "b64476b44ea654abcbbee59915bbd2f261521452c3a33367e188a30735191384",
+          "pilot.json": "1ca841ddc2969cc406b679ed6be01dc01093c2be9792b03caad8a0f15380fe84",
+          "runner.stdout": "927fc007adb75d9d73b4fa604b4ee30136e897d14eb179ce20f1d804341e08a0"
+        }
+      },
+      "artifact_construction_after_compaction_observed": false
+    },
+    {
+      "client": "codex",
+      "arm": "recency",
+      "case": "build_planner",
+      "native_client_version": "codex-cli 0.154.0",
+      "native_seconds": 246.18687619897537,
+      "mean_client_reported_ttft_ms": null,
+      "client_ttft_samples": 0,
+      "engine_weighted_decode_tps": 43.269335644958396,
+      "gateway_requests": 17,
+      "engine_completions": 17,
+      "engine_generated_tokens_including_auxiliary_calls": 9402,
+      "client_reported_usage": [
+        {
+          "input_tokens": 271417,
+          "cached_input_tokens": 248174,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 9402,
+          "reasoning_output_tokens": 2729
+        }
+      ],
+      "selector_total_wall_ms": 143.303,
+      "selector_total_thread_cpu_ms": 141.001,
+      "compacted_requests": 0,
+      "max_forwarded_estimate": 22360,
+      "sum_raw_input_estimates": 260920,
+      "sum_forwarded_input_estimates": 260920,
+      "native_terminal_success": true,
+      "observed_test_loop": true,
+      "test_tool_calls": 4,
+      "visible_methods": 6,
+      "visible_passed": true,
+      "visible_plus_gold_methods": 13,
+      "accepted": false,
+      "gold_passed": false,
+      "gold_failure_lines": [
+        "FAIL: test_malformed_direct_targets_are_rejected (test_postrun_contract.AdditionalContractTests.test_malformed_direct_targets_are_rejected) (target=Target(name='bad name', command='build', sources=(), deps=()))",
+        "FAIL: test_malformed_direct_targets_are_rejected (test_postrun_contract.AdditionalContractTests.test_malformed_direct_targets_are_rejected) (target=Target(name='root', command='build', sources=('../escape',), deps=()))",
+        "FAILED (failures=2)"
+      ],
+      "scope_clean": true,
+      "artifact_sha256": {
+        "build_manifest.py": "3691c86cefcbe087a6a67f7af2dd0f4d5b557df6c010a59ee5e5528f26269ed9",
+        "incremental.py": "5392636857addcd47aab9269fca85d2f9271ec607e22a3e4bd199ac671430206"
+      },
+      "source_hashes": {
+        "src/sift/__init__.py": "74b30a8090226747751229da906315ae3319605cf7dd71ee51adab234eb0f159",
+        "src/sift/core.py": "b290fde061dc28016f2bcd3d65e25ab9820b43e5eec5103056c5adeab2db5238",
+        "src/sift/litellm_proxy.py": "64c7ec7840242cabffc8c0e5f7bba690ee400f2001d324763cb1db1352fd39ae",
+        "src/sift/litellm_responses.py": "ff446f39476645c0d81f502a207213d36c6e34b21b97610549dba1eec2326edd",
+        "benchmarks/agents.py": "f2a15917864c5ed96545845d188ce0c9feb9a0846a9527a3cc8063a6aa340a7e",
+        "benchmarks/native_callback.py": "fbc35d8cd24a54d3bd051b3d8621d09950210ce8485788864103dbbf86bbe6c2",
+        "benchmarks/native_litellm.yaml": "05bb2f30752aeb53ccffdb90e6227ade1a761e6fa24e4ce41d8058c88abadd8b",
+        "benchmarks/recency.py": "4cc6f30d4bf8762b2ee291a621ffe3a595e0c2cbfa7c6b3a25a23cc46e88fd8d"
+      },
+      "utc_window": {
+        "start": "2026-10-15T22:00:37.783203+00:00",
+        "end": "2026-10-15T22:04:45.597310+00:00"
+      },
+      "compaction_chronology": {
+        "interpretation": "No request required compaction. This is a native-client control and cannot establish compression quality."
+      },
+      "posthoc_engine_accounting": {
+        "classification": "Inferred from matched untruncated engine logs, reconciled with client aggregates; not provider wire usage or billed cost.",
+        "formulas": {
+          "full_prompt": "release_n_tokens - generated_tokens + 1",
+          "cached_prompt": "full_prompt - prompt_eval_tokens"
+        },
+        "matched_tasks": 17,
+        "truncated_tasks": 0,
+        "inferred_totals": {
+          "new_prompt": 23243,
+          "generated": 9402,
+          "full_prompt": 271417,
+          "cached_prompt": 248174
+        },
+        "client_reconciliation": {
+          "native_turn_usage_exact": true
+        },
+        "private_evidence_sha256": {
+          "engine.log": "30442ec7ce8ce8b9ae2741b60a5ef97d62c88788b69e6b0621d805eb3ed0db2d",
+          "observations.json": "fcb6378b030fbae6db8cb41864321798b62deb9aaaf6a45330a00ddeef5ee161",
+          "pilot.json": "6c167b1c456db69e7c4e80cce016a1670fdd128e4931e1a726876a8481df265a",
+          "runner.stdout": "a4370a3dcd21c999186440c4ffaede8f76f67a7605f06052f47f47ad7e59e3f0"
+        }
+      },
+      "artifact_construction_after_compaction_observed": false
+    },
+    {
+      "client": "claude",
+      "arm": "recency",
+      "case": "build_planner",
+      "native_client_version": "2.1.251 (Claude Code)",
+      "native_seconds": 847.0055472999811,
+      "mean_client_reported_ttft_ms": 5974.153846153846,
+      "client_ttft_samples": 39,
+      "engine_weighted_decode_tps": 42.18497415590686,
+      "gateway_requests": 40,
+      "engine_completions": 40,
+      "engine_generated_tokens_including_auxiliary_calls": 25290,
+      "client_reported_usage": {
+        "input_tokens": 291949,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 511214,
+        "output_tokens": 25111,
+        "output_tokens_details": {
+          "thinking_tokens": 0
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "",
+        "iterations": [],
+        "speed": "standard"
+      },
+      "selector_total_wall_ms": 1636.164,
+      "selector_total_thread_cpu_ms": 1632.298,
+      "compacted_requests": 22,
+      "max_forwarded_estimate": 24499,
+      "sum_raw_input_estimates": 1006468,
+      "sum_forwarded_input_estimates": 744931,
+      "native_terminal_success": true,
+      "observed_test_loop": true,
+      "test_tool_calls": 9,
+      "visible_methods": 6,
+      "visible_passed": true,
+      "visible_plus_gold_methods": 13,
+      "accepted": false,
+      "gold_passed": false,
+      "gold_failure_lines": [
+        "FAIL: test_malformed_direct_targets_are_rejected (test_postrun_contract.AdditionalContractTests.test_malformed_direct_targets_are_rejected) (target=Target(name='bad name', command='build', sources=(), deps=()))",
+        "FAIL: test_malformed_direct_targets_are_rejected (test_postrun_contract.AdditionalContractTests.test_malformed_direct_targets_are_rejected) (target=Target(name='root', command='build', sources=('../escape',), deps=()))",
+        "FAILED (failures=2)"
+      ],
+      "scope_clean": true,
+      "artifact_sha256": {
+        "build_manifest.py": "860d2cc2f0da7222dca579c56a245d7f7acc6d6057bbcac863a28c03e93b4bf5",
+        "incremental.py": "3322047eea17ec7293c3ff6f1237c9cae0a4bb5a55006fcafdc889be85a84ed8"
+      },
+      "source_hashes": {
+        "src/sift/__init__.py": "74b30a8090226747751229da906315ae3319605cf7dd71ee51adab234eb0f159",
+        "src/sift/core.py": "b290fde061dc28016f2bcd3d65e25ab9820b43e5eec5103056c5adeab2db5238",
+        "src/sift/litellm_proxy.py": "64c7ec7840242cabffc8c0e5f7bba690ee400f2001d324763cb1db1352fd39ae",
+        "src/sift/litellm_responses.py": "ff446f39476645c0d81f502a207213d36c6e34b21b97610549dba1eec2326edd",
+        "benchmarks/agents.py": "f2a15917864c5ed96545845d188ce0c9feb9a0846a9527a3cc8063a6aa340a7e",
+        "benchmarks/native_callback.py": "fbc35d8cd24a54d3bd051b3d8621d09950210ce8485788864103dbbf86bbe6c2",
+        "benchmarks/native_litellm.yaml": "05bb2f30752aeb53ccffdb90e6227ade1a761e6fa24e4ce41d8058c88abadd8b",
+        "benchmarks/recency.py": "4cc6f30d4bf8762b2ee291a621ffe3a595e0c2cbfa7c6b3a25a23cc46e88fd8d"
+      },
+      "utc_window": {
+        "start": "2026-10-15T22:11:44.458786+00:00",
+        "end": "2026-10-15T22:25:53.605763+00:00"
+      },
+      "compaction_chronology": {
+        "first_compaction_utc": "2026-10-15T22:17:47.942368448Z",
+        "successful_edits_before_first_compaction": 9,
+        "successful_edits_after_first_compaction": 6,
+        "failing_validation_unchanged_before_and_after": true,
+        "interpretation": "One failed trial, no causal attribution of validation defects to recency or Sift. Gold-failing validation body already present before first compaction and unchanged afterward."
+      },
+      "denied_diagnostic_or_version_commands": 4,
+      "posthoc_engine_accounting": {
+        "classification": "Inferred from matched untruncated engine logs, reconciled with client aggregates; not provider wire usage or billed cost.",
+        "formulas": {
+          "full_prompt": "release_n_tokens - generated_tokens + 1",
+          "cached_prompt": "full_prompt - prompt_eval_tokens"
+        },
+        "matched_tasks": 40,
+        "truncated_tasks": 0,
+        "inferred_totals": {
+          "new_prompt": 293419,
+          "generated": 25290,
+          "full_prompt": 804633,
+          "cached_prompt": 511214
+        },
+        "client_reconciliation": {
+          "model_wide_exact": true,
+          "main_usage_excludes_first_engine_task": {
+            "slot": 0,
+            "task": 1,
+            "new_prompt": 1470,
+            "generated": 179,
+            "cached_prompt": 0
+          },
+          "auxiliary_identity_note": "The exact offset is consistent with the known native auxiliary call; timing/count reconciliation alone is not a request-ID join to the client."
+        },
+        "private_evidence_sha256": {
+          "engine.log": "67eed609950becbc1e9f2703fb66cdcc16788fd83c3f6247293895c02670ac01",
+          "observations.json": "d6618a724c565d6ea24bc53f56e034e136c5bf40c763ae9cbdc71817843a0920",
+          "pilot.json": "3df72fae226852a4054fdf971a5697d0a7a8d776166d7f9d3e1a89fed370000d",
+          "runner.stdout": "0d1b18bf3e0b5b03f395e356654c1efb57c1f3d802adf2215642366417fbc206"
+        }
+      },
+      "artifact_construction_after_compaction_observed": true
+    },
+    {
+      "client": "codex",
+      "arm": "sift",
+      "case": "build_planner",
+      "native_client_version": "codex-cli 0.154.0",
+      "native_seconds": 183.5270722429268,
+      "mean_client_reported_ttft_ms": null,
+      "client_ttft_samples": 0,
+      "engine_weighted_decode_tps": 43.98475262468407,
+      "gateway_requests": 14,
+      "engine_completions": 14,
+      "engine_generated_tokens_including_auxiliary_calls": 6979,
+      "client_reported_usage": [
+        {
+          "input_tokens": 187738,
+          "cached_input_tokens": 170121,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 6979,
+          "reasoning_output_tokens": 2268
+        }
+      ],
+      "selector_total_wall_ms": 91.653,
+      "selector_total_thread_cpu_ms": 91.615,
+      "compacted_requests": 0,
+      "max_forwarded_estimate": 16954,
+      "sum_raw_input_estimates": 179723,
+      "sum_forwarded_input_estimates": 179723,
+      "native_terminal_success": true,
+      "observed_test_loop": true,
+      "test_tool_calls": 4,
+      "visible_methods": 6,
+      "visible_passed": true,
+      "visible_plus_gold_methods": 13,
+      "accepted": false,
+      "gold_passed": false,
+      "gold_failure_lines": [
+        "FAIL: test_malformed_direct_targets_are_rejected (test_postrun_contract.AdditionalContractTests.test_malformed_direct_targets_are_rejected) (target=Target(name='bad name', command='build', sources=(), deps=()))",
+        "FAIL: test_malformed_direct_targets_are_rejected (test_postrun_contract.AdditionalContractTests.test_malformed_direct_targets_are_rejected) (target=Target(name='root', command='build', sources=('../escape',), deps=()))",
+        "FAIL: test_malformed_direct_targets_are_rejected (test_postrun_contract.AdditionalContractTests.test_malformed_direct_targets_are_rejected) (target=Target(name='root', command='build', sources=('source', 'source'), deps=()))",
+        "FAILED (failures=3)"
+      ],
+      "scope_clean": true,
+      "artifact_sha256": {
+        "build_manifest.py": "dc0081608e8735c48cc96ddb9b078db3024ffba902e2b27cbf46b3b2fffaa3bd",
+        "incremental.py": "c6e8970b69179b866f311ac260efeed6d09b678e0738a38a3263a2f7e075b543"
+      },
+      "source_hashes": {
+        "src/sift/__init__.py": "74b30a8090226747751229da906315ae3319605cf7dd71ee51adab234eb0f159",
+        "src/sift/core.py": "b290fde061dc28016f2bcd3d65e25ab9820b43e5eec5103056c5adeab2db5238",
+        "src/sift/litellm_proxy.py": "64c7ec7840242cabffc8c0e5f7bba690ee400f2001d324763cb1db1352fd39ae",
+        "src/sift/litellm_responses.py": "ff446f39476645c0d81f502a207213d36c6e34b21b97610549dba1eec2326edd",
+        "benchmarks/agents.py": "f2a15917864c5ed96545845d188ce0c9feb9a0846a9527a3cc8063a6aa340a7e",
+        "benchmarks/native_callback.py": "fbc35d8cd24a54d3bd051b3d8621d09950210ce8485788864103dbbf86bbe6c2",
+        "benchmarks/native_litellm.yaml": "05bb2f30752aeb53ccffdb90e6227ade1a761e6fa24e4ce41d8058c88abadd8b",
+        "benchmarks/recency.py": "4cc6f30d4bf8762b2ee291a621ffe3a595e0c2cbfa7c6b3a25a23cc46e88fd8d"
+      },
+      "utc_window": {
+        "start": "2026-10-15T22:27:10.892771+00:00",
+        "end": "2026-10-15T22:30:16.098301+00:00"
+      },
+      "compaction_chronology": {
+        "interpretation": "No request required compaction. This is a native-client control and cannot establish compression quality."
+      },
+      "posthoc_engine_accounting": {
+        "classification": "Inferred from matched untruncated engine logs, reconciled with client aggregates; not provider wire usage or billed cost.",
+        "formulas": {
+          "full_prompt": "release_n_tokens - generated_tokens + 1",
+          "cached_prompt": "full_prompt - prompt_eval_tokens"
+        },
+        "matched_tasks": 14,
+        "truncated_tasks": 0,
+        "inferred_totals": {
+          "new_prompt": 17617,
+          "generated": 6979,
+          "full_prompt": 187738,
+          "cached_prompt": 170121
+        },
+        "client_reconciliation": {
+          "native_turn_usage_exact": true
+        },
+        "private_evidence_sha256": {
+          "engine.log": "f79e170de658172cb6c2a0c0fb8ded39103bb52ae01bb319f069d0c8a0937693",
+          "observations.json": "3f94a5fa17728edd2d9fa51d2cb73310b475feb236b0ae85dd349a8252c33ae3",
+          "pilot.json": "fa48acc495dad4a3eacf9403fea2228d876e7063cd1b4c4bddb1c90e461c0206",
+          "runner.stdout": "68383d586ffdd04e8ca207df8a46a1be49dd197ac247311e6d673375e46bbcca"
+        }
+      },
+      "artifact_construction_after_compaction_observed": false
+    }
+  ],
+  "limitations": [
+    "One run per client/arm; generated paths may diverge. No statistical or general task-quality claim.",
+    "Native CLI runs local Qwen; Claude Code and Codex identify the clients, not the inference model.",
+    "TTFT is client-reported for Claude. Codex verified TTFT is unavailable.",
+    "Engine weighted decode throughput includes auxiliary client requests. Client usage remains separately reported.",
+    "No per-token bill exists for this local model. No dollar saving or accepted-task cost advantage is established.",
+    "Initial pre-generation template compatibility failure is retained in the revised plan outside generated-task comparison.",
+    "All four runs concern one public authored build task, not four independent domains or a general task-success estimate.",
+    "The same native permissions were used within each client. Claude/recency encountered four denied diagnostic/version commands, another path-specific timing factor.",
+    "Posthoc engine-accounting formulas are validated for these complete untruncated logs only; auxiliary identities have no client/server request-ID join."
+  ],
+  "schema_version": 1,
+  "title": "Frozen native build-planner pilot, 2026-10-15",
+  "collected_utc": "2026-10-15T22:31:25.323288+00:00",
+  "generated_trials": 4,
+  "accepted_trials": 0,
+  "initial_pre_generation_compatibility_failures_retained_in_plan": 1,
+  "fixture_manifest_sha256": "0aabe3296b2ece2ee562860dbe19cbf77cdd8b85a0faa63cf97bdbaed7d2f317",
+  "inference_model_for_every_trial": "Local unsloth/Qwen3.8-27B-GGUF / UD-IQ3_S",
+  "compacted_input_ceiling_estimate": 24576,
+  "model_context_window": 32768,
+  "per_call_output_cap": 4096,
+  "max_native_seconds_per_trial": 1200,
+  "runtime_changed_between_trials": false,
+  "artifact_repairs_or_modified_acceptance_between_arms": false,
+  "independent_artifact_review": "All four native traces, fixtures, scope, delivered artifact hashes and gold outcomes were checked independently. Verification used separate snapshots and did not repair delivered work.",
+  "interpretation": "Both Codex arms required no compaction, while the sole Claude/Sift compaction followed its final source edits and test request. Claude/recency edited after compaction, but its failing validator already existed before compaction and remained unchanged. This does not establish a paired comparison of successful artifact construction under Sift compression. Different elapsed times and outputs cannot be attributed to Sift selection.",
+  "reproducibility": "Public fixture, gold, source and protocol are reproducible. Native raw traces and private verification receipts are not published; recorded hashes and aggregates do not make those outputs independently replayable from this repository.",
+  "cleanup": "Dedicated benchmark gateway removed after all logs were saved. Existing Qwen engine left running idle with unchanged configuration. Running Subroute production/staging gateways were not reloaded."
+}

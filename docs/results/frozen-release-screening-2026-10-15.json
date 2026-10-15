@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "title": "Private frozen-release retention screening, 2026-10-15",
+  "evidence_class": "Six small AI-authored private cases fixed before comparison of frozen releases. Not a human-authored, consented real-trace, or representative production benchmark.",
+  "declaration": {
+    "declared_utc": "2026-10-15T22:07:12.300770+00:00",
+    "input_sha256": "9176460668c42df0a99dc76cd82d6b42764349d52bdbc26ac33da69b35cb2c2d",
+    "private_result_sha256": "04b647735f5631d39d1dd37020193f1228f769c5ca19c11a031ff19366a1c109",
+    "evaluated_utc": "2026-10-15T22:07:55.889533+00:00",
+    "case_count": 6,
+    "required_exact_span_count": 14
+  },
+  "protocol": {
+    "counter": "ceil(len(json.dumps(messages))/4), Python default JSON encoding. This is a caller-owned estimate, not a provider tokenizer.",
+    "source_formats_and_behaviors": [
+      "cross-turn dependencies and effective revisions",
+      "long CSV rows",
+      "semantic questions with little lexical overlap",
+      "source indentation and call-site context",
+      "large protected parallel-tool work",
+      "structured tool-epoch append stability"
+    ],
+    "retention": "An exact required source span must appear in a decoded quoted excerpt or in a retained, unchanged original message. Partial identifiers do not count.",
+    "protected_context": "Pinned instructions and active user/tool work must remain exact. Required-span packing costs include the standard historical-quote wrapper and protected messages.",
+    "cache_check": "One predeclared tool case was evaluated at 18, 19, and 20 completed cycles. The earlier complete output must be an unchanged prefix of the next output. Two adjacent comparisons are reported separately from six-case retention totals.",
+    "failure_policy": "All cases remain in the denominator. Exceptions and unsupported cases would remain reported. Budgets and required spans were not changed after scoring.",
+    "inference": "No model or provider calls. No algorithm changes or tuning during this comparison."
+  },
+  "packing_feasibility": [
+    {
+      "case": 1,
+      "target_estimated_tokens": 950,
+      "required_exact_spans": 3,
+      "required_spans_plus_protected_estimated_tokens": 225,
+      "raw_estimated_tokens": 4311,
+      "all_required_spans_fit": true
+    },
+    {
+      "case": 2,
+      "target_estimated_tokens": 850,
+      "required_exact_spans": 1,
+      "required_spans_plus_protected_estimated_tokens": 229,
+      "raw_estimated_tokens": 2837,
+      "all_required_spans_fit": true
+    },
+    {
+      "case": 3,
+      "target_estimated_tokens": 800,
+      "required_exact_spans": 3,
+      "required_spans_plus_protected_estimated_tokens": 190,
+      "raw_estimated_tokens": 1531,
+      "all_required_spans_fit": true
+    },
+    {
+      "case": 4,
+      "target_estimated_tokens": 900,
+      "required_exact_spans": 2,
+      "required_spans_plus_protected_estimated_tokens": 173,
+      "raw_estimated_tokens": 901,
+      "all_required_spans_fit": true
+    },
+    {
+      "case": 5,
+      "target_estimated_tokens": 1900,
+      "required_exact_spans": 2,
+      "required_spans_plus_protected_estimated_tokens": 1102,
+      "raw_estimated_tokens": 2258,
+      "all_required_spans_fit": true
+    },
+    {
+      "case": 6,
+      "target_estimated_tokens": 2200,
+      "required_exact_spans": 3,
+      "required_spans_plus_protected_estimated_tokens": 470,
+      "raw_estimated_tokens": 4749,
+      "all_required_spans_fit": true
+    }
+  ],
+  "release_sources": {
+    "v0.9.1": {
+      "commit": "2c3d34c52774ec6e95523cebb39fcfda744ab11d",
+      "core_sha256": "93496752326b176ec0b9eef2b121609d936fc3527befc413d7d4b8d67e1ab81e"
+    },
+    "v0.10.0": {
+      "commit": "e8dc791ba76d99012a3cd43e6114c01faedeeb6a",
+      "core_sha256": "b290fde061dc28016f2bcd3d65e25ab9820b43e5eec5103056c5adeab2db5238"
+    }
+  },
+  "aggregate": {
+    "v0.9.1": {
+      "cases": 6,
+      "exact_spans_retained": 5,
+      "required_spans": 14,
+      "all_span_cases": 2,
+      "exceptions": 0,
+      "budget_passes": 6,
+      "immutable_passes": 6,
+      "protected_exact_passes": 6,
+      "cache_prefix_checks": [
+        true,
+        true
+      ]
+    },
+    "v0.10.0": {
+      "cases": 6,
+      "exact_spans_retained": 8,
+      "required_spans": 14,
+      "all_span_cases": 3,
+      "exceptions": 0,
+      "budget_passes": 6,
+      "immutable_passes": 6,
+      "protected_exact_passes": 6,
+      "cache_prefix_checks": [
+        true,
+        true
+      ]
+    }
+  },
+  "interpretation": "The frozen 0.10.0 release improved exact retention on this screening but still omitted six of fourteen required spans and failed complete retention on three of six cases, despite feasible budgets. This does not establish mature or general retention quality. Report separately from the earlier fourteen-of-fourteen development result, which used a different, previously disclosed three-case corpus.",
+  "reproducibility": "Private case text, identifiers, answers and individual results are not published. These inputs are not currently reproducible from the public repository. Hashes record the private declaration and result artifacts; they do not make this a publicly reproducible benchmark."
+}

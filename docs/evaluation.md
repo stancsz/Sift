@@ -90,6 +90,8 @@ These runs used Claude Code 2.1.251 and Codex CLI 0.154.0 against local `qwen3.8
 
 ## Controlled cold-prefill comparison, 2026-10-15
 
+This comparison preceded the 0.10.0 structured-record change. It is historical latency evidence, rather than a fresh timing comparison of the current release.
+
 Three public authored cases cover a changed retry policy, an appointment's UTC offset, and an invoice rounding rule. Their expected labels were fixed before inference. Each case ran twice with full context, Sift, and protocol-preserving head/tail trimming, for 18 sequential calls. Variant order was deterministically shuffled with seed 773. Full prompts fit the backend context; the two compactors had the same 6,000-estimated-token ceiling. This is a small label-answer benchmark, not natural agent-task acceptance.
 
 The local stack used Unsloth `Qwen3.8-27B-UD-IQ3_S.gguf`, model revision `4ca720788d1e01f1bff70c033e0d0028fd02e502`, on an NVIDIA RTX 5070 Ti with 16 GB VRAM. The llama.cpp CUDA image was pinned to `sha256:b0baccbe2e00b5d74e63f85f9f023c93d61d0f329475269e1e7002e87eb875ea`. Context was 32,768, parallelism one, K/V caches `q8_0`, flash attention enabled, and reasoning budget 512. LiteLLM 1.103.0 served the gateway and benchmark SDK. All variants used temperature zero, seed 773, and a 768-token output cap including reasoning.
@@ -158,3 +160,44 @@ A four-run authored build pilot is [predeclared](results/native-build-pilot-plan
 The first planned Claude/Sift build attempt failed before generation: two short, uncompacted Anthropic requests reached the Qwen template, which rejected a later system-message position. No source file changed and the native terminal is an error. Inspection of LiteLLM 1.103.0 confirmed that its adapter preserves in-sequence instruction positions, with no placement flag; demoting system roles would change the request and was rejected as a fix. The isolated benchmark now uses the same explicit Qwen/Anthropic instruction placement profile as the existing local gateway, before either selector. It preserves objects, roles/content and within-group order while deliberately moving instructions before dialogue. This profile is separate from Sift's product behavior and is not general equivalence for arbitrary late instructions. Actual native-adapter regression checks placement, tools/caps and immutability on both arms. The [revised plan and retained initial failure](results/native-build-pilot-revision-2026-10-15.json) preserve the original declaration and unchanged fixture/acceptance conditions. No completed paired result is claimed yet.
 
 Release CI 38813211144 caught an environment assumption: the pinned image and official PyPI wheels both report LiteLLM 1.103.0 but contain different Anthropic adapter source. The image preserves late system roles; PyPI adds a mid-conversation-system capability check and can demote unsupported late systems to user. The original regression incorrectly assumed the image's unprofiled output in both environments. Its requirement is now expressed directly against the original input: after the explicit profile, BASE/LATER instructions must both retain system role and exact text, followed by TASK user content, with unchanged tools/caps/temperature and caller data. Runtime profile and product source did not change. [Verified source and wheel hashes](results/litellm-build-provenance-2026-10-15.json) preserve this failed release gate; fresh clean-package CI is required before release.
+
+That release gate subsequently passed: main CI 38813888559 and tag CI 38814264306 both succeeded, including installed LiteLLM 1.103.0 integration on Python 3.13/3.14 with all 67 checks and no optional skips. Core-only CI also passed on Python 3.11 through 3.14. Version 0.10.0 remains an experimental prerelease. The clean Python 3.14 wheel install discovered 67 checks, passed 39 core checks and skipped 28 optional integration checks; the pinned image ran all 67 against the explicitly unpacked wheel because that image has no pip. The 22,286-byte wheel has SHA256 `bb7b784b92a1159e51f77fdeb960ab6f0dd2af4f53e32c0dd6d1443e523bca79`. All four vendored Subroute modules match the peeled release commit and wheel; 35 focused Subroute checks pass. Running Subroute gateways were not reloaded from the shared dirty checkout.
+
+## Fresh screening of frozen releases, 2026-10-15
+
+An independent author fixed six small private cases after 0.10.0 was frozen. The algorithm author stayed blind to the case text and answers, and neither release was tuned during scoring. The input hash was declared before comparison. The cases cover revision dependencies, CSV, low lexical overlap, source indentation, protected parallel work, and structured tool-cycle append stability. They are AI-authored screening data, not consented real agent traces or a representative quality benchmark.
+
+| Frozen release | Exact required spans | Cases retaining every required span | Budget / immutable / protected passes | Append-prefix checks |
+|---|---:|---:|---:|---:|
+| 0.9.1 | 5/14 | 2/6 | 6/6 each | 2/2 |
+| 0.10.0 | 8/14 | 3/6 | 6/6 each | 2/2 |
+
+All six inputs required compaction, every required span set could fit alongside protected context, and neither version raised an exception. Targets ranged from 800 to 2,200 estimated tokens to exercise extraction on small inputs; these are not retention measurements at the deployed 24,576 target. The counter used a serialized-character estimate, not a provider tokenizer. Version 0.10.0 still omitted six required spans and failed full retention on half the cases. The favorable 14/14 development result above therefore does not establish generalization or mature reliability. No model calls, answer accuracy, task cost or latency were measured here.
+
+The [aggregate report](results/frozen-release-screening-2026-10-15.json) records declaration time, input/result hashes, exact release sources, budgets, feasible packing costs and denominators. Raw cases, answers and individual retention results remain private to preserve the author's blindness. This makes the screening unavailable for public reproduction; hashes alone do not remove that limitation. If these cases are later opened for algorithm development, they must be retired from future held-out evaluation.
+
+## Completed frozen native build pilot, 2026-10-15
+
+The revised four-run pilot above is complete. Every run used the same public authored build-planner fixture, six visible and seven predeclared gold methods, frozen runtime hashes, a 24,576-estimated-token input ceiling, a 4,096-token output cap and a fresh idle-engine restart. Claude Code 2.1.251 and native Linux Codex 0.154.0 are the clients; all inference used the same local Qwen model. No delivered artifacts were repaired and no acceptance checks changed between arms. The initial pre-generation compatibility failure remains in the revised plan, separate from these four generated-artifact trials.
+
+| Client / selector | Native time, seconds | Mean client TTFT, seconds (samples) | Engine weighted decode tokens/s | Requests / compacted | Final acceptance |
+|---|---:|---:|---:|---:|---|
+| Claude / Sift | 392.48 | 2.650 (16) | 43.57 | 17 / 1 | Rejected: three malformed-input subcases |
+| Codex / recency | 246.19 | Unavailable | 43.27 | 17 / 0 | Rejected: two malformed-input subcases |
+| Claude / recency | 847.01 | 5.974 (39) | 42.18 | 40 / 22 | Rejected: two malformed-input subcases |
+| Codex / Sift | 183.53 | Unavailable | 43.98 | 14 / 0 | Rejected: three malformed-input subcases |
+
+All four have normal native completion, a real standalone failing-to-passing test loop, clean scope and six passing visible tests. Independent acceptance still rejects every artifact for malformed directly supplied targets. These are four trials of one development task, not four independent tasks or a general success-rate estimate.
+
+Chronology limits causal conclusions. Claude/Sift's only compaction followed its last source edit and final visible-test request; no source edit followed it. Both Codex runs stayed below target, so their time difference occurs without any selection. Claude/recency did make six successful edits after its first compaction, but replaying the edit trace shows that its defective validator already existed before compaction and remained unchanged. It also encountered four denied diagnostic/version commands under the same per-client permission profile. Different generated paths, requests and output lengths therefore prevent attribution of the elapsed-time difference to Sift. This pilot does not establish successful artifact construction under Sift compression.
+
+Posthoc engine accounting matched complete prompt/decode/release records by slot/task ID. For these untruncated logs, full prompt is inferred as `release_n_tokens - generated_tokens + 1`, and cached prompt as full minus newly evaluated prompt tokens. These inferred quantities reconcile exactly with client aggregates, including Claude's model-wide totals. Main-turn Claude usage excludes an initial auxiliary call with 1,470 prompt tokens and 126/179 generated tokens respectively; that arithmetic is consistent with the auxiliary call but lacks a client/server request-ID join.
+
+| Client / selector | Inferred full prompt | Newly evaluated prompt | Inferred cached prompt | Engine generated, including auxiliary calls | Total selector thread CPU, ms |
+|---|---:|---:|---:|---:|---:|
+| Claude / Sift | 213,541 | 34,313 | 179,228 | 15,016 | 168.63 |
+| Codex / recency | 271,417 | 23,243 | 248,174 | 9,402 | 141.00 |
+| Claude / recency | 804,633 | 293,419 | 511,214 | 25,290 | 1,632.30 |
+| Codex / Sift | 187,738 | 17,617 | 170,121 | 6,979 | 91.62 |
+
+These are totals over different task paths, not equal-workload token savings, provider wire-usage receipts or bills. All artifacts failed acceptance, so no cheaper successful-task claim is supported. The [complete aggregate report](results/native-build-pilot-2026-10-15.json) preserves sources, fixture/artifact/evidence hashes, estimated counts, client usage, chronology and limitations. Raw native traces remain private; fixture/source reproduction does not reproduce the original stochastic outputs exactly. After saving all logs, the dedicated benchmark gateway was removed and the existing Qwen engine left running idle with unchanged configuration. Running Subroute production and staging gateways were not reloaded.
