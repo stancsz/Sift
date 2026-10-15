@@ -31,8 +31,8 @@ _SIGNALS = re.compile(
     re.IGNORECASE,
 )
 _TEST_FAILURE = re.compile(
-    r"^\s*(?:tool_result\s+\S+\s+)?(?:ERROR|FAIL|FAILED)\s*:?\s+"
-    r"(?:test_[A-Za-z0-9_]+|\S+::test_[A-Za-z0-9_]+)",
+    r"^\s*(?:tool_result\s+\S+\s+)?(?P<failure>(?:ERROR|FAIL|FAILED)\s*:?\s+"
+    r"(?:test_[A-Za-z0-9_]+|\S+::test_[A-Za-z0-9_]+))",
     re.IGNORECASE,
 )
 _MAX_PIECE_CHARS = 360
@@ -300,14 +300,18 @@ def _diagnostic_candidates(old: list[dict[str, Any]], offset: int,
         seen: set[str] = set()
         total_chars = 0
         for raw_line in _render(message).splitlines():
-            line = raw_line.strip()[:_MAX_PIECE_CHARS]
-            if not _TEST_FAILURE.match(line) or line in seen:
+            match = _TEST_FAILURE.match(raw_line)
+            if match is None:
                 continue
-            if len(lines) == 8 or total_chars + len(line) > 640:
+            failure = match.group("failure")
+            key = failure.casefold()
+            if key in seen:
+                continue
+            if len(lines) == 12 or total_chars + len(failure) > 640:
                 break
-            seen.add(line)
-            lines.append(line)
-            total_chars += len(line)
+            seen.add(key)
+            lines.append(failure)
+            total_chars += len(failure)
         if lines:
             excerpt = "\n".join(lines)
             output.append(_Candidate(index + offset, -1, str(message["role"]),

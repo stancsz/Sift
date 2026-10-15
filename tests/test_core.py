@@ -171,8 +171,9 @@ class CompactionTests(unittest.TestCase):
     def test_named_test_failures_survive_a_fixed_tool_epoch(self):
         task = message("user", "Implement the incremental build planner")
         cycles = []
-        failures = ("ERROR: test_diamond_rebuild", "FAIL: test_rejects_cycle",
-                    "FAILED tests/test_build.py::test_missing_input")
+        failures = tuple(f"ERROR: test_case_{index}" for index in range(10)) + (
+            "FAIL: test_rejects_cycle", "FAILED tests/test_build.py::test_missing_input",
+        )
         for index in range(20):
             log = "build planner routine output " * 20
             if index == 5:
