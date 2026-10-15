@@ -37,6 +37,19 @@ class CompactionTests(unittest.TestCase):
         self.assertIn("azure-73", result.messages[1]["content"])
         self.assertIn("untrusted", result.messages[1]["content"].lower())
 
+    def test_selected_failure_keeps_neighboring_diagnostic(self):
+        lines = [f"routine build output {i}" for i in range(1_000)]
+        lines[500] = "FAILED test_invoice_total"
+        lines[501] = "rounding_mode=HALF_EVEN; observed +0.01 versus Decimal expected"
+        source = [message("user", "\n".join(lines)),
+                  message("assistant", "Build log received"),
+                  message("user", "What caused FAILED test_invoice_total?")]
+        result = compact_messages(source, estimate, target=700)
+        evidence = str(result.messages)
+        self.assertIn("FAILED test_invoice_total", evidence)
+        self.assertIn("rounding_mode=HALF_EVEN", evidence)
+        self.assertLessEqual(result.audit["forwarded_tokens"], 700)
+
     def test_current_tool_chain_and_prior_complete_turn_survive(self):
         prior = [message("user", "Run tests"),
                  message("assistant", None, tool_calls=[{"id": "x", "function": {"name": "test", "arguments": "{}"}}]),

@@ -4,7 +4,9 @@ This page separates span retention, runtime compatibility, and model answers. Th
 
 ## Reproducible package tests
 
-`python -m unittest discover -s tests -q` runs 16 tests for budget enforcement, message preservation, Anthropic and OpenAI tool loops, old thinking blocks, unsupported inputs, and seeded middle-fact placement. `python benchmarks/compare.py` uses 100 authored placements of a unique fact in the middle of a noisy history. Sift retained 100/100; an 800-character head/tail slice retained 0/100. This benchmark is designed around Sift's query-aware selection and does not estimate general recall.
+`python -m unittest discover -s tests -q` runs 17 tests for budget enforcement, message preservation, Anthropic and OpenAI tool loops, old thinking blocks, neighboring diagnostics, unsupported inputs, and seeded middle-fact placement. `python benchmarks/compare.py` uses 100 authored placements of a unique fact in the middle of a noisy history. Sift retained 100/100; an 800-character head/tail slice retained 0/100. This benchmark is designed around Sift's query-aware selection and does not estimate general recall.
+
+The 0.3.0 regression places `FAILED test_invoice_total` beside a `rounding_mode=HALF_EVEN` clue in a 1,000-line log. Under the same 700-token budget, 0.2.0 retained the failure name but lost the adjacent clue; 0.3.0 retains both. This is a concrete causal-context failure of isolated excerpt selection, not proof that all agent failures came from Sift. A separate 90,000-distinct-line, 784,764-estimated-token case retained the same pair and forwarded 16,420 estimated tokens under a 24,576-token target in 0.68 seconds on one Windows desktop.
 
 ## Private agent-trace replay
 

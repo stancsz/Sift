@@ -30,8 +30,7 @@ _SIGNALS = re.compile(
     re.IGNORECASE,
 )
 _MAX_PIECE_CHARS = 360
-_MAX_CANDIDATES = 256
-_MAX_SELECTED = 96
+_MAX_CANDIDATES = 512
 _DEDUP_WINDOW = 65_536
 _MESSAGE_KEYS = frozenset({
     "role", "content", "name", "tool_calls", "tool_call_id", "cache_control",
@@ -169,13 +168,20 @@ def _candidates(old: list[dict[str, Any]], query: str) -> list[_Candidate]:
     seen: set[bytes] = set()
     recent_hashes: deque[bytes] = deque()
     serial = 0
-    last: _Candidate | None = None
     for message_index, message in enumerate(old):
         role = str(message.get("role", "unknown"))
-        for part_index, piece in enumerate(_pieces(_render(message))):
+        parts = iter(_pieces(_render(message)))
+        previous = None
+        piece = next(parts, None)
+        following = next(parts, None)
+        part_index = 0
+        while piece is not None:
             normalized = " ".join(piece.lower().split())
             digest = hashlib.blake2b(normalized.encode("utf-8"), digest_size=8).digest()
             if digest in seen:
+                previous, piece = piece, following
+                following = next(parts, None)
+                part_index += 1
                 continue
             if len(recent_hashes) == _DEDUP_WINDOW:
                 seen.remove(recent_hashes.popleft())
@@ -186,19 +192,22 @@ def _candidates(old: list[dict[str, Any]], query: str) -> list[_Candidate]:
             score += 2 * (message_index + 1) / max(1, len(old))
             if serial == 0:
                 score += 3
-            candidate = _Candidate(message_index, part_index, role, piece, score)
-            last = candidate
+            # Keep the neighboring source text that explains a selected line.
+            # Rank the center only, so surrounding noise does not win selection.
+            span = "\n".join(part for part in (previous, piece, following) if part)
+            candidate = _Candidate(message_index, part_index, role, span, score)
             item = (score, serial, candidate)
             if len(heap) < _MAX_CANDIDATES:
                 heapq.heappush(heap, item)
             elif item[:2] > heap[0][:2]:
                 heapq.heapreplace(heap, item)
             serial += 1
+            previous, piece = piece, following
+            following = next(parts, None)
+            part_index += 1
     selected = [item[2] for item in heap]
-    if last is not None and last not in selected:
-        selected.append(last)
     selected.sort(key=lambda item: (-item.score, item.message_index, item.part_index))
-    return selected[:_MAX_SELECTED]
+    return selected
 
 
 def _summary(candidates: list[_Candidate]) -> dict[str, str]:
