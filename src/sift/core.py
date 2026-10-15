@@ -36,6 +36,7 @@ _TEST_FAILURE = re.compile(
     r"(?:test_[A-Za-z0-9_]+|\S+::test_[A-Za-z0-9_]+))",
     re.IGNORECASE,
 )
+_PYTHON_BLOCK = re.compile(r"^[ \t]*(?:async[ \t]+def|def|class)[ \t]+[A-Za-z_]\w*")
 _MAX_PIECE_CHARS = 360
 _MAX_CANDIDATES = 512
 _DEDUP_WINDOW = 65_536
@@ -66,6 +67,13 @@ class _Candidate:
     text: str
     score: float
     center: str = ""
+
+
+@dataclass(frozen=True)
+class _Piece:
+    text: str
+    start: int
+    end: int
 
 
 def _count(counter: TokenCounter, messages: list[dict[str, Any]]) -> int:
@@ -157,8 +165,37 @@ def _record_line(text: str) -> bool:
         return False
 
 
+def _python_block_end(source: str, piece: _Piece) -> int:
+    """Include a bounded indented Python block when its declaration is selected."""
+    if not _PYTHON_BLOCK.match(piece.text):
+        return piece.end
+    base_indent = len(piece.text) - len(piece.text.lstrip(" \t"))
+    end = piece.end
+    limit = min(len(source), piece.start + 2_048)
+    cursor = source.find("\n", end, limit + 1)
+    lines = 0
+    while cursor >= 0 and lines < 32:
+        start = cursor + 1
+        if start >= limit:
+            break
+        next_newline = source.find("\n", start, limit + 1)
+        if next_newline < 0 and limit < len(source):
+            break
+        stop = len(source) if next_newline < 0 else next_newline
+        line = source[start:stop]
+        if not line.strip():
+            break
+        indent = len(line) - len(line.lstrip(" \t"))
+        if indent <= base_indent:
+            break
+        end = stop
+        cursor = next_newline
+        lines += 1
+    return end
+
+
 def _pieces(text: str):
-    """Yield bounded source substrings without building a list of all lines."""
+    """Yield bounded source slices without building a list of all lines."""
     offset = 0
     while offset < len(text):
         newline = text.find("\n", offset)
@@ -168,7 +205,7 @@ def _pieces(text: str):
         # JSONL records carry their own field context. Keep a bounded record
         # exact rather than inserting newlines inside its strings and keys.
         if end - offset <= 2_048 and _record_line(text[offset:end]):
-            yield text[offset:end]
+            yield _Piece(text[offset:end], offset, end)
             offset = len(text) if newline < 0 else newline + 1
             continue
         cursor = offset
@@ -177,15 +214,13 @@ def _pieces(text: str):
                              cursor + _MAX_PIECE_CHARS + 1)
             if cut < 0:
                 cut = cursor + _MAX_PIECE_CHARS
-            piece = text[cursor:cut].strip()
-            if piece:
-                yield piece
+            piece = text[cursor:cut]
+            if piece.strip():
+                yield _Piece(piece, cursor, cut)
             cursor = cut
-            while cursor < end and text[cursor].isspace():
-                cursor += 1
-        piece = text[cursor:end].strip()
-        if piece:
-            yield piece
+        piece = text[cursor:end]
+        if piece.strip():
+            yield _Piece(piece, cursor, end)
         offset = len(text) if newline < 0 else newline + 1
 
 
@@ -202,7 +237,7 @@ def _term_frequencies(old: list[dict[str, Any]], terms: set[str]) -> tuple[Count
             for piece in _pieces(_render(message)):
                 total += 1
                 frequencies.update(terms.intersection(
-                    term.lower() for term in _TERMS.findall(piece)))
+                    term.lower() for term in _TERMS.findall(piece.text)))
     return frequencies, total
 
 
@@ -217,13 +252,14 @@ def _candidates(old: list[dict[str, Any]], terms: set[str],
     serial = 0
     for message_index, message in enumerate(old):
         role = str(message.get("role", "unknown"))
-        parts = iter(_pieces(_render(message)))
+        source = _render(message)
+        parts = iter(_pieces(source))
         previous = None
         piece = next(parts, None)
         following = next(parts, None)
         part_index = 0
         while piece is not None:
-            normalized = " ".join(piece.lower().split())
+            normalized = " ".join(piece.text.lower().split())
             digest = hashlib.blake2b(normalized.encode("utf-8"), digest_size=8).digest()
             if digest in seen:
                 previous, piece = piece, following
@@ -234,13 +270,13 @@ def _candidates(old: list[dict[str, Any]], terms: set[str],
                 seen.remove(recent_hashes.popleft())
             recent_hashes.append(digest)
             seen.add(digest)
-            matching = terms.intersection(term.lower() for term in _TERMS.findall(piece))
+            matching = terms.intersection(term.lower() for term in _TERMS.findall(piece.text))
             # Repeated field names and routine log vocabulary should not
             # outscore rarer evidence merely by matching more common words.
             score = sum(100 * math.log1p(total / (1 + frequencies[term]))
                         for term in matching)
-            score += 8 * bool(_SIGNALS.search(piece))
-            if bridge_match is not None and bridge_match.search(piece):
+            score += 8 * bool(_SIGNALS.search(piece.text))
+            if bridge_match is not None and bridge_match.search(piece.text):
                 score += 120
             score += 2 * (message_index + 1) / max(1, len(old))
             if serial == 0:
@@ -249,12 +285,15 @@ def _candidates(old: list[dict[str, Any]], terms: set[str],
             # Rank the center only, so surrounding noise does not win selection.
             # Adjacent structured records are independent evidence. Charging
             # their neighbors repeatedly wastes budget and obscures citations.
-            structured = _record_line(piece)
-            span = "\n".join(
-                part for part in (previous, piece, following)
-                if part and (not structured or part == piece or not _record_line(part))
-            )
-            candidate = _Candidate(message_index, part_index, role, span, score, piece)
+            structured = _record_line(piece.text)
+            before = (previous if previous and piece.start - previous.end <= 2 and
+                      (not structured or not _record_line(previous.text)) else piece)
+            after = (following if following and following.start - piece.end <= 2 and
+                     (not structured or not _record_line(following.text)) else piece)
+            start, end = before.start, max(after.end, _python_block_end(source, piece))
+            span = source[start:end]
+            candidate = _Candidate(message_index, part_index, role, span, score,
+                                   piece.text)
             item = (score, serial, candidate)
             if len(heap) < _MAX_CANDIDATES:
                 heapq.heappush(heap, item)

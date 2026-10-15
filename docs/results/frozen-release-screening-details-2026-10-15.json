@@ -1,0 +1,387 @@
+{
+  "declared_file_sha256": "9176460668c42df0a99dc76cd82d6b42764349d52bdbc26ac33da69b35cb2c2d",
+  "evaluated_utc": "2026-10-15T22:07:55.889533+00:00",
+  "status": "Initial frozen-tag evaluation, no tuning; AI-authored holdout not real-trace evidence",
+  "releases": {
+    "v0.9.1": {
+      "commit": "2c3d34c52774ec6e95523cebb39fcfda744ab11d",
+      "core_sha256": "93496752326b176ec0b9eef2b121609d936fc3527befc413d7d4b8d67e1ab81e"
+    },
+    "v0.10.0": {
+      "commit": "e8dc791ba76d99012a3cd43e6114c01faedeeb6a",
+      "core_sha256": "b290fde061dc28016f2bcd3d65e25ab9820b43e5eec5103056c5adeab2db5238"
+    }
+  },
+  "cases": [
+    {
+      "case_number": 1,
+      "private_name": "cross_turn_custody_revision",
+      "target": 950,
+      "minimal_required_with_protected": 225,
+      "results": {
+        "v0.9.1": {
+          "exact_hits": 3,
+          "exact_total": 3,
+          "span_hits": [
+            true,
+            true,
+            true
+          ],
+          "forwarded": 881,
+          "within_budget": true,
+          "immutable": true,
+          "protected_exact": true,
+          "compacted": true,
+          "method": "query_aware_extract"
+        },
+        "v0.10.0": {
+          "exact_hits": 3,
+          "exact_total": 3,
+          "span_hits": [
+            true,
+            true,
+            true
+          ],
+          "forwarded": 881,
+          "within_budget": true,
+          "immutable": true,
+          "protected_exact": true,
+          "compacted": true,
+          "method": "query_aware_extract"
+        }
+      }
+    },
+    {
+      "case_number": 2,
+      "private_name": "long_csv_worksheet",
+      "target": 850,
+      "minimal_required_with_protected": 229,
+      "results": {
+        "v0.9.1": {
+          "exact_hits": 0,
+          "exact_total": 1,
+          "span_hits": [
+            false
+          ],
+          "forwarded": 811,
+          "within_budget": true,
+          "immutable": true,
+          "protected_exact": true,
+          "compacted": true,
+          "method": "query_aware_extract"
+        },
+        "v0.10.0": {
+          "exact_hits": 0,
+          "exact_total": 1,
+          "span_hits": [
+            false
+          ],
+          "forwarded": 811,
+          "within_budget": true,
+          "immutable": true,
+          "protected_exact": true,
+          "compacted": true,
+          "method": "query_aware_extract"
+        }
+      }
+    },
+    {
+      "case_number": 3,
+      "private_name": "semantic_handover_blocker",
+      "target": 800,
+      "minimal_required_with_protected": 190,
+      "results": {
+        "v0.9.1": {
+          "exact_hits": 0,
+          "exact_total": 3,
+          "span_hits": [
+            false,
+            false,
+            false
+          ],
+          "forwarded": 693,
+          "within_budget": true,
+          "immutable": true,
+          "protected_exact": true,
+          "compacted": true,
+          "method": "query_aware_extract"
+        },
+        "v0.10.0": {
+          "exact_hits": 0,
+          "exact_total": 3,
+          "span_hits": [
+            false,
+            false,
+            false
+          ],
+          "forwarded": 693,
+          "within_budget": true,
+          "immutable": true,
+          "protected_exact": true,
+          "compacted": true,
+          "method": "query_aware_extract"
+        }
+      }
+    },
+    {
+      "case_number": 4,
+      "private_name": "source_indentation_and_callsite",
+      "target": 900,
+      "minimal_required_with_protected": 173,
+      "results": {
+        "v0.9.1": {
+          "exact_hits": 0,
+          "exact_total": 2,
+          "span_hits": [
+            false,
+            false
+          ],
+          "forwarded": 879,
+          "within_budget": true,
+          "immutable": true,
+          "protected_exact": true,
+          "compacted": true,
+          "method": "query_aware_extract"
+        },
+        "v0.10.0": {
+          "exact_hits": 0,
+          "exact_total": 2,
+          "span_hits": [
+            false,
+            false
+          ],
+          "forwarded": 879,
+          "within_budget": true,
+          "immutable": true,
+          "protected_exact": true,
+          "compacted": true,
+          "method": "query_aware_extract"
+        }
+      }
+    },
+    {
+      "case_number": 5,
+      "private_name": "large_active_parallel_group",
+      "target": 1900,
+      "minimal_required_with_protected": 1102,
+      "results": {
+        "v0.9.1": {
+          "exact_hits": 2,
+          "exact_total": 2,
+          "span_hits": [
+            true,
+            true
+          ],
+          "forwarded": 1762,
+          "within_budget": true,
+          "immutable": true,
+          "protected_exact": true,
+          "compacted": true,
+          "method": "epoch_extract"
+        },
+        "v0.10.0": {
+          "exact_hits": 2,
+          "exact_total": 2,
+          "span_hits": [
+            true,
+            true
+          ],
+          "forwarded": 1878,
+          "within_budget": true,
+          "immutable": true,
+          "protected_exact": true,
+          "compacted": true,
+          "method": "epoch_extract"
+        }
+      }
+    },
+    {
+      "case_number": 6,
+      "private_name": "structured_epoch_append",
+      "target": 2200,
+      "minimal_required_with_protected": 470,
+      "results": {
+        "v0.9.1": {
+          "exact_hits": 0,
+          "exact_total": 3,
+          "span_hits": [
+            false,
+            false,
+            false
+          ],
+          "forwarded": 1657,
+          "within_budget": true,
+          "immutable": true,
+          "protected_exact": true,
+          "compacted": true,
+          "method": "epoch_extract",
+          "cache_snapshots": [
+            {
+              "cycles": 18,
+              "score": {
+                "exact_hits": 0,
+                "exact_total": 3,
+                "span_hits": [
+                  false,
+                  false,
+                  false
+                ],
+                "forwarded": 1180,
+                "within_budget": true,
+                "immutable": true,
+                "protected_exact": true,
+                "compacted": true,
+                "method": "epoch_extract"
+              }
+            },
+            {
+              "cycles": 19,
+              "score": {
+                "exact_hits": 0,
+                "exact_total": 3,
+                "span_hits": [
+                  false,
+                  false,
+                  false
+                ],
+                "forwarded": 1418,
+                "within_budget": true,
+                "immutable": true,
+                "protected_exact": true,
+                "compacted": true,
+                "method": "epoch_extract"
+              }
+            },
+            {
+              "cycles": 20,
+              "score": {
+                "exact_hits": 0,
+                "exact_total": 3,
+                "span_hits": [
+                  false,
+                  false,
+                  false
+                ],
+                "forwarded": 1657,
+                "within_budget": true,
+                "immutable": true,
+                "protected_exact": true,
+                "compacted": true,
+                "method": "epoch_extract"
+              }
+            }
+          ],
+          "append_prefix_checks": [
+            true,
+            true
+          ]
+        },
+        "v0.10.0": {
+          "exact_hits": 3,
+          "exact_total": 3,
+          "span_hits": [
+            true,
+            true,
+            true
+          ],
+          "forwarded": 2015,
+          "within_budget": true,
+          "immutable": true,
+          "protected_exact": true,
+          "compacted": true,
+          "method": "epoch_extract",
+          "cache_snapshots": [
+            {
+              "cycles": 18,
+              "score": {
+                "exact_hits": 3,
+                "exact_total": 3,
+                "span_hits": [
+                  true,
+                  true,
+                  true
+                ],
+                "forwarded": 1538,
+                "within_budget": true,
+                "immutable": true,
+                "protected_exact": true,
+                "compacted": true,
+                "method": "epoch_extract"
+              }
+            },
+            {
+              "cycles": 19,
+              "score": {
+                "exact_hits": 3,
+                "exact_total": 3,
+                "span_hits": [
+                  true,
+                  true,
+                  true
+                ],
+                "forwarded": 1777,
+                "within_budget": true,
+                "immutable": true,
+                "protected_exact": true,
+                "compacted": true,
+                "method": "epoch_extract"
+              }
+            },
+            {
+              "cycles": 20,
+              "score": {
+                "exact_hits": 3,
+                "exact_total": 3,
+                "span_hits": [
+                  true,
+                  true,
+                  true
+                ],
+                "forwarded": 2015,
+                "within_budget": true,
+                "immutable": true,
+                "protected_exact": true,
+                "compacted": true,
+                "method": "epoch_extract"
+              }
+            }
+          ],
+          "append_prefix_checks": [
+            true,
+            true
+          ]
+        }
+      }
+    }
+  ],
+  "aggregate": {
+    "v0.9.1": {
+      "cases": 6,
+      "exact_spans_retained": 5,
+      "required_spans": 14,
+      "all_span_cases": 2,
+      "exceptions": 0,
+      "budget_passes": 6,
+      "immutable_passes": 6,
+      "protected_exact_passes": 6,
+      "cache_prefix_checks": [
+        true,
+        true
+      ]
+    },
+    "v0.10.0": {
+      "cases": 6,
+      "exact_spans_retained": 8,
+      "required_spans": 14,
+      "all_span_cases": 3,
+      "exceptions": 0,
+      "budget_passes": 6,
+      "immutable_passes": 6,
+      "protected_exact_passes": 6,
+      "cache_prefix_checks": [
+        true,
+        true
+      ]
+    }
+  }
+}

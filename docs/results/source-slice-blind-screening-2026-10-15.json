@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "title": "First unseen screening of the 0.11.0.dev0 source-slice candidate",
+  "evidence_class": "Six independently authored, private synthetic cases fixed after candidate source freeze and before either version was scored. Not a representative or consented real-trace benchmark.",
+  "declaration": {
+    "declared_utc": "2026-10-15T22:47:29.693209+00:00",
+    "input_sha256": "bbc423af53f1ba2b499f4bab83faf917a2e00d1f4ca719a3c31342ad204ea173",
+    "result_sha256": "0e4f7c9c7bd72f86b6de5314b8148f72fe60a486ae83443a753061517fe9b19d",
+    "candidate_core_sha256": "010b7dda0336362d0334fc7054c2957ce40bbee86a07647f83ff8e01b2165f18",
+    "case_count": 6,
+    "required_exact_span_count": 15
+  },
+  "method": {
+    "counter": "ceil(len(json.dumps(messages))/4), Python default JSON encoding; not a provider tokenizer",
+    "targets_estimated_tokens": [950, 1500, 950, 850, 1050, 2400],
+    "required_plus_protected_estimated_tokens": [191, 666, 219, 212, 222, 399],
+    "all_required_sets_fit": true,
+    "formats": ["Markdown revision table", "YAML beside a large active tool group", "multiline TSV", "weak-overlap narrative decision", "INI and diff across turns", "fixed-width 20-cycle tool epoch"],
+    "versions": ["frozen v0.10.0", "0.11.0.dev0 candidate at the declared core SHA"],
+    "policy": "No cases, targets, answers, source code, or scoring rules changed after declaration. No provider calls or tuning occurred during comparison. Exceptions remain in the denominator."
+  },
+  "aggregate": {
+    "v0.10.0": {"exact_spans": 8, "required_spans": 15, "all_span_cases": 2, "cases": 6, "exceptions": 0, "budget_passes": 6, "immutable_passes": 6, "protected_exact_passes": 6, "cache_prefix_passes": 2, "cache_prefix_checks": 2},
+    "candidate": {"exact_spans": 8, "required_spans": 15, "all_span_cases": 2, "cases": 6, "exceptions": 0, "budget_passes": 6, "immutable_passes": 6, "protected_exact_passes": 6, "cache_prefix_passes": 2, "cache_prefix_checks": 2}
+  },
+  "category_exact_counts_old_to_candidate": ["3/3 to 3/3", "1/2 to 1/2", "1/1 to 1/1", "0/3 to 0/3", "1/3 to 1/3", "2/3 to 2/3"],
+  "independent_review": "A second reviewer independently replayed both frozen sources. Exact spans were checked inside decoded JSON quoted excerpts or unchanged retained original message text, not merely serialized request strings. The reviewer reproduced every per-case score, constructive packing feasibility for all six targets, budget/protected/immutable passes, and both 18-to-19/19-to-20 strict append-prefix checks without changing cases or source.",
+  "interpretation": "The formatting repair improved the opened development examples but showed no exact-span gain on this newly fixed set. Both versions missed seven of fifteen required spans even though all required sets were feasible. Budget safety and fixed-prefix checks passed. This result does not establish a mature or broadly effective selector; accepted agent-task and matched live latency/cost evidence are still missing.",
+  "reproducibility": "Raw inputs and case answers remain private. Hashes establish what was fixed and scored, but the public cannot reproduce the per-case evaluation from this report. The author and reviewer can audit the retained local artifacts. This set must not be used for iterative tuning and then counted as fresh unseen validation."
+}

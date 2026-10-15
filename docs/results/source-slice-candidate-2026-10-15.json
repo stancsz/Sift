@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "status": "Unreleased 0.11.0.dev0 source candidate; retired development evaluation, not unseen validation",
+  "source_core_sha256": "010b7dda0336362d0334fc7054c2957ce40bbee86a07647f83ff8e01b2165f18",
+  "comparison": "Frozen v0.10.0 release at e8dc791ba76d99012a3cd43e6114c01faedeeb6a",
+  "corpus": "benchmarks/retired_frozen_release_screening_2026-10-15.json",
+  "corpus_sha256": "9176460668c42df0a99dc76cd82d6b42764349d52bdbc26ac33da69b35cb2c2d",
+  "counter": "ceil(len(json.dumps(messages))/4), Python default JSON encoding; not a provider tokenizer",
+  "retention": {
+    "v0.10.0_exact_spans": 8,
+    "candidate_exact_spans": 11,
+    "required_spans": 14,
+    "v0.10.0_all_span_cases": 3,
+    "candidate_all_span_cases": 5,
+    "cases": 6,
+    "candidate_per_case_exact": [3, 1, 0, 2, 2, 3],
+    "candidate_budget_passes": 6,
+    "candidate_input_immutable_passes": 6,
+    "candidate_protected_exact_passes": 6,
+    "candidate_cache_append_prefix_passes": 2,
+    "candidate_cache_append_prefix_checks": 2
+  },
+  "failure": "All three required spans in the weak-lexical-overlap handover case remain absent. Source fidelity does not solve semantic selection.",
+  "offline_tests": "70/70 unittest cases passed in a separate pinned LiteLLM 1.103.0 container, network disabled; 30/30 focused core, invariant, acceptance and structured-evidence tests passed on the host.",
+  "package_check": "A 0.11.0.dev0 wheel was built and installed into a clean Python 3.14 virtual environment. Its SHA256 is 726802bd7be1bda7d9715941ffe7fccc7a6159412077d92a229d34583302e876; 42 core tests passed and 28 optional LiteLLM tests skipped without that extra installed. Replaying the disclosed corpus from the separate v0.10.0 and candidate wheels reproduced 8/14 and 11/14 exact spans, respectively. No wheel is published as a release yet.",
+  "cpu_screen": {
+    "kind": "One synthetic 979,060-estimated-token JSONL intake; 44,001 records; target 24,576; same Windows Python 3.14 process, alternating old/new twice; process CPU seconds, not provider latency",
+    "v0.10.0_seconds": [1.797, 1.766],
+    "candidate_seconds": [1.766, 1.859],
+    "both_forwarded_estimated_tokens": 17200,
+    "both_retained_named_record": true
+  },
+  "limitations": "This is an opened, synthetic development corpus. A separate newly fixed six-case synthetic screening found no aggregate gain: both versions retained 8/15 exact spans. No model answer quality, accepted agent task, live prefill, first-token latency, provider bill, or real-trace generalization was measured for this candidate. The core retains the prior binary-search assumption that the caller's token count grows as ranked quotes are added; the final forwarded output is always counted against the hard target."
+}

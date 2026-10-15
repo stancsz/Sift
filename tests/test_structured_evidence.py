@@ -77,6 +77,44 @@ class StructuredEvidenceTests(unittest.TestCase):
                 self.assertLessEqual(count(result.messages), 700)
                 self.assertEqual(source, original)
 
+    def test_long_csv_row_keeps_its_original_physical_line(self):
+        row = ('SAMPLE-ORCHID-73,VALVE-G62,2026-10-15T11:20Z,27.8,manual_review,'
+               + '"Operator wrote ""read after equilibration""; ' + 'valve checked; ' * 31 + 'seal held"')
+        document = '\n'.join([f'normal row {index},accepted' for index in range(100)]
+                             + [row] + [f'normal row {index},accepted' for index in range(100, 200)])
+        source = [{'role': 'user', 'content': document},
+                  {'role': 'assistant', 'content': 'Worksheet received.'},
+                  {'role': 'user', 'content': 'Quote the full original row for SAMPLE-ORCHID-73.'}]
+        original = copy.deepcopy(source)
+        result = compact_messages(source, count, target=900)
+        self.assertTrue(any(row in quote for quote in quoted_excerpts(result.messages)))
+        self.assertLessEqual(count(result.messages), 900)
+        self.assertEqual(source, original)
+
+    def test_multiline_source_keeps_indentation_and_line_breaks(self):
+        function = ('def charge(invoice):\n'
+                    '    amount = invoice["amount"]\n'
+                    '    if invoice["currency"] == "USD":\n'
+                    '        return amount * 100')
+        document = '\n'.join(['# context ' + str(index) for index in range(80)]
+                             + [function] + ['# context ' + str(index) for index in range(80, 160)])
+        source = [{'role': 'user', 'content': document},
+                  {'role': 'assistant', 'content': 'Source received.'},
+                  {'role': 'user', 'content': 'Quote the charge function exactly, with indentation.'}]
+        original = copy.deepcopy(source)
+        result = compact_messages(source, count, target=500)
+        self.assertTrue(any(function in quote for quote in quoted_excerpts(result.messages)))
+        self.assertLessEqual(count(result.messages), 500)
+        self.assertEqual(source, original)
+
+    def test_large_blank_gap_does_not_make_a_selected_excerpt_huge(self):
+        source = [{'role': 'user', 'content': 'needle\n' + '\n' * 100_000 + 'next'},
+                  {'role': 'assistant', 'content': 'Received.'},
+                  {'role': 'user', 'content': 'Where is the needle?'}]
+        result = compact_messages(source, count, target=700)
+        self.assertTrue(any('needle' in quote for quote in quoted_excerpts(result.messages)))
+        self.assertLessEqual(count(result.messages), 700)
+
 
 if __name__ == "__main__":
     unittest.main()

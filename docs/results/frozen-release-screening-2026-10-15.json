@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "title": "Private frozen-release retention screening, 2026-10-15",
-  "evidence_class": "Six small AI-authored private cases fixed before comparison of frozen releases. Not a human-authored, consented real-trace, or representative production benchmark.",
+  "title": "Frozen-release retention screening, 2026-10-15 (retired development corpus)",
+  "evidence_class": "Six small AI-authored cases fixed privately before comparison of frozen releases, then opened for algorithm development and permanently retired from held-out scoring. Not human-authored, consented real-trace, or representative production evidence.",
   "declaration": {
     "declared_utc": "2026-10-15T22:07:12.300770+00:00",
     "input_sha256": "9176460668c42df0a99dc76cd82d6b42764349d52bdbc26ac33da69b35cb2c2d",
@@ -117,5 +117,5 @@
     }
   },
   "interpretation": "The frozen 0.10.0 release improved exact retention on this screening but still omitted six of fourteen required spans and failed complete retention on three of six cases, despite feasible budgets. This does not establish mature or general retention quality. Report separately from the earlier fourteen-of-fourteen development result, which used a different, previously disclosed three-case corpus.",
-  "reproducibility": "Private case text, identifiers, answers and individual results are not published. These inputs are not currently reproducible from the public repository. Hashes record the private declaration and result artifacts; they do not make this a publicly reproducible benchmark."
+  "reproducibility": "The exact frozen input and initial per-case results are now published at benchmarks/retired_frozen_release_screening_2026-10-15.json and docs/results/frozen-release-screening-details-2026-10-15.json. Their SHA256 values match the precomparison declaration above. The files' historical 'private holdout' status describes original creation only; after opening them for development, they cannot serve as unseen validation again. Replaying these files does not reproduce stochastic agent outputs and does not turn this small synthetic corpus into representative task evidence."
 }
