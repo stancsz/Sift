@@ -1,0 +1,22 @@
+{
+  "version_label": "1.103.0",
+  "adapter_path": "litellm/llms/anthropic/experimental_pass_through/adapters/transformation.py",
+  "pinned_image": {
+    "image": "ghcr.io/berriai/litellm-database@sha256:bd07ceb1fc7c4505f116c4eb2767956a8accba3119548dd8ae55e5356a381d56",
+    "adapter_sha256": "65a76120b983b2e12f7c07682a89a43fe64795cacdbe7972f63f12be07443159",
+    "observed_behavior": "Preserves in-sequence system roles and positions."
+  },
+  "official_pypi": {
+    "wheel": "litellm-1.103.0-cp310-abi3-manylinux_2_28_x86_64.whl",
+    "wheel_sha256": "bc44607abc41d2b34111899860a0c7e593dfbec154b1f264539150c337bd8bf9",
+    "adapter_sha256": "3d1d031111d880fb6195e741c6fa9c009d1e2f48fa6a4d1ae17724ca0b8f6824",
+    "observed_behavior": "Adds leading_count, preserve_midturn_system and target-support condition; unsupported trailing systems become user messages."
+  },
+  "initial_ci_failure": {
+    "run": 38813211144,
+    "test": "test_native_anthropic_qwen_profile_preserves_objects_and_output_contract",
+    "reason": "Test assumed image-specific unprofiled adapter output on clean PyPI build."
+  },
+  "regression_requirement": "Both builds must preserve the profiled original BASE system, LATER system and TASK user roles/text, tools/caps/temperature, and input immutability. Do not derive expected roles from unprofiled adapter output.",
+  "runtime_change": "None; benchmark profile and product modules unchanged during the frozen native pilot. Version-label equality does not establish source equality."
+}

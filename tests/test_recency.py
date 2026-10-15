@@ -233,7 +233,6 @@ class RecencyAdapterTests(unittest.TestCase):
         original = copy.deepcopy(request)
         before, _ = adapter.translate_anthropic_to_openai(
             anthropic_message_request=request, custom_llm_provider="openai")
-        self.assertEqual([message["role"] for message in before["messages"]], ["system", "user", "system"])
         for arm in ("sift", "recency"):
             with self.subTest(arm=arm), patch.dict(sys.modules, {"recency": recency}), \
                     patch.dict(os.environ, {"SIFT_BENCH_ARM": arm}), \
@@ -247,7 +246,15 @@ class RecencyAdapterTests(unittest.TestCase):
                 self.assertIs(placed["system"], request["system"])
                 after, _ = adapter.translate_anthropic_to_openai(
                     anthropic_message_request=placed, custom_llm_provider="openai")
-                self.assertEqual(after["messages"], [before["messages"][0], before["messages"][2], before["messages"][1]])
+                # The image and PyPI builds differ on unprofiled late systems.
+                # Require the profile's actual output to preserve original roles/text.
+                self.assertEqual([message["role"] for message in after["messages"]], ["system", "system", "user"])
+                texts = [message["content"] if isinstance(message["content"], str) else
+                         "".join(block["text"] for block in message["content"])
+                         for message in after["messages"]]
+                self.assertEqual(texts, [request["system"][0]["text"],
+                                        request["messages"][1]["content"][0]["text"],
+                                        request["messages"][0]["content"]])
                 self.assertEqual(after["tools"], before["tools"])
                 self.assertEqual(after["max_tokens"], 4096)
                 self.assertEqual(after["temperature"], 0)

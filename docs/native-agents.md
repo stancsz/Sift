@@ -71,7 +71,11 @@ repair when the pinned native formatter is fixed; retire the selector binding
 when this experiment ends or a supported selection hook becomes available.
 The same model profile explicitly places in-sequence Anthropic system/developer
 messages before dialogue because this Qwen template rejects later instruction
-entries and the pinned adapter preserves their positions. Original objects,
+entries and the pinned image adapter preserves their positions. Clean PyPI
+1.103.0 has different adapter source and can demote unsupported late systems to
+user messages. The profile must preserve the original leading instruction roles
+and text on both builds; matching version labels alone do not prove matching
+source. See [build provenance](results/litellm-build-provenance-2026-10-15.json). Original objects,
 roles/content, within-group order, top-level system, tools and caps remain exact.
 Instruction position changes deliberately; this is not general equivalence for
 arbitrary late instructions. The profile applies before counting in both arms.
