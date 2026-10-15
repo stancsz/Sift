@@ -124,7 +124,9 @@ The complete candidate suite passed 45 checks against LiteLLM 1.103.0. An indepe
 
 The portable native-client runner and its two public development fixtures remain under review. Independent review caught a gold-file collision, an invalid test-loop success condition, ambiguous native executable discovery, and a Windows descendant-cleanup gap before any new inference calls. These findings must be fixed and rechecked before its reports count as evidence. Public authored fixtures are development controls, not a held-out corpus.
 
-Checkpoint lesson: reserve capacity before retaining work in an executor queue, and preserve the reservation until the real worker finishes. Benchmark acceptance also needs native command exit status and owned descendant cleanup; parsing an `OK` line alone can certify a failed command incorrectly.
+The host's Python 3.14 check then exposed a second cancellation detail: `asyncio.shield` logs a detached worker exception explicitly, even when our callback has retrieved it. Waiting with `asyncio.wait` preserves the worker on caller cancellation and allows the existing drain callback to own detached errors without duplicate logging. The same three runtime regressions pass on Python 3.14, and all 45 checks pass on Python 3.13 with LiteLLM 1.103.0. An initial host-wide suite used a preexisting unsupported LiteLLM 1.100.1 and failed its version/counting checks; it is not a clean compatibility result. A separate dependency-free Python 3.14 environment passed 23 core checks with 22 optional skips. CI now includes Python 3.14 for both core and the pinned optional integration.
+
+Checkpoint lesson: reserve capacity before retaining work in an executor queue, and preserve the reservation until the real worker finishes. Verify asynchronous cancellation behavior on every supported runtime and separate clean installs from host-wide dependency state. Benchmark acceptance also needs native command exit status and owned descendant cleanup; parsing an `OK` line alone can certify a failed command incorrectly.
 
 ## Next quality gate
 

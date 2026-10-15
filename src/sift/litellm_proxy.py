@@ -226,7 +226,10 @@ class SiftLiteLLMHook(CustomLogger):
         # an attached caller still receives the original result or exception.
         worker.add_done_callback(lambda future: None if future.cancelled() else future.exception())
         try:
-            return await asyncio.shield(worker)
+            # wait() leaves the worker untouched when its caller is cancelled.
+            # Unlike shield(), it does not log detached errors again on 3.14.
+            await asyncio.wait((worker,))
+            return worker.result()
         except asyncio.CancelledError:
             abandoned.set()
             raise
