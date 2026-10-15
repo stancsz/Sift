@@ -1,4 +1,12 @@
 # Logs
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+.pytest_cache/
+
 logs
 *.log
 npm-debug.log*
