@@ -1,0 +1,52 @@
+{
+  "declared_utc": "2026-10-15T21:43:18.961204+00:00",
+  "status": "public authored development pilot; no held-out or dollar-savings claim",
+  "case": "build_planner",
+  "fixture_manifest_sha256": "0aabe3296b2ece2ee562860dbe19cbf77cdd8b85a0faa63cf97bdbaed7d2f317",
+  "source_hashes": {
+    "src/sift/core.py": "b290fde061dc28016f2bcd3d65e25ab9820b43e5eec5103056c5adeab2db5238",
+    "benchmarks/agents.py": "719134f4582c245d1f9eda1340b205d9f0d788c969e84e31a1fb233d91d088ff",
+    "benchmarks/native_callback.py": "4aac5498b4e31c43baa7e98c752ff4f6fc0471438e49b41bfbc4c23a7d02f9dc",
+    "benchmarks/native_litellm.yaml": "05bb2f30752aeb53ccffdb90e6227ade1a761e6fa24e4ce41d8058c88abadd8b",
+    "benchmarks/recency.py": "4cc6f30d4bf8762b2ee291a621ffe3a595e0c2cbfa7c6b3a25a23cc46e88fd8d"
+  },
+  "order": [
+    {
+      "client": "claude",
+      "arm": "sift"
+    },
+    {
+      "client": "codex",
+      "arm": "recency"
+    },
+    {
+      "client": "claude",
+      "arm": "recency"
+    },
+    {
+      "client": "codex",
+      "arm": "sift"
+    }
+  ],
+  "controls": {
+    "native_client_versions": {
+      "claude": "2.1.251",
+      "codex": "0.154.0 Linux WSL"
+    },
+    "gateway": "LiteLLM 1.103.0 isolated Compose on port4010",
+    "model": "qwen3.8-27b / Unsloth UD-IQ3_S on local llama.cpp",
+    "input_target_estimate": 24576,
+    "raw_limit_estimate": 1000000,
+    "max_output_tokens": 4096,
+    "model_context_window": 32768,
+    "timeout_seconds_per_run": 1200,
+    "max_client_turns_claude": 80,
+    "client_context_window": 1000000,
+    "client_compaction_threshold": 950000,
+    "cache": "Restart existing local engine only while idle before each run, preserving same container configuration; fresh native session per run; allow within-run cache reuse. Preserve engine/gateway receipts and contamination/unknowns.",
+    "execution": "Sequential; no advisors, configured provider retries or fallback calls. Retain all failures; no solution repair or altered gold between arms."
+  },
+  "acceptance": "Same strict standalone failing-to-passing test-loop, native terminal and scope gates; six visible plus seven predeclared gold checks. A run must actually compact to qualify as a compaction stress trial.",
+  "metrics": "Native elapsed time, artifact acceptance, request and compaction counts, forwarded estimates, selector CPU/wall, client-reported usage/Claude TTFT, engine weighted decode TPS. Codex true TTFT unavailable. No inferred TTFT from native LiteLLM first-chunk fallback.",
+  "interpretation": "Four single descriptive trials; paths may diverge. No general task-success, statistical speedup or whole-task bill claim."
+}

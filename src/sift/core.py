@@ -12,6 +12,7 @@ from dataclasses import dataclass
 import hashlib
 import heapq
 import json
+import math
 import re
 from typing import Any, Callable, Literal
 
@@ -142,6 +143,20 @@ def _starts_tool_cycle(message: dict[str, Any], protocol: Protocol) -> bool:
     )
 
 
+def _record_line(text: str) -> bool:
+    """Recognize bounded self-contained records without parsing large payloads."""
+    if len(text) > 2_048:
+        return False
+    stripped = text.strip()
+    if not ((stripped.startswith("{") and stripped.endswith("}")) or
+            (stripped.startswith("[") and stripped.endswith("]"))):
+        return False
+    try:
+        return isinstance(json.loads(stripped), (dict, list))
+    except (ValueError, RecursionError):
+        return False
+
+
 def _pieces(text: str):
     """Yield bounded source substrings without building a list of all lines."""
     offset = 0
@@ -150,6 +165,12 @@ def _pieces(text: str):
         end = len(text) if newline < 0 else newline
         if end > offset and text[end - 1] == "\r":
             end -= 1
+        # JSONL records carry their own field context. Keep a bounded record
+        # exact rather than inserting newlines inside its strings and keys.
+        if end - offset <= 2_048 and _record_line(text[offset:end]):
+            yield text[offset:end]
+            offset = len(text) if newline < 0 else newline + 1
+            continue
         cursor = offset
         while end - cursor > _MAX_PIECE_CHARS:
             cut = text.rfind(" ", cursor + _MAX_PIECE_CHARS // 2,
@@ -173,18 +194,21 @@ def _query_terms(query: str) -> set[str]:
             if term.lower() not in _STOPWORDS}
 
 
-def _term_frequencies(old: list[dict[str, Any]], terms: set[str]) -> Counter[str]:
+def _term_frequencies(old: list[dict[str, Any]], terms: set[str]) -> tuple[Counter[str], int]:
     frequencies: Counter[str] = Counter()
+    total = 0
     if terms:
         for message in old:
             for piece in _pieces(_render(message)):
+                total += 1
                 frequencies.update(terms.intersection(
                     term.lower() for term in _TERMS.findall(piece)))
-    return frequencies
+    return frequencies, total
 
 
 def _candidates(old: list[dict[str, Any]], terms: set[str],
-                frequencies: Counter[str], bridge_ids: tuple[str, ...] = ()) -> list[_Candidate]:
+                frequencies: Counter[str], total: int,
+                bridge_ids: tuple[str, ...] = ()) -> list[_Candidate]:
     bridge_match = (re.compile(r"\b(?:" + "|".join(map(re.escape, bridge_ids)) + r")\b", re.IGNORECASE)
                     if bridge_ids else None)
     heap: list[tuple[float, int, _Candidate]] = []
@@ -211,7 +235,10 @@ def _candidates(old: list[dict[str, Any]], terms: set[str],
             recent_hashes.append(digest)
             seen.add(digest)
             matching = terms.intersection(term.lower() for term in _TERMS.findall(piece))
-            score = sum(100 + 80 / (1 + frequencies[term]) for term in matching)
+            # Repeated field names and routine log vocabulary should not
+            # outscore rarer evidence merely by matching more common words.
+            score = sum(100 * math.log1p(total / (1 + frequencies[term]))
+                        for term in matching)
             score += 8 * bool(_SIGNALS.search(piece))
             if bridge_match is not None and bridge_match.search(piece):
                 score += 120
@@ -220,7 +247,13 @@ def _candidates(old: list[dict[str, Any]], terms: set[str],
                 score += 3
             # Keep the neighboring source text that explains a selected line.
             # Rank the center only, so surrounding noise does not win selection.
-            span = "\n".join(part for part in (previous, piece, following) if part)
+            # Adjacent structured records are independent evidence. Charging
+            # their neighbors repeatedly wastes budget and obscures citations.
+            structured = _record_line(piece)
+            span = "\n".join(
+                part for part in (previous, piece, following)
+                if part and (not structured or part == piece or not _record_line(part))
+            )
             candidate = _Candidate(message_index, part_index, role, span, score, piece)
             item = (score, serial, candidate)
             if len(heap) < _MAX_CANDIDATES:
@@ -239,8 +272,8 @@ def _candidates(old: list[dict[str, Any]], terms: set[str],
 def _linked_candidates(old: list[dict[str, Any]], query: str) -> list[_Candidate]:
     """Reserve a few excerpts joined by IDs in high-ranked source evidence."""
     terms = _query_terms(query)
-    frequencies = _term_frequencies(old, terms)
-    primary = _candidates(old, terms, frequencies)
+    frequencies, total = _term_frequencies(old, terms)
+    primary = _candidates(old, terms, frequencies, total)
     if not primary:
         return primary
     bridge_ids: list[str] = []
@@ -258,7 +291,7 @@ def _linked_candidates(old: list[dict[str, Any]], query: str) -> list[_Candidate
             break
     if not bridge_ids:
         return primary
-    second_pass = _candidates(old, terms, frequencies, tuple(bridge_ids))
+    second_pass = _candidates(old, terms, frequencies, total, tuple(bridge_ids))
     matched = re.compile(r"\b(?:" + "|".join(map(re.escape, bridge_ids)) + r")\b", re.IGNORECASE)
     output: list[_Candidate] = []
     seen: set[tuple[int, int]] = set()

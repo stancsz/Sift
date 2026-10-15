@@ -1,0 +1,46 @@
+{
+  "start_utc": "2026-10-15T21:36:38.488972+00:00",
+  "core_sha256": "b290fde061dc28016f2bcd3d65e25ab9820b43e5eec5103056c5adeab2db5238",
+  "initial_cache": "uncontrolled; no cold/warm causal performance comparison",
+  "cache": [
+    {
+      "cycles": 34,
+      "status": 200,
+      "seconds": 18.632665999932215,
+      "estimated_forwarded": 19475,
+      "provider_input": 21366,
+      "cached_tokens": 0,
+      "completion_tokens": 64,
+      "finish_reason": "stop",
+      "answer": "test_cache_probe_33",
+      "compacted": "true"
+    },
+    {
+      "cycles": 35,
+      "status": 200,
+      "seconds": 4.069939999841154,
+      "estimated_forwarded": 21464,
+      "provider_input": 23646,
+      "cached_tokens": 21362,
+      "completion_tokens": 85,
+      "finish_reason": "stop",
+      "answer": "test_cache_probe_34",
+      "compacted": "true"
+    },
+    {
+      "cycles": 36,
+      "status": 200,
+      "seconds": 3.984804900130257,
+      "estimated_forwarded": 23453,
+      "provider_input": 25926,
+      "cached_tokens": 23642,
+      "completion_tokens": 78,
+      "finish_reason": "stop",
+      "answer": "test_cache_probe_35",
+      "compacted": "true"
+    }
+  ],
+  "cache_passed": true,
+  "end_utc": "2026-10-15T21:37:05.621416+00:00",
+  "scope": "Selected within-boundary cache compatibility, not a controlled Sift-versus-baseline performance comparison. Saved usage/terminal fields extracted by the probe; engine and gateway logs independently matched."
+}

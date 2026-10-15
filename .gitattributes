@@ -1,0 +1,10 @@
+# Preserve predeclared fixture byte hashes across Windows and Linux.
+benchmarks/agent_cases/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+benchmarks/agent_gold/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+benchmarks/structured_evidence_cases.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+# Keep execution-source hashes stable across benchmark hosts.
+benchmarks/agents.py text eol=lf
+benchmarks/native_callback.py text eol=lf
+benchmarks/recency.py text eol=lf
+benchmarks/native_litellm.yaml text eol=lf
+benchmarks/compose.native.yaml text eol=lf

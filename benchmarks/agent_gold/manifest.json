@@ -1,0 +1,24 @@
+{
+  "fixture_status": "public authored development fixtures, not held-out",
+  "recorded_before_first_client_run_utc": "2026-10-15T20:51:15.027856+00:00",
+  "sha256": {
+    "agent_cases/incident_reconstruction/findings.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+    "agent_cases/incident_reconstruction/incident_1.jsonl": "332345d0c04eb3bf629cde932adbf5e3ec077fbc3868eb07473536714de07ee5",
+    "agent_cases/incident_reconstruction/incident_2.jsonl": "84ad0aa04706b1e4e26fa674a13b277d0bd9ce7239baa1b500e0525ea0dac6e7",
+    "agent_cases/incident_reconstruction/incident_3.jsonl": "3cc2cece0bf9c2ba9ed4e9351061315ccb80b977678d6f2f3a28ccb40041de2e",
+    "agent_cases/incident_reconstruction/incident_4.jsonl": "2794dec3bbd2d02ec0a5fa93c435a2cb69753d5328df65f594d0fdcb5acf7b60",
+    "agent_cases/incident_reconstruction/README.md": "30c41e5469ce534eb22c3e5a27f84f81c43eb821011968b24074af4f93cba6f2",
+    "agent_cases/incident_reconstruction/test_incident_reconstruction.py": "b835b1643e5212b3c927612119390ab3937830bdb2fc3731418fae4023d83b10",
+    "agent_cases/research_evidence_audit/corrections.jsonl": "917da665a9cc7924b6a080741d6b9bc5ed59d1347a65d76e0228a2eeecd91188",
+    "agent_cases/research_evidence_audit/dataset_and_limits.jsonl": "62361fe909e95f091a7dccf123ea434f0a08f5120da46e71ce82c610288bec4e",
+    "agent_cases/research_evidence_audit/findings.json": "e3566b3a06430868d71e9287dfd6c6c520a3da027aabea01951d407ee131dc2f",
+    "agent_cases/research_evidence_audit/README.md": "e5644c366d8ae32aad12eb8fb3c4d40c40874a9343df8b5b66c107a261a254ac",
+    "agent_cases/research_evidence_audit/registry.jsonl": "85c19786cbbe04800fed014bbd5a793e42ae13ac427dfefe84f354fa0ac78fb6",
+    "agent_cases/research_evidence_audit/report_revisions.jsonl": "61f8eed7f868dc0de6aa9952413726f8ae4541fcb7f27ef916c6cfcc0d2908b4",
+    "agent_cases/research_evidence_audit/test_research_schema.py": "f65ecaf794e20cfc958183f15003928fa8cc474b68852515e1556867fb538052",
+    "agent_gold/incident_reconstruction/README.md": "01a046d29f4226006a98020a2d19bc8bf1e24bbc1a1aede974715c5006776afb",
+    "agent_gold/incident_reconstruction/test_incident_gold.py": "697d25f15b1e206a5b01843709f3365986bdc61c36f2c8b23978aed9731e7237",
+    "agent_gold/research_evidence_audit/README.md": "01a046d29f4226006a98020a2d19bc8bf1e24bbc1a1aede974715c5006776afb",
+    "agent_gold/research_evidence_audit/test_research_gold.py": "9426d7d0f3fd2977f4b7bb00592244d570859e53d47a91d7eab21afde4fdccbd"
+  }
+}

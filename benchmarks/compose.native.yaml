@@ -1,0 +1,29 @@
+# Temporary benchmark gateway only. It never mounts Subroute state, credentials,
+# databases or config. Run from a frozen Sift source checkout and retain its commit and source hashes.
+# Set SIFT_NATIVE_GATEWAY_KEY, select SIFT_BENCH_ARM=sift|recency before startup,
+# and recreate this service between arms. Do not reuse a live gateway process.
+# Example: docker compose -f benchmarks/compose.native.yaml up -d
+# Cleanup: docker compose -f benchmarks/compose.native.yaml down
+services:
+  native-benchmark:
+    image: ghcr.io/berriai/litellm-database@sha256:bd07ceb1fc7c4505f116c4eb2767956a8accba3119548dd8ae55e5356a381d56
+    restart: "no"
+    ports:
+      - "127.0.0.1:${SIFT_NATIVE_PORT:-4010}:4000"
+    environment:
+      PYTHONPATH: /sift-src:/bench
+      LITELLM_LOG: INFO
+      LITELLM_LOCAL_MODEL_COST_MAP: "True"
+      SIFT_BENCH_ARM: ${SIFT_BENCH_ARM:-sift}
+      SIFT_NATIVE_GATEWAY_KEY: ${SIFT_NATIVE_GATEWAY_KEY:?Set a dedicated benchmark key}
+      SIFT_NATIVE_BACKEND_URL: ${SIFT_NATIVE_BACKEND_URL:-http://qwen-local:8080/v1}
+    volumes:
+      - ../src:/sift-src:ro
+      - .:/bench:ro
+    networks: [engine]
+    command: ["--config", "/bench/native_litellm.yaml", "--port", "4000", "--host", "0.0.0.0", "--telemetry", "False"]
+
+networks:
+  engine:
+    external: true
+    name: ${SIFT_NATIVE_NETWORK:-subroute_default}

@@ -1,0 +1,25 @@
+{
+  "case": "build_planner",
+  "fixture_status": "public authored development fixture, not held-out",
+  "recorded_before_first_portable_client_run_utc": "2026-10-15T21:09:34.821684+00:00",
+  "visible_test_count": 6,
+  "original_gold_test_count": 5,
+  "later_contract_test_count": 2,
+  "sha256": {
+    "case/build_manifest.py": "83f27148483137ffc097801c6fc23744f2c9cd9f52df8e5144f4b028c65811e7",
+    "case/incremental.py": "683a521751141a78a12b21be27de8e89f0790393ac4a04edc1393fe1e95bb9a4",
+    "case/README.md": "95e8d619381930d95b9931aa37744462dea31d85789a03096cda85b0addc1a7b",
+    "case/test_build_planner.py": "ab9ce929f832cff6cde968ca63efbb932c41f4172fae9d66aab3f29dc2b220cc",
+    "gold/README.md": "e5f63d97c4c0f9678770fd1230604793ed58381ef4c4f17e52a5e39049c459ee",
+    "gold/test_build_holdout.py": "bce38f96af57abfc05be91cf3509db9d1cf807bbceae04025f83ec7034e7ca3e",
+    "gold/test_postrun_contract.py": "2b1dca315f68d2f2747861ab88e485a7899b909dbf2de0e3e2cb7ec924b346c2"
+  },
+  "original_source_sha256": {
+    "case/build_manifest.py": "83f27148483137ffc097801c6fc23744f2c9cd9f52df8e5144f4b028c65811e7",
+    "case/incremental.py": "683a521751141a78a12b21be27de8e89f0790393ac4a04edc1393fe1e95bb9a4",
+    "case/README.md": "9a5e76ed9bc1a2fbe9c0551795765ba0c603f022eeb13937352e04f190e90657",
+    "case/test_build_planner.py": "ab9ce929f832cff6cde968ca63efbb932c41f4172fae9d66aab3f29dc2b220cc",
+    "gold/test_build_holdout.py": "bce38f96af57abfc05be91cf3509db9d1cf807bbceae04025f83ec7034e7ca3e",
+    "gold/test_postrun_contract.py": "2b1dca315f68d2f2747861ab88e485a7899b909dbf2de0e3e2cb7ec924b346c2"
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "declared_utc": "2026-10-15T21:48:52.586917+00:00",
+  "status": "public authored development pilot; no held-out or dollar-savings claim",
+  "case": "build_planner",
+  "fixture_manifest_sha256": "0aabe3296b2ece2ee562860dbe19cbf77cdd8b85a0faa63cf97bdbaed7d2f317",
+  "source_hashes": {
+    "src/sift/core.py": "b290fde061dc28016f2bcd3d65e25ab9820b43e5eec5103056c5adeab2db5238",
+    "benchmarks/agents.py": "f2a15917864c5ed96545845d188ce0c9feb9a0846a9527a3cc8063a6aa340a7e",
+    "benchmarks/native_callback.py": "fbc35d8cd24a54d3bd051b3d8621d09950210ce8485788864103dbbf86bbe6c2",
+    "benchmarks/native_litellm.yaml": "05bb2f30752aeb53ccffdb90e6227ade1a761e6fa24e4ce41d8058c88abadd8b",
+    "benchmarks/recency.py": "4cc6f30d4bf8762b2ee291a621ffe3a595e0c2cbfa7c6b3a25a23cc46e88fd8d"
+  },
+  "order": [
+    {
+      "client": "claude",
+      "arm": "sift"
+    },
+    {
+      "client": "codex",
+      "arm": "recency"
+    },
+    {
+      "client": "claude",
+      "arm": "recency"
+    },
+    {
+      "client": "codex",
+      "arm": "sift"
+    }
+  ],
+  "controls": {
+    "native_client_versions": {
+      "claude": "2.1.251",
+      "codex": "0.154.0 Linux WSL"
+    },
+    "gateway": "LiteLLM 1.103.0 isolated Compose on port4010",
+    "model": "qwen3.8-27b / Unsloth UD-IQ3_S on local llama.cpp",
+    "input_target_estimate": 24576,
+    "raw_limit_estimate": 1000000,
+    "max_output_tokens": 4096,
+    "model_context_window": 32768,
+    "timeout_seconds_per_run": 1200,
+    "max_client_turns_claude": 80,
+    "client_context_window": 1000000,
+    "client_compaction_threshold": 950000,
+    "cache": "Restart existing local engine only while idle before each run, preserving same container configuration; fresh native session per run; allow within-run cache reuse. Preserve engine/gateway receipts and contamination/unknowns.",
+    "execution": "Sequential; no advisors, configured provider retries or fallback calls. Retain all failures; no solution repair or altered gold between arms.",
+    "instruction_placement": "Qwen-only Anthropic profile stably moves system/developer entries before dialogue, retaining original message objects, roles/content and within-group order. Changes position deliberately; not general equivalence for arbitrary late instructions. Top-level system/tools/caps unchanged. Applies before both selectors/counting; product Sift defaults unchanged."
+  },
+  "acceptance": "Same strict standalone failing-to-passing test-loop, native terminal and scope gates; six visible plus seven predeclared gold checks. A run must actually compact to qualify as a compaction stress trial.",
+  "metrics": "Native elapsed time, artifact acceptance, request and compaction counts, forwarded estimates, selector CPU/wall, client-reported usage/Claude TTFT, engine weighted decode TPS. Codex true TTFT unavailable. No inferred TTFT from native LiteLLM first-chunk fallback.",
+  "interpretation": "Four single descriptive trials; paths may diverge. No general task-success, statistical speedup or whole-task bill claim.",
+  "supersedes_plan_sha256": "9700dc31b3b3b582d8b5752022f1c7552a2221d51e50768883979e5d0abf08b4",
+  "revision_reason": "The first Claude/Sift attempt failed before generation because the native Anthropic adapter preserved a late system-message position rejected by the Qwen template. No artifact-quality or speed result. An explicit Qwen/Anthropic instruction-placement profile is now applied equally before either selector. Initial attempt retained separately; same fixtures, gold and acceptance gates. Benchmark execution files use LF so byte hashes are reproducible across hosts.",
+  "initial_failed_attempt": {
+    "client": "claude",
+    "arm": "sift",
+    "gateway_audits": 2,
+    "compacted_requests": 0,
+    "forwarded_estimates": [
+      1430,
+      1380
+    ],
+    "generated_tokens": 0,
+    "native_terminal_success": false,
+    "artifact_changed": false,
+    "error": "Qwen Jinja: System message must be at the beginning",
+    "classification": "template compatibility failure before generation, retained outside quality/performance comparison"
+  }
+}

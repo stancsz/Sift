@@ -1,0 +1,32 @@
+# Same model and ceiling for both arms. NativeBenchmarkHook rejects an explicit
+# larger output request; absent limits use this configured 4096-token default.
+model_list:
+  - model_name: qwen3.8-27b
+    model_info:
+      max_input_tokens: 28672
+      max_output_tokens: 4096
+      context_window: 32768
+    litellm_params:
+      model: openai/qwen3.8-27b
+      api_base: os.environ/SIFT_NATIVE_BACKEND_URL
+      api_key: local
+      use_chat_completions_api: true
+      max_tokens: 4096
+      timeout: 90
+
+router_settings:
+  enable_pre_call_checks: true
+  num_retries: 0
+  fallbacks: []
+  context_window_fallbacks: []
+
+litellm_settings:
+  use_chat_completions_url_for_anthropic_messages: true
+  callbacks:
+    - native_callback.benchmark_hook
+  turn_off_message_logging: true
+  set_verbose: false
+
+general_settings:
+  master_key: os.environ/SIFT_NATIVE_GATEWAY_KEY
+  cancel_on_disconnect: true

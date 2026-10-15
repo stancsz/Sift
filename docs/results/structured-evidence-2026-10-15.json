@@ -1,0 +1,221 @@
+{
+  "sources": {
+    "old": "93496752326b176ec0b9eef2b121609d936fc3527befc413d7d4b8d67e1ab81e",
+    "json_only": "44d5ddafc2914230939cfff43c3589f924906c09f0865f77fbe62a0cab268b7d",
+    "idf_only": "4775ad85f65af5ad37ac3145df115bd4fb17473d64eb8efd3e41aca343d4a29e",
+    "both": "b290fde061dc28016f2bcd3d65e25ab9820b43e5eec5103056c5adeab2db5238"
+  },
+  "cases": {
+    "old": [
+      {
+        "case": "warehouse_disposition",
+        "exact": 2,
+        "required": 4,
+        "forwarded": 800
+      },
+      {
+        "case": "build_compatibility",
+        "exact": 3,
+        "required": 5,
+        "forwarded": 717
+      },
+      {
+        "case": "museum_climate_audit",
+        "exact": 3,
+        "required": 5,
+        "forwarded": 776
+      }
+    ],
+    "json_only": [
+      {
+        "case": "warehouse_disposition",
+        "exact": 4,
+        "required": 4,
+        "forwarded": 899
+      },
+      {
+        "case": "build_compatibility",
+        "exact": 5,
+        "required": 5,
+        "forwarded": 861
+      },
+      {
+        "case": "museum_climate_audit",
+        "exact": 5,
+        "required": 5,
+        "forwarded": 828
+      }
+    ],
+    "idf_only": [
+      {
+        "case": "warehouse_disposition",
+        "exact": 2,
+        "required": 4,
+        "forwarded": 800
+      },
+      {
+        "case": "build_compatibility",
+        "exact": 3,
+        "required": 5,
+        "forwarded": 717
+      },
+      {
+        "case": "museum_climate_audit",
+        "exact": 3,
+        "required": 5,
+        "forwarded": 776
+      }
+    ],
+    "both": [
+      {
+        "case": "warehouse_disposition",
+        "exact": 4,
+        "required": 4,
+        "forwarded": 899
+      },
+      {
+        "case": "build_compatibility",
+        "exact": 5,
+        "required": 5,
+        "forwarded": 861
+      },
+      {
+        "case": "museum_climate_audit",
+        "exact": 5,
+        "required": 5,
+        "forwarded": 828
+      }
+    ]
+  },
+  "large": {
+    "old": {
+      "raw_estimated": 720653,
+      "forwarded": 24465,
+      "thread_process_cpu_seconds": 0.6875,
+      "needle_retained": true
+    },
+    "json_only": {
+      "raw_estimated": 720653,
+      "forwarded": 24549,
+      "thread_process_cpu_seconds": 0.953125,
+      "needle_retained": true
+    },
+    "idf_only": {
+      "raw_estimated": 720653,
+      "forwarded": 24465,
+      "thread_process_cpu_seconds": 0.65625,
+      "needle_retained": true
+    },
+    "both": {
+      "raw_estimated": 720653,
+      "forwarded": 24549,
+      "thread_process_cpu_seconds": 0.9375,
+      "needle_retained": true
+    }
+  },
+  "research": {
+    "old": [
+      {
+        "target": 1000,
+        "exact": 1,
+        "forwarded": 918
+      },
+      {
+        "target": 1500,
+        "exact": 1,
+        "forwarded": 1346
+      },
+      {
+        "target": 2000,
+        "exact": 2,
+        "forwarded": 1878
+      },
+      {
+        "target": 2500,
+        "exact": 3,
+        "forwarded": 2305
+      }
+    ],
+    "json_only": [
+      {
+        "target": 1000,
+        "exact": 4,
+        "forwarded": 958
+      },
+      {
+        "target": 1500,
+        "exact": 4,
+        "forwarded": 1494
+      },
+      {
+        "target": 2000,
+        "exact": 4,
+        "forwarded": 1944
+      },
+      {
+        "target": 2500,
+        "exact": 4,
+        "forwarded": 2483
+      }
+    ],
+    "idf_only": [
+      {
+        "target": 1000,
+        "exact": 1,
+        "forwarded": 918
+      },
+      {
+        "target": 1500,
+        "exact": 1,
+        "forwarded": 1346
+      },
+      {
+        "target": 2000,
+        "exact": 2,
+        "forwarded": 1835
+      },
+      {
+        "target": 2500,
+        "exact": 3,
+        "forwarded": 2353
+      }
+    ],
+    "both": [
+      {
+        "target": 1000,
+        "exact": 5,
+        "forwarded": 998
+      },
+      {
+        "target": 1500,
+        "exact": 6,
+        "forwarded": 1452
+      },
+      {
+        "target": 2000,
+        "exact": 6,
+        "forwarded": 1983
+      },
+      {
+        "target": 2500,
+        "exact": 6,
+        "forwarded": 2441
+      }
+    ]
+  },
+  "structured_epoch_prefix_stable": true,
+  "core_file_bytes_sha256": "b290fde061dc28016f2bcd3d65e25ab9820b43e5eec5103056c5adeab2db5238",
+  "focused_tests": {
+    "test_core": 14,
+    "test_invariants": 3,
+    "test_acceptance_corpus": 6,
+    "test_structured_evidence": 4,
+    "all_passed": true
+  },
+  "baseline_tag_object": "22666c835982212234e3f3eaf24977b2fc688a6a",
+  "baseline_commit": "2c3d34c52774ec6e95523cebb39fcfda744ab11d",
+  "status": "Authored public development cases; not held-out evidence. Independent replay before release.",
+  "fixture_sha256": "a54f63af0fe1a7118acde818ca02d7b4a8793f5ade0dbe1079d5ede3a6f1cc5a",
+  "counter": "ceil(len(json.dumps(messages))/4), matching public structured-evidence tests; not a provider tokenizer",
+  "large_timing_note": "One screening run per variant, process CPU seconds on one Windows desktop; not a latency distribution or general speedup"
+}

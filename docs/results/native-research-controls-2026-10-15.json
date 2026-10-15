@@ -1,0 +1,96 @@
+{
+  "status": "Two authored public development controls, not a matched performance comparison; neither compacted. Client usage/TTFT are labelled, window decode metrics may include native auxiliary calls.",
+  "rows": [
+    {
+      "client": "claude",
+      "client_version": "2.1.251 (Claude Code)",
+      "python_version": "3.13.11 (main, Dec  5 2025, 20:20:00) [MSC v.1944 64 bit (AMD64)]",
+      "case": "research_evidence_audit",
+      "accepted": true,
+      "native_seconds": 118.97218539984897,
+      "native_exit_code": 0,
+      "native_terminal_success": true,
+      "visible_passed": true,
+      "post_run_visible_plus_gold_passed": true,
+      "test_tool_calls_recognized": 2,
+      "observed_test_loop": true,
+      "client_reported_usage": {
+        "input_tokens": 10929,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 50739,
+        "output_tokens": 4498,
+        "output_tokens_details": {
+          "thinking_tokens": 0
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "",
+        "iterations": [],
+        "speed": "standard"
+      },
+      "mean_client_reported_ttft_ms": 1480.0,
+      "ttft_samples": 8,
+      "gateway_audits": 9,
+      "compacted_requests": 0,
+      "max_forwarded_estimate": 10753,
+      "window_decode_tps": 44.95298034388595,
+      "scope_clean": true,
+      "artifact_sha256": "b130cd52cfe6a529fee4cd178386195f24e06c0fd7c02acc7b9958bc80d3af94",
+      "integration_note": "Staging gateway, pre-structured-record core; routing/advisor snapshot restored; exact runner source hash was not retained in this early wrapper."
+    },
+    {
+      "client": "codex",
+      "client_version": "codex-cli 0.154.0",
+      "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "case": "research_evidence_audit",
+      "accepted": false,
+      "native_seconds": 128.1430940439459,
+      "native_exit_code": 0,
+      "native_terminal_success": true,
+      "visible_passed": true,
+      "post_run_visible_plus_gold_passed": true,
+      "test_tool_calls_recognized": 0,
+      "observed_test_loop": null,
+      "client_reported_usage": [
+        {
+          "input_tokens": 142256,
+          "cached_input_tokens": 121036,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 4556,
+          "reasoning_output_tokens": 1994
+        }
+      ],
+      "mean_client_reported_ttft_ms": null,
+      "ttft_samples": 0,
+      "gateway_audits": 10,
+      "compacted_requests": 0,
+      "max_forwarded_estimate": 19202,
+      "window_decode_tps": 42.980702268449015,
+      "scope_clean": true,
+      "artifact_sha256": "41059f03f6a46069b4dc7fa4f4ecd6288198dc55961e6992477f5d1f6b2661fa",
+      "integration_note": "Dedicated LiteLLM1.103.0 gateway/candidate core b290fde061dc28016f2bcd3d65e25ab9820b43e5eec5103056c5adeab2db5238; Linux WSL native sandbox passed. Runner source SHA930d870958912774f67c9a9a5ba9fc55142238171e12b6ea8e98ba6c7d6a6a30.",
+      "rejection_reason": "Compound test shell commands masked the pre-edit failure exit status; strict standalone-command gate correctly recognized neither test call. Correct artifact does not repair the failed contract. No repeat call."
+    }
+  ],
+  "earlier_failures": [
+    {
+      "client": "claude",
+      "result": "harness parser failure lost native evidence; artifact passed but run rejected"
+    },
+    {
+      "client": "codex Windows",
+      "result": "isolated home missing, no model call; repaired"
+    },
+    {
+      "client": "codex Windows",
+      "result": "fresh elevated sandbox setup marker unavailable, one request, task manually stopped, rejected; no global settings changed"
+    }
+  ]
+}

@@ -30,7 +30,7 @@ For example, a gateway can accept a history of up to **1,000,000 estimated token
 Install the tagged release from GitHub. Sift is not currently published to PyPI.
 
 ```sh
-python -m pip install "sift-context[litellm] @ git+https://github.com/stancsz/Sift.git@v0.9.1"
+python -m pip install "sift-context[litellm] @ git+https://github.com/stancsz/Sift.git@v0.10.0"
 ```
 
 Put a callback instance beside your LiteLLM configuration:
@@ -91,6 +91,7 @@ The hard bound is `forwarded_tokens <= target` according to your supplied counte
 | Six private Claude Code trace replays, forced 5K target | Distinct failed-test retention rose from 24/28 on v0.7.0 to 28/28 on v0.8.0 | A specific diagnostic-retention improvement |
 | Live 34/35/36-cycle Chat Completions sequence | 19,475 / 21,464 / 23,453 estimated forwarded tokens; 21,362 / 23,642 provider-cached tokens on appended turns | Cache reuse inside one fixed group boundary, with correct newest and earliest failure answers |
 | Controlled cold-prefill comparison | Mean input 13,215 to 7,433 tokens; mean TTFT 8.96 to 5.49 seconds; Sift and full context each correct 6/6 | Lower latency on three authored cases repeated twice; head/tail also scored 6/6 |
+| Structured development cases, v0.10.0 | Required exact records 8/14 to 14/14 at the same 900-token estimate; research chain 1/6 to 6/6 at 1,500 | Repairs two observed extraction failures; not held-out task quality |
 | Native Codex build-planner task | Six visible and five original holdouts passed; broader post-run contract probes and reporting checks failed | Existing test passes did not establish the full artifact contract |
 | Native Claude Code incident investigation | All required records were cited exactly; elapsed-time calculation failed the gold check | Evidence availability did not ensure correct reasoning |
 
@@ -110,7 +111,7 @@ Read [the algorithm and acceptance contract](docs/algorithm.md) for selection ru
 ## Reproduce and contribute
 
 ```sh
-git clone --branch v0.9.1 https://github.com/stancsz/Sift.git
+git clone --branch v0.10.0 https://github.com/stancsz/Sift.git
 cd Sift
 python -m pip install -e .
 python -m unittest discover -s tests -q
@@ -118,6 +119,8 @@ python benchmarks/compare.py
 ```
 
 The tests cover hard budgets, protocol preservation, active tool loops, append-only behavior inside fixed boundaries, diagnostic context, identifier joins, contradictory facts, unsupported inputs, and the optional LiteLLM callback. Install `.[litellm]` to exercise the integration with its pinned dependency.
+
+The [native-agent guide](docs/native-agents.md) includes opt-in Claude Code and Codex runs, public development fixtures with separate gold checks, and an isolated LiteLLM comparison gateway. These source-checkout benchmarks are separate from the installed callback and make real model calls.
 
 Useful contributions include reproducible failure cases, consented agent traces with spans labeled before tuning, and controlled measurements of accepted task quality, total cost, and time to first token. [Open an issue](https://github.com/stancsz/Sift/issues) with the smallest redacted reproduction. See [ROADMAP.md](ROADMAP.md) for the gates toward a mature release.
 
