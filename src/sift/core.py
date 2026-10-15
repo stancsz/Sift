@@ -82,6 +82,10 @@ def _text(content: Any, *, allow_none: bool = False) -> str:
         kind = block.get("type")
         if kind == "text" and isinstance(block.get("text"), str):
             parts.append(block["text"])
+        elif kind in {"thinking", "redacted_thinking"}:
+            # Prior reasoning is not evidence to quote back as user data.
+            # The current turn and retained tool cycles keep these blocks exact.
+            continue
         elif kind == "tool_use" and isinstance(block.get("input"), dict):
             parts.append("tool_use " + str(block.get("id", "")) + " "
                          + str(block.get("name", "")) + " "
@@ -118,6 +122,18 @@ def _real_user(message: dict[str, Any], protocol: Protocol) -> bool:
         isinstance(block, dict) and block.get("type") == "tool_result"
         for block in content
     ))
+
+
+def _starts_tool_cycle(message: dict[str, Any], protocol: Protocol) -> bool:
+    if message.get("role") != "assistant":
+        return False
+    if protocol == "openai":
+        return bool(message.get("tool_calls"))
+    content = message.get("content")
+    return isinstance(content, list) and any(
+        isinstance(block, dict) and block.get("type") == "tool_use"
+        for block in content
+    )
 
 
 def _pieces(text: str):
@@ -221,6 +237,7 @@ def compact_messages(
         return CompactionResult(deepcopy(messages), {
             "compacted": False, "input_tokens": raw, "forwarded_tokens": raw,
             "omitted_estimated_tokens": 0, "preserved_recent_turns": 0,
+            "preserved_recent_tool_cycles": 0,
             "selected_excerpts": 0,
         })
     if protocol not in {"openai", "anthropic"}:
@@ -234,12 +251,84 @@ def compact_messages(
         raise CompactionError("late instruction cannot be compacted", code="late_instruction")
     latest_user = next((i for i in range(len(messages) - 1, instruction_end - 1, -1)
                         if _real_user(messages[i], protocol)), -1)
-    if latest_user <= instruction_end:
-        raise CompactionError("no older dialogue before active turn", code="active_too_large")
+    if latest_user < instruction_end:
+        raise CompactionError("no active user turn", code="active_too_large")
     active = messages[:instruction_end] + messages[latest_user:]
     active_count = _count(count_tokens, active)
     if active_count >= target - 256:
-        raise CompactionError("active turn and instructions exceed target", code="active_too_large")
+        # Agent clients can issue many tool cycles under one human request. Keep
+        # that request and the latest whole tool cycle; older cycles are history.
+        cycle_starts = [index for index in range(latest_user + 1, len(messages))
+                        if _starts_tool_cycle(messages[index], protocol)]
+        if not cycle_starts:
+            raise CompactionError("active turn and instructions exceed target", code="active_too_large")
+        tail_start = cycle_starts[-1]
+        essential = messages[:instruction_end] + [messages[latest_user]] + messages[tail_start:]
+        essential_count = _count(count_tokens, essential)
+        if essential_count >= target - 256:
+            raise CompactionError("active task or latest tool cycle exceeds target", code="active_too_large")
+        recent_budget = min(8_192, (target - essential_count) // 2)
+        retained_cycles = 1
+        for index in reversed(cycle_starts[:-1]):
+            candidate_count = _count(
+                count_tokens, messages[:instruction_end] + [messages[latest_user]] + messages[index:]
+            )
+            if candidate_count >= target - 256 or candidate_count - essential_count > recent_budget:
+                break
+            tail_start = index
+            retained_cycles += 1
+            if retained_cycles == 4:
+                break
+        old_before = messages[instruction_end:latest_user]
+        old_after = messages[latest_user + 1:tail_start]
+        query = _render(messages[latest_user]) + "\n" + _render(messages[-1])
+        ranked = _candidates(old_before + old_after, query)
+        options = [
+            _Candidate(candidate.message_index + instruction_end
+                       if candidate.message_index < len(old_before)
+                       else candidate.message_index + instruction_end + 1,
+                       candidate.part_index, candidate.role, candidate.text, candidate.score)
+            for candidate in ranked
+        ]
+        if not options:
+            raise CompactionError("no extractable historical content", code="active_too_large")
+
+        def build_tool_history(number: int) -> tuple[list[dict[str, Any]], int]:
+            selected = options[:number]
+            before = [item for item in selected if item.message_index < latest_user]
+            after = [item for item in selected if item.message_index > latest_user]
+            output = messages[:instruction_end]
+            if before:
+                output += [_summary(before)]
+            output += [messages[latest_user]]
+            if after:
+                output += [_summary(after)]
+            output += messages[tail_start:]
+            return output, _count(count_tokens, output)
+
+        low, high = 1, len(options)
+        best: tuple[list[dict[str, Any]], int] | None = None
+        selected_count = 0
+        while low <= high:
+            middle = (low + high) // 2
+            trial = build_tool_history(middle)
+            if trial[1] <= target:
+                best = trial
+                selected_count = middle
+                low = middle + 1
+            else:
+                high = middle - 1
+        if best is None:
+            raise CompactionError("no historical excerpt fits target", code="active_too_large")
+        output, forwarded = best
+        return CompactionResult(deepcopy(output), {
+            "compacted": True, "input_tokens": raw, "forwarded_tokens": forwarded,
+            "omitted_estimated_tokens": max(0, raw - forwarded),
+            "preserved_recent_turns": 0,
+            "preserved_recent_tool_cycles": retained_cycles,
+            "selected_excerpts": selected_count,
+            "method": "query_aware_extract",
+        })
 
     recent_start = latest_user
     retained = 0
@@ -286,6 +375,7 @@ def compact_messages(
         "forwarded_tokens": forwarded,
         "omitted_estimated_tokens": max(0, raw - forwarded),
         "preserved_recent_turns": retained,
+        "preserved_recent_tool_cycles": 0,
         "selected_excerpts": high,
         "method": "query_aware_extract",
     })

@@ -60,6 +60,63 @@ class CompactionTests(unittest.TestCase):
         result = compact_messages(source, estimate, target=500, protocol="anthropic")
         self.assertEqual(result.messages[-3:], current)
 
+    def test_long_single_claude_tool_turn_compacts_older_cycles(self):
+        task = message("user", "Fix the booking timezone tests and keep the original requirement.")
+        cycles = []
+        for index in range(24):
+            cycles.extend([
+                message("assistant", [{"type": "tool_use", "id": f"tool_{index}",
+                                       "name": "PowerShell", "input": {"command": "python -m unittest"}}]),
+                message("user", [{"type": "tool_result", "tool_use_id": f"tool_{index}",
+                                  "content": f"test run {index}: " + "verbose output " * 70}]),
+            ])
+        cycles[-1]["content"][0]["content"] += "\nFAILED: test_dst_gap"
+        source = [message("system", "Follow project rules"), task, *cycles]
+        result = compact_messages(source, estimate, target=1_400, protocol="anthropic")
+        self.assertLessEqual(result.audit["forwarded_tokens"], 1_400)
+        self.assertEqual(result.messages[0], source[0])
+        self.assertIn(task, result.messages)
+        self.assertEqual(result.messages[-2:], cycles[-2:])
+        self.assertIn("test_dst_gap", str(result.messages[-1]))
+        self.assertTrue(result.audit["compacted"])
+
+    def test_old_thinking_is_omitted_while_current_thinking_is_exact(self):
+        source = [
+            message("user", "Find the failure"),
+            message("assistant", [
+                {"type": "thinking", "thinking": "private prior reasoning", "signature": "sig-old"},
+                {"type": "tool_use", "id": "old", "name": "Read", "input": {}},
+            ]),
+            message("user", [{"type": "tool_result", "tool_use_id": "old",
+                              "content": "FAILED: test_policy " + "noise " * 1000}]),
+            message("assistant", [
+                {"type": "thinking", "thinking": "private current reasoning", "signature": "sig-new"},
+                {"type": "tool_use", "id": "new", "name": "Read", "input": {}},
+            ]),
+            message("user", [{"type": "tool_result", "tool_use_id": "new",
+                              "content": "Current file content"}]),
+        ]
+        result = compact_messages(source, estimate, target=600, protocol="anthropic")
+        self.assertEqual(result.messages[-2:], source[-2:])
+        self.assertNotIn("private prior reasoning", str(result.messages))
+        self.assertIn("private current reasoning", str(result.messages))
+
+    def test_long_openai_tool_loop_keeps_latest_call_and_result(self):
+        task = message("user", "Finish the ledger reconciliation")
+        cycles = []
+        for index in range(18):
+            cycles.extend([
+                message("assistant", None, tool_calls=[{"id": f"call_{index}", "type": "function",
+                    "function": {"name": "run", "arguments": "{}"}}]),
+                message("tool", f"result {index}: " + "routine output " * 70,
+                        tool_call_id=f"call_{index}"),
+            ])
+        source = [task, *cycles]
+        result = compact_messages(source, estimate, target=1_200, protocol="openai")
+        self.assertIn(task, result.messages)
+        self.assertEqual(result.messages[-2:], cycles[-2:])
+        self.assertLessEqual(result.audit["forwarded_tokens"], 1_200)
+
     def test_limits_and_unsupported_media_fail_closed(self):
         source = [message("user", "old " * 1000), message("assistant", "old"),
                   message("user", "new " * 1000)]
