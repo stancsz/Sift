@@ -288,46 +288,102 @@ def compact_messages(
             retained_cycles += 1
             if retained_cycles == 4:
                 break
+        task_query = _render(messages[latest_user])
         old_before = messages[instruction_end:latest_user]
-        old_after = messages[latest_user + 1:tail_start]
-        query = _render(messages[latest_user]) + "\n" + _render(messages[-1])
-        ranked = _candidates(old_before + old_after, query)
-        options = [
-            _Candidate(candidate.message_index + instruction_end
-                       if candidate.message_index < len(old_before)
-                       else candidate.message_index + instruction_end + 1,
-                       candidate.part_index, candidate.role, candidate.text, candidate.score)
-            for candidate in ranked
+        prior_options = [
+            _Candidate(item.message_index + instruction_end, item.part_index,
+                       item.role, item.text, item.score)
+            for item in _candidates(old_before, task_query)
         ]
-        if not options:
-            raise CompactionError("no extractable historical content", code="active_too_large")
+        task_prefix = messages[:instruction_end] + [messages[latest_user]]
+        task_count = _count(count_tokens, task_prefix)
+        base = task_prefix + messages[tail_start:]
+        available = max(0, target - _count(count_tokens, base) - 256)
+        prior_quota = min(target // 6, available // 4)
+        low, high = 0, len(prior_options)
+        prior_count = 0
+        while low <= high:
+            middle = (low + high) // 2
+            trial = messages[:instruction_end]
+            if middle:
+                trial += [_summary(prior_options[:middle])]
+            trial += [messages[latest_user]]
+            if _count(count_tokens, trial) - task_count <= prior_quota:
+                prior_count = middle
+                low = middle + 1
+            else:
+                high = middle - 1
+        prior_selected = prior_options[:prior_count]
 
-        def build_tool_history(number: int) -> tuple[list[dict[str, Any]], int]:
-            selected = options[:number]
-            before = [item for item in selected if item.message_index < latest_user]
-            after = [item for item in selected if item.message_index > latest_user]
+        # Four-cycle epochs are anchored to the original task. A completed
+        # epoch's source and query never change, so its excerpt is reusable
+        # until the whole epoch ages out of the bounded prompt.
+        completed = []
+        epoch_start = latest_user + 1
+        per_epoch = max(4, min(24, target // 1_000))
+        for cycle_number in range(4, len(cycle_starts), 4):
+            epoch_end = cycle_starts[cycle_number]
+            if epoch_end > tail_start:
+                break
+            completed.append((epoch_start, epoch_end))
+            epoch_start = epoch_end
+        completed = completed[-32:]
+        epochs: list[list[_Candidate]] = []
+        for start, end in completed:
+            epochs.append([
+                _Candidate(item.message_index + start, item.part_index,
+                           item.role, item.text, item.score)
+                for item in _candidates(messages[start:end], task_query)[:per_epoch]
+            ])
+        query = task_query + "\n" + _render(messages[-1])
+        dynamic_options = [
+            _Candidate(item.message_index + epoch_start, item.part_index,
+                       item.role, item.text, item.score)
+            for item in _candidates(messages[epoch_start:tail_start], query)
+        ]
+
+        def build_tool_history(drop_epochs: int, number: int) -> tuple[list[dict[str, Any]], int]:
+            stable = [item for group in epochs[drop_epochs:] for item in group]
             output = messages[:instruction_end]
-            if before:
-                output += [_summary(before)]
+            if prior_selected:
+                output += [_summary(prior_selected)]
             output += [messages[latest_user]]
+            after = stable + dynamic_options[:number]
             if after:
                 output += [_summary(after)]
             output += messages[tail_start:]
             return output, _count(count_tokens, output)
 
-        low, high = 1, len(options)
+        reserve = min(1_024, available // 4)
+        low, high = 0, len(epochs)
+        drop_epochs = len(epochs)
+        while low <= high:
+            middle = (low + high) // 2
+            if build_tool_history(middle, 0)[1] <= target - reserve:
+                drop_epochs = middle
+                high = middle - 1
+            else:
+                low = middle + 1
+        if drop_epochs == len(epochs) and not dynamic_options and epochs:
+            # At a very tight budget, even one whole epoch may not fit. Keep
+            # as much of the newest completed epoch as the hard target allows.
+            dynamic_options = epochs[-1]
+        stable_count = sum(len(group) for group in epochs[drop_epochs:])
+        if not prior_selected and not stable_count and not dynamic_options:
+            raise CompactionError("no extractable historical content", code="active_too_large")
+        low, high = 0, len(dynamic_options)
         best: tuple[list[dict[str, Any]], int] | None = None
         selected_count = 0
         while low <= high:
             middle = (low + high) // 2
-            trial = build_tool_history(middle)
+            trial = build_tool_history(drop_epochs, middle)
             if trial[1] <= target:
                 best = trial
-                selected_count = middle
+                selected_count = prior_count + stable_count + middle
                 low = middle + 1
             else:
                 high = middle - 1
-        if best is None:
+        if best is None or selected_count == 0:
             raise CompactionError("no historical excerpt fits target", code="active_too_large")
         output, forwarded = best
         return CompactionResult(deepcopy(output), {
@@ -335,8 +391,9 @@ def compact_messages(
             "omitted_estimated_tokens": max(0, raw - forwarded),
             "preserved_recent_turns": 0,
             "preserved_recent_tool_cycles": retained_cycles,
+            "stable_epoch_excerpts": stable_count,
             "selected_excerpts": selected_count,
-            "method": "query_aware_extract",
+            "method": "epoch_extract",
         })
 
     recent_start = latest_user

@@ -130,6 +130,26 @@ class CompactionTests(unittest.TestCase):
         self.assertEqual(result.messages[-2:], cycles[-2:])
         self.assertLessEqual(result.audit["forwarded_tokens"], 1_200)
 
+    def test_completed_early_tool_epoch_keeps_stable_excerpt_prefix(self):
+        task = message("user", "Investigate invoice replay failure")
+        cycles = []
+        for index in range(15):
+            cycles.extend([
+                message("assistant", None, tool_calls=[{"id": f"call_{index}", "type": "function",
+                    "function": {"name": "run", "arguments": "{}"}}]),
+                message("tool", f"invoice replay diagnostic {index}: " + "log output " * 95,
+                        tool_call_id=f"call_{index}"),
+            ])
+        first = compact_messages([task, *cycles[:-2]], estimate, target=4_000)
+        second = compact_messages([task, *cycles], estimate, target=4_000)
+        self.assertGreater(first.audit["stable_epoch_excerpts"], 0)
+        self.assertEqual(first.audit["stable_epoch_excerpts"], second.audit["stable_epoch_excerpts"])
+        def early_lines(result):
+            return [line for line in result.messages[1]["content"].splitlines()
+                    if line.startswith("[message ") and int(line.split()[1]) <= 12]
+        self.assertEqual(early_lines(first), early_lines(second))
+        self.assertLessEqual(second.audit["forwarded_tokens"], 4_000)
+
     def test_limits_and_unsupported_media_fail_closed(self):
         source = [message("user", "old " * 1000), message("assistant", "old"),
                   message("user", "new " * 1000)]

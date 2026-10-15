@@ -4,11 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sift-context"
-version = "0.3.0"
+version = "0.4.0"
 description = "Deterministic, query-aware extractive context compaction"
 requires-python = ">=3.11"
 license = {file = "LICENSE"}
 authors = [{name = "stancsz"}]
+
+[project.optional-dependencies]
+litellm = ["litellm[extra-proxy,proxy]==1.103.0"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
