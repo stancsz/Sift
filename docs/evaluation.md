@@ -116,6 +116,16 @@ Carry the model's reasoning reserve into benchmark output limits. The first 256-
 
 The final hand-and-sieve PNG was inspected at 160 and 48 pixels on light and dark backgrounds, with a separate source-detail review. Independent visual review accepted the current asset; no remaining material defect was found at those display sizes.
 
+## Runtime admission checkpoint after 0.9.0
+
+Independent review reproduced a runtime defect in 0.9.0: the two-worker semaphore was acquired inside the executor, so additional requests could queue with large histories. A cancelled queued caller could still enter the token counter later. The candidate now admits work before executor submission, rejects overload with HTTP 429 and `Retry-After: 1`, skips a cancelled caller's queued work, and keeps already running work admitted until its thread actually finishes. Detached worker errors are consumed, submission failures release capacity, and request context variables propagate into counting. No provider call or automatic retry was added.
+
+The complete candidate suite passed 45 checks against LiteLLM 1.103.0. An independent public-callback probe verified immediate overload rejection with two blocked counters, event-loop responsiveness, running and queued cancellation, late errors, submission failures, and recovery. Already running Python threads cannot be forcibly stopped; concurrency stays bounded at two per hook instance. Subroute's automatic recovery adapter reuses this execution owner while retaining its budget and error translation; 35 focused checks passed. These are CPU/runtime checks, not new provider compatibility or task-quality results. No running gateway was restarted for this checkpoint.
+
+The portable native-client runner and its two public development fixtures remain under review. Independent review caught a gold-file collision, an invalid test-loop success condition, ambiguous native executable discovery, and a Windows descendant-cleanup gap before any new inference calls. These findings must be fixed and rechecked before its reports count as evidence. Public authored fixtures are development controls, not a held-out corpus.
+
+Checkpoint lesson: reserve capacity before retaining work in an executor queue, and preserve the reservation until the real worker finishes. Benchmark acceptance also needs native command exit status and owned descendant cleanup; parsing an `OK` line alone can certify a failed command incorrectly.
+
 ## Next quality gate
 
 Collect a larger consented corpus of genuine long agent sessions and annotate must-retain spans before tuning. Include queries requiring facts without direct lexical overlap, conflicting revisions, and facts whose exact source matters. Compare answer correctness and latency against protocol-preserving head/tail and model-based baselines at the same forwarded-token budget. Current measurements do not establish a general recall rate or a mature optimum.

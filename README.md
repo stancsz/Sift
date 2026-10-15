@@ -30,7 +30,7 @@ For example, a gateway can accept a history of up to **1,000,000 estimated token
 Install the tagged release from GitHub. Sift is not currently published to PyPI.
 
 ```sh
-python -m pip install "sift-context[litellm] @ git+https://github.com/stancsz/Sift.git@v0.9.0"
+python -m pip install "sift-context[litellm] @ git+https://github.com/stancsz/Sift.git@v0.9.1"
 ```
 
 Put a callback instance beside your LiteLLM configuration:
@@ -55,7 +55,7 @@ litellm_settings:
 
 `local-chat` is the resolved public model name in your proxy configuration. Set a target for each model you want compacted. If a routing callback changes the model name, place it before Sift. The [complete example](examples/litellm_config.yaml) includes a local OpenAI-compatible route; [the callback file](examples/litellm_callback.py) can be copied alongside it.
 
-The callback supports **Chat Completions, Anthropic Messages, and stateless text Responses** on **LiteLLM Proxy 1.103.0**, pinned by the optional dependency. It uses the proxy's route counter, runs CPU work off the event loop with at most two concurrent compactions, and adds a server-owned `sift` audit to internal metadata. Configured routes return `x-sift-compacted` and estimated input/forwarded token headers. Requests below target keep their original messages or input and tools.
+The callback supports **Chat Completions, Anthropic Messages, and stateless text Responses** on **LiteLLM Proxy 1.103.0**, pinned by the optional dependency. It uses the proxy's route counter, runs CPU work off the event loop with at most two admitted compactions per hook instance, and adds a server-owned `sift` audit to internal metadata. Excess work receives HTTP 429 with `Retry-After: 1`. Cancelled queued work is skipped; already running Python work retains its slot until it finishes. Configured routes return `x-sift-compacted` and estimated input/forwarded token headers. Requests below target keep their original messages or input and tools.
 
 The integration uses private LiteLLM counting/conversion methods, so upgrading LiteLLM requires compatibility testing. Counting copies repair missing array `items` and account for tool schema text that this version's formatter skips. Original provider definitions stay exact. Sift leaves provider transport, streaming, retries, and public protocols to LiteLLM. [LiteLLM callback reference](https://docs.litellm.ai/docs/proxy/call_hooks).
 
@@ -110,7 +110,7 @@ Read [the algorithm and acceptance contract](docs/algorithm.md) for selection ru
 ## Reproduce and contribute
 
 ```sh
-git clone --branch v0.9.0 https://github.com/stancsz/Sift.git
+git clone --branch v0.9.1 https://github.com/stancsz/Sift.git
 cd Sift
 python -m pip install -e .
 python -m unittest discover -s tests -q

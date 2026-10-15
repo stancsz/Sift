@@ -6,7 +6,7 @@ A mature release needs evidence across real Claude Code and Codex tasks, not onl
 
 ## Current foundation
 
-Version 0.9.0 provides deterministic extraction, caller-owned hard input budgets, exact essential active work, neighboring diagnostic evidence, bounded identifier joins, failed-test identifiers, and fixed tool-cycle boundaries for prefix reuse. Its optional callback targets LiteLLM Proxy 1.103.0 and supports Chat Completions, Anthropic Messages, and a stateless text Responses subset. Selected live checks confirm protocol compatibility and cache reuse inside one boundary. Native client tasks still have independent acceptance failures. See [the evaluation record](docs/evaluation.md).
+Version 0.9.1 provides deterministic extraction, caller-owned hard input budgets, exact essential active work, neighboring diagnostic evidence, bounded identifier joins, failed-test identifiers, and fixed tool-cycle boundaries for prefix reuse. Its optional callback targets LiteLLM Proxy 1.103.0 and supports Chat Completions, Anthropic Messages, and a stateless text Responses subset. Admission and cancellation keep CPU work bounded, including queued callers. Selected live checks confirm protocol compatibility and cache reuse inside one boundary. Native client tasks still have independent acceptance failures. See [the evaluation record](docs/evaluation.md).
 
 ## 1. Establish trustworthy agent acceptance
 

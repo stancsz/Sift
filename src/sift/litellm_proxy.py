@@ -7,6 +7,7 @@ The core package remains independent of LiteLLM until this module is imported.
 from __future__ import annotations
 
 import asyncio
+import contextvars
 from copy import deepcopy
 import json
 import logging
@@ -193,6 +194,43 @@ class SiftLiteLLMHook(CustomLogger):
         self.raw_limit = raw_limit
         self._slots = threading.BoundedSemaphore(2)
 
+    async def _compact(self, router: Any, data: dict, *, call_type: str,
+                       target: int) -> dict | None:
+        """Bound admission before executor submission, including cancelled work.
+
+        A Python thread already running cannot be stopped safely. It keeps its
+        slot until it finishes. A cancelled caller's queued worker skips work.
+        """
+        if not self._slots.acquire(blocking=False):
+            raise HTTPException(429, detail="Sift is busy", headers={"Retry-After": "1"})
+        abandoned = threading.Event()
+
+        def run() -> dict | None:
+            try:
+                if abandoned.is_set():
+                    return None
+                return compact_proxy_request(
+                    router, data, call_type=call_type,
+                    target=target, raw_limit=self.raw_limit,
+                )
+            finally:
+                self._slots.release()
+
+        try:
+            context = contextvars.copy_context()
+            worker = asyncio.get_running_loop().run_in_executor(None, context.run, run)
+        except BaseException:
+            self._slots.release()
+            raise
+        # Retrieving a detached worker's error avoids an unhandled-future warning;
+        # an attached caller still receives the original result or exception.
+        worker.add_done_callback(lambda future: None if future.cancelled() else future.exception())
+        try:
+            return await asyncio.shield(worker)
+        except asyncio.CancelledError:
+            abandoned.set()
+            raise
+
     async def async_pre_call_hook(self, user_api_key_dict: Any, cache: Any,
                                   data: dict, call_type: str) -> dict | None:
         model = data.get("model")
@@ -205,18 +243,7 @@ class SiftLiteLLMHook(CustomLogger):
         if router is None:
             raise HTTPException(503, detail="Sift token counter is unavailable")
 
-        def run() -> dict[str, Any]:
-            if not self._slots.acquire(timeout=1):
-                raise HTTPException(429, detail="Sift is busy")
-            try:
-                return compact_proxy_request(
-                    router, data, call_type=call_type,
-                    target=target, raw_limit=self.raw_limit,
-                )
-            finally:
-                self._slots.release()
-
-        return await asyncio.to_thread(run)
+        return await self._compact(router, data, call_type=call_type, target=target)
 
     async def async_post_call_response_headers_hook(
         self, data: dict, user_api_key_dict: Any, response: object,
