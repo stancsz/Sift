@@ -4,6 +4,14 @@
 
 Run a reproducible, provider-attributed comparison of Sift against full-context prompting on a frozen 100-task LongBench v2 development sample. Measure answer quality, input tokens, upstream-reported cost, cache use, and latency. Use the evidence to decide what Sift can claim and what to improve next.
 
+## Execution plan
+
+1. Use OpenRouter's `minimax/minimax-m3` route for both arms, pin requests to the MiniMax provider, and disable provider fallbacks. Recheck the selected endpoint, prompt limit, pricing, credentials, and frozen source hashes before spending on the main run.
+2. On the frozen 100-task public training-split sample, compare full-context prompts with Sift-compressed prompts at a 32,768-token target. Run three paired repeats per task with matched settings and seeds, for 600 generations total. Keep the task wording, question, and message roles consistent between arms.
+3. Start only after the Qwen job is terminal and the one-task smoke, request-size checks, receipt validation, and spend gates pass. Use two workers and a $19 primary-run ceiling, keeping total smoke-plus-main spend within the $20 working budget. This client-side ceiling is best-effort because already dispatched calls may still bill.
+4. Preserve every response and receipt. Compare answer accuracy and paired task outcomes alongside provider prompt-token reduction, cache-inclusive upstream cost, reconstructed uncached cost, latency, preprocessing, and wall-clock time. Report cache effects and sample limits next to any savings claim.
+5. Review the task-level failures, make only evidence-backed Sift changes, then rerun the same frozen sample and settings for a paired before/after readout. Publish only claims supported by those results; this sample is not a full-suite score or a blind holdout.
+
 ## Route and limits
 
 - Send both arms through OpenRouter using `minimax/minimax-m3`, pinned to provider `minimax` with provider fallbacks disabled. Do not use an automatic model alias or let requests switch providers. Verify and save the returned provider and model for every response; exclude route deviations from the counted result and report them.
@@ -53,5 +61,5 @@ After acceptance, publish the protocol and raw aggregateable results in `docs/ev
 - Two paired longest-task smoke artifacts exist: `docs/results/longbench-v2-minimax-m3-smoke-longest-2026-10-16.json` and `docs/results/longbench-v2-minimax-m3-smoke-guard-2026-10-16.json`. Both confirmed MiniMax attribution, HTTP 200, valid choices, and provider/local input counts in agreement. They are one task only and establish no quality claim. The second smoke exercised the 1.5× spend guard.
 - The smokes show implicit caching can materially change observed costs: the later smoke had near-total prompt cache hits. The cost-reporting plan above therefore separates actual cache-inclusive cost from a reconstructed uncached estimate.
 - The main 100 × 3 paired evaluation has **not** started. The runner now requires BYOK mode with a positive upstream cost receipt and records run/per-request seeds, outbound message hashes, request timestamps, and Sift preprocessing time. The manifest freezes and verifies the runner, protocol, sample preparer, dataset helper, renderer, and core hashes; targeted local preflight and receipt assertions passed. Codex Advisor council recommends proceeding only after the Qwen run completes and the live route/pricing and budget gates are rechecked. The primary-run ceiling is $19.00.
-- The separate Qwen run remains live at 87/100 tasks. Keep it undisturbed until terminal; its existing prompt-cache behavior makes it exploratory evidence only.
+- The separate Qwen run remains active. Keep it undisturbed until terminal; its existing prompt-cache behavior makes it exploratory evidence only.
 - A separate exploratory Qwen run is not evidence for this MiniMax comparison. Preserve it without restarting its service until its current run ends; disclose its cache conditions if it is later used as context.
