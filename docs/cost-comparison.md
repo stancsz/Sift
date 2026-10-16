@@ -9,46 +9,66 @@ invoice.
 
 ## A simple price example
 
-For scale, suppose a single request would otherwise send **1,000,000 uncached
-input tokens** to GPT-6 Astra. At the standard API rates checked on 2026-10-16,
-uncached short-context input is $10.00 per million tokens. Because this
-baseline exceeds 272,000 input tokens, Astra applies long-context prices to
-the full request: $20.00 per million input tokens and $75.00 per million
-output tokens. If Sift instead causes the provider to receive **24,576
-billable input tokens**, its input charge is $0.2458. Assume both runs
-generate the same 10,000 output tokens.
+For scale, suppose one uncached request would otherwise send 500,000 or
+1,000,000 input tokens, and Sift instead has a **32,768-token estimated
+forwarding target**. Assume both runs generate the same 10,000 output tokens,
+and that the provider bills exactly the estimated forwarded count. These
+examples use standard global API rates checked on 2026-10-16.
 
-| One request, no prompt cache | Input charge | Output charge | Total |
+| Provider and input | Without Sift | With Sift | Modeled reduction |
 |---|---:|---:|---:|
-| Without Sift | $20.0000 | $0.7500 | $20.7500 |
-| With Sift | $0.2458 | $0.5000 | $0.7458 |
-| Difference | $19.7542 less | $0.2500 less | $20.0042 less (96.4%) |
+| GPT-6 Astra, 500K | $10.7500 | $0.8277 | 92.3% |
+| GPT-6 Astra, 1M | $20.7500 | $0.8277 | 96.0% |
+| Claude Opus 5.5, 500K | $2.2000 | $0.3311 | 85.0% |
+| Claude Opus 5.5, 1M | $4.2000 | $0.3311 | 92.1% |
+
+Astra uses its long-context rates for the entire request above 272,000 input
+tokens: $20 per million input and $75 per million output. The 32,768-token
+Sift request is below that threshold: $10 per million input and $50 per
+million output. Claude Opus 5.5 standard global rates are $4 per million
+input and $20 per million output across its 1M context window. For example,
+the 1M Astra baseline is $20 input + $0.75 output; the 32,768-token estimate
+is $0.3277 input + $0.50 output. The 1M Opus 5.5 baseline is $4 input +
+$0.20 output; the shortened estimate is $0.1311 input + $0.20 output.
+
+This is arithmetic for one request, not a measured 500K–1M multi-turn task.
+It does not establish preserved task quality, whole-conversation savings, or
+faster completion. A real conversation bills each turn and can include cache
+reads/writes, reasoning or auxiliary tokens, tools, retries, and output. If
+Sift changes the accepted-task rate, the cost per accepted task can move in a
+different direction from the per-request example. The project has not run the
+matched 500K–1M Astra/Opus task comparison yet.
+
+Current model cards: [GPT-6 Astra](https://developers.openai.com/api/docs/models/gpt-6-astra)
+and [Claude Opus 5.5](https://platform.claude.com/docs/en/models/opus-5-5/overview).
+Rates checked 2026-10-16. Claude Opus 4.8 rates are not used in the comparison
+above.
 
 ### Warm-prefix sensitivity
 
 The cold-cache table is not the only useful comparison. For one follow-up
 request, assume the 1,000,000-token full prompt is already cached for 95% of
-its input, while the 24,576-token Sift prompt has either the same 95% cache
+its input, while the 32,768-token Sift prompt has either the same 95% cache
 share or no cache hit. This excludes the earlier cache-write bill and keeps
 the same 10,000 output tokens.
 
 | One warm follow-up request | Input charge | Output charge | Total |
 |---|---:|---:|---:|
 | Without Sift, 95% cached | $2.9000 | $0.7500 | $3.6500 |
-| With Sift, 95% cached | $0.0356 | $0.5000 | $0.5356 |
-| With Sift, no cache hit | $0.2458 | $0.5000 | $0.7458 |
+| With Sift, 95% cached | $0.0475 | $0.5000 | $0.5475 |
+| With Sift, no cache hit | $0.3277 | $0.5000 | $0.8277 |
 
-Under these assumptions Sift is $3.11 (85.3%) cheaper with a matching 95%
-cache share, or $2.90 (79.6%) cheaper if its shortened prompt gets no cache
+Under these Astra assumptions Sift is $3.10 (85.0%) cheaper with a matching 95%
+cache share, or $2.82 (77.3%) cheaper if its shortened prompt gets no cache
 hit. These are price sensitivities, not measured cache rates or task savings.
 Sift's effect on prefix reuse must be measured from provider usage; include the
 initial cache-write cost when calculating a whole conversation or task.
 
-The cold-cache table is arithmetic for stated token counts, not a measured Sift
-task result. It assumes provider-counted input equals the example counts, no
-cache hits or writes, equal task success, and equal output token counts; retries
-and tool charges are excluded. The 24,576 Sift target is an estimate; the
-actual request can count differently. The 1M input example is not a claim that
+The tables are arithmetic for stated token counts, not measured Sift task
+results. They assume provider-counted input equals the example counts, no
+cache hits or writes for the cold table, equal task success, and equal output
+token counts; retries and tool charges are excluded. The 32,768 Sift target is
+an estimate; the actual request can count differently. The 1M input example is not a claim that
 every request, including its tools and output reserve, fits a 1.05M context
 window. Use provider invoices and usage for actual totals.
 
@@ -121,8 +141,8 @@ Sift reduced mean local Qwen input from 26,822 to 19,347 tokens (27.9%), but
 scored 15/48 repeated answers versus 20/48 for full context. This does not
 support claiming equal-quality savings. Applying Astra's price to Qwen token
 counts would be a rough illustration only; provider tokenization, caching,
-and billed usage must be measured on Astra. The large 1M-to-24,576 example
-above remains price arithmetic under an equal-success assumption, not a result
+and billed usage must be measured on Astra. The 500K/1M-to-32,768 examples
+above remain price arithmetic under an equal-success assumption, not a result
 we have demonstrated for current Sift. See the [evaluation record](evaluation.md).
 
 A fresh six-case public LongBench v2 Table QA screen used MiniMax M3 through
