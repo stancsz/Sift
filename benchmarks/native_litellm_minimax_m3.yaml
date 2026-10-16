@@ -11,6 +11,8 @@ model_list:
       api_key: os.environ/OPENROUTER_API_KEY
       api_base: https://openrouter.ai/api/v1
       use_chat_completions_api: true
+      stream_options:
+        include_usage: true
       reasoning:
         exclude: true
       max_tokens: 4096
