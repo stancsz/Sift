@@ -4,6 +4,10 @@
 
 Run a reproducible, provider-attributed comparison of Sift against full-context prompting on a frozen 100-task LongBench v2 development sample. Measure answer quality, input tokens, upstream-reported cost, cache use, and latency. Use the evidence to decide what Sift can claim and what to improve next.
 
+## OpenRouter MiniMax plan
+
+Use OpenRouter's MiniMax M3 route for a paired comparison: send each selected LongBench v2 task once with its full prompt and once with the same task compressed by Sift to a 32,768-token target. Pin both arms to the MiniMax provider with fallbacks disabled, run three matched repeats across 100 frozen tasks, and retain per-request provider, token, cache, cost, latency, and scoring receipts. Start the 600-generation main run only after the active Qwen evaluation is terminal and the live endpoint, source hashes, request-size preflight, smoke receipts, and spend gates pass. Analyze quality and efficiency together; distinguish observed cache-inclusive cost from reconstructed uncached estimates, and publish only results supported by the task-level evidence.
+
 ## Execution plan
 
 1. Use OpenRouter's `minimax/minimax-m3` route for both arms, pin requests to the MiniMax provider, and disable provider fallbacks. Recheck the selected endpoint, prompt limit, pricing, credentials, and frozen source hashes before spending on the main run.
