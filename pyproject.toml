@@ -16,7 +16,7 @@ Homepage = "https://github.com/stancsz/Sift"
 Issues = "https://github.com/stancsz/Sift/issues"
 
 [project.optional-dependencies]
-litellm = ["litellm[extra-proxy,proxy]==1.103.0"]
+litellm = ["litellm[proxy]==1.103.0"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

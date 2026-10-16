@@ -6,6 +6,16 @@ This page separates span retention, runtime compatibility, and model answers. Th
 
 `python -m unittest discover -s tests -q` covers budget enforcement, message preservation, Anthropic and OpenAI tool loops, the optional LiteLLM callback, old thinking blocks, neighboring diagnostics, distant identifier joins, repetitive log noise, unsupported inputs, and seeded middle-fact placement. The 0.9.0 suite has 42 passing tests with LiteLLM 1.103.0, including five actual SDK loopback tests for native terminal/usage provenance. The packaged wheel's Sift code passed the suite inside the staging runtime; a clean Python 3.14 core install passed 23 tests and explicitly skipped 19 optional integration tests. Subroute's focused integration/configuration suite passed 35 tests. `python benchmarks/compare.py` uses 100 authored placements of a unique fact in the middle of a noisy history. Sift retained 100/100; an 800-character head/tail slice retained 0/100. This benchmark is designed around Sift's query-aware selection and does not estimate general recall.
 
+The current `0.11.0.dev0` source checkout was also wheel-built and installed
+into a clean Python 3.14 environment with the pinned LiteLLM 1.103.0 proxy
+extra. `python -m unittest discover -s tests -q` passed all 98 tests with no
+skips, and `pip check` reported no broken requirements. This verifies the
+candidate's declared install and callback test path, not a public release or
+provider task quality. The optional dependency now requests LiteLLM's `proxy`
+extra only; the additional `extra-proxy` integration set was not needed by
+Sift's callback and introduced unrelated key-management, vector-search, and
+A2A dependencies.
+
 The 0.3.0 regression places `FAILED test_invoice_total` beside a `rounding_mode=HALF_EVEN` clue in a 1,000-line log. Under the same 700-token budget, 0.2.0 retained the failure name but lost the adjacent clue; 0.3.0 retains both. This is a concrete causal-context failure of isolated excerpt selection, not proof that all agent failures came from Sift. A separate 90,000-distinct-line, 784,764-estimated-token case retained the same pair and forwarded 16,420 estimated tokens under a 24,576-token target in 0.68 seconds on one Windows desktop.
 
 ## Private agent-trace replay
