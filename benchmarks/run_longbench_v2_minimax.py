@@ -1,12 +1,20 @@
-"""Run a frozen MiniMax M3 LongBench sample through OpenRouter in parallel."""
+"""Run a frozen MiniMax M3 LongBench sample through OpenRouter in parallel.
+
+The default run compares full context with one primary Sift target (32K) on
+every selected case, including cases where Sift is a pass-through. A local
+tokenizer-based cost estimate must fit under the configured ceiling before
+the first provider request is sent.
+"""
 
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from copy import deepcopy
+from collections import deque
 from datetime import datetime, timezone
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import random
@@ -31,17 +39,34 @@ from prepare_longbench_v2 import (  # noqa: E402
     prompt_sha256,
 )
 from prepare_longbench_v2_minimax import (  # noqa: E402
-    MODEL_ID,
-    SIFT_TARGETS,
     render_minimax,
 )
 from sift import compact_messages  # noqa: E402
 
 
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
+REQUESTED_MODEL = "minimax/minimax-m3"
 OUTPUT_TOKENS = 16
 MAX_WORKERS = 4
 SAFETY_MARGIN = 128
+DEFAULT_TARGET = 32_768
+DEFAULT_REPEATS = 3
+# Defaults use prior observed MiniMax BYOK upstream usage receipts. Override
+# these flags if the rates applicable to the account have changed.
+DEFAULT_INPUT_PRICE_PER_MILLION = 0.30
+DEFAULT_OUTPUT_PRICE_PER_MILLION = 1.20
+DEFAULT_ESTIMATED_SPEND_CEILING_USD = 20.0
+# Earlier OpenRouter measurements included a 2.98x local/provider token-count
+# divergence for a large prompt. Use a 4x local-token reserve for both preflight
+# and dispatch gating until the route has broader audited receipts. This remains
+# a best-effort local guard, not a provider-enforced hard cap.
+INPUT_ESTIMATE_SAFETY_FACTOR = 4.0
+OPENROUTER_REQUEST_TOKEN_LIMIT = 524_288
+PROVIDER_CONTEXT_ESTIMATE_FACTOR = 3.25
+FULL_CASE_COUNT = 100
+FULL_REPEATS = 3
+PRIMARY_TARGET = 32_768
+MAX_FULL_LOCAL_TOKENS = 150_000
 class EvaluationError(RuntimeError):
     pass
 
@@ -53,6 +78,18 @@ def count_prompt(tokenizer: Tokenizer, messages: list[dict[str, str]]) -> int:
 
 def load_cases(manifest_path: Path, dataset_path: Path, tokenizer_path: Path, template_path: Path):
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if manifest.get("model", {}).get("id") != REQUESTED_MODEL:
+        raise EvaluationError(f"Frozen manifest must target {REQUESTED_MODEL}")
+    frozen_cases = manifest.get("cases")
+    if not isinstance(frozen_cases, list) or len(frozen_cases) != FULL_CASE_COUNT:
+        raise EvaluationError(f"Frozen manifest must contain exactly {FULL_CASE_COUNT} cases")
+    case_ids = [case.get("id") for case in frozen_cases if isinstance(case, dict)]
+    if len(case_ids) != FULL_CASE_COUNT or len(set(case_ids)) != FULL_CASE_COUNT:
+        raise EvaluationError("Frozen manifest must contain exactly 100 distinct case IDs")
+    if manifest.get("selection", {}).get("selected_count") != FULL_CASE_COUNT:
+        raise EvaluationError("Frozen manifest metadata must record exactly 100 selected cases")
+    if manifest.get("sift", {}).get("primary_target_tokens") != PRIMARY_TARGET:
+        raise EvaluationError(f"Frozen manifest target must be {PRIMARY_TARGET} tokens")
     if manifest["dataset"]["revision"] != DATASET_REVISION or manifest["dataset"]["data_file_sha256"] != DATASET_SHA256:
         raise EvaluationError("Frozen sample does not use the pinned LongBench v2 dataset")
     if file_sha256(dataset_path) != DATASET_SHA256:
@@ -83,11 +120,26 @@ def load_cases(manifest_path: Path, dataset_path: Path, tokenizer_path: Path, te
         actual_count = count_prompt(tokenizer, messages)
         if actual_count != frozen["m3_rendered_prompt_tokens"]:
             raise EvaluationError(f"MiniMax tokenizer count changed: {frozen['id']}")
+        if not PRIMARY_TARGET < actual_count <= MAX_FULL_LOCAL_TOKENS:
+            raise EvaluationError(
+                f"Frozen full prompt must be >{PRIMARY_TARGET} and <= {MAX_FULL_LOCAL_TOKENS} "
+                f"local M3 tokens: {frozen['id']}={actual_count}"
+            )
+        projected_provider_count = math.ceil(actual_count * PROVIDER_CONTEXT_ESTIMATE_FACTOR)
+        if projected_provider_count > OPENROUTER_REQUEST_TOKEN_LIMIT:
+            raise EvaluationError(
+                f"Frozen full prompt projects beyond the observed OpenRouter request limit: "
+                f"{frozen['id']} local={actual_count}, projected={projected_provider_count}, "
+                f"limit={OPENROUTER_REQUEST_TOKEN_LIMIT}"
+            )
+        if row["answer"] not in {"A", "B", "C", "D"}:
+            raise EvaluationError(f"Invalid LongBench v2 answer key: {frozen['id']}")
         prepared.append({"frozen": frozen, "messages": messages, "full_count": actual_count})
     return manifest, tokenizer, prepared
 
 
-def make_jobs(cases: list[dict], tokenizer: Tokenizer, seed: int, repeat: int) -> list[dict]:
+def make_jobs(cases: list[dict], tokenizer: Tokenizer, seed: int, repeat: int,
+              target_tokens: int) -> list[dict]:
     jobs = []
     for case in cases:
         frozen = case["frozen"]
@@ -101,33 +153,41 @@ def make_jobs(cases: list[dict], tokenizer: Tokenizer, seed: int, repeat: int) -
             "target": None,
             "messages": deepcopy(case["messages"]),
             "estimated_tokens": full_count,
+            "projected_provider_tokens": math.ceil(full_count * PROVIDER_CONTEXT_ESTIMATE_FACTOR),
             "selector_audit": None,
             "repeat": repeat,
             "generation_seed": seed + repeat + 1,
         })
-        for target in SIFT_TARGETS:
-            effective_target = target - SAFETY_MARGIN
-            if full_count <= effective_target:
-                continue
-            result = compact_messages(
-                case["messages"], lambda value: count_prompt(tokenizer, value),
-                target=effective_target, raw_limit=1_000_000, protocol="openai",
-            )
-            measured = count_prompt(tokenizer, result.messages)
-            if measured > effective_target:
-                raise EvaluationError(f"Sift prompt exceeds target for {case_id} at {target}")
-            jobs.append({
-                "case_id": case_id,
-                "domain": frozen["domain"],
-                "expected": frozen["answer_key"],
-                "arm": "sift",
-                "target": target,
-                "messages": result.messages,
-                "estimated_tokens": measured,
-                "selector_audit": result.audit,
-                "repeat": repeat,
-                "generation_seed": seed + repeat + 1,
-            })
+        effective_target = target_tokens - SAFETY_MARGIN
+        if effective_target <= 0:
+            raise EvaluationError("target must be larger than the safety margin")
+        below_budget_before_selection = full_count <= effective_target
+        result = compact_messages(
+            case["messages"], lambda value: count_prompt(tokenizer, value),
+            target=effective_target, raw_limit=1_000_000, protocol="openai",
+        )
+        measured = count_prompt(tokenizer, result.messages)
+        if measured > effective_target:
+            raise EvaluationError(f"Sift prompt exceeds target for {case_id} at {target_tokens}")
+        projected_provider_count = math.ceil(measured * PROVIDER_CONTEXT_ESTIMATE_FACTOR)
+        if projected_provider_count > OPENROUTER_REQUEST_TOKEN_LIMIT:
+            raise EvaluationError(f"Sift prompt projects beyond the observed OpenRouter request limit: {case_id}")
+        passthrough = result.messages == case["messages"]
+        jobs.append({
+            "case_id": case_id,
+            "domain": frozen["domain"],
+            "expected": frozen["answer_key"],
+            "arm": "sift",
+            "target": target_tokens,
+            "messages": result.messages,
+            "estimated_tokens": measured,
+            "projected_provider_tokens": projected_provider_count,
+            "passthrough": passthrough,
+            "below_budget_before_selection": below_budget_before_selection,
+            "selector_audit": result.audit,
+            "repeat": repeat,
+            "generation_seed": seed + repeat + 1,
+        })
     random.Random(seed + repeat).shuffle(jobs)
     return jobs
 
@@ -144,9 +204,13 @@ def call_openrouter(job: dict, *, api_key: str, seed: int) -> dict:
     usage = None
     finish_reason = None
     provider = None
+    returned_model = None
+    response_id = None
     status = None
+    raw_sse_events: list[str] = []
+    raw_error_body = None
     payload = {
-        "model": MODEL_ID,
+        "model": REQUESTED_MODEL,
         "messages": job["messages"],
         "temperature": 0.1,
         "top_p": 0.8,
@@ -155,7 +219,7 @@ def call_openrouter(job: dict, *, api_key: str, seed: int) -> dict:
         "reasoning": {"enabled": False},
         "stream": True,
         "stream_options": {"include_usage": True},
-        "provider": {"sort": "throughput", "allow_fallbacks": True},
+        "provider": {"only": ["minimax"], "allow_fallbacks": False},
     }
     try:
         with requests.post(
@@ -167,19 +231,26 @@ def call_openrouter(job: dict, *, api_key: str, seed: int) -> dict:
         ) as response:
             status = response.status_code
             if status != 200:
-                body = response.text[:2_000]
-                return {"http_status": status, "normal": False, "failure": body,
+                raw_error_body = response.text
+                return {"http_status": status, "normal": False,
+                        "failure": "non_200_response", "raw_error_body": raw_error_body,
+                        "raw_sse_events": raw_sse_events, "raw_response_body": None,
+                        "model": None, "provider": None, "usage": None,
+                        "cost_details": None, "response_id": None,
                         "end_to_end_ms": (time.perf_counter() - started) * 1000}
             for line in response.iter_lines(decode_unicode=True):
                 if not line or not line.startswith("data:"):
                     continue
                 value = line[5:].strip()
+                raw_sse_events.append(value)
                 if value == "[DONE]":
                     break
                 chunk = json.loads(value)
                 if chunk.get("usage") is not None:
                     usage = chunk["usage"]
                 provider = chunk.get("provider") or provider
+                returned_model = chunk.get("model") or returned_model
+                response_id = chunk.get("id") or response_id
                 for choice in chunk.get("choices", []):
                     if choice.get("finish_reason") is not None:
                         finish_reason = choice["finish_reason"]
@@ -189,19 +260,41 @@ def call_openrouter(job: dict, *, api_key: str, seed: int) -> dict:
                         if first_content is None:
                             first_content = time.perf_counter()
                         text_parts.append(visible)
-    except (requests.RequestException, json.JSONDecodeError) as error:
-        return {"http_status": status, "normal": False, "failure": type(error).__name__,
-                "end_to_end_ms": (time.perf_counter() - started) * 1000}
+    except Exception as error:
+        return {
+            "http_status": status,
+            "normal": False,
+            "failure": type(error).__name__,
+            "failure_message": str(error),
+            "raw_error_body": raw_error_body,
+            "raw_sse_events": raw_sse_events,
+            "raw_response_body": "\n".join(raw_sse_events),
+            "model": returned_model,
+            "provider": provider,
+            "response_id": response_id,
+            "usage": usage,
+            "cost_details": usage.get("cost_details") if isinstance(usage, dict) else None,
+            "end_to_end_ms": (time.perf_counter() - started) * 1000,
+        }
 
     ended = time.perf_counter()
     text = "".join(text_parts)
     choice = parse_choice(text)
     completion_tokens = usage.get("completion_tokens") if isinstance(usage, dict) else None
     elapsed_after_first = ended - first_content if first_content is not None else None
+    failure = None
+    if returned_model != REQUESTED_MODEL:
+        failure = "returned_model_missing_or_mismatched"
+    elif not isinstance(provider, str) or provider.strip().casefold() != "minimax":
+        failure = "returned_provider_missing_or_mismatched"
+    normal = finish_reason == "stop" and first_content is not None and failure is None
     return {
         "http_status": status,
-        "normal": finish_reason == "stop" and first_content is not None,
+        "normal": normal,
+        "failure": failure,
         "finish_reason": finish_reason,
+        "model": returned_model,
+        "response_id": response_id,
         "answer": text[:500],
         "choice": choice,
         "valid_structured_choice": choice is not None,
@@ -213,24 +306,183 @@ def call_openrouter(job: dict, *, api_key: str, seed: int) -> dict:
         ),
         "provider": provider,
         "usage": usage,
+        "cost_details": usage.get("cost_details") if isinstance(usage, dict) else None,
+        "raw_sse_events": raw_sse_events,
+        "raw_response_body": "\n".join(raw_sse_events),
+        "raw_error_body": raw_error_body,
     }
 
 
+def estimate_budget(jobs: list[dict], repeats: int, *, input_price_per_million: float,
+                    output_price_per_million: float, ceiling_usd: float) -> dict:
+    """Estimate the planned run from local M3 rendered tokens and output caps."""
+    input_tokens = sum(job["estimated_tokens"] for job in jobs)
+    conservative_input_tokens = input_tokens * INPUT_ESTIMATE_SAFETY_FACTOR
+    output_tokens = len(jobs) * OUTPUT_TOKENS
+    estimated_input_cost = conservative_input_tokens * input_price_per_million / 1_000_000
+    estimated_output_cost = output_tokens * output_price_per_million / 1_000_000
+    estimated = estimated_input_cost + estimated_output_cost
+    return {
+        "basis": "local published MiniMax tokenizer rendered counts; provider usage is authoritative after calls",
+        "planned_requests": len(jobs),
+        "repeats": repeats,
+        "estimated_input_tokens": input_tokens,
+        "conservative_input_tokens_for_budget": conservative_input_tokens,
+        "estimated_max_output_tokens": output_tokens,
+        "input_price_usd_per_million": input_price_per_million,
+        "output_price_usd_per_million": output_price_per_million,
+        "estimated_input_cost_usd": estimated_input_cost,
+        "estimated_max_output_cost_usd": estimated_output_cost,
+        "estimated_total_cost_usd": estimated,
+        "ceiling_usd": ceiling_usd,
+        "preflight_passed": estimated <= ceiling_usd,
+        "actual_openrouter_reported_cost_usd": 0.0,
+        "actual_upstream_reported_cost_usd": 0.0,
+        "actual_cost_basis": "separate OpenRouter and upstream-reported fields; guard settles to the larger reported value when both exist, otherwise the available value; provider receipts are not invoice-verified",
+        "input_estimate_safety_factor": INPUT_ESTIMATE_SAFETY_FACTOR,
+        "input_estimate_note": "Budget guard reserves 4x local MiniMax rendered-token counts based on a prior ~2.98x provider/local discrepancy. A separate 3.25x context projection checks the previously observed 524,288-token OpenRouter request limit. Both are best-effort estimates, not provider-enforced limits or guaranteed invoice bounds.",
+        "pricing_source": "Prior observed OpenRouter BYOK M3 receipts: approximately $0.30/M input and $1.20/M output; configurable because account/provider rates may vary.",
+        "budget_guard_spend_usd": 0.0,
+        "budget_guard_settlement_note": "Reported provider cost when available; otherwise the reserved estimate is charged against the guard. This accounting value is not an invoice.",
+        "unknown_cost_receipts": 0,
+        "unknown_cost_job_ids": [],
+        "budget_guard_stopped": False,
+    }
+
+
+def estimate_job_guard_cost(job: dict, input_price_per_million: float,
+                            output_price_per_million: float) -> float:
+    conservative_input = job["estimated_tokens"] * INPUT_ESTIMATE_SAFETY_FACTOR
+    return (
+        conservative_input * input_price_per_million
+        + OUTPUT_TOKENS * output_price_per_million
+    ) / 1_000_000
+
+
+def cost_receipt(usage: Any) -> tuple[float | None, str]:
+    """Return one guard-settlement amount, or None when the receipt is unknown."""
+    if not isinstance(usage, dict):
+        return None, "missing_usage"
+    details = usage.get("cost_details")
+    upstream = details.get("upstream_inference_cost") if isinstance(details, dict) else None
+    direct = usage.get("cost")
+    valid_upstream = (
+        float(upstream) if isinstance(upstream, (int, float)) and math.isfinite(float(upstream)) else None
+    )
+    valid_direct = (
+        float(direct) if isinstance(direct, (int, float)) and math.isfinite(float(direct)) else None
+    )
+    if valid_upstream is not None and valid_direct is not None:
+        return max(valid_upstream, valid_direct), "max_upstream_or_openrouter_cost"
+    if valid_upstream is not None:
+        return valid_upstream, "upstream_inference_cost"
+    if usage.get("is_byok") is True:
+        return None, "byok_without_upstream_cost"
+    if valid_direct is not None:
+        return valid_direct, "openrouter_cost"
+    return None, "missing_cost_fields"
+
+
+def update_actual_budget(report: dict) -> None:
+    openrouter_cost = 0.0
+    upstream_cost = 0.0
+    guard_spend = 0.0
+    unknown_cost_job_ids = []
+    for sample in report.get("samples", []):
+        usage = sample.get("usage")
+        if isinstance(usage, dict):
+            cost = usage.get("cost")
+            if isinstance(cost, (int, float)) and math.isfinite(float(cost)):
+                openrouter_cost += float(cost)
+            details = usage.get("cost_details")
+            if isinstance(details, dict):
+                upstream = details.get("upstream_inference_cost")
+                if isinstance(upstream, (int, float)) and math.isfinite(float(upstream)):
+                    upstream_cost += float(upstream)
+        guard_spend += float(sample.get("guard_charge_usd", 0.0))
+        if sample.get("cost_receipt_status") != "reported":
+            unknown_cost_job_ids.append(sample.get("job_id"))
+    report["budget"]["actual_openrouter_reported_cost_usd"] = openrouter_cost
+    report["budget"]["actual_upstream_reported_cost_usd"] = upstream_cost
+    report["budget"]["budget_guard_spend_usd"] = guard_spend
+    report["budget"]["unknown_cost_receipts"] = len(unknown_cost_job_ids)
+    report["budget"]["unknown_cost_job_ids"] = unknown_cost_job_ids
+
+
+def write_report_atomic(path: Path, report: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + ".tmp")
+    temporary.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    temporary.replace(path)
+
+
 def run(manifest_path: Path, dataset_path: Path, tokenizer_path: Path,
-        template_path: Path, output_path: Path, repeats: int, seed: int, workers: int) -> dict:
+        template_path: Path, output_path: Path, repeats: int, seed: int, workers: int,
+        target_tokens: int = DEFAULT_TARGET, case_ids: list[str] | None = None,
+        estimated_spend_ceiling_usd: float = DEFAULT_ESTIMATED_SPEND_CEILING_USD,
+        input_price_per_million: float = DEFAULT_INPUT_PRICE_PER_MILLION,
+        output_price_per_million: float = DEFAULT_OUTPUT_PRICE_PER_MILLION,
+        smoke: bool = False) -> dict:
     if output_path.exists():
         raise FileExistsError(f"Refusing to overwrite report: {output_path}")
     if workers < 1 or workers > MAX_WORKERS:
         raise ValueError(f"workers must be between 1 and {MAX_WORKERS}")
-    if repeats != 1:
-        raise ValueError("this frozen development screen is preregistered for exactly one repeat")
+    if repeats < 1:
+        raise ValueError("repeats must be at least one")
+    if target_tokens <= SAFETY_MARGIN:
+        raise ValueError(f"target must be greater than the {SAFETY_MARGIN}-token safety margin")
+    if not math.isfinite(estimated_spend_ceiling_usd) or estimated_spend_ceiling_usd <= 0:
+        raise ValueError("estimated spend ceiling must be positive")
+    if (not math.isfinite(input_price_per_million) or not math.isfinite(output_price_per_million)
+            or input_price_per_million < 0 or output_price_per_million < 0):
+        raise ValueError("input and output prices must be nonnegative")
     api_key = os.environ.get("OPENROUTER_API_KEY")
     if not api_key:
         raise EvaluationError("OPENROUTER_API_KEY is required")
     manifest, tokenizer, cases = load_cases(manifest_path, dataset_path, tokenizer_path, template_path)
+    if len(cases) != FULL_CASE_COUNT:
+        raise EvaluationError(
+            f"Full-run manifest must contain exactly {FULL_CASE_COUNT} frozen cases; observed {len(cases)}"
+        )
+    if len({case["frozen"]["id"] for case in cases}) != FULL_CASE_COUNT:
+        raise EvaluationError(f"Full-run manifest must contain {FULL_CASE_COUNT} distinct case IDs")
+    over_context_cap = [
+        (case["frozen"]["id"], case["full_count"])
+        for case in cases if case["full_count"] > MAX_FULL_LOCAL_TOKENS
+    ]
+    if over_context_cap:
+        preview = ", ".join(f"{case_id}={tokens}" for case_id, tokens in over_context_cap[:5])
+        raise EvaluationError(
+            f"Manifest has full prompts over the {MAX_FULL_LOCAL_TOKENS}-token local cap: {preview}"
+        )
+    if case_ids:
+        if not smoke or len(case_ids) != 1:
+            raise EvaluationError("A case subset is allowed only for an explicit one-case --smoke run")
+        if repeats != 1:
+            raise EvaluationError("A one-case --smoke run must use exactly one repeat")
+        if target_tokens != PRIMARY_TARGET:
+            raise EvaluationError(f"Smoke run must use the primary {PRIMARY_TARGET}-token Sift target")
+        selected_ids = set(case_ids)
+        if len(selected_ids) != 1:
+            raise EvaluationError("Smoke mode requires one distinct frozen case ID")
+        cases = [case for case in cases if case["frozen"]["id"] in selected_ids]
+        if len(cases) != len(selected_ids):
+            raise EvaluationError("Requested case IDs do not match distinct frozen cases")
+    elif smoke:
+        raise EvaluationError("--smoke requires exactly one --case-id")
+    else:
+        if repeats != FULL_REPEATS:
+            raise EvaluationError(f"Full run requires exactly {FULL_REPEATS} repeats")
+        if target_tokens != PRIMARY_TARGET:
+            raise EvaluationError(f"Full run requires the primary {PRIMARY_TARGET}-token Sift target")
     jobs = []
     for repeat in range(1, repeats + 1):
-        jobs.extend(make_jobs(cases, tokenizer, seed, repeat))
+        jobs.extend(make_jobs(cases, tokenizer, seed, repeat, target_tokens))
+    budget = estimate_budget(
+        jobs, repeats, input_price_per_million=input_price_per_million,
+        output_price_per_million=output_price_per_million,
+        ceiling_usd=estimated_spend_ceiling_usd,
+    )
     report = {
         "schema_version": 1,
         "status": "in_progress",
@@ -240,51 +492,189 @@ def run(manifest_path: Path, dataset_path: Path, tokenizer_path: Path,
         "dataset_revision": DATASET_REVISION,
         "dataset_sha256": DATASET_SHA256,
         "sift_core_sha256": hashlib.sha256((ROOT / "src/sift/core.py").read_bytes()).hexdigest(),
-        "model": MODEL_ID,
-        "route": "OpenRouter, throughput-sorted provider routing with fallbacks enabled",
+        "model": REQUESTED_MODEL,
+        "full_context_local_token_cap": MAX_FULL_LOCAL_TOKENS,
+        "openrouter_observed_request_token_limit": OPENROUTER_REQUEST_TOKEN_LIMIT,
+        "provider_context_estimate_factor": PROVIDER_CONTEXT_ESTIMATE_FACTOR,
+        "route": "OpenRouter; requested model and MiniMax provider are both verified per successful response",
+        "source_hashes": {
+            "runner_sha256": file_sha256(Path(__file__).resolve()),
+            "manifest_sha256": file_sha256(manifest_path),
+            "preparation_script_sha256": file_sha256(ROOT / "benchmarks/prepare_longbench_v2_minimax.py"),
+            "sift_core_sha256": hashlib.sha256((ROOT / "src/sift/core.py").read_bytes()).hexdigest(),
+            "tokenizer_sha256": file_sha256(tokenizer_path),
+            "chat_template_sha256": file_sha256(template_path),
+        },
+        "budget": budget,
         "execution": {
-            "arms": ["full", "sift"], "sift_targets": list(SIFT_TARGETS),
+            "arms": ["full", "sift"], "sift_target_tokens": target_tokens,
+            "full_context_local_token_cap": MAX_FULL_LOCAL_TOKENS,
+            "sift_safety_margin_tokens": SAFETY_MARGIN,
             "repeats": repeats, "concurrency": workers,
-            "request_order": "seeded shuffle across cases, arms, targets, and repeats",
+            "request_order": "seeded shuffle across cases, arms, and repeats",
             "temperature": 0.1, "top_p": 0.8, "reasoning": "disabled",
             "max_output_tokens": OUTPUT_TOKENS, "retries": 0,
             "answer_format": "exactly one option letter; only exact A/B/C/D outputs are scorable",
             "provider_usage_is_authoritative": True,
+            "requested_model": REQUESTED_MODEL,
+            "provider_policy": {"only": ["minimax"], "allow_fallbacks": False},
         },
         "preparation": {
             "tokenizer_count": "MiniMax published tokenizer over published rendered chat template",
             "provider_count_note": "Per-request OpenRouter usage is authoritative; local token counts include a 128-token safety margin for Sift targets.",
+            "context_projection": {
+                "factor": PROVIDER_CONTEXT_ESTIMATE_FACTOR,
+                "observed_request_token_limit": OPENROUTER_REQUEST_TOKEN_LIMIT,
+                "note": "This best-effort preflight is based on prior observed local/provider divergence; actual provider usage is captured per request and may differ.",
+            },
         },
         "samples": [],
+        "mode": "single_case_smoke" if smoke else "full_100_case_run",
     }
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    lock = threading.Lock()
+    if case_ids:
+        report["selected_case_ids"] = list(case_ids)
+    report["budget"]["in_flight_reserved_cost_usd"] = 0.0
+    if not budget["preflight_passed"]:
+        report["status"] = "not_started_estimated_budget_exceeded"
+        report["completed_utc"] = datetime.now(timezone.utc).isoformat()
+        write_report_atomic(output_path, report)
+        raise EvaluationError(
+            f"Estimated cost ${budget['estimated_total_cost_usd']:.6f} exceeds ceiling "
+            f"${estimated_spend_ceiling_usd:.2f}; no API requests were sent"
+        )
+    write_report_atomic(output_path, report)
+    pending_jobs = deque(jobs)
+    in_flight: dict[Any, tuple[dict, float]] = {}
+    guard_spend = 0.0
+    stopped_for_budget = False
+    budget_gate_closed = False
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        future_jobs = {
-            pool.submit(call_openrouter, job, api_key=api_key, seed=job["generation_seed"]): job
-            for job in jobs
-        }
-        for future in as_completed(future_jobs):
-            job = future_jobs[future]
-            try:
-                result = future.result()
-            except Exception as error:  # preserve every failed attempt in the denominator
-                result = {"normal": False, "failure": type(error).__name__}
-            result.update({
-                "case_id": job["case_id"], "domain": job["domain"], "arm": job["arm"],
-                "target_tokens": job["target"], "repeat": job["repeat"],
-                "expected": job["expected"],
-                "correct": result.get("normal") is True and result.get("choice") == job["expected"],
-                "local_rendered_prompt_tokens": job["estimated_tokens"],
-                "selector_audit": job["selector_audit"],
-            })
-            with lock:
+        while pending_jobs or in_flight:
+            while pending_jobs and len(in_flight) < workers:
+                if budget_gate_closed:
+                    break
+                if guard_spend > estimated_spend_ceiling_usd:
+                    stopped_for_budget = True
+                    budget_gate_closed = True
+                    break
+                job = pending_jobs[0]
+                reservation = estimate_job_guard_cost(
+                    job, input_price_per_million, output_price_per_million
+                )
+                reserved_in_flight = sum(amount for _, amount in in_flight.values())
+                if guard_spend + reserved_in_flight + reservation > estimated_spend_ceiling_usd:
+                    stopped_for_budget = True
+                    budget_gate_closed = True
+                    break
+                pending_jobs.popleft()
+                future = pool.submit(call_openrouter, job, api_key=api_key,
+                                     seed=job["generation_seed"])
+                in_flight[future] = (job, reservation)
+
+            if not in_flight:
+                break
+            report["budget"]["in_flight_reserved_cost_usd"] = sum(
+                amount for _, amount in in_flight.values()
+            )
+            report["in_flight_jobs"] = [
+                {
+                    "job_id": f"{active_job['case_id']}:{active_job['arm']}:{active_job['repeat']}",
+                    "reserved_cost_usd": active_reservation,
+                }
+                for active_job, active_reservation in in_flight.values()
+            ]
+            write_report_atomic(output_path, report)
+            completed, _ = wait(in_flight, return_when=FIRST_COMPLETED)
+            for future in completed:
+                job, reservation = in_flight.pop(future)
+                try:
+                    result = future.result()
+                except Exception as error:
+                    result = {
+                        "normal": False, "failure": type(error).__name__,
+                        "failure_message": str(error), "http_status": None,
+                        "raw_sse_events": [], "raw_response_body": None,
+                        "raw_error_body": None, "model": None, "provider": None,
+                        "response_id": None, "usage": None, "cost_details": None,
+                        "end_to_end_ms": None,
+                    }
+                actual_cost, receipt_source = cost_receipt(result.get("usage"))
+                receipt_reported = actual_cost is not None
+                guard_charge = actual_cost if receipt_reported else reservation
+                guard_spend += guard_charge
+                result.update({
+                    "job_id": f"{job['case_id']}:{job['arm']}:{job['repeat']}",
+                    "case_id": job["case_id"], "domain": job["domain"], "arm": job["arm"],
+                    "target_tokens": job["target"], "repeat": job["repeat"],
+                    "expected": job["expected"],
+                    "correct": result.get("normal") is True and result.get("choice") == job["expected"],
+                    "local_rendered_prompt_tokens": job["estimated_tokens"],
+                    "projected_provider_prompt_tokens": job["projected_provider_tokens"],
+                    "sift_passthrough": job["passthrough"] if job["arm"] == "sift" else False,
+                    "full_prompt_below_target_before_selection": (
+                        job["below_budget_before_selection"] if job["arm"] == "sift" else None
+                    ),
+                    "selector_audit": job["selector_audit"],
+                    "cost_receipt_status": "reported" if receipt_reported else "missing",
+                    "cost_receipt_source": receipt_source,
+                    "guard_reserved_cost_usd": reservation,
+                    "guard_charge_usd": guard_charge,
+                })
                 report["samples"].append(result)
-                output_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    report["status"] = "complete"
+                update_actual_budget(report)
+                report["budget"]["in_flight_reserved_cost_usd"] = sum(
+                    amount for _, amount in in_flight.values()
+                )
+                report["in_flight_jobs"] = [
+                    {
+                        "job_id": f"{active_job['case_id']}:{active_job['arm']}:{active_job['repeat']}",
+                        "reserved_cost_usd": active_reservation,
+                    }
+                    for active_job, active_reservation in in_flight.values()
+                ]
+                write_report_atomic(output_path, report)
+                if guard_spend > estimated_spend_ceiling_usd:
+                    stopped_for_budget = True
+                    budget_gate_closed = True
+            report["budget"]["in_flight_reserved_cost_usd"] = sum(
+                amount for _, amount in in_flight.values()
+            )
+            report["in_flight_jobs"] = [
+                {
+                    "job_id": f"{active_job['case_id']}:{active_job['arm']}:{active_job['repeat']}",
+                    "reserved_cost_usd": active_reservation,
+                }
+                for active_job, active_reservation in in_flight.values()
+            ]
+            write_report_atomic(output_path, report)
+
+    if pending_jobs:
+        report["not_started_jobs"] = [
+            {
+                "job_id": f"{job['case_id']}:{job['arm']}:{job['repeat']}",
+                "case_id": job["case_id"], "arm": job["arm"], "repeat": job["repeat"],
+                "target_tokens": job["target"],
+                "local_rendered_prompt_tokens": job["estimated_tokens"],
+                "reserved_cost_usd": estimate_job_guard_cost(
+                    job, input_price_per_million, output_price_per_million
+                ),
+                "reason": "actual_usage_plus_in_flight_reservations_reached_budget_ceiling",
+            }
+            for job in pending_jobs
+        ]
+    report["budget"]["budget_guard_stopped"] = (
+        stopped_for_budget or bool(pending_jobs) or guard_spend > estimated_spend_ceiling_usd
+    )
+    if guard_spend > estimated_spend_ceiling_usd:
+        report["status"] = "budget_guard_overrun"
+    elif pending_jobs:
+        report["status"] = "budget_guard_stopped"
+    else:
+        report["status"] = "complete"
+    report["budget"]["in_flight_reserved_cost_usd"] = 0.0
+    report["in_flight_jobs"] = []
     report["completed_utc"] = datetime.now(timezone.utc).isoformat()
-    output_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    write_report_atomic(output_path, report)
     return report
 
 
@@ -297,11 +687,25 @@ if __name__ == "__main__":
     parser.add_argument("--tokenizer", type=Path, default=ROOT / "tmp" / "minimax-m3-tokenizer.json")
     parser.add_argument("--template", type=Path, default=ROOT / "tmp" / "minimax-m3-chat-template.jinja")
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--repeats", type=int, default=1)
+    parser.add_argument("--repeats", type=int, default=DEFAULT_REPEATS)
     parser.add_argument("--seed", type=int, default=20261018)
     parser.add_argument("--workers", type=int, default=MAX_WORKERS)
+    parser.add_argument("--target", type=int, default=DEFAULT_TARGET,
+                        help="Primary Sift context target in local MiniMax-tokenizer tokens.")
+    parser.add_argument("--case-id", action="append", dest="case_ids",
+                        help="Optional frozen case subset; repeat the flag for multiple IDs.")
+    parser.add_argument("--smoke", action="store_true",
+                        help="Explicitly allow one frozen case with exactly one repeat.")
+    parser.add_argument("--estimated-spend-ceiling-usd", type=float,
+                        default=DEFAULT_ESTIMATED_SPEND_CEILING_USD)
+    parser.add_argument("--input-price-per-million", type=float,
+                        default=DEFAULT_INPUT_PRICE_PER_MILLION)
+    parser.add_argument("--output-price-per-million", type=float,
+                        default=DEFAULT_OUTPUT_PRICE_PER_MILLION)
     args = parser.parse_args()
     result = run(args.manifest, args.dataset_path, args.tokenizer, args.template, args.output,
-                 args.repeats, args.seed, args.workers)
+                 args.repeats, args.seed, args.workers, args.target, args.case_ids,
+                 args.estimated_spend_ceiling_usd, args.input_price_per_million,
+                 args.output_price_per_million, args.smoke)
     print(json.dumps({"status": result["status"], "samples": len(result["samples"]),
                       "output": str(args.output)}, indent=2))
