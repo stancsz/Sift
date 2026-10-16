@@ -101,7 +101,8 @@ def load_frozen_cases(manifest_path: Path, dataset_path: Path, tokenizer_url: st
 
 
 def messages_for_arm(case: dict, arm: str, tokenizer_url: str,
-                     compressor=None, target_tokens: int = SIFT_TARGET) -> tuple[list[dict], dict]:
+                     compressor=None, target_tokens: int = SIFT_TARGET,
+                     model_context_tokens: int = MODEL_CONTEXT) -> tuple[list[dict], dict]:
     original = case["messages"]
     prep_started = time.perf_counter()
     cpu_started = time.process_time()
@@ -157,7 +158,7 @@ def messages_for_arm(case: dict, arm: str, tokenizer_url: str,
         details["preprocess_cpu_ms"] = (time.process_time() - cpu_started) * 1000
     details["exact_qwen_input_tokens"] = exact_prompt_tokens(tokenizer_url, output)
     details["fits_arm_limit"] = details["exact_qwen_input_tokens"] <= (
-        MODEL_CONTEXT - OUTPUT_RESERVE if arm == "full" else target_tokens
+        model_context_tokens - OUTPUT_RESERVE if arm == "full" else target_tokens
     )
     return output, details
 
@@ -287,7 +288,8 @@ def run(manifest_path: Path, dataset_path: Path, output_path: Path,
         tokenizer_url: str, server_url: str, repeats: int, seed: int,
         case_ids: list[str] | None = None,
         arms: list[str] | None = None,
-        target_tokens: int = SIFT_TARGET) -> dict:
+        target_tokens: int = SIFT_TARGET,
+        model_context_tokens: int = MODEL_CONTEXT) -> dict:
     if type(target_tokens) is not int or target_tokens <= 0:
         raise ValueError("target_tokens must be a positive integer")
     if output_path.exists():
@@ -319,7 +321,7 @@ def run(manifest_path: Path, dataset_path: Path, output_path: Path,
         "sift_core_sha256": hashlib.sha256((ROOT / "src/sift/core.py").read_bytes()).hexdigest(),
         "runner_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "model": MODEL,
-        "model_context_tokens": MODEL_CONTEXT,
+        "model_context_tokens": model_context_tokens,
         "output_reserve_tokens": OUTPUT_RESERVE,
         "sift_target_estimated_tokens": target_tokens,
         "exact_tokenizer": tokenizer_url.rstrip("/") + "/v1/chat/completions/input_tokens",
@@ -380,6 +382,7 @@ def run(manifest_path: Path, dataset_path: Path, output_path: Path,
         for arm in selected_arms:
             prompts[arm], prep[arm] = messages_for_arm(
                 case, arm, tokenizer_url, compressor, target_tokens,
+                model_context_tokens,
             )
         for arm in selected_arms:
             if not prep[arm]["fits_arm_limit"]:
@@ -428,13 +431,15 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=SEED)
     parser.add_argument("--target", type=int, default=SIFT_TARGET,
                         help="Estimated input-token ceiling for Sift and other compacted arms.")
+    parser.add_argument("--model-context", type=int, default=MODEL_CONTEXT,
+                        help="Full-context model window recorded in the report and used for its input cap.")
     parser.add_argument("--case-id", action="append", dest="case_ids")
     parser.add_argument("--arm", action="append", choices=ARMS,
                         help="Comparison arm; repeat this flag to select arms. Defaults to all arms.")
     args = parser.parse_args()
     report = run(args.manifest, args.dataset_path, args.output,
                  args.tokenizer_url, args.server_url, args.repeats, args.seed,
-                 args.case_ids, args.arm, args.target)
+                 args.case_ids, args.arm, args.target, args.model_context)
     summary = {
         arm: {
             "n": sum(row.get("arm") == arm for row in report["samples"]),
