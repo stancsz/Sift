@@ -122,6 +122,51 @@ class LiteLLMProxyTests(unittest.TestCase):
             compact_proxy_request(RouterCounter(), data, call_type="acompletion", target=400)
         self.assertEqual(caught.exception.status_code, 413)
 
+    def test_precount_guard_includes_tool_schemas_before_route_tokenization(self):
+        class CountingRouter:
+            calls = 0
+
+            def _count_pre_call_check_tokens(self, messages, input, request_kwargs):
+                self.calls += 1
+                return 10
+
+        router = CountingRouter()
+        data = {"model": "local-chat", "messages": [
+            {"role": "user", "content": "Read the evidence."},
+        ], "tools": [{"type": "function", "function": {
+            "name": "read_evidence", "description": "evidence " * 1_000,
+            "parameters": {"type": "object", "properties": {}},
+        }}]}
+        with self.assertRaises(HTTPException) as caught:
+            compact_proxy_request(
+                router, data, call_type="acompletion", target=100,
+                max_input_characters=1_000,
+            )
+        self.assertEqual(caught.exception.status_code, 413)
+        self.assertEqual(router.calls, 0)
+
+    def test_default_precount_guard_accepts_near_million_unicode_tokens(self):
+        from sift import compact_messages
+
+        messages = [{"role": "user", "content": "界" * 990_000}]
+        result = compact_messages(
+            messages, lambda items: litellm.token_counter(messages=items),
+            target=1_000_000, raw_limit=1_000_000,
+        )
+        self.assertGreaterEqual(result.audit["input_tokens"], 990_000)
+        self.assertLessEqual(result.audit["input_tokens"], 1_000_000)
+        self.assertFalse(result.audit["compacted"])
+
+    def test_precount_limits_are_configurable_for_trusted_workloads(self):
+        data = {"model": "local-chat", "messages": [
+            {"role": "user", "content": "trusted " * 200},
+        ]}
+        result = compact_proxy_request(
+            RouterCounter(), data, call_type="acompletion", target=1_000,
+            max_input_characters=2_000, max_input_nodes=100,
+        )
+        self.assertFalse(result["metadata"]["sift"]["compacted"])
+
     def test_deployed_litellm_counter_accepts_counting_only_schema_copy(self):
         class ActualCounter:
             def _count_pre_call_check_tokens(self, messages, input, request_kwargs):

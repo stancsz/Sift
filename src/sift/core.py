@@ -20,6 +20,9 @@ from typing import Any, Callable, Literal
 
 Protocol = Literal["openai", "anthropic"]
 TokenCounter = Callable[[list[dict[str, Any]]], int]
+DEFAULT_TARGET_TOKENS = 32_768
+DEFAULT_MAX_INPUT_CHARACTERS = 16_777_216
+DEFAULT_MAX_INPUT_NODES = 250_000
 _TERMS = re.compile(r"[^\W_]{3,}", re.UNICODE)
 _LINK_IDS = re.compile(r"\b[A-Za-z][A-Za-z0-9_-]*\d+[A-Za-z0-9_-]*\b")
 _STOPWORDS = frozenset({
@@ -97,6 +100,71 @@ def _count(counter: TokenCounter, messages: list[dict[str, Any]]) -> int:
     if type(value) is not int or value < 0:
         raise CompactionError("token counter must return a nonnegative integer")
     return value
+
+
+def _check_precount_size(value: Any, *, max_characters: int,
+                         max_nodes: int) -> None:
+    """Bound traversal and text size before invoking an expensive route counter.
+
+    This is a separate safety bound from the token limit. It runs after an
+    HTTP framework has parsed JSON, so deployments still need an ingress body
+    limit to bound initial request memory.
+    """
+    characters = 0
+    nodes = 0
+    active: set[int] = set()
+    stack: list[tuple[Any, bool]] = [(value, False)]
+    while stack:
+        current, exiting = stack.pop()
+        if exiting:
+            active.remove(id(current))
+            continue
+        nodes += 1
+        if nodes > max_nodes:
+            raise CompactionError(
+                "request exceeds the pre-count structural limit",
+                code="input_size_limit",
+            )
+        if isinstance(current, (str, bytes, bytearray)):
+            characters += len(current)
+            if characters > max_characters:
+                raise CompactionError(
+                    "request exceeds the pre-count text limit",
+                    code="input_size_limit",
+                )
+            continue
+        if isinstance(current, dict):
+            if nodes + len(stack) + 2 * len(current) > max_nodes:
+                raise CompactionError(
+                    "request exceeds the pre-count structural limit",
+                    code="input_size_limit",
+                )
+            identity = id(current)
+            if identity in active:
+                raise CompactionError(
+                    "cyclic request data exceeds the pre-count limit",
+                    code="input_size_limit",
+                )
+            active.add(identity)
+            stack.append((current, True))
+            for key, item in current.items():
+                stack.append((key, False))
+                stack.append((item, False))
+        elif isinstance(current, (list, tuple)):
+            if nodes + len(stack) + len(current) > max_nodes:
+                raise CompactionError(
+                    "request exceeds the pre-count structural limit",
+                    code="input_size_limit",
+                )
+            identity = id(current)
+            if identity in active:
+                raise CompactionError(
+                    "cyclic request data exceeds the pre-count limit",
+                    code="input_size_limit",
+                )
+            active.add(identity)
+            stack.append((current, True))
+            stack.extend((item, False) for item in current)
 
 
 def _text(content: Any, *, allow_none: bool = False) -> str:
@@ -678,7 +746,9 @@ def _compact_with_late_instruction_anchors(
 
 def compact_messages(
     messages: list[dict[str, Any]], count_tokens: TokenCounter, *,
-    target: int = 24_576, raw_limit: int = 1_000_000,
+    target: int = DEFAULT_TARGET_TOKENS, raw_limit: int = 1_000_000,
+    max_input_characters: int = DEFAULT_MAX_INPUT_CHARACTERS,
+    max_input_nodes: int = DEFAULT_MAX_INPUT_NODES,
     protocol: Protocol = "openai",
 ) -> CompactionResult:
     """Compact older text to `target` using the caller's exact token counter.
@@ -687,10 +757,15 @@ def compact_messages(
     complete prior turns survive verbatim. Remaining history is selected as
     quoted, query-aware excerpts; selection is deterministic and CPU-only.
     """
-    if type(target) is not int or type(raw_limit) is not int or target <= 0 or raw_limit < target:
-        raise CompactionError("invalid target or raw_limit")
+    if (type(target) is not int or type(raw_limit) is not int or target <= 0
+            or raw_limit < target or type(max_input_characters) is not int
+            or max_input_characters <= 0 or type(max_input_nodes) is not int
+            or max_input_nodes <= 0):
+        raise CompactionError("invalid compaction or pre-count limits")
     if not isinstance(messages, list) or not all(isinstance(msg, dict) for msg in messages):
         raise CompactionError("messages must be a list of objects")
+    _check_precount_size(messages, max_characters=max_input_characters,
+                         max_nodes=max_input_nodes)
     raw = _count(count_tokens, messages)
     if raw > raw_limit:
         raise CompactionError("request exceeds raw_limit", code="raw_limit")

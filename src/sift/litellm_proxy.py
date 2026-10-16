@@ -18,7 +18,13 @@ from fastapi import HTTPException
 from litellm.integrations.custom_logger import CustomLogger
 from litellm.litellm_core_utils.core_helpers import get_or_create_metadata_bucket
 
-from .core import CompactionError, compact_messages
+from .core import (
+    DEFAULT_MAX_INPUT_CHARACTERS,
+    DEFAULT_MAX_INPUT_NODES,
+    CompactionError,
+    _check_precount_size,
+    compact_messages,
+)
 
 
 _PROTOCOLS = {
@@ -59,12 +65,22 @@ def _countable_tools(tools: Any) -> list[dict[str, Any]] | None:
 def compact_proxy_request(
     router: Any, data: dict[str, Any], *, call_type: str,
     target: int, raw_limit: int = 1_000_000,
+    max_input_characters: int = DEFAULT_MAX_INPUT_CHARACTERS,
+    max_input_nodes: int = DEFAULT_MAX_INPUT_NODES,
 ) -> dict[str, Any]:
     """Return request messages plus a server-owned Sift audit.
 
     Uses the proxy router's deployed pre-call counter so tools and route
     metadata count against the same budget as LiteLLM's own capacity check.
+    The pre-count guard bounds parsed payload traversal and text before route
+    tokenization; an ingress body limit is still needed to bound JSON parsing.
     """
+    try:
+        _check_precount_size(
+            data, max_characters=max_input_characters, max_nodes=max_input_nodes,
+        )
+    except CompactionError as error:
+        raise HTTPException(413, detail=f"Sift: {error}") from error
     response_input = call_type in {"responses", "aresponses"}
     protocol = "openai" if response_input else _PROTOCOLS.get(call_type)
     if protocol is None:
@@ -152,11 +168,14 @@ def compact_proxy_request(
 
     try:
         result = compact_messages(
-            messages, count, target=target, raw_limit=raw_limit, protocol=protocol,
+            messages, count, target=target, raw_limit=raw_limit,
+            max_input_characters=max_input_characters,
+            max_input_nodes=max_input_nodes, protocol=protocol,
         )
     except CompactionError as error:
         status = {
             "raw_limit": 413, "active_too_large": 413,
+            "input_size_limit": 413,
             "unsupported_content": 422, "unsupported_protocol": 422,
             "late_instruction": 422,
         }.get(error.code, 400)
@@ -183,15 +202,22 @@ def compact_proxy_request(
 class SiftLiteLLMHook(CustomLogger):
     """LiteLLM Proxy callback for explicitly configured chat model names."""
 
-    def __init__(self, model_targets: Mapping[str, int], *, raw_limit: int = 1_000_000) -> None:
+    def __init__(self, model_targets: Mapping[str, int], *, raw_limit: int = 1_000_000,
+                 max_input_characters: int = DEFAULT_MAX_INPUT_CHARACTERS,
+                 max_input_nodes: int = DEFAULT_MAX_INPUT_NODES) -> None:
         super().__init__()
         if not model_targets or any(
             not isinstance(name, str) or not name or type(target) is not int or target <= 0
             for name, target in model_targets.items()
         ) or type(raw_limit) is not int or raw_limit < max(model_targets.values()):
             raise ValueError("invalid Sift model targets or raw limit")
+        if (type(max_input_characters) is not int or max_input_characters <= 0
+                or type(max_input_nodes) is not int or max_input_nodes <= 0):
+            raise ValueError("invalid Sift pre-count limits")
         self.model_targets = dict(model_targets)
         self.raw_limit = raw_limit
+        self.max_input_characters = max_input_characters
+        self.max_input_nodes = max_input_nodes
         self._slots = threading.BoundedSemaphore(2)
 
     async def _compact(self, router: Any, data: dict, *, call_type: str,
@@ -212,6 +238,8 @@ class SiftLiteLLMHook(CustomLogger):
                 return compact_proxy_request(
                     router, data, call_type=call_type,
                     target=target, raw_limit=self.raw_limit,
+                    max_input_characters=self.max_input_characters,
+                    max_input_nodes=self.max_input_nodes,
                 )
             finally:
                 self._slots.release()

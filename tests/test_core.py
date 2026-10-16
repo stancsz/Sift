@@ -247,6 +247,38 @@ class CompactionTests(unittest.TestCase):
         with self.assertRaisesRegex(CompactionError, "content"):
             compact_messages(media, estimate, target=100)
 
+    def test_precount_text_limit_rejects_before_calling_token_counter(self):
+        called = False
+
+        def counter(messages):
+            nonlocal called
+            called = True
+            return 10
+
+        with self.assertRaises(CompactionError) as caught:
+            compact_messages(
+                [message("user", "x" * 10_000)], counter, target=100,
+                max_input_characters=1_000,
+            )
+        self.assertEqual(caught.exception.code, "input_size_limit")
+        self.assertFalse(called)
+
+    def test_precount_node_limit_rejects_repeated_short_messages_before_counting(self):
+        called = False
+
+        def counter(messages):
+            nonlocal called
+            called = True
+            return 10
+
+        with self.assertRaises(CompactionError) as caught:
+            compact_messages(
+                [message("user", "x") for _ in range(100)], counter,
+                target=100, max_input_nodes=20,
+            )
+        self.assertEqual(caught.exception.code, "input_size_limit")
+        self.assertFalse(called)
+
     def test_late_instruction_stays_anchored_and_tool_cycle_remains_whole(self):
         source = [message("system", "Initial instruction."),
                   message("user", "Historical MIDDLE_KEY evidence was recorded.")]
