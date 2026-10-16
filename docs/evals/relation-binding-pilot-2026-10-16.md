@@ -126,3 +126,17 @@ changed the next evaluation from a broad structured-data comparison to this
 specific relation-binding pilot; no selector change was authorized. Reported
 usage: Gemini 3,037 prompt + 115 completion tokens; Sol 648 prompt + 341
 completion tokens.
+
+## Authoring preflight, 2026-10-16
+
+The frozen selector snapshot passes 21 core tests and the whole-record
+candidate passes its 2 boundary tests. The case set is not ready. A Claude Code
+authoring response was rejected: its JSON was malformed, and a syntax-only
+diagnostic found multiple cases below the preregistered 8-record minimum. The
+response is quarantined under ignored `.runs/` data and was not scored. The
+reported CLI cost for that request was $0.2672536; token usage fields were not
+available. A second attempt with constrained JSON output was stopped after 15
+minutes without a payload or usage receipt. Neither response is a holdout, and
+no inference calls were made. The next evaluation requires a valid independent
+author response, a predeclared scoring harness, and hashes recorded before
+examining the case content.
