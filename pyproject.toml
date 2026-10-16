@@ -8,7 +8,8 @@ version = "0.11.0.dev0"
 description = "Deterministic, query-aware extractive context compaction"
 readme = "README.md"
 requires-python = ">=3.11"
-license = {file = "LICENSE"}
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{name = "stancsz"}]
 
 [project.urls]

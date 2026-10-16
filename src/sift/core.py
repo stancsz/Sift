@@ -53,7 +53,7 @@ _MAX_CANDIDATES = 512
 _DEDUP_WINDOW = 65_536
 _QUOTED_QUERY_BONUS = 500
 _MESSAGE_KEYS = frozenset({
-    "role", "content", "name", "tool_calls", "tool_call_id", "cache_control",
+    "role", "content", "name", "tool_calls", "function_call", "tool_call_id", "cache_control",
 })
 
 
@@ -131,14 +131,19 @@ def _text(content: Any, *, allow_none: bool = False) -> str:
 def _render(message: dict[str, Any]) -> str:
     if message.keys() - _MESSAGE_KEYS:
         raise CompactionError("unsupported message fields in compacted request", code="unsupported_content")
-    if message.get("role") not in {"system", "developer", "user", "assistant", "tool"}:
+    if message.get("role") not in {"system", "developer", "user", "assistant", "tool", "function"}:
         raise CompactionError("unsupported message role in compacted request", code="unsupported_content")
     calls = message.get("tool_calls")
     if calls is not None and not isinstance(calls, list):
         raise CompactionError("unsupported tool_calls in compacted request", code="unsupported_content")
-    content = _text(message.get("content"), allow_none=bool(calls))
+    function_call = message.get("function_call")
+    if function_call is not None and not isinstance(function_call, dict):
+        raise CompactionError("unsupported function_call in compacted request", code="unsupported_content")
+    content = _text(message.get("content"), allow_none=bool(calls) or function_call is not None)
     if calls:
         content += "\ntool_calls " + json.dumps(calls, ensure_ascii=False, sort_keys=True)
+    if function_call is not None:
+        content += "\nfunction_call " + json.dumps(function_call, ensure_ascii=False, sort_keys=True)
     return content
 
 
@@ -158,7 +163,7 @@ def _starts_tool_cycle(message: dict[str, Any], protocol: Protocol) -> bool:
     if message.get("role") != "assistant":
         return False
     if protocol == "openai":
-        return bool(message.get("tool_calls"))
+        return bool(message.get("tool_calls") or message.get("function_call"))
     content = message.get("content")
     return isinstance(content, list) and any(
         isinstance(block, dict) and block.get("type") == "tool_use"
@@ -403,7 +408,7 @@ def _candidates(old: list[dict[str, Any]], terms: set[str],
                                    score, piece.text, piece.prefix)
             coverage_signals = _SIGNALS.findall(piece.text) + _COVERAGE_SIGNALS.findall(piece.text)
             independent_signal = any(match.casefold() not in terms for match in coverage_signals)
-            if with_coverage and role in {"tool", "user"} and independent_signal:
+            if with_coverage and role in {"tool", "function", "user"} and independent_signal:
                 coverage_score = 8 + 2 * (message_index + 1) / max(1, len(old))
                 if serial == 0:
                     coverage_score += 3
@@ -492,7 +497,7 @@ def _diagnostic_candidates(old: list[dict[str, Any]], offset: int,
     output: list[_Candidate] = []
     for index, message in enumerate(old):
         content = message.get("content")
-        if message.get("role") != "tool" and not (
+        if message.get("role") not in {"tool", "function"} and not (
             message.get("role") == "user" and isinstance(content, list) and any(
                 isinstance(block, dict) and block.get("type") == "tool_result"
                 for block in content

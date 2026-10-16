@@ -56,6 +56,31 @@ class LiteLLMProxyTests(unittest.TestCase):
         self.assertEqual(headers["x-sift-estimated-forwarded-tokens"],
                          str(result["metadata"]["sift"]["forwarded_tokens"]))
 
+    def test_legacy_function_call_history_compacts_through_callback(self):
+        messages = [{"role": "user", "content": "Old configuration " * 1_500},
+                    {"role": "assistant", "content": "Previous search complete."},
+                    {"role": "user", "content": "Find the current deployment setting."}]
+        cycles = []
+        for index in range(12):
+            cycles.extend([
+                {"role": "assistant", "content": None, "function_call": {
+                    "name": "read_file", "arguments": json.dumps({"path": f"config-{index}.py"}),
+                }},
+                {"role": "function", "name": "read_file",
+                 "content": f"config result {index}: " + "deployment setting evidence " * 42},
+            ])
+        final = {"role": "assistant", "content": "The latest file is authoritative."}
+        messages.extend([*cycles, final])
+        data = {"model": "local-chat", "messages": messages}
+        saved = copy.deepcopy(data)
+
+        result = compact_proxy_request(RouterCounter(), data, call_type="acompletion", target=1_800)
+
+        self.assertTrue(result["metadata"]["sift"]["compacted"])
+        self.assertLessEqual(result["metadata"]["sift"]["forwarded_tokens"], 1_800)
+        self.assertEqual(result["messages"][-3:], [cycles[-2], cycles[-1], final])
+        self.assertEqual(data, saved)
+
     def test_under_target_keeps_messages_and_reports_no_op(self):
         data = {"model": "local-chat", "messages": [{"role": "user", "content": "hello"}]}
         result = compact_proxy_request(RouterCounter(), data, call_type="acompletion", target=700)

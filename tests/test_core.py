@@ -84,6 +84,30 @@ class CompactionTests(unittest.TestCase):
         self.assertLessEqual(result.audit["forwarded_tokens"], 700)
         self.assertGreaterEqual(result.audit["preserved_recent_turns"], 1)
 
+    def test_legacy_function_call_cycle_survives_compaction(self):
+        task = message("user", "Find the current deployment setting.")
+        cycles = []
+        for index in range(12):
+            cycles.extend([
+                message("assistant", None, function_call={
+                    "name": "read_file", "arguments": json.dumps({"path": f"config-{index}.py"}),
+                }),
+                message("function", f"config result {index}: " + "deployment setting evidence " * 42,
+                        name="read_file"),
+            ])
+        current_answer = message("assistant", "The latest file is authoritative.")
+        source = [message("user", "Historical configuration " * 1_500),
+                  message("assistant", "Old search complete."), task, *cycles, current_answer]
+        original = copy.deepcopy(source)
+
+        result = compact_messages(source, estimate, target=1_800)
+
+        self.assertTrue(result.audit["compacted"])
+        self.assertLessEqual(result.audit["forwarded_tokens"], 1_800)
+        self.assertGreaterEqual(result.audit["preserved_recent_tool_cycles"], 1)
+        self.assertEqual(result.messages[-3:], [cycles[-2], cycles[-1], current_answer])
+        self.assertEqual(source, original)
+
     def test_anthropic_tool_result_does_not_reanchor_current_turn(self):
         current = [message("user", "Fix the bug"),
                    message("assistant", [{"type": "tool_use", "id": "x", "name": "Read", "input": {}}]),
