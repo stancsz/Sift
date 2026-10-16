@@ -1,0 +1,31 @@
+{
+  "incident_id": "CHG-88421",
+  "root_cause": "CHG-88421 attached egress policy net-export-17 and permitted exporter-prod to assume finance-export-writer; the session lacked owner tag and sent data to unapproved sink 198.51.100.77.",
+  "confirmed_exposure": true,
+  "payment_posting_duplicate": false,
+  "containment_order": [
+    "revoke sess-incident-88421",
+    "rotate finance-export-writer credentials",
+    "block 198.51.100.77",
+    "preserve evidence",
+    "notify affected customer",
+    "rollback CHG-88421"
+  ],
+  "authority": [
+    "immutable IAM and flow archives for observed actions",
+    "signed change record for deployed state",
+    "settlement ledger for posting state",
+    "runbook for required response",
+    "tickets for customer-reported impact",
+    "chat or dashboard summaries are leads only"
+  ],
+  "required_evidence_ids": [
+    "DEP-000000",
+    "IAM-INC-003001",
+    "NET-005999",
+    "PAY-008997",
+    "TIC-011999",
+    "RUN-012000",
+    "DEP-017999"
+  ]
+}

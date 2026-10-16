@@ -47,6 +47,48 @@ class MassiveContextPreflightTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "requires LiteLLM 1.103.0"):
                 preflight.preflight(None, None, "openrouter/minimax/minimax-m3", [64_000])
 
+    def test_exact_span_loss_is_diagnostic_not_a_scale_or_budget_failure(self):
+        def compact(_router, request, *, target, **_kwargs):
+            raw = 560_000
+            forwarded = raw if target == 1_000_000 else 31_000
+            return {"metadata": {"sift": {"input_tokens": raw,
+                                             "forwarded_tokens": forwarded}},
+                    "messages": request["messages"]}
+
+        with (patch.object(preflight, "version", return_value="1.103.0"),
+              patch.object(preflight, "Router"),
+              patch.object(Path, "read_bytes", return_value=b"packet"),
+              patch.object(Path, "is_file", return_value=True),
+              patch.object(preflight, "load_required_spans", return_value=(object(),)),
+              patch.object(preflight, "compact_proxy_request", side_effect=compact),
+              patch.object(preflight, "audit_retention", return_value={"gold_fact": "omitted"})):
+            result = preflight.preflight(Path("packet"), Path("gold"),
+                                         "openrouter/minimax/minimax-m3", [32_000])
+
+        row = result["targets"][0]
+        self.assertTrue(row["scale_and_budget_passed"])
+        self.assertEqual({"retained": 0, "total": 1, "all_retained": False},
+                         row["exact_span_retention_diagnostic"])
+
+    def test_task_without_span_manifest_still_gets_scale_and_budget_preflight(self):
+        def compact(_router, request, *, target, **_kwargs):
+            raw = 560_000
+            return {"metadata": {"sift": {"input_tokens": raw,
+                                             "forwarded_tokens": 31_000}},
+                    "messages": request["messages"]}
+
+        with (patch.object(preflight, "version", return_value="1.103.0"),
+              patch.object(preflight, "Router"),
+              patch.object(Path, "read_bytes", return_value=b"packet"),
+              patch.object(preflight, "compact_proxy_request", side_effect=compact)):
+            result = preflight.preflight(Path("packet"), Path("missing-gold"),
+                                         "openrouter/minimax/minimax-m3", [32_000])
+
+        row = result["targets"][0]
+        self.assertTrue(row["scale_and_budget_passed"])
+        self.assertIsNone(row["exact_span_retention_diagnostic"])
+
+
 
 if __name__ == "__main__":
     unittest.main()

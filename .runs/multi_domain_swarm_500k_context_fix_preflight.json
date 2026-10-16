@@ -1,0 +1,68 @@
+{
+  "full_arm_forwarded_tokens": 609660,
+  "kind": "provider_free_synthetic_anthropic_request_preflight",
+  "notes": [
+    "Counts a constructed Anthropic Messages tool-cycle transcript, not a captured Claude Code request.",
+    "Omits Claude Code system prompt and active tool schemas; the deployed route must qualify each real request.",
+    "Exact source-span retention is diagnostic only; the agent may retrieve omitted source facts from the same workspace.",
+    "Preflight pass means only that the constructed request reached the raw scale floor and Sift stayed within target; it is not agent acceptance or provider-ingestion evidence."
+  ],
+  "packet": {
+    "bytes": 1768250,
+    "fixture": "multi_domain_incident_swarm_500k",
+    "historical_tool_result_chunks": 36,
+    "path": "/tmp/multi_domain_swarm_context.md",
+    "required_evidence_spans": 0,
+    "sha256": "08daf5dc6616eb4c5d3f9dacc2cab469cdbffbaa29f5f72c76a983a3a7309de9"
+  },
+  "qualified_agent_comparison": false,
+  "raw_message_tokens": 609660,
+  "schema_version": 1,
+  "targets": [
+    {
+      "audit": {
+        "compacted": true,
+        "counting_responses_tools_translated": false,
+        "counting_tool_floor_adjustment": 0,
+        "counting_tool_schema_items_filled": false,
+        "forwarded_tokens": 63935,
+        "input_tokens": 609660,
+        "method": "query_aware_extract",
+        "omitted_estimated_tokens": 545725,
+        "preserved_recent_tool_cycles": 0,
+        "preserved_recent_turns": 0,
+        "selected_excerpts": 391,
+        "stable_prefix_excerpts": 1
+      },
+      "elapsed_ms": 1122.324,
+      "exact_span_retention_diagnostic": null,
+      "required_span_states": null,
+      "scale_and_budget_passed": true,
+      "target_tokens": 64000
+    },
+    {
+      "audit": {
+        "compacted": true,
+        "counting_responses_tools_translated": false,
+        "counting_tool_floor_adjustment": 0,
+        "counting_tool_schema_items_filled": false,
+        "forwarded_tokens": 31871,
+        "input_tokens": 609660,
+        "method": "query_aware_extract",
+        "omitted_estimated_tokens": 577789,
+        "preserved_recent_tool_cycles": 0,
+        "preserved_recent_turns": 0,
+        "selected_excerpts": 221,
+        "stable_prefix_excerpts": 1
+      },
+      "elapsed_ms": 972.647,
+      "exact_span_retention_diagnostic": null,
+      "required_span_states": null,
+      "scale_and_budget_passed": true,
+      "target_tokens": 32000
+    }
+  ],
+  "task_request_chars": 2081,
+  "task_request_sha256": "bf1fb26ffc1652ce270f06b35f277496b134c69e0bccd576729ac0016e4c4487",
+  "token_counter": "LiteLLM Router._count_pre_call_check_tokens 1.103.0 openrouter/minimax/minimax-m3"
+}
