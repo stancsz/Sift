@@ -1,0 +1,1761 @@
+{
+  "schema_version": 1,
+  "status": "complete",
+  "evaluation": "public LongBench v2 MiniMax M3 development screen; not a holdout or model-to-model comparison",
+  "created_utc": "2026-10-16T10:03:29.043680+00:00",
+  "manifest_sha256": "156a44eefb95e02a3a941cd2e40bcfc087afb163912bc4616f3ffdf161b6959b",
+  "dataset_revision": "2b48e494f2c7a2f0af81aae178e05c7e1dde0fe9",
+  "dataset_sha256": "15d61c22d92c96900b3c4948b6aeea218d3214b676a65df48e7b8555604c7fe2",
+  "sift_core_sha256": "efd224e19f96d86e0c4836fc1ff654ed9743db95b190365b88e9d06b2c035179",
+  "model": "minimax/minimax-m3",
+  "route": "OpenRouter, throughput-sorted provider routing with fallbacks enabled",
+  "execution": {
+    "arms": [
+      "full",
+      "sift"
+    ],
+    "sift_targets": [
+      16384,
+      24576,
+      32768,
+      49152,
+      65536
+    ],
+    "repeats": 1,
+    "concurrency": 4,
+    "request_order": "seeded shuffle across cases, arms, targets, and repeats",
+    "temperature": 0.1,
+    "top_p": 0.8,
+    "reasoning": "disabled",
+    "max_output_tokens": 16,
+    "retries": 0,
+    "answer_format": "exactly one option letter; only exact A/B/C/D outputs are scorable",
+    "provider_usage_is_authoritative": true
+  },
+  "preparation": {
+    "tokenizer_count": "MiniMax published tokenizer over published rendered chat template",
+    "provider_count_note": "Per-request OpenRouter usage is authoritative; local token counts include a 128-token safety margin for Sift targets."
+  },
+  "samples": [
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "B",
+      "choice": "B",
+      "valid_structured_choice": true,
+      "ttft_ms": 2604.3298000004143,
+      "end_to_end_ms": 2832.7742000110447,
+      "completion_tokens_per_second": 8.7548655161034,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 16114,
+        "completion_tokens": 2,
+        "total_tokens": 16116,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 128,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00480588,
+          "upstream_inference_prompt_cost": 0.00480348,
+          "upstream_inference_completions_cost": 2.4e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "67062a63bb02136c067cf5ac",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 16384,
+      "repeat": 1,
+      "expected": "C",
+      "correct": false,
+      "local_rendered_prompt_tokens": 16114,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 45402,
+        "forwarded_tokens": 16114,
+        "omitted_estimated_tokens": 29288,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 111,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "C",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 2859.868499916047,
+      "end_to_end_ms": 3025.8755998220295,
+      "completion_tokens_per_second": 12.04767748567797,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 56114,
+        "completion_tokens": 2,
+        "total_tokens": 56116,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 128,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.01680588,
+          "upstream_inference_prompt_cost": 0.01680348,
+          "upstream_inference_completions_cost": 2.4e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "66f2a59d821e116aacb2a553",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 65536,
+      "repeat": 1,
+      "expected": "A",
+      "correct": false,
+      "local_rendered_prompt_tokens": 56114,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 591329,
+        "forwarded_tokens": 56114,
+        "omitted_estimated_tokens": 535215,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 512,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "D",
+      "choice": "D",
+      "valid_structured_choice": true,
+      "ttft_ms": 3156.409899936989,
+      "end_to_end_ms": 3173.7389999907464,
+      "completion_tokens_per_second": 115.41280238418062,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 59007,
+        "completion_tokens": 2,
+        "total_tokens": 59009,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 128,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.01767378,
+          "upstream_inference_prompt_cost": 0.01767138,
+          "upstream_inference_completions_cost": 2.4e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "66f95e11bb02136c067c5370",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 65536,
+      "repeat": 1,
+      "expected": "B",
+      "correct": false,
+      "local_rendered_prompt_tokens": 59007,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 120799,
+        "forwarded_tokens": 59007,
+        "omitted_estimated_tokens": 61792,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 512,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "A",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 3168.4431999456137,
+      "end_to_end_ms": 3394.3006999325007,
+      "completion_tokens_per_second": 8.85514096328932,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 32522,
+        "completion_tokens": 2,
+        "total_tokens": 32524,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 128,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00972828,
+          "upstream_inference_prompt_cost": 0.00972588,
+          "upstream_inference_completions_cost": 2.4e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "67062a63bb02136c067cf5ac",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 32768,
+      "repeat": 1,
+      "expected": "C",
+      "correct": false,
+      "local_rendered_prompt_tokens": 32522,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 45402,
+        "forwarded_tokens": 32522,
+        "omitted_estimated_tokens": 12880,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 226,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "D",
+      "choice": "D",
+      "valid_structured_choice": true,
+      "ttft_ms": 2067.54030007869,
+      "end_to_end_ms": 2121.2051000911742,
+      "completion_tokens_per_second": 18.634188514023478,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 21731,
+        "completion_tokens": 1,
+        "total_tokens": 21732,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 131,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00648906,
+          "upstream_inference_prompt_cost": 0.00648786,
+          "upstream_inference_completions_cost": 1.2e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "67039cfabb02136c067cd04e",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 65536,
+      "repeat": 1,
+      "expected": "C",
+      "correct": false,
+      "local_rendered_prompt_tokens": 21731,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 122913,
+        "forwarded_tokens": 21731,
+        "omitted_estimated_tokens": 101182,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 512,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "C",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 2946.110999910161,
+      "end_to_end_ms": 3434.742399957031,
+      "completion_tokens_per_second": 4.093064833345048,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 48943,
+        "completion_tokens": 2,
+        "total_tokens": 48945,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 128,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.01465458,
+          "upstream_inference_prompt_cost": 0.01465218,
+          "upstream_inference_completions_cost": 2.4e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "66f3a311821e116aacb2de19",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 49152,
+      "repeat": 1,
+      "expected": "B",
+      "correct": false,
+      "local_rendered_prompt_tokens": 48943,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 187640,
+        "forwarded_tokens": 48943,
+        "omitted_estimated_tokens": 138697,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 430,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "D",
+      "choice": "D",
+      "valid_structured_choice": true,
+      "ttft_ms": 3451.5542001463473,
+      "end_to_end_ms": 3496.627400163561,
+      "completion_tokens_per_second": 22.186132771094396,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 120799,
+        "completion_tokens": 1,
+        "total_tokens": 120800,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 131,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.03620946,
+          "upstream_inference_prompt_cost": 0.03620826,
+          "upstream_inference_completions_cost": 1.2e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "66f95e11bb02136c067c5370",
+      "domain": "Long Structured Data Understanding",
+      "arm": "full",
+      "target_tokens": null,
+      "repeat": 1,
+      "expected": "B",
+      "correct": false,
+      "local_rendered_prompt_tokens": 120799,
+      "selector_audit": null
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "D",
+      "choice": "D",
+      "valid_structured_choice": true,
+      "ttft_ms": 1873.3090001624078,
+      "end_to_end_ms": 1893.1396000552922,
+      "completion_tokens_per_second": 100.85423591838132,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 21731,
+        "completion_tokens": 2,
+        "total_tokens": 21733,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 128,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00649098,
+          "upstream_inference_prompt_cost": 0.00648858,
+          "upstream_inference_completions_cost": 2.4e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "67039cfabb02136c067cd04e",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 49152,
+      "repeat": 1,
+      "expected": "C",
+      "correct": false,
+      "local_rendered_prompt_tokens": 21731,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 122913,
+        "forwarded_tokens": 21731,
+        "omitted_estimated_tokens": 101182,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 512,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "A",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 1779.6668000519276,
+      "end_to_end_ms": 1799.7898000758141,
+      "completion_tokens_per_second": 99.38875901336502,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 48939,
+        "completion_tokens": 2,
+        "total_tokens": 48941,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 128,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.01465338,
+          "upstream_inference_prompt_cost": 0.01465098,
+          "upstream_inference_completions_cost": 2.4e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "66f2a59d821e116aacb2a553",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 49152,
+      "repeat": 1,
+      "expected": "A",
+      "correct": true,
+      "local_rendered_prompt_tokens": 48939,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 591329,
+        "forwarded_tokens": 48939,
+        "omitted_estimated_tokens": 542390,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 446,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "D",
+      "choice": "D",
+      "valid_structured_choice": true,
+      "ttft_ms": 1553.4624001011252,
+      "end_to_end_ms": 1569.3755999673158,
+      "completion_tokens_per_second": 125.68182495145008,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 21731,
+        "completion_tokens": 2,
+        "total_tokens": 21733,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 21730,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0013065,
+          "upstream_inference_prompt_cost": 0.0013041,
+          "upstream_inference_completions_cost": 2.4e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "67039cfabb02136c067cd04e",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 24576,
+      "repeat": 1,
+      "expected": "C",
+      "correct": false,
+      "local_rendered_prompt_tokens": 21731,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 122913,
+        "forwarded_tokens": 21731,
+        "omitted_estimated_tokens": 101182,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 512,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "C",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 2178.917800076306,
+      "end_to_end_ms": 2202.6740999426693,
+      "completion_tokens_per_second": 84.18819476309962,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 24424,
+        "completion_tokens": 2,
+        "total_tokens": 24426,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 218,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00727728,
+          "upstream_inference_prompt_cost": 0.00727488,
+          "upstream_inference_completions_cost": 2.4e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "66f3a311821e116aacb2de19",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 24576,
+      "repeat": 1,
+      "expected": "B",
+      "correct": false,
+      "local_rendered_prompt_tokens": 24424,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 187640,
+        "forwarded_tokens": 24424,
+        "omitted_estimated_tokens": 163216,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 207,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 400,
+      "normal": false,
+      "failure": "{\"error\":{\"message\":\"This endpoint's maximum context length is 524288 tokens. However, you requested about 558513 tokens (558497 of text input, 16 in the output). Please reduce the length of either one, or use the context-compression plugin to compress your prompt automatically.\",\"code\":400,\"metadata\":{\"provider_name\":null}}}",
+      "end_to_end_ms": 681.632700143382,
+      "case_id": "66f3a311821e116aacb2de19",
+      "domain": "Long Structured Data Understanding",
+      "arm": "full",
+      "target_tokens": null,
+      "repeat": 1,
+      "expected": "B",
+      "correct": false,
+      "local_rendered_prompt_tokens": 187640,
+      "selector_audit": null
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "C",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 2266.196999931708,
+      "end_to_end_ms": 2294.002000009641,
+      "completion_tokens_per_second": 71.92950887949334,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 65219,
+        "completion_tokens": 2,
+        "total_tokens": 65221,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 128,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.01953738,
+          "upstream_inference_prompt_cost": 0.01953498,
+          "upstream_inference_completions_cost": 2.4e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "66f2abc5821e116aacb2aab7",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 65536,
+      "repeat": 1,
+      "expected": "C",
+      "correct": true,
+      "local_rendered_prompt_tokens": 65219,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 347028,
+        "forwarded_tokens": 65219,
+        "omitted_estimated_tokens": 281809,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 282,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "D",
+      "choice": "D",
+      "valid_structured_choice": true,
+      "ttft_ms": 1690.0019000750035,
+      "end_to_end_ms": 1723.0595001019537,
+      "completion_tokens_per_second": 60.50045975417145,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 24396,
+        "completion_tokens": 2,
+        "total_tokens": 24398,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 128,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00729048,
+          "upstream_inference_prompt_cost": 0.00728808,
+          "upstream_inference_completions_cost": 2.4e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "66f95e11bb02136c067c5370",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 24576,
+      "repeat": 1,
+      "expected": "B",
+      "correct": false,
+      "local_rendered_prompt_tokens": 24396,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 120799,
+        "forwarded_tokens": 24396,
+        "omitted_estimated_tokens": 96403,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 204,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "D",
+      "choice": "D",
+      "valid_structured_choice": true,
+      "ttft_ms": 9785.207299981266,
+      "end_to_end_ms": 9803.671299945563,
+      "completion_tokens_per_second": 108.31889102401045,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 48908,
+        "completion_tokens": 2,
+        "total_tokens": 48910,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 128,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.01464408,
+          "upstream_inference_prompt_cost": 0.01464168,
+          "upstream_inference_completions_cost": 2.4e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "66f2abc5821e116aacb2aab7",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 49152,
+      "repeat": 1,
+      "expected": "C",
+      "correct": false,
+      "local_rendered_prompt_tokens": 48908,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 347028,
+        "forwarded_tokens": 48908,
+        "omitted_estimated_tokens": 298120,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 206,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "D",
+      "choice": "D",
+      "valid_structured_choice": true,
+      "ttft_ms": 2545.0132000260055,
+      "end_to_end_ms": 2560.5756000149995,
+      "completion_tokens_per_second": 128.51488211422625,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 16186,
+        "completion_tokens": 2,
+        "total_tokens": 16188,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 128,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00482748,
+          "upstream_inference_prompt_cost": 0.00482508,
+          "upstream_inference_completions_cost": 2.4e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "67039cfabb02136c067cd04e",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 16384,
+      "repeat": 1,
+      "expected": "C",
+      "correct": false,
+      "local_rendered_prompt_tokens": 16186,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 122913,
+        "forwarded_tokens": 16186,
+        "omitted_estimated_tokens": 106727,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 379,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "D",
+      "choice": "D",
+      "valid_structured_choice": true,
+      "ttft_ms": 5623.2920999173075,
+      "end_to_end_ms": 5642.360499827191,
+      "completion_tokens_per_second": 104.88557033898469,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 48914,
+        "completion_tokens": 2,
+        "total_tokens": 48916,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 128,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.01464588,
+          "upstream_inference_prompt_cost": 0.01464348,
+          "upstream_inference_completions_cost": 2.4e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "66f95e11bb02136c067c5370",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 49152,
+      "repeat": 1,
+      "expected": "B",
+      "correct": false,
+      "local_rendered_prompt_tokens": 48914,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 120799,
+        "forwarded_tokens": 48914,
+        "omitted_estimated_tokens": 71885,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 418,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "A",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 2339.0454999171197,
+      "end_to_end_ms": 2541.17379989475,
+      "completion_tokens_per_second": 9.894705492607125,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 24410,
+        "completion_tokens": 2,
+        "total_tokens": 24412,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 128,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00729468,
+          "upstream_inference_prompt_cost": 0.00729228,
+          "upstream_inference_completions_cost": 2.4e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "66f2a59d821e116aacb2a553",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 24576,
+      "repeat": 1,
+      "expected": "A",
+      "correct": true,
+      "local_rendered_prompt_tokens": 24410,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 591329,
+        "forwarded_tokens": 24410,
+        "omitted_estimated_tokens": 566919,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 218,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "A",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 1902.989299967885,
+      "end_to_end_ms": 1922.422100091353,
+      "completion_tokens_per_second": 102.91877584768126,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 16216,
+        "completion_tokens": 2,
+        "total_tokens": 16218,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 128,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00483648,
+          "upstream_inference_prompt_cost": 0.00483408,
+          "upstream_inference_completions_cost": 2.4e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "66f2a59d821e116aacb2a553",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 16384,
+      "repeat": 1,
+      "expected": "A",
+      "correct": true,
+      "local_rendered_prompt_tokens": 16216,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 591329,
+        "forwarded_tokens": 16216,
+        "omitted_estimated_tokens": 575113,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 142,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "C",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 2637.5566001515836,
+      "end_to_end_ms": 2652.508000144735,
+      "completion_tokens_per_second": 133.7667376243102,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 58149,
+        "completion_tokens": 2,
+        "total_tokens": 58151,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 128,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.01741638,
+          "upstream_inference_prompt_cost": 0.01741398,
+          "upstream_inference_completions_cost": 2.4e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "66f3a311821e116aacb2de19",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 65536,
+      "repeat": 1,
+      "expected": "B",
+      "correct": false,
+      "local_rendered_prompt_tokens": 58149,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 187640,
+        "forwarded_tokens": 58149,
+        "omitted_estimated_tokens": 129491,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 512,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "D",
+      "choice": "D",
+      "valid_structured_choice": true,
+      "ttft_ms": 1873.347899876535,
+      "end_to_end_ms": 1890.946100000292,
+      "completion_tokens_per_second": 113.64798592670002,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 32574,
+        "completion_tokens": 2,
+        "total_tokens": 32576,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 128,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00974388,
+          "upstream_inference_prompt_cost": 0.00974148,
+          "upstream_inference_completions_cost": 2.4e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "66f95e11bb02136c067c5370",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 32768,
+      "repeat": 1,
+      "expected": "B",
+      "correct": false,
+      "local_rendered_prompt_tokens": 32574,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 120799,
+        "forwarded_tokens": 32574,
+        "omitted_estimated_tokens": 88225,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 274,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "D",
+      "choice": "D",
+      "valid_structured_choice": true,
+      "ttft_ms": 1273.3307001180947,
+      "end_to_end_ms": 1296.6794001404196,
+      "completion_tokens_per_second": 85.65787380401028,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 21731,
+        "completion_tokens": 2,
+        "total_tokens": 21733,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 21730,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0013065,
+          "upstream_inference_prompt_cost": 0.0013041,
+          "upstream_inference_completions_cost": 2.4e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "67039cfabb02136c067cd04e",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 32768,
+      "repeat": 1,
+      "expected": "C",
+      "correct": false,
+      "local_rendered_prompt_tokens": 21731,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 122913,
+        "forwarded_tokens": 21731,
+        "omitted_estimated_tokens": 101182,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 512,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "C",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 1967.6715999376029,
+      "end_to_end_ms": 2079.276999924332,
+      "completion_tokens_per_second": 17.920279845220925,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 32625,
+        "completion_tokens": 2,
+        "total_tokens": 32627,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 128,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00975918,
+          "upstream_inference_prompt_cost": 0.00975678,
+          "upstream_inference_completions_cost": 2.4e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "66f3a311821e116aacb2de19",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 32768,
+      "repeat": 1,
+      "expected": "B",
+      "correct": false,
+      "local_rendered_prompt_tokens": 32625,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 187640,
+        "forwarded_tokens": 32625,
+        "omitted_estimated_tokens": 155015,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 290,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "A",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 1525.7755001075566,
+      "end_to_end_ms": 1608.1072001252323,
+      "completion_tokens_per_second": 24.291979876167026,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 16007,
+        "completion_tokens": 2,
+        "total_tokens": 16009,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 128,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00477378,
+          "upstream_inference_prompt_cost": 0.00477138,
+          "upstream_inference_completions_cost": 2.4e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "66f2abc5821e116aacb2aab7",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 16384,
+      "repeat": 1,
+      "expected": "C",
+      "correct": false,
+      "local_rendered_prompt_tokens": 16007,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 347028,
+        "forwarded_tokens": 16007,
+        "omitted_estimated_tokens": 331021,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 54,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "D",
+      "choice": "D",
+      "valid_structured_choice": true,
+      "ttft_ms": 3409.3243000097573,
+      "end_to_end_ms": 3459.1266000643373,
+      "completion_tokens_per_second": 20.079393901568146,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 122913,
+        "completion_tokens": 1,
+        "total_tokens": 122914,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 131,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.03684366,
+          "upstream_inference_prompt_cost": 0.03684246,
+          "upstream_inference_completions_cost": 1.2e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "67039cfabb02136c067cd04e",
+      "domain": "Long Structured Data Understanding",
+      "arm": "full",
+      "target_tokens": null,
+      "repeat": 1,
+      "expected": "C",
+      "correct": false,
+      "local_rendered_prompt_tokens": 122913,
+      "selector_audit": null
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "A",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 1861.2251000013202,
+      "end_to_end_ms": 1872.713099932298,
+      "completion_tokens_per_second": 174.09470856688685,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 16247,
+        "completion_tokens": 2,
+        "total_tokens": 16249,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 128,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00484578,
+          "upstream_inference_prompt_cost": 0.00484338,
+          "upstream_inference_completions_cost": 2.4e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "66f3a311821e116aacb2de19",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 16384,
+      "repeat": 1,
+      "expected": "B",
+      "correct": false,
+      "local_rendered_prompt_tokens": 16247,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 187640,
+        "forwarded_tokens": 16247,
+        "omitted_estimated_tokens": 171393,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 134,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "B",
+      "choice": "B",
+      "valid_structured_choice": true,
+      "ttft_ms": 3363.7046001385897,
+      "end_to_end_ms": 3456.0267000924796,
+      "completion_tokens_per_second": 21.66328539969192,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 24413,
+        "completion_tokens": 2,
+        "total_tokens": 24415,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 128,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00729558,
+          "upstream_inference_prompt_cost": 0.00729318,
+          "upstream_inference_completions_cost": 2.4e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "67062a63bb02136c067cf5ac",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 24576,
+      "repeat": 1,
+      "expected": "C",
+      "correct": false,
+      "local_rendered_prompt_tokens": 24413,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 45402,
+        "forwarded_tokens": 24413,
+        "omitted_estimated_tokens": 20989,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 169,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "C",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 2311.577099841088,
+      "end_to_end_ms": 2366.741499863565,
+      "completion_tokens_per_second": 18.12763303131271,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 45402,
+        "completion_tokens": 1,
+        "total_tokens": 45403,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 131,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.01359036,
+          "upstream_inference_prompt_cost": 0.01358916,
+          "upstream_inference_completions_cost": 1.2e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "67062a63bb02136c067cf5ac",
+      "domain": "Long Structured Data Understanding",
+      "arm": "full",
+      "target_tokens": null,
+      "repeat": 1,
+      "expected": "C",
+      "correct": true,
+      "local_rendered_prompt_tokens": 45402,
+      "selector_audit": null
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "B",
+      "choice": "B",
+      "valid_structured_choice": true,
+      "ttft_ms": 1992.0328999869525,
+      "end_to_end_ms": 2006.016599945724,
+      "completion_tokens_per_second": 143.02366368676786,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 16201,
+        "completion_tokens": 2,
+        "total_tokens": 16203,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 128,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00483198,
+          "upstream_inference_prompt_cost": 0.00482958,
+          "upstream_inference_completions_cost": 2.4e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "66f95e11bb02136c067c5370",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 16384,
+      "repeat": 1,
+      "expected": "B",
+      "correct": true,
+      "local_rendered_prompt_tokens": 16201,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 120799,
+        "forwarded_tokens": 16201,
+        "omitted_estimated_tokens": 104598,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 136,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "A",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 1488.7702001724392,
+      "end_to_end_ms": 1490.6992001924664,
+      "completion_tokens_per_second": 1036.8066247981892,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 32625,
+        "completion_tokens": 2,
+        "total_tokens": 32627,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 128,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00975918,
+          "upstream_inference_prompt_cost": 0.00975678,
+          "upstream_inference_completions_cost": 2.4e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "66f2a59d821e116aacb2a553",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 32768,
+      "repeat": 1,
+      "expected": "A",
+      "correct": true,
+      "local_rendered_prompt_tokens": 32625,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 591329,
+        "forwarded_tokens": 32625,
+        "omitted_estimated_tokens": 558704,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 295,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "B",
+      "choice": "B",
+      "valid_structured_choice": true,
+      "ttft_ms": 3122.791500063613,
+      "end_to_end_ms": 3138.7084999587387,
+      "completion_tokens_per_second": 125.65181963797548,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 24290,
+        "completion_tokens": 2,
+        "total_tokens": 24292,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 218,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00723708,
+          "upstream_inference_prompt_cost": 0.00723468,
+          "upstream_inference_completions_cost": 2.4e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "66f2abc5821e116aacb2aab7",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 24576,
+      "repeat": 1,
+      "expected": "C",
+      "correct": false,
+      "local_rendered_prompt_tokens": 24290,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 347028,
+        "forwarded_tokens": 24290,
+        "omitted_estimated_tokens": 322738,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 81,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "B",
+      "choice": "B",
+      "valid_structured_choice": true,
+      "ttft_ms": 1621.4107999112457,
+      "end_to_end_ms": 1639.6782998926938,
+      "completion_tokens_per_second": 109.48405649547789,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 32462,
+        "completion_tokens": 2,
+        "total_tokens": 32464,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 128,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00971028,
+          "upstream_inference_prompt_cost": 0.00970788,
+          "upstream_inference_completions_cost": 2.4e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "66f2abc5821e116aacb2aab7",
+      "domain": "Long Structured Data Understanding",
+      "arm": "sift",
+      "target_tokens": 32768,
+      "repeat": 1,
+      "expected": "C",
+      "correct": false,
+      "local_rendered_prompt_tokens": 32462,
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 347028,
+        "forwarded_tokens": 32462,
+        "omitted_estimated_tokens": 314566,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 121,
+        "method": "query_aware_extract"
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "A",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 8293.538799975067,
+      "end_to_end_ms": 8370.120499981567,
+      "completion_tokens_per_second": 13.057949874645312,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 347028,
+        "completion_tokens": 1,
+        "total_tokens": 347029,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 131,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.10407816,
+          "upstream_inference_prompt_cost": 0.10407696,
+          "upstream_inference_completions_cost": 1.2e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "66f2abc5821e116aacb2aab7",
+      "domain": "Long Structured Data Understanding",
+      "arm": "full",
+      "target_tokens": null,
+      "repeat": 1,
+      "expected": "C",
+      "correct": false,
+      "local_rendered_prompt_tokens": 347028,
+      "selector_audit": null
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "B",
+      "choice": "B",
+      "valid_structured_choice": true,
+      "ttft_ms": 13914.206200046465,
+      "end_to_end_ms": 13968.523600138724,
+      "completion_tokens_per_second": 18.410306794903338,
+      "provider": "Minimax",
+      "usage": {
+        "prompt_tokens": 591329,
+        "completion_tokens": 1,
+        "total_tokens": 591330,
+        "cost": 0,
+        "is_byok": true,
+        "prompt_tokens_details": {
+          "cached_tokens": 131,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.17736846,
+          "upstream_inference_prompt_cost": 0.17736726,
+          "upstream_inference_completions_cost": 1.2e-06
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "case_id": "66f2a59d821e116aacb2a553",
+      "domain": "Long Structured Data Understanding",
+      "arm": "full",
+      "target_tokens": null,
+      "repeat": 1,
+      "expected": "A",
+      "correct": false,
+      "local_rendered_prompt_tokens": 591329,
+      "selector_audit": null
+    }
+  ],
+  "completed_utc": "2026-10-16T10:03:58.792435+00:00"
+}

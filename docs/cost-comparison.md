@@ -125,6 +125,18 @@ and billed usage must be measured on Astra. The large 1M-to-24,576 example
 above remains price arithmetic under an equal-success assumption, not a result
 we have demonstrated for current Sift. See the [evaluation record](evaluation.md).
 
+A fresh six-case public LongBench v2 Table QA screen used MiniMax M3 through
+OpenRouter. Sift reduced provider-reported input by 82.9% to 93.4% and the
+provider's pass-through cost field by 82.9% to 93.5% on matched successful
+requests. OpenRouter marked the requests as BYOK and top-level cost was $0, so
+the pass-through amounts are not invoice-verified. Full context got 1/5
+correct answers; Sift got 6/28 across targets, with tiny per-target samples.
+One full request failed because the provider's endpoint limit was lower than
+the local tokenizer estimate. The result shows input reduction, not
+equal-quality savings or production latency benefit; Sift preprocessing was
+not included in the response timings. See the [fresh sample report](evals/longbench-v2-minimax-m3-table-fresh-2026-10-16.md)
+and [raw result](results/longbench-v2-minimax-m3-table-fresh-2026-10-16.json).
+
 The 2026-10-16 least-privilege rollup diagnostic later completed one public
 synthetic task in all three arms. Substituting each arm's client-reported local
 Qwen usage into Astra's short-context rates gives illustrative totals of

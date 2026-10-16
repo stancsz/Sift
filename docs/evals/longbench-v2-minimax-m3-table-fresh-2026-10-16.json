@@ -1,0 +1,163 @@
+{
+  "schema_version": 1,
+  "status": "frozen public development sample; no generations made during preparation",
+  "created_utc": "2026-10-16T10:00:50.891000+00:00",
+  "blinding_note": "The dataset is public and the sample author can inspect it; this is not a blind or independently authored holdout. Case IDs were sampled before reviewing their prompts or any outputs for this selector revision.",
+  "dataset": {
+    "id": "zai-org/LongBench-v2",
+    "revision": "2b48e494f2c7a2f0af81aae178e05c7e1dde0fe9",
+    "split": "train (503 public rows)",
+    "data_file_sha256": "15d61c22d92c96900b3c4948b6aeea218d3214b676a65df48e7b8555604c7fe2",
+    "license": "apache-2.0"
+  },
+  "model": {
+    "id": "minimax/minimax-m3",
+    "context_tokens": 1048576,
+    "tokenizer_source": "https://huggingface.co/MiniMaxAI/MiniMax-M3/resolve/main/tokenizer.json",
+    "tokenizer_sha256": "bb1f1626cf01448f1e3b6036d0a061ffc66c91d9046aada14ea23a5441b5ad6e",
+    "chat_template_source": "https://huggingface.co/MiniMaxAI/MiniMax-M3/resolve/main/chat_template.jinja",
+    "chat_template_sha256": "11421244f67553498e5c8112dae02802025bcc4305ec45ad380af95c96f9fe64",
+    "counting_note": "Counts use the published MiniMax tokenizer and frozen chat renderer with reasoning disabled. Provider-reported counts remain authoritative."
+  },
+  "sift": {
+    "core_sha256": "efd224e19f96d86e0c4836fc1ff654ed9743db95b190365b88e9d06b2c035179",
+    "git_commit": "e7e1f4f",
+    "targets": [
+      16384,
+      24576,
+      32768,
+      49152,
+      65536
+    ],
+    "safety_margin_tokens": 128
+  },
+  "harness": {
+    "preparation_script_sha256": "15a7c2be558b55e961377fe584e2664fc68bd179706c94ff6df1403cc40727ad",
+    "runner_path": "benchmarks/run_longbench_v2_minimax.py",
+    "runner_sha256": "a880a0328d684ca58413297703d95f404204c606ded26f12fa3cc8605ef60f24"
+  },
+  "selection": {
+    "seed": 20261017,
+    "excluded_prior_manifests": [
+      {
+        "path": "docs/evals/longbench-v2-qwen-screen-2026-10-16.json",
+        "sha256": "75ba71354935f2f3aeb69cca2b209ac79f998db0d49e7f139d830ed492005d85",
+        "case_count": 23,
+        "overlap_with_prior_manifests": 0
+      },
+      {
+        "path": "docs/evals/longbench-v2-qwen-extension-2026-10-16.json",
+        "sha256": "6c024df1ce2b884cd0b22242d856979a9e4d743a583492c40ef68cfc9fa74f50",
+        "case_count": 10,
+        "overlap_with_prior_manifests": 0
+      },
+      {
+        "path": "docs/evals/longbench-v2-minimax-m3-sift-screen-2026-10-16.json",
+        "sha256": "c947b4c2a61ffe05964318afb79457aa0355e7e589206a1cf4320339d369cd38",
+        "case_count": 10,
+        "overlap_with_prior_manifests": 1
+      }
+    ],
+    "excluded_case_count": 42,
+    "domain": "Long Structured Data Understanding",
+    "sub_domain": "Table QA",
+    "eligible_full_prompt_tokens": [
+      24577,
+      900000
+    ],
+    "eligible_case_count": 13,
+    "sample_size": 6,
+    "policy": "Uniform deterministic random sample from unused Table QA rows whose full M3-rendered prompt exceeds 24,576 tokens and is at most 900,000 tokens; no manual case substitutions.",
+    "selected_by_length": {
+      "short": 2,
+      "medium": 4
+    }
+  },
+  "execution_protocol": {
+    "arms": [
+      "full",
+      "sift"
+    ],
+    "repeats_per_case": 1,
+    "runner_seed_argument": 20261026,
+    "request_order_seed": 20261027,
+    "generation_seed": 20261028,
+    "randomize_arm_order": true,
+    "temperature": 0.1,
+    "top_p": 0.8,
+    "reasoning": false,
+    "cache_prompt": false,
+    "max_output_tokens": 16,
+    "retries": 0,
+    "provider": "OpenRouter minimax/minimax-m3, throughput sort, fallbacks enabled",
+    "scoring": "Only normal terminal output containing exactly one A/B/C/D letter counts correct; all failed, invalid, or missing outcomes remain incorrect."
+  },
+  "cases": [
+    {
+      "id": "66f2a59d821e116aacb2a553",
+      "domain": "Long Structured Data Understanding",
+      "sub_domain": "Table QA",
+      "difficulty": "easy",
+      "length": "short",
+      "answer_key": "A",
+      "context_chars": 840733,
+      "m3_rendered_prompt_tokens": 591329,
+      "prompt_sha256": "d717eb692e3c1dc55c92301b92679b41e3c8f303a3a9a865d5a78cbc90e456b5"
+    },
+    {
+      "id": "66f2abc5821e116aacb2aab7",
+      "domain": "Long Structured Data Understanding",
+      "sub_domain": "Table QA",
+      "difficulty": "hard",
+      "length": "medium",
+      "answer_key": "C",
+      "context_chars": 916788,
+      "m3_rendered_prompt_tokens": 347028,
+      "prompt_sha256": "f1cda624526cd088a5250569774f63d61730cbafd134714e2a391fd854df9ce4"
+    },
+    {
+      "id": "66f3a311821e116aacb2de19",
+      "domain": "Long Structured Data Understanding",
+      "sub_domain": "Table QA",
+      "difficulty": "hard",
+      "length": "medium",
+      "answer_key": "B",
+      "context_chars": 2232827,
+      "m3_rendered_prompt_tokens": 187640,
+      "prompt_sha256": "da0e041d2ab739f4377a458683b84830ef65c67c8929a8c782f251df40765006"
+    },
+    {
+      "id": "66f95e11bb02136c067c5370",
+      "domain": "Long Structured Data Understanding",
+      "sub_domain": "Table QA",
+      "difficulty": "hard",
+      "length": "medium",
+      "answer_key": "B",
+      "context_chars": 306252,
+      "m3_rendered_prompt_tokens": 120799,
+      "prompt_sha256": "f4ae83c65cf491a54296f3a4629153ace11532a1bef3dcb31b9a05f6c30636c0"
+    },
+    {
+      "id": "67039cfabb02136c067cd04e",
+      "domain": "Long Structured Data Understanding",
+      "sub_domain": "Table QA",
+      "difficulty": "easy",
+      "length": "medium",
+      "answer_key": "C",
+      "context_chars": 341229,
+      "m3_rendered_prompt_tokens": 122913,
+      "prompt_sha256": "97c4390913e66fd8dd07002aecbec73ae2d22eead079de1e106a65091a86e126"
+    },
+    {
+      "id": "67062a63bb02136c067cf5ac",
+      "domain": "Long Structured Data Understanding",
+      "sub_domain": "Table QA",
+      "difficulty": "hard",
+      "length": "short",
+      "answer_key": "C",
+      "context_chars": 195192,
+      "m3_rendered_prompt_tokens": 45402,
+      "prompt_sha256": "4335076862bdfc7d3e178350e030ac2344f949f1319bfdccd3736a81c71dff60"
+    }
+  ]
+}
