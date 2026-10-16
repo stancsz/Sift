@@ -1,0 +1,99 @@
+{
+  "date": "2026-10-16",
+  "status": "public synthetic development repeat; not independent task evidence",
+  "fixture": "least_privilege_rollup",
+  "manifest_sha256": "2c82403fba61c4ef6c5c89b04d036cc6e691aacee64a26fa9a41b55b7b71fb96",
+  "client": "Claude Code 2.1.251",
+  "backend": "local Qwen 3.8 27B",
+  "target_estimated_tokens": 24576,
+  "output_cap_tokens": 3072,
+  "random_seed": 20261017,
+  "arm_order": ["recency", "full", "sift"],
+  "astra_estimate": {
+    "method": "Substitute local client-reported Qwen token counts into GPT-6 Astra short-context rates; no Astra calls were made.",
+    "rates_usd_per_million": {
+      "uncached_input": 10.0,
+      "cached_input": 1.0,
+      "cache_write": 12.5,
+      "output": 50.0
+    },
+    "cache_write_tokens": 0,
+    "limitations": [
+      "Not an Astra invoice or measured Astra usage.",
+      "Provider tokenizer, cache behavior, retries, and cache writes may differ.",
+      "One exposed task cannot establish accepted-task economics."
+    ]
+  },
+  "arms": {
+    "recency": {
+      "run_id": "sift-agent-emf1w4r6",
+      "accepted": false,
+      "terminal_success": false,
+      "wall_seconds": 226.6652243,
+      "mean_client_ttft_ms": 6505.363636,
+      "ttft_samples": 11,
+      "uncached_input_tokens": 25195,
+      "cache_read_tokens": 146691,
+      "output_tokens": 4964,
+      "astra_estimated_usd": 0.646841,
+      "visible_tests_passed": false,
+      "gold_tests_passed": false,
+      "visible_test_count": 4,
+      "gold_test_count": 9,
+      "acceptance_failure": "Only three of six requested permissions appeared; missing dynamodb:Query, s3:GetObject, and rds:DescribeDBInstances.",
+      "gateway_requests": 13,
+      "compactions": 0,
+      "max_input_tokens": 23118
+    },
+    "full": {
+      "run_id": "sift-agent-gpbh1kpx",
+      "accepted": true,
+      "terminal_success": true,
+      "wall_seconds": 264.5097809,
+      "mean_client_ttft_ms": 3398.235294,
+      "ttft_samples": 17,
+      "uncached_input_tokens": 28863,
+      "cache_read_tokens": 305186,
+      "output_tokens": 6494,
+      "astra_estimated_usd": 0.918516,
+      "visible_tests_passed": true,
+      "gold_tests_passed": true,
+      "visible_test_count": 4,
+      "gold_test_count": 9,
+      "gateway_selection": "bypassed"
+    },
+    "sift": {
+      "run_id": "sift-agent-y16odqbj",
+      "accepted": true,
+      "terminal_success": true,
+      "wall_seconds": 238.8952739,
+      "mean_client_ttft_ms": 2828.823529,
+      "ttft_samples": 17,
+      "uncached_input_tokens": 40238,
+      "cache_read_tokens": 271028,
+      "output_tokens": 6242,
+      "astra_estimated_usd": 0.985508,
+      "visible_tests_passed": true,
+      "gold_tests_passed": true,
+      "visible_test_count": 4,
+      "gold_test_count": 9,
+      "gateway_requests": 18,
+      "compactions": 2,
+      "gateway_raw_estimated_token_sum": 284113,
+      "gateway_forwarded_estimated_token_sum": 260885,
+      "compaction_examples": [
+        {"input_tokens": 25032, "forwarded_tokens": 13418},
+        {"input_tokens": 25510, "forwarded_tokens": 13896}
+      ],
+      "selector_thread_cpu_ms_sum": 247.03
+    }
+  },
+  "analysis": {
+    "full_combined_input_tokens": 334049,
+    "sift_combined_input_tokens": 311266,
+    "sift_combined_input_reduction_vs_full_percent": 6.8205,
+    "sift_astra_estimated_cost_change_vs_full_percent": 7.293,
+    "qwen_decode_tokens_per_second": null,
+    "qwen_decode_tokens_per_second_note": "Engine records could not be joined to these client requests by request ID."
+  }
+}

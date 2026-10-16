@@ -145,3 +145,10 @@ not measured Astra costs: the full-context arm is lowest, and no Astra request
 was made. Since only one exposed task was tested, this comparison does not
 establish savings or equal-quality cost reduction. See the
 [three-arm diagnostic](evals/natural-agent-pilot-2026-10-16.md#least-privilege-rollup-three-arm-diagnostic-2026-10-16).
+
+A randomized repeat of the same public fixture accepted both full and Sift,
+while recency missed three requested permissions. Substituting local Qwen usage
+into the same Astra short-context rates gives $0.9185 for full and $0.9855 for
+Sift; the failed recency arm estimates $0.6468 and is not an accepted-task
+saving. This is one repeated task, not general cost evidence. See the
+[repeat report](evals/least-privilege-rollup-repeat-2026-10-16.md).
