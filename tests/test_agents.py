@@ -8,8 +8,10 @@ import json
 import errno
 import os
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -21,6 +23,24 @@ SPEC.loader.exec_module(agents)
 
 
 class AgentEvidenceTests(unittest.TestCase):
+    def test_unittest_command_accepts_only_supported_command_with_terminal_stderr_redirect(self):
+        for command in (
+            "python -m unittest -q 2>&1",
+            "python3 -m unittest discover -v 2>&1",
+            "py -3 -m unittest -q",
+            "/bin/bash -lc 'python -m unittest -q 2>&1'",
+        ):
+            with self.subTest(command=command):
+                self.assertTrue(agents.unittest_command(command))
+        for command in (
+            "python -m unittest -q 2>&1 && python audit.py",
+            "python -m unittest -q; python audit.py",
+            "python -m unittest -q 2>&1 | tee tests.log",
+            "python -c 'import unittest'",
+        ):
+            with self.subTest(command=command):
+                self.assertFalse(agents.unittest_command(command))
+
     def test_predeclared_fixture_hashes_survive_checkout(self):
         base = Path(__file__).resolve().parents[1] / "benchmarks"
         manifest = json.loads((base / "agent_gold" / "manifest.json").read_text(encoding="utf-8"))
@@ -33,6 +53,112 @@ class AgentEvidenceTests(unittest.TestCase):
             category, relative = name.split("/", 1)
             with self.subTest(fixture=name):
                 self.assertEqual(hashlib.sha256((roots[category] / relative).read_bytes()).hexdigest(), expected)
+
+    def test_frozen_manifest_pins_case_and_postrun_acceptance_files(self):
+        with tempfile.TemporaryDirectory(prefix="sift-frozen-fixture-") as temporary:
+            root = Path(temporary)
+            case, gold = root / "case", root / "gold"
+            case.mkdir()
+            gold.mkdir()
+            (case / "README.md").write_text("task", encoding="utf-8")
+            (case / "input.csv").write_text("id\n1\n", encoding="utf-8")
+            (gold / "test_gold.py").write_text("import unittest\n", encoding="utf-8")
+            def digest(path):
+                return hashlib.sha256(path.read_bytes()).hexdigest()
+            manifest = root / "manifest.json"
+            manifest.write_text(json.dumps({
+                "frozen_at_utc": "2026-10-15T00:00:00Z",
+                "input_sha256": {name: digest(case / name) for name in ("README.md", "input.csv")},
+                "acceptance_sha256": {"test_gold.py": digest(gold / "test_gold.py")},
+            }), encoding="utf-8")
+            verified = agents.verify_frozen_manifest(case, gold, manifest)
+            self.assertEqual(verified["input_sha256"]["input.csv"], digest(case / "input.csv"))
+            self.assertEqual(verified["acceptance_sha256"]["test_gold.py"], digest(gold / "test_gold.py"))
+
+            (gold / "test_gold.py").write_text("# changed after freeze\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "acceptance_sha256"):
+                agents.verify_frozen_manifest(case, gold, manifest)
+
+    def test_frozen_manifest_pins_evidence_annotations_when_present(self):
+        with tempfile.TemporaryDirectory(prefix="sift-frozen-evidence-") as temporary:
+            root = Path(temporary)
+            case, gold = root / "agent_cases" / "fixture_one", root / "agent_gold" / "fixture_one"
+            case.mkdir(parents=True)
+            gold.mkdir(parents=True)
+            (case / "README.md").write_text("task", encoding="utf-8")
+            (gold / "test_gold.py").write_text("import unittest\n", encoding="utf-8")
+            evidence = gold / "evidence.json"
+            evidence.write_text('{"schema_version":1}\n', encoding="utf-8")
+            digest = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+            manifest = root / "manifest.json"
+            manifest.write_text(json.dumps({
+                "input_sha256": {"README.md": digest(case / "README.md")},
+                "acceptance_sha256": {"test_gold.py": digest(gold / "test_gold.py")},
+                "evidence_sha256": digest(evidence),
+            }), encoding="utf-8")
+
+            verified = agents.verify_frozen_manifest(case, gold, manifest)
+            self.assertEqual(verified["evidence_sha256"], digest(evidence))
+            evidence.write_text('{"schema_version":1,"changed":true}\n', encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "evidence_sha256"):
+                agents.verify_frozen_manifest(case, gold, manifest)
+            manifest_data = json.loads(manifest.read_text(encoding="utf-8"))
+            manifest_data.pop("evidence_sha256")
+            manifest.write_text(json.dumps(manifest_data), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "must be pinned"):
+                agents.verify_frozen_manifest(case, gold, manifest)
+
+    def test_tampered_frozen_manifest_stops_before_native_client_setup(self):
+        with tempfile.TemporaryDirectory(prefix="sift-frozen-preflight-") as temporary:
+            root = Path(temporary)
+            case, gold = root / "case", root / "gold"
+            case.mkdir()
+            gold.mkdir()
+            (case / "README.md").write_text("task", encoding="utf-8")
+            (case / "solution.py").write_text("pass\n", encoding="utf-8")
+            gold_test = gold / "test_gold.py"
+            gold_test.write_text("import unittest\n", encoding="utf-8")
+            def digest(path):
+                return hashlib.sha256(path.read_bytes()).hexdigest()
+            manifest = root / "manifest.json"
+            manifest.write_text(json.dumps({
+                "input_sha256": {name: digest(case / name) for name in ("README.md", "solution.py")},
+                "acceptance_sha256": {"test_gold.py": digest(gold_test)},
+            }), encoding="utf-8")
+            gold_test.write_text("# changed after freeze\n", encoding="utf-8")
+            argv = ["agents.py", "--client", "claude", "--case", str(case), "--gold", str(gold),
+                    "--manifest", str(manifest), "--editable", "solution.py",
+                    "--base-url", "http://unused.invalid/v1", "--model", "offline",
+                    "--api-key-env", "SIFT_OFFLINE_KEY"]
+            with patch.object(sys, "argv", argv), patch.dict(os.environ, {"SIFT_OFFLINE_KEY": "offline"}), \
+                    patch.object(agents, "executable_for", side_effect=AssertionError("client setup must not run")), \
+                    patch.object(agents, "run_process", side_effect=AssertionError("no subprocess may run")), \
+                    redirect_stdout(io.StringIO()), self.assertRaises(SystemExit) as error:
+                agents.main()
+            self.assertEqual(error.exception.code, 2)
+
+    def test_claude_can_run_fixture_cli_but_python_one_liners_remain_denied(self):
+        command = agents.client_command(
+            SimpleNamespace(client="claude", model="offline"), "claude", ["reconcile.py", "audit.py"])
+        allowed = command[command.index("--allowedTools") + 1]
+        shell = "PowerShell" if os.name == "nt" else "Bash"
+        self.assertIn(f"{shell}({agents.TOOL_TEST_PYTHON} reconcile.py:*)", allowed)
+        self.assertIn(f"{shell}({agents.TOOL_TEST_PYTHON} audit.py:*)", allowed)
+        self.assertNotIn(f"{shell}({agents.TOOL_TEST_PYTHON} -c:*)", allowed)
+
+        restricted = agents.client_command(
+            SimpleNamespace(client="claude", model="offline"), "claude", ["implementation.py"])
+        restricted_allowed = restricted[restricted.index("--allowedTools") + 1]
+        self.assertNotIn(f"{shell}({agents.TOOL_TEST_PYTHON} audit.py:*)", restricted_allowed)
+
+    def test_claude_output_cap_cannot_exceed_gateway_limit(self):
+        argv = ["agents.py", "--client", "claude", "--case", "case", "--gold", "gold",
+                "--editable", "solution.py", "--base-url", "http://127.0.0.1:4010/v1",
+                "--model", "qwen3.8-27b", "--api-key-env", "SIFT_AGENT_API_KEY",
+                "--claude-max-output-tokens", "4097"]
+        with patch.object(sys, "argv", argv), self.assertRaises(SystemExit) as error:
+            agents.main()
+        self.assertEqual(error.exception.code, 2)
 
     def test_readonly_filesystem_is_a_valid_denial_but_unrelated_io_errors_are_not(self):
         with tempfile.TemporaryDirectory(prefix="sift-probe-errno-") as temporary:
@@ -95,6 +221,43 @@ class AgentEvidenceTests(unittest.TestCase):
                 self.assertTrue(result["observed_test_loop"])
                 self.assertEqual(result["test_tool_calls"], 2)
                 self.assertEqual(result["client_reported_ttft_ms"], [17.5] if client == "claude" else [])
+
+    def test_claude_stream_reports_decode_rate_and_labeled_client_cost(self):
+        events = [
+            {"type": "stream_event", "timestamp": "2026-10-16T12:00:00.000Z",
+             "event": {"type": "message_start"}, "ttft_ms": 250.0},
+            {"type": "stream_event", "timestamp": "2026-10-16T12:00:00.250Z",
+             "event": {"type": "content_block_delta", "delta": {"type": "text_delta", "text": "hello"}}},
+            {"type": "stream_event", "timestamp": "2026-10-16T12:00:00.750Z",
+             "event": {"type": "content_block_delta", "delta": {"type": "text_delta", "text": " world"}}},
+            {"type": "stream_event", "timestamp": "2026-10-16T12:00:00.800Z",
+             "event": {"type": "message_delta", "usage": {"output_tokens": 20}}},
+            {"type": "stream_event", "timestamp": "2026-10-16T12:00:00.810Z",
+             "event": {"type": "message_stop"}},
+            {"type": "result", "subtype": "success", "is_error": False,
+             "usage": {"input_tokens": 100, "output_tokens": 20}, "total_cost_usd": 0.0123},
+        ]
+
+        result = agents.event_evidence("claude", "\n".join(map(json.dumps, events)))
+
+        self.assertEqual(result["client_reported_ttft_ms"], [250.0])
+        self.assertEqual(result["client_reported_decode_tokens_per_second"], [40.0])
+        self.assertEqual(result["mean_client_reported_decode_tokens_per_second"], 40.0)
+        self.assertEqual(result["client_reported_cost_usd"], 0.0123)
+        self.assertEqual(result["client_reported_cost_source"], "Claude Code result.total_cost_usd")
+
+    def test_decode_rate_is_unknown_without_stream_timestamps(self):
+        events = [
+            {"type": "stream_event", "event": {"type": "message_start"}, "ttft_ms": 50},
+            {"type": "stream_event", "event": {"type": "content_block_delta",
+             "delta": {"type": "text_delta", "text": "generated"}}},
+            {"type": "stream_event", "event": {"type": "message_delta", "usage": {"output_tokens": 10}}},
+            {"type": "stream_event", "event": {"type": "message_stop"}},
+            {"type": "result", "subtype": "success", "is_error": False, "usage": {}},
+        ]
+        result = agents.event_evidence("claude", "\n".join(map(json.dumps, events)))
+        self.assertEqual(result["client_reported_decode_tokens_per_second"], [])
+        self.assertIsNone(result["mean_client_reported_decode_tokens_per_second"])
 
     def test_parser_failure_preserves_redacted_native_checkpoint_and_post_checks(self):
         with tempfile.TemporaryDirectory(prefix="sift-agent-regression-") as temporary:
@@ -159,6 +322,68 @@ class AgentEvidenceTests(unittest.TestCase):
                 saved = (run / name).read_text(encoding="utf-8")
                 self.assertNotIn(key, saved)
                 self.assertNotIn(json.dumps(key)[1:-1], saved)
+
+    def test_generated_output_is_isolated_from_baseline_and_allowed_when_declared(self):
+        with tempfile.TemporaryDirectory(prefix="sift-agent-output-regression-") as temporary:
+            base = Path(temporary)
+            case, gold, run = (base / name for name in ("case", "gold", "run"))
+            for directory in (case, gold, run):
+                directory.mkdir()
+            (case / "README.md").write_text("Generate report.json by editing implementation.py.", encoding="utf-8")
+            implementation = case / "implementation.py"
+            implementation.write_text(
+                'from pathlib import Path\nimport json\nPath("report.json").write_text(json.dumps({"ok": False}))\n',
+                encoding="utf-8")
+            check = (
+                'import json, subprocess, sys, unittest\nfrom pathlib import Path\n'
+                'ROOT=Path(__file__).parent\n'
+                'class Check(unittest.TestCase):\n'
+                ' def test_report(self):\n'
+                '  subprocess.run([sys.executable,str(ROOT/"implementation.py")],check=True,cwd=ROOT)\n'
+                '  self.assertEqual(json.loads((ROOT/"report.json").read_text()),{"ok":True})\n')
+            (case / "test_visible.py").write_text(check, encoding="utf-8")
+            (gold / "test_gold.py").write_text(check, encoding="utf-8")
+            key = "offline-key"
+            original_run_process = agents.run_process
+
+            def process(command, directory, env, **kwargs):
+                if command[0] != "fake-native":
+                    return original_run_process(command, directory, env, **kwargs)
+                if "--version" in command:
+                    return {"exit_code": 0, "timed_out": False, "seconds": 0.1,
+                            "stdout": "fake-native 1.0", "stderr": ""}
+                self.assertFalse((directory / "report.json").exists(),
+                                 "a baseline test's generated artifact must not leak into the client workspace")
+                (directory / "implementation.py").write_text(
+                    'from pathlib import Path\nimport json\nPath("report.json").write_text(json.dumps({"ok": True}))\n',
+                    encoding="utf-8")
+                subprocess.run([sys.executable, str(directory / "implementation.py")], check=True, cwd=directory)
+                return {"exit_code": 0, "timed_out": False, "seconds": 0.2, "stdout": "{}\n", "stderr": ""}
+
+            argv = ["agents.py", "--client", "claude", "--case", str(case), "--gold", str(gold),
+                    "--editable", "implementation.py", "--allowed-output", "report.json",
+                    "--base-url", "http://unused.invalid/v1", "--model", "offline",
+                    "--api-key-env", "SIFT_OFFLINE_KEY"]
+            successful_events = {"native_terminal_success": True, "observed_test_loop": True,
+                                 "test_tool_calls": 2, "client_reported_usage": None,
+                                 "client_reported_ttft_ms": [], "mean_client_reported_ttft_ms": None}
+            with patch.object(sys, "argv", argv), patch.dict(os.environ, {"SIFT_OFFLINE_KEY": key}), \
+                    patch.object(agents.Path, "home", return_value=base), \
+                    patch.object(agents.tempfile, "mkdtemp", return_value=str(run)), \
+                    patch.object(agents, "executable_for", return_value="fake-native"), \
+                    patch.object(agents, "run_process", side_effect=process), \
+                    patch.object(agents, "event_evidence", return_value=successful_events), redirect_stdout(io.StringIO()):
+                status = agents.main()
+            report = json.loads((run / "result.json").read_text(encoding="utf-8"))
+            self.assertEqual(status, 0, json.dumps(report, indent=2))
+            self.assertTrue(report["accepted"])
+            self.assertEqual(report["baseline"]["exit_code"], 1)
+            self.assertTrue((run / "baseline-check" / "report.json").is_file())
+            self.assertEqual(report["created_outputs"], ["report.json"])
+            self.assertEqual(report["missing_outputs"], [])
+            self.assertEqual(report["extra_files"], [])
+            self.assertTrue(report["visible"]["passed"])
+            self.assertTrue(report["gold"]["passed"])
 
     def test_codex_owned_home_exists_before_version_and_native_startup(self):
         with tempfile.TemporaryDirectory(prefix="sift-codex-home-regression-") as temporary:

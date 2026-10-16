@@ -1,7 +1,9 @@
 # Temporary benchmark gateway only. It never mounts Subroute state, credentials,
 # databases or config. Run from a frozen Sift source checkout and retain its commit and source hashes.
-# Set SIFT_NATIVE_GATEWAY_KEY, select SIFT_BENCH_ARM=sift|recency before startup,
-# and recreate this service between arms. Do not reuse a live gateway process.
+# Set SIFT_NATIVE_GATEWAY_KEY, select SIFT_BENCH_ARM=full|sift|recency before startup,
+# optionally set SIFT_BENCH_TARGET and SIFT_BENCH_EVIDENCE_MANIFEST, and recreate
+# this service between arms.
+# Do not reuse a live gateway process.
 # Example: docker compose -f benchmarks/compose.native.yaml up -d
 # Cleanup: docker compose -f benchmarks/compose.native.yaml down
 services:
@@ -15,11 +17,22 @@ services:
       LITELLM_LOG: INFO
       LITELLM_LOCAL_MODEL_COST_MAP: "True"
       SIFT_BENCH_ARM: ${SIFT_BENCH_ARM:-sift}
+      SIFT_BENCH_MODEL: ${SIFT_BENCH_MODEL:-qwen3.8-27b}
+      SIFT_BENCH_FULL_MODEL: ${SIFT_BENCH_FULL_MODEL:-qwen3.8-27b-full}
+      SIFT_BENCH_PROFILE: ${SIFT_BENCH_PROFILE:-qwen}
+      SIFT_BENCH_TARGET: ${SIFT_BENCH_TARGET:-24576}
+      SIFT_BENCH_EVIDENCE_MANIFEST: ${SIFT_BENCH_EVIDENCE_MANIFEST:-}
       SIFT_NATIVE_GATEWAY_KEY: ${SIFT_NATIVE_GATEWAY_KEY:?Set a dedicated benchmark key}
       SIFT_NATIVE_BACKEND_URL: ${SIFT_NATIVE_BACKEND_URL:-http://qwen-local:8080/v1}
     volumes:
       - ../src:/sift-src:ro
       - .:/bench:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4000/health/readiness', timeout=2).read()"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 2s
     networks: [engine]
     command: ["--config", "/bench/native_litellm.yaml", "--port", "4000", "--host", "0.0.0.0", "--telemetry", "False"]
 

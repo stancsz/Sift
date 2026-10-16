@@ -1,0 +1,10 @@
+# Overlay for the isolated MiniMax M3 comparison. It keeps the existing pinned
+# LiteLLM image, process-per-arm selector, and network while selecting a model profile.
+services:
+  native-benchmark:
+    environment:
+      SIFT_BENCH_MODEL: minimax-m3-sift
+      SIFT_BENCH_FULL_MODEL: minimax-m3-full
+      SIFT_BENCH_PROFILE: passthrough
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:?Set OPENROUTER_API_KEY for this experiment}
+    command: ["--config", "/bench/native_litellm_minimax_m3.yaml", "--port", "4000", "--host", "0.0.0.0", "--telemetry", "False"]

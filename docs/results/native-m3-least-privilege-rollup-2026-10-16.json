@@ -1,0 +1,173 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-16",
+  "status": "exposed public synthetic development diagnostic; not held-out evidence",
+  "git_head": "c25fcfe13208293e342b1ea7955ac0845389c92f",
+  "model_route": "openrouter/minimax/minimax-m3",
+  "client": "Claude Code 2.1.251",
+  "fixture": {
+    "name": "least_privilege_rollup",
+    "status": "public synthetic development derivative; exposed, not held-out",
+    "manifest_sha256": "9a5acb2d45fe91cfbbc0bb4c01c2dcad3a22df54df2495d60b604d2374b5393e",
+    "evidence_sha256": "fb2ca60a70eb1ae195356e7a942a2c57a5f77a6fd6db0629e921103af9a0e683",
+    "acceptance_sha256": "9ae55a63c255b414fd43a7121607436f8ec451c3fb59bcb6cce9f2adf8ad2d5f"
+  },
+  "experiment_code_sha256": {
+    "src/sift/core.py": "f6608b2f3ef36b5d3720d03424f65ce680b3ac421ed3d0e41fa291289eb4d22c",
+    "src/sift/litellm_proxy.py": "64c7ec7840242cabffc8c0e5f7bba690ee400f2001d324763cb1db1352fd39ae",
+    "benchmarks/agents.py": "40d4ce765a12a26a02d5719315807a6d3798709be3d0e635c1cee5624edecf95",
+    "benchmarks/native_callback.py": "19003f0dd6739e0b5fd629a275a4c29487cfbe7545d03e3890d6ca65bd619152",
+    "benchmarks/compose.native.yaml": "778fefbaa8d36de0b1f415ee642a09216c7ff92e177e9553a441e337641c0db5",
+    "benchmarks/compose.native.minimax-m3.yaml": "b78a2f03618c7841753281f104b34aa57098f61926d070c7559f20e09ffd2391",
+    "benchmarks/native_litellm_minimax_m3.yaml": "3279a284be41c3722b6607a9d8602e2ad20c75ebfad4abc87cf8bb68854939df"
+  },
+  "protocol": {
+    "order": ["full", "sift_24576", "recency_16384", "sift_16384"],
+    "randomized": false,
+    "repetitions_per_arm": 1,
+    "output_limit_tokens": 3072,
+    "retries": 0,
+    "selection_tokenizer": "LiteLLM 1.103.0 counter; estimates are not provider invoices",
+    "cost_source": "Claude Code result.total_cost_usd; client-reported, not a verified OpenRouter invoice",
+    "decode_tokens_per_second": null
+  },
+  "arms": {
+    "full": {
+      "model_alias": "minimax-m3-full",
+      "target_tokens": null,
+      "accepted": true,
+      "visible_passed": true,
+      "gold_passed": true,
+      "normal_terminal": true,
+      "observed_failing_to_passing_test_loop": true,
+      "task_time_seconds": 63.27442259993404,
+      "mean_client_ttft_ms": 2919.222222222222,
+      "client_ttft_samples": 18,
+      "client_usage": {
+        "input_tokens": 20919,
+        "cache_read_input_tokens": 209612,
+        "cache_creation_input_tokens": 0,
+        "output_tokens": 7847
+      },
+      "client_reported_cost_usd": 0.4209850000000001,
+      "selector_audit": {
+        "compactions_before_first_edit": 0,
+        "pre_edit_status": "no_compaction_before_edit"
+      }
+    },
+    "sift_24576": {
+      "model_alias": "minimax-m3-sift",
+      "target_tokens": 24576,
+      "accepted": true,
+      "visible_passed": true,
+      "gold_passed": true,
+      "normal_terminal": true,
+      "observed_failing_to_passing_test_loop": true,
+      "task_time_seconds": 128.28828099998645,
+      "mean_client_ttft_ms": 10485.7,
+      "client_ttft_samples": 10,
+      "client_usage": {
+        "input_tokens": 20395,
+        "cache_read_input_tokens": 123248,
+        "cache_creation_input_tokens": 0,
+        "output_tokens": 9384
+      },
+      "client_reported_cost_usd": 0.417369,
+      "selector_audit": {
+        "selection_events": 11,
+        "compaction_events": 0,
+        "sum_input_token_estimates": 140583,
+        "sum_forwarded_token_estimates": 140583,
+        "max_input_tokens": 20032,
+        "max_forwarded_tokens": 20032,
+        "pre_edit_status": "no_compaction_before_edit"
+      }
+    },
+    "recency_16384": {
+      "model_alias": "minimax-m3-sift",
+      "target_tokens": 16384,
+      "accepted": false,
+      "visible_passed": false,
+      "gold_passed": false,
+      "normal_terminal": false,
+      "observed_failing_to_passing_test_loop": null,
+      "task_time_seconds": 16.86665810015984,
+      "mean_client_ttft_ms": 1151.4545454545455,
+      "client_ttft_samples": 11,
+      "client_usage": {
+        "input_tokens": 11311,
+        "cache_read_input_tokens": 37109,
+        "cache_creation_input_tokens": 0,
+        "output_tokens": 634
+      },
+      "client_reported_cost_usd": 0.1044435,
+      "failure_class": "HTTP 422: Sift: late instruction cannot be compacted; no file edit or accepted artifact",
+      "selector_audit": {
+        "selection_events": 13,
+        "compaction_events": 0,
+        "max_successful_input_tokens": 10869,
+        "max_successful_forwarded_tokens": 10869,
+        "pre_edit_status": "no_direct_edit"
+      }
+    },
+    "sift_16384": {
+      "model_alias": "minimax-m3-sift",
+      "target_tokens": 16384,
+      "accepted": true,
+      "visible_passed": true,
+      "gold_passed": true,
+      "normal_terminal": true,
+      "observed_failing_to_passing_test_loop": true,
+      "task_time_seconds": 131.23380730021745,
+      "mean_client_ttft_ms": 2062.0666666666666,
+      "client_ttft_samples": 30,
+      "client_usage": {
+        "input_tokens": 235570,
+        "cache_read_input_tokens": 112018,
+        "cache_creation_input_tokens": 0,
+        "output_tokens": 10138
+      },
+      "client_reported_cost_usd": 1.4924845,
+      "selector_audit": {
+        "selection_events": 31,
+        "compaction_events": 27,
+        "sum_input_token_estimates": 1289644,
+        "sum_forwarded_token_estimates": 333928,
+        "estimated_input_reduction_fraction": 0.741089,
+        "max_input_tokens": 89931,
+        "max_forwarded_tokens": 16360,
+        "mean_selector_thread_cpu_ms": 131.16,
+        "pre_edit": {
+          "status": "verified_before_edit",
+          "request_seq": 29,
+          "input_tokens": 88037,
+          "forwarded_tokens": 16352,
+          "retained_required_evidence_ids": ["e001", "e002", "e003", "e004"]
+        }
+      }
+    }
+  },
+  "astra_standard_short_context_repricing": {
+    "checked_date": "2026-10-16",
+    "rates_usd_per_million": {
+      "uncached_input": 10,
+      "cached_input": 1,
+      "cache_write_input": 12.5,
+      "output": 50
+    },
+    "assumptions": [
+      "Uses MiniMax client-reported token counts as if Astra billed the same counts.",
+      "Cache writes reported as zero.",
+      "Assumes every request is below Astra's 272,000-token long-context threshold.",
+      "Not an Astra request, invoice, or cost-per-accepted-task result."
+    ],
+    "repriced_cost_usd": {
+      "full": 0.811152,
+      "sift_24576_noop": 0.796398,
+      "recency_16384_failed": 0.181919,
+      "sift_16384": 2.974618
+    },
+    "source": "https://developers.openai.com/api/docs/models/gpt-6-astra"
+  },
+  "interpretation": "On one exposed task, full and Sift at 16K both passed acceptance. Sift compacted before the first direct edit and the audited request retained all four required source spans, but this arm took 2.07x as long and reported 3.55x the cost of full context. The Sift 24K arm was a no-op. Recency at 16K failed closed. These one-run, fixed-order results do not establish causality or general performance."
+}

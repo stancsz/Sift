@@ -1,0 +1,43 @@
+# Stratus Cloud — Access Events 2024-Q3
+# Format: timestamp_utc | actor | action | resource | result
+# Note: pre-policy era, contains distractors. NOT part of the trailing-90-day window.
+
+2024-07-02T09:14:11Z | alice.chen@stratus.example | s3:GetObject | arn:aws:s3:::analytics-prod/* | ALLOW
+2024-07-04T15:25:45Z | josef.pichler@stratus.example | dynamodb:Query | arn:aws:dynamodb:us-east-1:123456789012:table/sessions-prod | ALLOW
+2024-07-08T12:20:40Z | yasmin.ali@stratus.example | rds:DescribeDBInstances | arn:aws:rds:us-east-1:123456789012:db:prod-cluster | DENY
+2024-07-08T16:02:47Z | alice.chen@stratus.example | s3:GetObject | arn:aws:s3:::logs-archive/* | ALLOW
+2024-07-13T12:23:31Z | nina.ortiz@stratus.example | s3:GetObject | arn:aws:s3:::logs-archive/* | ALLOW
+2024-07-14T16:04:48Z | noor.farouk@stratus.example | kms:Decrypt | arn:aws:kms:us-east-1:123456789012:key/analytics-key | ALLOW
+2024-07-15T11:30:05Z | bob.patel@stratus.example | s3:GetObject | arn:aws:s3:::analytics-prod/* | ALLOW
+2024-07-17T09:18:26Z | fedir.hryhorenko@stratus.example | s3:GetObject | arn:aws:s3:::user-uploads/* | ALLOW
+2024-07-19T08:21:33Z | alice.chen@stratus.example | kms:Decrypt | arn:aws:kms:us-east-1:123456789012:key/analytics-key | ALLOW
+2024-07-22T10:54:38Z | quentin.brooks@stratus.example | dynamodb:Query | arn:aws:dynamodb:us-east-1:123456789012:table/sessions-prod | ALLOW
+2024-07-23T14:48:02Z | alice.chen@stratus.example | dynamodb:Query | arn:aws:dynamodb:us-east-1:123456789012:table/sessions-prod | DENY
+2024-07-27T10:57:29Z | josef.pichler@stratus.example | s3:GetObject | arn:aws:s3:::logs-archive/* | ALLOW
+2024-07-29T14:38:46Z | fedir.hryhorenko@stratus.example | kms:Decrypt | arn:aws:kms:us-east-1:123456789012:key/analytics-key | ALLOW
+2024-07-31T19:52:24Z | yasmin.ali@stratus.example | s3:GetObject | arn:aws:s3:::logs-archive/* | ALLOW
+2024-08-01T10:09:55Z | alice.chen@stratus.example | rds:DescribeDBInstances | arn:aws:rds:us-east-1:123456789012:db:prod-cluster | DENY
+2024-08-04T13:15:21Z | alice.chen@stratus.example | s3:GetObject | arn:aws:s3:::user-uploads/* | DENY
+2024-08-09T18:42:09Z | alice.chen@stratus.example | kms:Decrypt | arn:aws:kms:us-east-1:123456789012:key/analytics-key | ALLOW
+2024-08-10T07:31:27Z | chiara.romano@stratus.example | s3:GetObject | arn:aws:s3:::analytics-prod/* | ALLOW
+2024-08-12T07:55:18Z | alice.chen@stratus.example | s3:GetObject | arn:aws:s3:::analytics-prod/* | ALLOW
+2024-08-13T13:45:05Z | uma.iyer@stratus.example | sts:AssumeRole | arn:aws:iam::123456789012:role/data-platform-auditor | ALLOW
+2024-08-14T17:26:22Z | quentin.brooks@stratus.example | s3:GetObject | arn:aws:s3:::logs-archive/* | ALLOW
+2024-08-15T12:03:44Z | bob.patel@stratus.example | s3:GetObject | arn:aws:s3:::logs-archive/* | ALLOW
+2024-08-16T08:07:39Z | nina.ortiz@stratus.example | kms:Decrypt | arn:aws:kms:us-east-1:123456789012:key/analytics-key | ALLOW
+2024-08-18T13:48:56Z | noor.farouk@stratus.example | rds:DescribeDBInstances | arn:aws:rds:us-east-1:123456789012:db:prod-cluster | ALLOW
+2024-08-18T15:17:30Z | alice.chen@stratus.example | s3:GetObject | arn:aws:s3:::logs-archive/* | ALLOW
+2024-08-27T19:00:14Z | alice.chen@stratus.example | s3:GetObject | arn:aws:s3:::user-uploads/* | DENY
+2024-08-29T15:00:20Z | noor.farouk@stratus.example | s3:GetObject | arn:aws:s3:::analytics-prod/* | ALLOW
+2024-09-01T10:22:54Z | fedir.hryhorenko@stratus.example | dynamodb:Query | arn:aws:dynamodb:us-east-1:123456789012:table/sessions-prod | DENY
+2024-09-03T11:11:25Z | alice.chen@stratus.example | dynamodb:Query | arn:aws:dynamodb:us-east-1:123456789012:table/sessions-prod | DENY
+2024-09-03T16:36:32Z | yasmin.ali@stratus.example | kms:Decrypt | arn:aws:kms:us-east-1:123456789012:key/analytics-key | ALLOW
+2024-09-05T07:17:49Z | uma.iyer@stratus.example | rds:DescribeDBInstances | arn:aws:rds:us-east-1:123456789012:db:prod-cluster | DENY
+2024-09-10T14:24:08Z | alice.chen@stratus.example | rds:DescribeDBInstances | arn:aws:rds:us-east-1:123456789012:db:prod-cluster | DENY
+2024-09-15T08:56:52Z | yasmin.ali@stratus.example | dynamodb:Query | arn:aws:dynamodb:us-east-1:123456789012:table/sessions-prod | DENY
+2024-09-19T08:09:11Z | alice.chen@stratus.example | kms:Decrypt | arn:aws:kms:us-east-1:123456789012:key/analytics-key | ALLOW
+2024-09-19T18:51:47Z | nina.ortiz@stratus.example | rds:DescribeDBInstances | arn:aws:rds:us-east-1:123456789012:db:prod-cluster | DENY
+2024-09-22T16:33:55Z | alice.chen@stratus.example | s3:GetObject | arn:aws:s3:::analytics-prod/* | ALLOW
+2024-09-26T13:50:42Z | bob.patel@stratus.example | dynamodb:Query | arn:aws:dynamodb:us-east-1:123456789012:table/sessions-prod | DENY
+2024-09-28T14:49:33Z | uma.iyer@stratus.example | s3:GetObject | arn:aws:s3:::user-uploads/* | DENY
+2024-09-30T09:18:00Z | alice.chen@stratus.example | s3:GetObject | arn:aws:s3:::user-uploads/* | DENY

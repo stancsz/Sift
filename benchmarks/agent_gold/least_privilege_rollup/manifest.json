@@ -1,0 +1,20 @@
+{
+  "acceptance_sha256": {
+    "test_rollup_gold.py": "9ae55a63c255b414fd43a7121607436f8ec451c3fb59bcb6cce9f2adf8ad2d5f"
+  },
+  "fixture": "least_privilege_rollup",
+  "frozen_at_utc": "2026-10-16T07:43:41Z",
+  "input_sha256": {
+    "audit_rollup.py": "a93371894bf364cbc7266a8b5064fdac460ffc29fd7fd1baa523510934784905",
+    "README.md": "fdefd450e16e6ff1e27110a40158ddadb2216d4888798ad2e3205539e7ff6abb",
+    "test_rollup.py": "425ac0bc78cd92421c600037dc7b89dd53ce03f42be922a20995c470b4fcbb59",
+    "data/audit_events_2024_legacy.log": "d4198971aba64f590d39c3a1926be214a54980b98dfd7f5db6beb1fa329a73f1",
+    "data/audit_events_2025_archive.log": "b902f08180edd9afa833ce452da9ee4cd64dd32191cae6c8263d3c2c4cb8eee2",
+    "data/audit_events_2026_q3.log": "fb0fc31d0cfe0bbda6218863e759106fe35c49115ed8e9b14a1ffc5a05f799ac",
+    "data/audit_events_2026_q4.log": "bf07c3b801fa07c94f987abd89551390be449bbeaa47b58e6aa4f5784a08ed28",
+    "data/policy_notes.md": "83d5c8d33f3dfe82d08a9d3d56dd4eeab51610be4cbbef983642914f598a1949",
+    "data/role_request.txt": "e4a4081ec8b95e32222387682826c5eefeed467c21bfb83a91487d144d4ec5b8"
+  },
+  "status": "public synthetic development derivative; exposed, not held-out",
+  "evidence_sha256": "fb2ca60a70eb1ae195356e7a942a2c57a5f77a6fd6db0629e921103af9a0e683"
+}

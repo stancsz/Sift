@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "fixture": "least_privilege_rollup",
+  "required_spans": [
+    {
+      "id": "e001",
+      "source": {
+        "file": "data/policy_notes.md",
+        "start_char": 1496,
+        "end_char": 1550
+      },
+      "sha256": "39e52e06f024241ce4c89d9b15f7ec99b049cb4652926b113b0714f2aa271957"
+    },
+    {
+      "id": "e002",
+      "source": {
+        "file": "data/policy_notes.md",
+        "start_char": 1025,
+        "end_char": 1094
+      },
+      "sha256": "54b6a74b2bda7dcf772a6f05d51fafe00a8366f3948f7348c83fd10579926e80"
+    },
+    {
+      "id": "e003",
+      "source": {
+        "file": "data/audit_events_2026_q4.log",
+        "start_char": 17446,
+        "end_char": 17550
+      },
+      "sha256": "33b26b8df9a9201f8eee594e9c41cfa1750df85c1a4eecd3595f1da26f449798"
+    },
+    {
+      "id": "e004",
+      "source": {
+        "file": "data/audit_events_2026_q4.log",
+        "start_char": 17551,
+        "end_char": 17653
+      },
+      "sha256": "36675450c1ced5fc6212798165c961c5416c0a85959aa9f1a69cc2ad228f68df"
+    }
+  ]
+}

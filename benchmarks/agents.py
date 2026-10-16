@@ -10,6 +10,7 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -223,6 +224,45 @@ def snapshot(directory: Path) -> dict[str, str]:
     return result
 
 
+def verify_frozen_manifest(case: Path, gold: Path, manifest_path: Path) -> dict:
+    """Verify a predeclared case and post-run test set before client execution."""
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    expected_case = manifest.get("input_sha256")
+    expected_gold = manifest.get("acceptance_sha256")
+    expected_evidence = manifest.get("evidence_sha256")
+    if not isinstance(expected_case, dict) or not isinstance(expected_gold, dict):
+        raise ValueError("Manifest needs input_sha256 and acceptance_sha256 maps")
+    actual_case = snapshot(case)
+    actual_gold = {
+        path.relative_to(gold).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in gold.rglob("test_*.py")
+        if path.is_file()
+    }
+    if actual_case != expected_case:
+        raise ValueError("Case files do not match the frozen input_sha256 manifest")
+    if actual_gold != expected_gold:
+        raise ValueError("Gold tests do not match the frozen acceptance_sha256 manifest")
+    evidence_path = gold / "evidence.json"
+    actual_evidence = None
+    if expected_evidence is not None:
+        if not isinstance(expected_evidence, str) or not re.fullmatch(r"[0-9a-f]{64}", expected_evidence):
+            raise ValueError("evidence_sha256 must be one lowercase SHA-256 digest")
+        if not evidence_path.is_file():
+            raise ValueError("Frozen evidence annotations are missing")
+        actual_evidence = hashlib.sha256(evidence_path.read_bytes()).hexdigest()
+        if actual_evidence != expected_evidence:
+            raise ValueError("Evidence annotations do not match the frozen evidence_sha256")
+    elif evidence_path.exists():
+        raise ValueError("Evidence annotations must be pinned in the frozen manifest")
+    return {
+        "frozen_at_utc": manifest.get("frozen_at_utc"),
+        "manifest_sha256": hashlib.sha256(manifest_path.read_bytes()).hexdigest(),
+        "input_sha256": actual_case,
+        "acceptance_sha256": actual_gold,
+        "evidence_sha256": actual_evidence,
+    }
+
+
 def unit_tests(directory: Path, env: dict[str, str]) -> dict:
     result = run_process([sys.executable, "-m", "unittest", "discover", "-q"], directory, env)
     result["tests_observed"] = bool(re.search(r"Ran [1-9]\d* tests?", result["stdout"] + result["stderr"]))
@@ -257,7 +297,11 @@ def sandbox_preflight(args, executable: str, root: Path, workspace: Path, env: d
 def client_command(args, executable: str, editable: list[str]) -> list[str]:
     if args.client == "claude":
         shell = "PowerShell" if os.name == "nt" else "Bash"
-        allowed = ["Read(./**)", *(f"Edit(./{name})" for name in editable), f"{shell}({TOOL_TEST_PYTHON} -m unittest:*)"]
+        allowed = ["Read(./**)", *(f"Edit(./{name})" for name in editable),
+                   f"{shell}({TOOL_TEST_PYTHON} -m unittest:*)",
+                   f"{shell}({TOOL_TEST_PYTHON} reconcile.py:*)"]
+        if "audit.py" in editable:
+            allowed.append(f"{shell}({TOOL_TEST_PYTHON} audit.py:*)")
         return [executable, "-p", "--bare", "--no-session-persistence", "--setting-sources", "",
                 "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}', "--disable-slash-commands",
                 "--tools", f"Read,Edit,{shell}", "--allowedTools", ",".join(allowed),
@@ -303,7 +347,10 @@ def unittest_command(command: str) -> bool:
             return False
         if len(parts) == 3 and parts[0] in {"bash", "/bin/bash", "sh", "/bin/sh"} and parts[1] in {"-c", "-lc"}:
             command = parts[2].strip()
-    return re.fullmatch(r"(?:python(?:3(?:\.\d+)?)?(?:\.exe)?|py(?:\.exe)?)(?:\s+-3)?\s+-m\s+unittest(?:\s+(?:-q|-v|discover))*", command) is not None
+    return re.fullmatch(
+        r"(?:python(?:3(?:\.\d+)?)?(?:\.exe)?|py(?:\.exe)?)(?:\s+-3)?\s+-m\s+unittest"
+        r"(?:\s+(?:-q|-v|discover))*(?:\s+2>&1)?",
+        command) is not None
 
 
 def event_evidence(client: str, stdout: str) -> dict:
@@ -315,8 +362,9 @@ def event_evidence(client: str, stdout: str) -> dict:
                 events.append(event)
         except json.JSONDecodeError:
             pass
-    test_runs, calls, ttft = [], {}, []
+    test_runs, calls, ttft, decode_tps = [], {}, [], []
     if client == "claude":
+        active_stream = None
         for event in events:
             message = event.get("message")
             content = message.get("content") if isinstance(message, dict) else None
@@ -341,11 +389,61 @@ def event_evidence(client: str, stdout: str) -> dict:
                                           and (code is None or type(code) is int and code == 0)))
             value = event.get("ttft_ms")
             detail = event.get("event")
-            if event.get("type") == "stream_event" and isinstance(detail, dict) and detail.get("type") == "message_start" and type(value) in (float, int) and value >= 0:
-                ttft.append(value)
+            if event.get("type") == "stream_event" and isinstance(detail, dict):
+                stream_type = detail.get("type")
+                if stream_type == "message_start":
+                    if type(value) in (float, int) and value >= 0:
+                        ttft.append(value)
+                    active_stream = {"first_delta": None, "last_delta": None, "output_tokens": None}
+                elif active_stream is not None:
+                    timestamp = event.get("timestamp")
+                    instant = None
+                    if isinstance(timestamp, str):
+                        try:
+                            parsed = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+                            if parsed.tzinfo is not None:
+                                instant = parsed.astimezone(timezone.utc).timestamp()
+                        except ValueError:
+                            pass
+                    if stream_type == "content_block_delta":
+                        delta = detail.get("delta")
+                        if isinstance(delta, dict) and any(
+                            isinstance(delta.get(name), str) and delta.get(name)
+                            for name in ("text", "thinking", "partial_json")
+                        ) and instant is not None:
+                            if active_stream["first_delta"] is None:
+                                active_stream["first_delta"] = instant
+                            active_stream["last_delta"] = instant
+                    elif stream_type == "message_delta":
+                        usage_detail = detail.get("usage")
+                        output_count = usage_detail.get("output_tokens") if isinstance(usage_detail, dict) else None
+                        if type(output_count) is int and output_count >= 0:
+                            active_stream["output_tokens"] = output_count
+                    elif stream_type == "message_stop":
+                        first_delta, last_delta, output_count = (
+                            active_stream["first_delta"], active_stream["last_delta"],
+                            active_stream["output_tokens"],
+                        )
+                        if (first_delta is not None and last_delta is not None and
+                                type(output_count) is int and output_count > 0 and last_delta > first_delta):
+                            decode_tps.append(output_count / (last_delta - first_delta))
+                        active_stream = None
         final = next((event for event in reversed(events) if event.get("type") == "result"), {})
         terminal = final.get("subtype") == "success" and final.get("is_error") is False
         usage = final.get("usage")
+        cost = final.get("total_cost_usd")
+        cost_source = ("Claude Code result.total_cost_usd"
+                       if type(cost) in (int, float) and math.isfinite(cost) and cost >= 0 else None)
+        if cost_source is None:
+            model_usage = final.get("modelUsage")
+            if isinstance(model_usage, dict):
+                costs = [item.get("costUSD") for item in model_usage.values()
+                         if isinstance(item, dict) and type(item.get("costUSD")) in (int, float)
+                         and math.isfinite(item["costUSD"]) and item["costUSD"] >= 0]
+                if costs:
+                    cost, cost_source = sum(costs), "Claude Code result.modelUsage.costUSD"
+        if cost_source is None:
+            cost = None
     else:
         for event in events:
             item = event.get("item")
@@ -360,6 +458,8 @@ def event_evidence(client: str, stdout: str) -> dict:
         terminal = any(event.get("type") == "turn.completed" for event in events) and not any(
             event.get("type") in ("turn.failed", "error") for event in events)
         usage = [event.get("usage") for event in events if event.get("type") == "turn.completed"]
+        cost = None
+        cost_source = None
     failed = False
     loop = False
     for output, native_failure, native_success in test_runs:
@@ -370,7 +470,10 @@ def event_evidence(client: str, stdout: str) -> dict:
     return {"native_terminal_success": terminal, "test_tool_calls": len(test_runs),
             "observed_test_loop": loop if test_runs else None,
             "client_reported_usage": usage, "client_reported_ttft_ms": ttft,
-            "mean_client_reported_ttft_ms": sum(ttft) / len(ttft) if ttft else None}
+            "mean_client_reported_ttft_ms": sum(ttft) / len(ttft) if ttft else None,
+            "client_reported_decode_tokens_per_second": decode_tps,
+            "mean_client_reported_decode_tokens_per_second": sum(decode_tps) / len(decode_tps) if decode_tps else None,
+            "client_reported_cost_usd": cost, "client_reported_cost_source": cost_source}
 
 
 def redact(value, secrets: list[str]):
@@ -396,14 +499,21 @@ def main() -> int:
     parser.add_argument("--client", choices=("claude", "codex"), required=True)
     parser.add_argument("--case", type=Path, required=True)
     parser.add_argument("--gold", type=Path, required=True, help="Independent tests, copied after the client exits")
+    parser.add_argument("--manifest", type=Path, help="Optional frozen fixture manifest to verify before client execution")
     parser.add_argument("--editable", action="append", required=True, help="Allowed relative existing file; repeat as needed")
+    parser.add_argument("--allowed-output", action="append", default=[],
+                        help="Predeclared relative file the client may create; repeat as needed")
     parser.add_argument("--base-url", required=True, help="OpenAI-compatible /v1 base URL; Claude uses its parent")
     parser.add_argument("--model", required=True)
     parser.add_argument("--api-key-env", required=True)
+    parser.add_argument("--claude-max-output-tokens", type=int, default=4096,
+                        help="Claude Code response cap; must not exceed the benchmark gateway cap")
     parser.add_argument("--timeout", type=int, default=1200)
     parser.add_argument("--executable")
     parser.add_argument("--windows-sandbox", choices=("elevated", "unelevated"))
     args = parser.parse_args()
+    if args.client == "claude" and not 0 < args.claude_max_output_tokens <= 4096:
+        parser.error("--claude-max-output-tokens must be between 1 and 4096")
     case, gold = args.case.resolve(), args.gold.resolve()
     key = os.environ.get(args.api_key_env)
     if not key or args.timeout <= 0 or not args.base_url.rstrip("/").endswith("/v1"):
@@ -416,12 +526,25 @@ def main() -> int:
         parser.error("Case needs README.md and gold needs independent test_*.py files")
     if any(path.is_symlink() for directory in (case, gold) for path in directory.rglob("*")):
         parser.error("Fixture symlinks are unsupported")
+    try:
+        fixture_integrity = verify_frozen_manifest(case, gold, args.manifest.resolve()) if args.manifest else None
+    except (OSError, ValueError, json.JSONDecodeError) as error:
+        parser.error(f"Frozen fixture verification failed: {error}")
     editable = []
     for name in args.editable:
         path = (case / name).resolve()
         if not path.is_relative_to(case) or not path.is_file() or path.suffix == ".py" and path.name.startswith("test_"):
             parser.error("Editable files must exist inside the case and cannot be test modules")
         editable.append(path.relative_to(case).as_posix())
+    allowed_outputs = []
+    for name in args.allowed_output:
+        path = (case / name).resolve()
+        if not path.is_relative_to(case) or path.exists():
+            parser.error("Allowed outputs must be new files inside the case")
+        relative = path.relative_to(case).as_posix()
+        if relative in editable or relative in allowed_outputs:
+            parser.error("Allowed outputs must be unique and cannot also be editable inputs")
+        allowed_outputs.append(relative)
     gold_modules = list(gold.rglob("test_*.py"))
     if any((case / path.relative_to(gold)).exists() for path in gold_modules):
         parser.error("Gold filenames must not overwrite case files")
@@ -443,15 +566,23 @@ def main() -> int:
         env.update({"CLAUDE_CONFIG_DIR": str(root / "client-home"), "ANTHROPIC_API_KEY": key,
                     "ANTHROPIC_BASE_URL": args.base_url.rstrip("/")[:-3],
                     "CLAUDE_CODE_MAX_CONTEXT_TOKENS": "1000000", "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "1000000",
-                    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "95", "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "4096",
+                    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "95",
+                    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": str(args.claude_max_output_tokens),
                     "MAX_THINKING_TOKENS": "512", "CLAUDE_CODE_MAX_RETRIES": "0",
                     "API_TIMEOUT_MS": str(min(90_000, args.timeout * 1000))})
     version_result = run_process([executable, "--version"], root, env, timeout=10)
     before = snapshot(workspace)
-    baseline = unit_tests(workspace, test_env)
+    # Baseline tests may create the task's deliverable. Keep those side effects
+    # out of the agent's starting workspace and out of change accounting.
+    baseline_workspace = root / "baseline-check"
+    shutil.copytree(workspace, baseline_workspace)
+    baseline = unit_tests(baseline_workspace, test_env)
     report = {"client": args.client, "model": args.model, "client_version": version_result["stdout"].strip(),
               "python_version": sys.version, "timeout": args.timeout, "workspace": str(workspace),
-              "editable": editable, "baseline": baseline, "accepted": False,
+              "client_output_limit_tokens": args.claude_max_output_tokens if args.client == "claude" else None,
+              "editable": editable, "allowed_outputs": allowed_outputs,
+              "baseline_workspace": str(baseline_workspace), "fixture_integrity": fixture_integrity,
+              "baseline": baseline, "accepted": False,
               "usage_note": "Client-reported usage and TTFT are not independently verified provider measurements."}
     secrets = list({key, json.dumps(key, ensure_ascii=False)[1:-1], json.dumps(key)[1:-1]})
     save_report(root, report, secrets)  # Preflight persistence before a paid native run.
@@ -469,6 +600,11 @@ def main() -> int:
         report["failure"] = "Model-free native sandbox readiness failed; model execution was not started"
     else:
         prompt = (case / "README.md").read_text(encoding="utf-8") + "\n\nEdit only: " + ", ".join(editable)
+        if allowed_outputs:
+            prompt += "\nYou may create these declared output files: " + ", ".join(allowed_outputs)
+        if "audit.py" in editable and "report.json" in allowed_outputs:
+            prompt += (f"\nAfter the final test run, execute `{TOOL_TEST_PYTHON} audit.py` as a separate tool command "
+                       "to create the required report.json in the workspace, then verify that it exists.")
         prompt += (f"\nUse {TOOL_TEST_PYTHON} for Python test commands on this host. "
                    f"Before editing and after editing, submit exactly `{TOOL_TEST_PYTHON} -m unittest -q` "
                    "as its own tool command. Use the tool's workdir field when available; the current directory is already the workspace. "
@@ -487,15 +623,22 @@ def main() -> int:
             report["harness_failure"] = {"stage": "parse_native_events", "type": type(error).__name__, "message": str(error)}
             report.update({"native_terminal_success": None, "observed_test_loop": None,
                            "client_reported_usage": None, "client_reported_ttft_ms": [],
-                           "mean_client_reported_ttft_ms": None})
+                           "mean_client_reported_ttft_ms": None,
+                           "client_reported_decode_tokens_per_second": [],
+                           "mean_client_reported_decode_tokens_per_second": None,
+                           "client_reported_cost_usd": None,
+                           "client_reported_cost_source": None})
             report["phase"] = "harness_failed"
             save_report(root, report, secrets)
         after = snapshot(workspace)
         changed = sorted(name for name in editable if before[name] != after.get(name))
         unauthorized = sorted(name for name in before if name not in editable and after.get(name) != before[name])
-        extra = sorted(after.keys() - before.keys())
+        created_outputs = sorted(name for name in allowed_outputs if name in after and name not in before)
+        missing_outputs = sorted(set(allowed_outputs) - set(created_outputs))
+        extra = sorted(after.keys() - before.keys() - set(allowed_outputs))
         symlinks = sorted(name for name, value in after.items() if value == "symlink")
-        report.update({"changed_files": changed, "unauthorized_changes": unauthorized, "extra_files": extra,
+        report.update({"changed_files": changed, "created_outputs": created_outputs,
+                       "missing_outputs": missing_outputs, "unauthorized_changes": unauthorized, "extra_files": extra,
                        "symlinks": symlinks, "artifact_hashes_before_redaction": after})
         # Test separate snapshots, so tests cannot repair the delivered artifact.
         if symlinks:
@@ -512,7 +655,7 @@ def main() -> int:
                 shutil.copy2(source, destination)
             report["gold"] = unit_tests(gold_copy, test_env)
         report["accepted"] = (not report.get("harness_failure") and native["exit_code"] == 0 and report["native_terminal_success"]
-                              and bool(changed) and not unauthorized and not extra and not symlinks
+                              and bool(changed) and not missing_outputs and not unauthorized and not extra and not symlinks
                               and report["observed_test_loop"] is True
                               and report["visible"]["passed"] and report["gold"]["passed"])
     # Trace files and report are outside the agent workspace and never enter tests.

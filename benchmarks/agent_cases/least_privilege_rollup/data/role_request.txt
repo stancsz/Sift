@@ -1,0 +1,14 @@
+# Stratus Cloud — Role Grant Request
+# Submitted by: bob.patel@stratus.example  (Alice's manager)
+# Subject:      alice.chen@stratus.example
+# Role:         data-eng-prod-read
+# Effective:    2026-11-01
+# Justification: Promotion to senior data engineer; expanded analytics scope.
+#
+# Format: <action> <resource-arn>
+s3:GetObject      arn:aws:s3:::analytics-prod/*
+s3:GetObject      arn:aws:s3:::logs-archive/*
+s3:GetObject      arn:aws:s3:::user-uploads/*
+kms:Decrypt       arn:aws:kms:us-east-1:123456789012:key/analytics-key
+dynamodb:Query    arn:aws:dynamodb:us-east-1:123456789012:table/sessions-prod
+rds:DescribeDBInstances arn:aws:rds:us-east-1:123456789012:db:prod-cluster
