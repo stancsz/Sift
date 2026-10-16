@@ -555,6 +555,7 @@ def run(manifest_path: Path, dataset_path: Path, tokenizer_path: Path,
         "openrouter_endpoint_max_prompt_tokens": OPENROUTER_REQUEST_TOKEN_LIMIT,
         "provider_context_estimate_factor": PROVIDER_CONTEXT_ESTIMATE_FACTOR,
         "route": "OpenRouter; requested model and MiniMax provider are verified per response; allow_fallbacks=false",
+        "provider_endpoint": manifest.get("provider_endpoint"),
         "source_hashes": {
             "runner_sha256": file_sha256(Path(__file__).resolve()),
             "manifest_sha256": file_sha256(manifest_path),

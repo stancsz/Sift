@@ -30,13 +30,15 @@
     "preparation_script": "benchmarks/prepare_longbench_v2_minimax_100.py",
     "preparation_script_sha256": "5c8bb308c24685bbc385c19f61da2548a191c516f8085cb94442943890835de1",
     "runner_path": "benchmarks/run_longbench_v2_minimax.py",
-    "runner_sha256": "2e0a6b48f37aaafc91bda39bf4729605cf3618723c22884cd3e41751ee098ff7",
+    "runner_sha256": "0fc06a5d01605cac3e6a1ada1b66656ad21568227f7159434d82c04263e58c05",
     "protocol_path": "docs/evals/longbench-v2-minimax-m3-100-protocol-2026-10-16.md",
-    "protocol_sha256": "51a3590c48bb83c94449f0f135ec22c690d38f4453a41e1f622c382464fc5596",
+    "protocol_sha256": "9226e9fbe7b3d9f6d002454e6127de1272bcc87af757780e5488011e2687ce93",
     "dataset_preparation_module_path": "benchmarks/prepare_longbench_v2.py",
     "dataset_preparation_module_sha256": "b913c0c89ed6bea2a7b74b54b64516bfcaad7f7894067ebbac9c5085e47ae069",
     "m3_renderer_module_path": "benchmarks/prepare_longbench_v2_minimax.py",
-    "m3_renderer_module_sha256": "2eb34e08fbdb3d1acb69339505e1e228030b930e2d967b174e67490006adee77"
+    "m3_renderer_module_sha256": "2eb34e08fbdb3d1acb69339505e1e228030b930e2d967b174e67490006adee77",
+    "analysis_script_path": "benchmarks/analyze_longbench_v2_minimax.py",
+    "analysis_script_sha256": "f9e17c69c958244968459c8447468b2985f136127e5042355d6a18fed2fa54a2"
   },
   "selection": {
     "seed": 20261021,
