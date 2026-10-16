@@ -1,0 +1,269 @@
+{
+  "schema_version": 1,
+  "evaluation": "blinded source-derived evidence-retention audit; no model outputs read and no provider calls",
+  "model_context": "minimax/minimax-m3",
+  "dataset_revision": "2b48e494f2c7a2f0af81aae178e05c7e1dde0fe9",
+  "dataset_sha256": "15d61c22d92c96900b3c4948b6aeea218d3214b676a65df48e7b8555604c7fe2",
+  "manifest_sha256": "c947b4c2a61ffe05964318afb79457aa0355e7e589206a1cf4320339d369cd38",
+  "sift_core_sha256": "c37f84829cf75a38f410e4eebb219ebf99c27c89a5c0b62a0ca9b70c36265de7",
+  "method": "Exact full-text CSV comment containment and complete per-round contribution-vector containment; no paraphrase or answer correctness adjudication.",
+  "cases": [
+    {
+      "case_id": "66f2a46d821e116aacb2a41a",
+      "domain": "Long Structured Data Understanding",
+      "full_prompt_tokens": 407264,
+      "question_sha256": "55c541b67b43d7d9d61d24c0d7bf1c17dd5537c5819d8bdc4c91138c6f233324",
+      "source_evidence": {
+        "kind": "complete_unique_csv_field_values",
+        "matching_comment_rows": 45,
+        "unique_exact_comment_count": 41,
+        "unique_comment_sha256": [
+          "571faf4e49a9a104f3bbcc78da4394b6ccd60546d6071e68e85dd3e2ba76437d",
+          "58b6b3bcaac38f5ab42b2d084e20120fac621aa54904c813ef710e272fe8a238",
+          "96107bfdf3043d5e8730a15922a286f58ea34c74c0aa4e9ed11e0460bbaf5938",
+          "84d39bb7bb7bed53affcc16404376acd27947fc923da118e283f23b960751775",
+          "ca5a2f9962612cbaef3091b30a950e6d744c490e4738bde1b7ff5b59184f276e",
+          "9523830ba3f41ca23ab00c4ec1db6d38dfeb2c4b48996d029c199cecaca4d0fa",
+          "7b2b36802ee6b8e4401aa3fc54e7cbcde1a1354e50c602a7e3fdc26929b4c209",
+          "2fa248616b09edf219722ac4b63d7ae0a4772f96c01fc3fbc1713627794efac9",
+          "3cbda8899e73cd090c8e490c51411abc895d9128513b62a5486387a70bf60a60",
+          "4b17913705e03c3a78aff2a90a8db925fbf1124b8cf0ad116e89957100dd536e",
+          "f49fe141bb9f23dc024dea22403f5824bd74a7eb356e080d9536c2d69398272a",
+          "a68b17cf81c0a84c198b0fc68cb7998e401d0b76b76931396f629ccabb9495c3",
+          "53e14f78da44b47597b9c050b6c4ed9bd21e8459fda6df61fe356a8e450d02c7",
+          "f317948a8f84aa5363d883a9a9bfd10d26a5ba996a298298962dd86d2f5ccddd",
+          "237605bd9946bf3cd0eac5fb08a1fef0823e989bbd09f39912b6cfcf2ef20ac5",
+          "75bff6c31dadbdbdc6b97a52e923a311acfb773209c088717322642493a70080",
+          "54d7d5149225498b038a5bf3005d0a777e89848cd64981ec042f6bdfaae016aa",
+          "0c3ead05e36a8de58e541565d68cd8b2546b1a3e830b020de2e15caa8d05785d",
+          "d44714486fefda8415a57f7a4993460370d685478aa7173ea416afcb76b2adf4",
+          "1c19eecfe91480fd14c514b500061b7fe1c978bdd4b9c5956c8397c59247e067",
+          "f372eac0421017031f8ef8bd15a93788e3c2c7eb11e10528b4967eeb5b35c317",
+          "926c5fe923d678bfa3d1c0ff3e9d78a38a61e4a20784f82f5293372f8be8f2a7",
+          "1b3bb19838fb06e2d4c5feae87342e2065d4aee4c7ea218af9f03613c00edafb",
+          "f230d06c75b0f53ad52f2a719695e1db902886248cea789ddaec879c81a5cd90",
+          "7fff4839294fab3ac7740c1b4903370aa8453d89fab57b7b66e35cb40e2b282d",
+          "14b1ed3b4cc6288e1bcce7173065bf6605b92c1a4810e41942a713503c659551",
+          "a4cf1bac9468964d6ae0959df883204437e0b637132e015c12ca790ad282ff1b",
+          "35cffa56e006cb65fc3d66e5abbd60653a9d23731928d94450c1155a3d1bb1a4",
+          "7aecf0f66aaab3681272025fefdf3ed4d31f3520e4582e9b1265746c77316450",
+          "b635380136432366a3d1af0f6ded67cb165d88ee96c3b57eb49e8fe8f8215ae1",
+          "e312d5d756bdc6bafcc7781c504e4d1f2bd74685055355ddc5aa4035aacd93e1",
+          "298a5511273be7cfbc01b7bc6a350ebe598e0e1ce2ef15f7694dac0a81d995ba",
+          "2c604802e42dd3fe5b852cf33dc6acafd6ccfb11a090f385c7156c876dd2f034",
+          "a925479cfaf96ba00157d4091f8f3bdd0466b0577ba7dfdb7772c98bfd6e0ed8",
+          "16a313a3475978bd36352a563e54a5123ec235f60c22e5907f6835ac41975ed9",
+          "4a91153f6db51214de47a530835f3f3774a44e217a45b84f56db03938e71e1c3",
+          "5ffc2df4556bc4789d7ac098885b15b8b5dc3f4ba02c243cb649b6b7b75736cb",
+          "554a0467a181b5bf8054606fd21953edc57b6e942944576be17c85ad7bf876f4",
+          "ff748bce31e52696d7a8c05d0adbafd7f71cdcbfbd56d932fe3d755282ccd2d4",
+          "bd40911f6e6007e0882111324335ba8d144ef1c9c5d657e1c8050b4ff68f1889",
+          "021ffd533b02eaa5e497a7230993d49b55f6a375337ede8ef0c40a6d71e439ba"
+        ],
+        "matching_review_ids": [
+          "-mKxNOVHiQQhDpteGtH1pw",
+          "3n0GUjHDzTuoG8bXZjey2Q",
+          "4CBuchBC7S1gZD8QfnGlvQ",
+          "4nXHhR3T_hb5KhQKgSU14Q",
+          "4p3a-XGpOaaW24bi3LLZHg",
+          "51RHs_V_fjuistnuKxNpEg",
+          "6qTtineIwJXZHVDmHtKDZg",
+          "6qTtineIwJXZHVDmHtKDZg",
+          "7qo_HYOkm82V0-GbFUutuQ",
+          "8huwxPsv3JvwwtEqmETOOA",
+          "BERC3JpJYb8vWGRDS__xfA",
+          "BJOKBv-5T0pbJ-AePUt-DA",
+          "D3ZNXi428GuMZrnP6FAWkA",
+          "F_9Jcggf4VKwFbnRkh6w1A",
+          "J-rpbttkX6uSGqYrvHMMtg",
+          "J0WxHbfHRJRwR8v5eZSv5A",
+          "J82eTw3o0s_1uy_voXal3w",
+          "KR7aBnvDZZcVztymr89eBQ",
+          "LsMfp61XVM-H58ub-rLCNA",
+          "Lt52n1WZ8HlhmBUz6ICxiw",
+          "M-5XDfm0W2OmAActTMv93w",
+          "M22Nx6kzmqL_dMWD-FAwEA",
+          "O5aYyci-fHtpyIenJf2-rQ",
+          "OGNe-DH1vYSVePt-NTQI8Q",
+          "OI6vKetdKzREcI3EFIG8NQ",
+          "P60Cm8kdcXxLELaD6yQisw",
+          "SEBriG8gKIumXSvQwyqsRQ",
+          "SRSZMo-NciWnrcls2kHGmA",
+          "UGaADNi2QR4-4cTZJreHrg",
+          "YrvCFQdYdz-7iTPSbz-KGw",
+          "_wzBkx7HCHcpdSAf-oX0Ug",
+          "b-kks4f8tVGvWsN8oIw3OA",
+          "bbPRpgmMBnxDnTWzFi9iPg",
+          "d-c9HA2NFWlCo77v4SV4ZQ",
+          "eRjmNpymCCRvN43nmEy-lg",
+          "h9y-jgYduS-bffPLxZdLnA",
+          "kK8pneuKN-grZ33GobC7iw",
+          "kUZWBVZvhWuC8TWUg5AYyA",
+          "lUV1KEm4cl4mluSEFharFQ",
+          "lUV1KEm4cl4mluSEFharFQ",
+          "uuA49nD83C-Uo3kPJprOAA",
+          "v_ZaAcAJmWQw9xWgRitslQ",
+          "v_ZaAcAJmWQw9xWgRitslQ",
+          "x5RSLMQ5Lu-DfYoCFbzZZw",
+          "x5RSLMQ5Lu-DfYoCFbzZZw"
+        ]
+      },
+      "arms": [
+        {
+          "arm": "full",
+          "target_tokens": null,
+          "retention": {
+            "retained_evidence_items": 41,
+            "required_evidence_items": 41,
+            "complete_evidence_set": true
+          }
+        },
+        {
+          "arm": "sift",
+          "target_tokens": 16384,
+          "applicable": true,
+          "forwarded_tokens": 16184,
+          "selected_excerpts": 72,
+          "retention": {
+            "retained_evidence_items": 0,
+            "required_evidence_items": 41,
+            "complete_evidence_set": false
+          }
+        },
+        {
+          "arm": "sift",
+          "target_tokens": 24576,
+          "applicable": true,
+          "forwarded_tokens": 24423,
+          "selected_excerpts": 109,
+          "retention": {
+            "retained_evidence_items": 0,
+            "required_evidence_items": 41,
+            "complete_evidence_set": false
+          }
+        },
+        {
+          "arm": "sift",
+          "target_tokens": 32768,
+          "applicable": true,
+          "forwarded_tokens": 32498,
+          "selected_excerpts": 149,
+          "retention": {
+            "retained_evidence_items": 0,
+            "required_evidence_items": 41,
+            "complete_evidence_set": false
+          }
+        },
+        {
+          "arm": "sift",
+          "target_tokens": 49152,
+          "applicable": true,
+          "forwarded_tokens": 48994,
+          "selected_excerpts": 219,
+          "retention": {
+            "retained_evidence_items": 0,
+            "required_evidence_items": 41,
+            "complete_evidence_set": false
+          }
+        },
+        {
+          "arm": "sift",
+          "target_tokens": 65536,
+          "applicable": true,
+          "forwarded_tokens": 65403,
+          "selected_excerpts": 291,
+          "retention": {
+            "retained_evidence_items": 0,
+            "required_evidence_items": 41,
+            "complete_evidence_set": false
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "671b2c05bb02136c067d50c8",
+      "domain": "Long-dialogue History Understanding",
+      "full_prompt_tokens": 39280,
+      "question_sha256": "a31cfeff6eb77eecd0df6f5c461babef0f70cd128462904f673fc1d99c6b2ae4",
+      "source_evidence": {
+        "kind": "all_round_contribution_vectors",
+        "round_count": 20,
+        "player_totals": [
+          30,
+          25,
+          40,
+          10,
+          35,
+          35,
+          35,
+          15,
+          25,
+          15
+        ],
+        "max_total": 40,
+        "tied_top_player_indices_zero_based": [
+          2
+        ]
+      },
+      "arms": [
+        {
+          "arm": "full",
+          "target_tokens": null,
+          "retention": {
+            "retained_evidence_items": 20,
+            "required_evidence_items": 20,
+            "complete_evidence_set": true
+          }
+        },
+        {
+          "arm": "sift",
+          "target_tokens": 16384,
+          "applicable": true,
+          "forwarded_tokens": 7424,
+          "selected_excerpts": 108,
+          "retention": {
+            "retained_evidence_items": 16,
+            "required_evidence_items": 20,
+            "complete_evidence_set": false
+          }
+        },
+        {
+          "arm": "sift",
+          "target_tokens": 24576,
+          "applicable": true,
+          "forwarded_tokens": 7424,
+          "selected_excerpts": 108,
+          "retention": {
+            "retained_evidence_items": 16,
+            "required_evidence_items": 20,
+            "complete_evidence_set": false
+          }
+        },
+        {
+          "arm": "sift",
+          "target_tokens": 32768,
+          "applicable": true,
+          "forwarded_tokens": 7424,
+          "selected_excerpts": 108,
+          "retention": {
+            "retained_evidence_items": 16,
+            "required_evidence_items": 20,
+            "complete_evidence_set": false
+          }
+        },
+        {
+          "arm": "sift",
+          "target_tokens": 49152,
+          "applicable": false,
+          "reason": "Original prompt already fits this target"
+        },
+        {
+          "arm": "sift",
+          "target_tokens": 65536,
+          "applicable": false,
+          "reason": "Original prompt already fits this target"
+        }
+      ]
+    }
+  ]
+}
