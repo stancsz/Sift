@@ -88,6 +88,32 @@ class MassiveContextPreflightTests(unittest.TestCase):
         self.assertTrue(row["scale_and_budget_passed"])
         self.assertIsNone(row["exact_span_retention_diagnostic"])
 
+    def test_each_swarm_task_reaches_500k_raw_before_sift_targets(self):
+        root = Path(__file__).resolve().parents[1]
+        cases = (
+            ("webhook_swarm_500k", preflight.TASK_REQUEST),
+            ("multi_domain_incident_swarm_500k", None),
+        )
+        for fixture, task_request in cases:
+            with self.subTest(fixture=fixture):
+                case = root / "benchmarks/agent_cases" / fixture
+                gold = root / "benchmarks/agent_gold" / fixture
+                kwargs = {}
+                if task_request is None:
+                    kwargs["task_request"] = (case / "task.md").read_text(encoding="utf-8")
+                result = preflight.preflight(
+                    case / "swarm_context.md", gold, "openrouter/minimax/minimax-m3",
+                    [64_000, 48_000, 32_000, 24_000, 16_000], **kwargs,
+                )
+
+                self.assertGreaterEqual(result["raw_message_tokens"], 500_000)
+                self.assertEqual(result["raw_message_tokens"], result["full_arm_forwarded_tokens"])
+                self.assertEqual([64_000, 48_000, 32_000, 24_000, 16_000],
+                                 [row["target_tokens"] for row in result["targets"]])
+                self.assertTrue(all(row["scale_and_budget_passed"] for row in result["targets"]))
+                self.assertTrue(all(row["audit"]["input_tokens"] >= 500_000
+                                    for row in result["targets"]))
+
 
 
 if __name__ == "__main__":
