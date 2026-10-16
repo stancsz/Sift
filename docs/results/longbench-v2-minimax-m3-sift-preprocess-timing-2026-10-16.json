@@ -1,0 +1,303 @@
+{
+  "measured_utc": "2026-10-16T09:17:54.888078+00:00",
+  "calls": 38,
+  "total_wall_s": 60.73224340006709,
+  "total_cpu_s": 58.734375,
+  "per_target": {
+    "16384": {
+      "n": 10,
+      "mean_wall_ms": 1145.0759599683806,
+      "mean_cpu_ms": 1107.8125
+    },
+    "24576": {
+      "n": 8,
+      "mean_wall_ms": 1457.413824973628,
+      "mean_cpu_ms": 1408.203125
+    },
+    "32768": {
+      "n": 8,
+      "mean_wall_ms": 1536.677487543784,
+      "mean_cpu_ms": 1488.28125
+    },
+    "49152": {
+      "n": 6,
+      "mean_wall_ms": 1912.3089666633557,
+      "mean_cpu_ms": 1848.9583333333333
+    },
+    "65536": {
+      "n": 6,
+      "mean_wall_ms": 1993.817516680186,
+      "mean_cpu_ms": 1921.875
+    }
+  },
+  "rows": [
+    {
+      "case_id": "66f3e58c821e116aacb2fabc",
+      "target": 16384,
+      "wall_ms": 1252.8766000177711,
+      "cpu_ms": 1265.625,
+      "result_tokens": 16221
+    },
+    {
+      "case_id": "66f3e58c821e116aacb2fabc",
+      "target": 24576,
+      "wall_ms": 1494.678899878636,
+      "cpu_ms": 1453.125,
+      "result_tokens": 24409
+    },
+    {
+      "case_id": "66f3e58c821e116aacb2fabc",
+      "target": 32768,
+      "wall_ms": 1457.8088000416756,
+      "cpu_ms": 1406.25,
+      "result_tokens": 30530
+    },
+    {
+      "case_id": "66f3e58c821e116aacb2fabc",
+      "target": 49152,
+      "wall_ms": 1454.7731999773532,
+      "cpu_ms": 1421.875,
+      "result_tokens": 30530
+    },
+    {
+      "case_id": "66f3e58c821e116aacb2fabc",
+      "target": 65536,
+      "wall_ms": 1431.5142999403179,
+      "cpu_ms": 1390.625,
+      "result_tokens": 30530
+    },
+    {
+      "case_id": "66f41108821e116aacb30c41",
+      "target": 16384,
+      "wall_ms": 1297.6660998538136,
+      "cpu_ms": 1250.0,
+      "result_tokens": 16256
+    },
+    {
+      "case_id": "66f41108821e116aacb30c41",
+      "target": 24576,
+      "wall_ms": 1446.5958001092076,
+      "cpu_ms": 1437.5,
+      "result_tokens": 24376
+    },
+    {
+      "case_id": "66f41108821e116aacb30c41",
+      "target": 32768,
+      "wall_ms": 1654.0398001670837,
+      "cpu_ms": 1609.375,
+      "result_tokens": 32616
+    },
+    {
+      "case_id": "66f41108821e116aacb30c41",
+      "target": 49152,
+      "wall_ms": 1777.7630998753011,
+      "cpu_ms": 1687.5,
+      "result_tokens": 38026
+    },
+    {
+      "case_id": "66f41108821e116aacb30c41",
+      "target": 65536,
+      "wall_ms": 1740.8807999454439,
+      "cpu_ms": 1687.5,
+      "result_tokens": 38026
+    },
+    {
+      "case_id": "66ebcc1e5a08c7b9b35df87d",
+      "target": 16384,
+      "wall_ms": 449.1268000565469,
+      "cpu_ms": 453.125,
+      "result_tokens": 16225
+    },
+    {
+      "case_id": "66ebd22e5a08c7b9b35e0126",
+      "target": 16384,
+      "wall_ms": 437.5524001661688,
+      "cpu_ms": 421.875,
+      "result_tokens": 16224
+    },
+    {
+      "case_id": "66f24538821e116aacb2865e",
+      "target": 16384,
+      "wall_ms": 2409.083299804479,
+      "cpu_ms": 2328.125,
+      "result_tokens": 16221
+    },
+    {
+      "case_id": "66f24538821e116aacb2865e",
+      "target": 24576,
+      "wall_ms": 2578.539000125602,
+      "cpu_ms": 2484.375,
+      "result_tokens": 24406
+    },
+    {
+      "case_id": "66f24538821e116aacb2865e",
+      "target": 32768,
+      "wall_ms": 2786.609400063753,
+      "cpu_ms": 2750.0,
+      "result_tokens": 28344
+    },
+    {
+      "case_id": "66f24538821e116aacb2865e",
+      "target": 49152,
+      "wall_ms": 2714.8480999749154,
+      "cpu_ms": 2609.375,
+      "result_tokens": 28344
+    },
+    {
+      "case_id": "66f24538821e116aacb2865e",
+      "target": 65536,
+      "wall_ms": 2855.261000106111,
+      "cpu_ms": 2734.375,
+      "result_tokens": 28344
+    },
+    {
+      "case_id": "66f2a46d821e116aacb2a41a",
+      "target": 16384,
+      "wall_ms": 2829.2736997827888,
+      "cpu_ms": 2671.875,
+      "result_tokens": 16184
+    },
+    {
+      "case_id": "66f2a46d821e116aacb2a41a",
+      "target": 24576,
+      "wall_ms": 2956.745699979365,
+      "cpu_ms": 2828.125,
+      "result_tokens": 24423
+    },
+    {
+      "case_id": "66f2a46d821e116aacb2a41a",
+      "target": 32768,
+      "wall_ms": 3128.870400134474,
+      "cpu_ms": 3015.625,
+      "result_tokens": 32498
+    },
+    {
+      "case_id": "66f2a46d821e116aacb2a41a",
+      "target": 49152,
+      "wall_ms": 3167.9078000597656,
+      "cpu_ms": 3078.125,
+      "result_tokens": 48994
+    },
+    {
+      "case_id": "66f2a46d821e116aacb2a41a",
+      "target": 65536,
+      "wall_ms": 3607.0405000355095,
+      "cpu_ms": 3453.125,
+      "result_tokens": 65403
+    },
+    {
+      "case_id": "670397b5bb02136c067ccec6",
+      "target": 16384,
+      "wall_ms": 563.2482999935746,
+      "cpu_ms": 546.875,
+      "result_tokens": 16223
+    },
+    {
+      "case_id": "670397b5bb02136c067ccec6",
+      "target": 24576,
+      "wall_ms": 740.9153999760747,
+      "cpu_ms": 734.375,
+      "result_tokens": 22038
+    },
+    {
+      "case_id": "670397b5bb02136c067ccec6",
+      "target": 32768,
+      "wall_ms": 688.344000140205,
+      "cpu_ms": 656.25,
+      "result_tokens": 22038
+    },
+    {
+      "case_id": "671b2c05bb02136c067d50c8",
+      "target": 16384,
+      "wall_ms": 221.51329996995628,
+      "cpu_ms": 203.125,
+      "result_tokens": 7424
+    },
+    {
+      "case_id": "671b2c05bb02136c067d50c8",
+      "target": 24576,
+      "wall_ms": 227.9935998376459,
+      "cpu_ms": 203.125,
+      "result_tokens": 7424
+    },
+    {
+      "case_id": "671b2c05bb02136c067d50c8",
+      "target": 32768,
+      "wall_ms": 225.8164999075234,
+      "cpu_ms": 234.375,
+      "result_tokens": 7424
+    },
+    {
+      "case_id": "66ec1eb9821e116aacb1af36",
+      "target": 16384,
+      "wall_ms": 1076.1937000788748,
+      "cpu_ms": 1062.5,
+      "result_tokens": 16252
+    },
+    {
+      "case_id": "66ec1eb9821e116aacb1af36",
+      "target": 24576,
+      "wall_ms": 1191.0147999878973,
+      "cpu_ms": 1140.625,
+      "result_tokens": 22604
+    },
+    {
+      "case_id": "66ec1eb9821e116aacb1af36",
+      "target": 32768,
+      "wall_ms": 1226.7249999567866,
+      "cpu_ms": 1187.5,
+      "result_tokens": 22604
+    },
+    {
+      "case_id": "66ec1eb9821e116aacb1af36",
+      "target": 49152,
+      "wall_ms": 1238.3550000377,
+      "cpu_ms": 1171.875,
+      "result_tokens": 22604
+    },
+    {
+      "case_id": "66ec1eb9821e116aacb1af36",
+      "target": 65536,
+      "wall_ms": 1232.3048999533057,
+      "cpu_ms": 1203.125,
+      "result_tokens": 22604
+    },
+    {
+      "case_id": "66f2a7a9821e116aacb2a721",
+      "target": 16384,
+      "wall_ms": 914.2253999598324,
+      "cpu_ms": 875.0,
+      "result_tokens": 16245
+    },
+    {
+      "case_id": "66f2a7a9821e116aacb2a721",
+      "target": 24576,
+      "wall_ms": 1022.8273998945951,
+      "cpu_ms": 984.375,
+      "result_tokens": 24432
+    },
+    {
+      "case_id": "66f2a7a9821e116aacb2a721",
+      "target": 32768,
+      "wall_ms": 1125.2059999387711,
+      "cpu_ms": 1046.875,
+      "result_tokens": 25966
+    },
+    {
+      "case_id": "66f2a7a9821e116aacb2a721",
+      "target": 49152,
+      "wall_ms": 1120.2066000550985,
+      "cpu_ms": 1125.0,
+      "result_tokens": 25966
+    },
+    {
+      "case_id": "66f2a7a9821e116aacb2a721",
+      "target": 65536,
+      "wall_ms": 1095.9036001004279,
+      "cpu_ms": 1062.5,
+      "result_tokens": 25966
+    }
+  ],
+  "measurement": "Post-hoc selection-only timing rerun for the frozen 10 cases; no model requests were sent.",
+  "timer_scope": "Timer starts after dataset loading and token-count validation; includes each Sift compaction and final rendered-token recount."
+}
