@@ -56,11 +56,11 @@ DEFAULT_REPEATS = 3
 DEFAULT_INPUT_PRICE_PER_MILLION = 0.30
 DEFAULT_OUTPUT_PRICE_PER_MILLION = 1.20
 DEFAULT_ESTIMATED_SPEND_CEILING_USD = 20.0
-# Earlier OpenRouter measurements included a 2.98x local/provider token-count
-# divergence for a large prompt. Use a 4x local-token reserve for both preflight
-# and dispatch gating until the route has broader audited receipts. This remains
-# a best-effort local guard, not a provider-enforced hard cap.
-INPUT_ESTIMATE_SAFETY_FACTOR = 4.0
+# Route-specific M3 receipts have matched the pinned local tokenizer so far.
+# Keep a 1.5x cost reserve, and fail closed if any new prompt count exceeds 1.05x.
+# This is a best-effort local guard, not a provider-enforced hard billing cap.
+INPUT_ESTIMATE_SAFETY_FACTOR = 1.5
+MAX_PROVIDER_LOCAL_INPUT_RATIO = 1.05
 OPENROUTER_REQUEST_TOKEN_LIMIT = 524_288
 PROVIDER_CONTEXT_ESTIMATE_FACTOR = 3.25
 FULL_CASE_COUNT = 100
@@ -78,6 +78,28 @@ def count_prompt(tokenizer: Tokenizer, messages: list[dict[str, str]]) -> int:
 
 def load_cases(manifest_path: Path, dataset_path: Path, tokenizer_path: Path, template_path: Path):
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    harness = manifest.get("harness", {})
+    if not isinstance(harness, dict):
+        raise EvaluationError("Frozen manifest harness metadata is missing")
+    frozen_sources = [
+        ("runner_path", "runner_sha256"),
+        ("protocol_path", "protocol_sha256"),
+        ("preparation_script", "preparation_script_sha256"),
+        ("dataset_preparation_module_path", "dataset_preparation_module_sha256"),
+        ("m3_renderer_module_path", "m3_renderer_module_sha256"),
+    ]
+    for path_key, digest_key in frozen_sources:
+        relative_path = harness.get(path_key)
+        expected_digest = harness.get(digest_key)
+        if not isinstance(relative_path, str) or not isinstance(expected_digest, str):
+            raise EvaluationError(f"Frozen manifest must record {path_key} and {digest_key}")
+        source_path = (ROOT / relative_path).resolve()
+        try:
+            source_path.relative_to(ROOT)
+        except ValueError as error:
+            raise EvaluationError(f"Frozen source path escapes repository: {relative_path}") from error
+        if not source_path.is_file() or file_sha256(source_path) != expected_digest:
+            raise EvaluationError(f"Frozen preparation source hash mismatch: {relative_path}")
     if manifest.get("model", {}).get("id") != REQUESTED_MODEL:
         raise EvaluationError(f"Frozen manifest must target {REQUESTED_MODEL}")
     frozen_cases = manifest.get("cases")
@@ -141,6 +163,10 @@ def load_cases(manifest_path: Path, dataset_path: Path, tokenizer_path: Path, te
 def make_jobs(cases: list[dict], tokenizer: Tokenizer, seed: int, repeat: int,
               target_tokens: int) -> list[dict]:
     jobs = []
+    def messages_digest(messages: list[dict[str, str]]) -> str:
+        packed = json.dumps(messages, ensure_ascii=False, separators=(",", ":"))
+        return hashlib.sha256(packed.encode("utf-8")).hexdigest()
+
     for case in cases:
         frozen = case["frozen"]
         case_id = frozen["id"]
@@ -157,16 +183,20 @@ def make_jobs(cases: list[dict], tokenizer: Tokenizer, seed: int, repeat: int,
             "selector_audit": None,
             "repeat": repeat,
             "generation_seed": seed + repeat + 1,
+            "sift_preprocessing_ms": None,
+            "request_messages_sha256": messages_digest(case["messages"]),
         })
         effective_target = target_tokens - SAFETY_MARGIN
         if effective_target <= 0:
             raise EvaluationError("target must be larger than the safety margin")
         below_budget_before_selection = full_count <= effective_target
+        preprocessing_started = time.perf_counter()
         result = compact_messages(
             case["messages"], lambda value: count_prompt(tokenizer, value),
             target=effective_target, raw_limit=1_000_000, protocol="openai",
         )
         measured = count_prompt(tokenizer, result.messages)
+        sift_preprocessing_ms = (time.perf_counter() - preprocessing_started) * 1000
         if measured > effective_target:
             raise EvaluationError(f"Sift prompt exceeds target for {case_id} at {target_tokens}")
         projected_provider_count = math.ceil(measured * PROVIDER_CONTEXT_ESTIMATE_FACTOR)
@@ -187,6 +217,8 @@ def make_jobs(cases: list[dict], tokenizer: Tokenizer, seed: int, repeat: int,
             "selector_audit": result.audit,
             "repeat": repeat,
             "generation_seed": seed + repeat + 1,
+            "sift_preprocessing_ms": sift_preprocessing_ms,
+            "request_messages_sha256": messages_digest(result.messages),
         })
     random.Random(seed + repeat).shuffle(jobs)
     return jobs
@@ -198,6 +230,7 @@ def parse_choice(text: str) -> str | None:
 
 
 def call_openrouter(job: dict, *, api_key: str, seed: int) -> dict:
+    started_utc = datetime.now(timezone.utc).isoformat()
     started = time.perf_counter()
     first_content = None
     text_parts: list[str] = []
@@ -237,6 +270,8 @@ def call_openrouter(job: dict, *, api_key: str, seed: int) -> dict:
                         "raw_sse_events": raw_sse_events, "raw_response_body": None,
                         "model": None, "provider": None, "usage": None,
                         "cost_details": None, "response_id": None,
+                        "request_started_utc": started_utc,
+                        "response_completed_utc": datetime.now(timezone.utc).isoformat(),
                         "end_to_end_ms": (time.perf_counter() - started) * 1000}
             for line in response.iter_lines(decode_unicode=True):
                 if not line or not line.startswith("data:"):
@@ -274,6 +309,8 @@ def call_openrouter(job: dict, *, api_key: str, seed: int) -> dict:
             "response_id": response_id,
             "usage": usage,
             "cost_details": usage.get("cost_details") if isinstance(usage, dict) else None,
+            "request_started_utc": started_utc,
+            "response_completed_utc": datetime.now(timezone.utc).isoformat(),
             "end_to_end_ms": (time.perf_counter() - started) * 1000,
         }
 
@@ -307,6 +344,8 @@ def call_openrouter(job: dict, *, api_key: str, seed: int) -> dict:
         "provider": provider,
         "usage": usage,
         "cost_details": usage.get("cost_details") if isinstance(usage, dict) else None,
+        "request_started_utc": started_utc,
+        "response_completed_utc": datetime.now(timezone.utc).isoformat(),
         "raw_sse_events": raw_sse_events,
         "raw_response_body": "\n".join(raw_sse_events),
         "raw_error_body": raw_error_body,
@@ -340,12 +379,15 @@ def estimate_budget(jobs: list[dict], repeats: int, *, input_price_per_million: 
         "actual_upstream_reported_cost_usd": 0.0,
         "actual_cost_basis": "separate OpenRouter and upstream-reported fields; guard settles to the larger reported value when both exist, otherwise the available value; provider receipts are not invoice-verified",
         "input_estimate_safety_factor": INPUT_ESTIMATE_SAFETY_FACTOR,
-        "input_estimate_note": "Budget guard reserves 4x local MiniMax rendered-token counts based on a prior ~2.98x provider/local discrepancy. A separate 3.25x context projection checks the previously observed 524,288-token OpenRouter request limit. Both are best-effort estimates, not provider-enforced limits or guaranteed invoice bounds.",
-        "pricing_source": "Prior observed OpenRouter BYOK M3 receipts: approximately $0.30/M input and $1.20/M output; configurable because account/provider rates may vary.",
+        "input_estimate_note": "Budget guard reserves 1.5x local M3 rendered tokens based on route-specific exact provider/local prompt counts from development and longest-case smoke receipts; dispatch closes if any observed ratio exceeds 1.05x. A separate 3.25x context projection checks the verified 524,288-token Minimax endpoint prompt limit. These are best-effort estimates, not provider-enforced limits or guaranteed invoice bounds.",
+        "pricing_source": "OpenRouter endpoint metadata checked 2026-10-16 for Minimax minimax/minimax-m3-20260531: $0.30/M input and $1.20/M output; configurable because endpoint/account rates may change.",
         "budget_guard_spend_usd": 0.0,
         "budget_guard_settlement_note": "Reported provider cost when available; otherwise the reserved estimate is charged against the guard. This accounting value is not an invoice.",
         "unknown_cost_receipts": 0,
         "unknown_cost_job_ids": [],
+        "max_provider_local_input_ratio": None,
+        "max_provider_local_input_ratio_guard": MAX_PROVIDER_LOCAL_INPUT_RATIO,
+        "stop_reasons": [],
         "budget_guard_stopped": False,
     }
 
@@ -359,6 +401,16 @@ def estimate_job_guard_cost(job: dict, input_price_per_million: float,
     ) / 1_000_000
 
 
+def _nonnegative_finite_number(value: Any) -> float | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    try:
+        number = float(value)
+    except (OverflowError, ValueError):
+        return None
+    return number if math.isfinite(number) and number >= 0 else None
+
+
 def cost_receipt(usage: Any) -> tuple[float | None, str]:
     """Return one guard-settlement amount, or None when the receipt is unknown."""
     if not isinstance(usage, dict):
@@ -366,12 +418,14 @@ def cost_receipt(usage: Any) -> tuple[float | None, str]:
     details = usage.get("cost_details")
     upstream = details.get("upstream_inference_cost") if isinstance(details, dict) else None
     direct = usage.get("cost")
-    valid_upstream = (
-        float(upstream) if isinstance(upstream, (int, float)) and math.isfinite(float(upstream)) else None
-    )
-    valid_direct = (
-        float(direct) if isinstance(direct, (int, float)) and math.isfinite(float(direct)) else None
-    )
+    valid_upstream = _nonnegative_finite_number(upstream)
+    valid_direct = _nonnegative_finite_number(direct)
+    if (upstream is not None and valid_upstream is None) or (direct is not None and valid_direct is None):
+        return None, "invalid_cost_receipt"
+    if usage.get("is_byok") is not True:
+        return None, "unexpected_billing_mode"
+    if valid_upstream is None or valid_upstream <= 0:
+        return None, "byok_zero_or_missing_upstream_cost"
     if valid_upstream is not None and valid_direct is not None:
         return max(valid_upstream, valid_direct), "max_upstream_or_openrouter_cost"
     if valid_upstream is not None:
@@ -392,13 +446,15 @@ def update_actual_budget(report: dict) -> None:
         usage = sample.get("usage")
         if isinstance(usage, dict):
             cost = usage.get("cost")
-            if isinstance(cost, (int, float)) and math.isfinite(float(cost)):
-                openrouter_cost += float(cost)
+            valid_cost = _nonnegative_finite_number(cost)
+            if valid_cost is not None:
+                openrouter_cost += valid_cost
             details = usage.get("cost_details")
             if isinstance(details, dict):
                 upstream = details.get("upstream_inference_cost")
-                if isinstance(upstream, (int, float)) and math.isfinite(float(upstream)):
-                    upstream_cost += float(upstream)
+                valid_upstream = _nonnegative_finite_number(upstream)
+                if valid_upstream is not None:
+                    upstream_cost += valid_upstream
         guard_spend += float(sample.get("guard_charge_usd", 0.0))
         if sample.get("cost_receipt_status") != "reported":
             unknown_cost_job_ids.append(sample.get("job_id"))
@@ -476,8 +532,10 @@ def run(manifest_path: Path, dataset_path: Path, tokenizer_path: Path,
         if target_tokens != PRIMARY_TARGET:
             raise EvaluationError(f"Full run requires the primary {PRIMARY_TARGET}-token Sift target")
     jobs = []
+    job_preparation_started = time.perf_counter()
     for repeat in range(1, repeats + 1):
         jobs.extend(make_jobs(cases, tokenizer, seed, repeat, target_tokens))
+    job_preparation_wall_ms = (time.perf_counter() - job_preparation_started) * 1000
     budget = estimate_budget(
         jobs, repeats, input_price_per_million=input_price_per_million,
         output_price_per_million=output_price_per_million,
@@ -494,13 +552,22 @@ def run(manifest_path: Path, dataset_path: Path, tokenizer_path: Path,
         "sift_core_sha256": hashlib.sha256((ROOT / "src/sift/core.py").read_bytes()).hexdigest(),
         "model": REQUESTED_MODEL,
         "full_context_local_token_cap": MAX_FULL_LOCAL_TOKENS,
-        "openrouter_observed_request_token_limit": OPENROUTER_REQUEST_TOKEN_LIMIT,
+        "openrouter_endpoint_max_prompt_tokens": OPENROUTER_REQUEST_TOKEN_LIMIT,
         "provider_context_estimate_factor": PROVIDER_CONTEXT_ESTIMATE_FACTOR,
-        "route": "OpenRouter; requested model and MiniMax provider are both verified per successful response",
+        "route": "OpenRouter; requested model and MiniMax provider are verified per response; allow_fallbacks=false",
         "source_hashes": {
             "runner_sha256": file_sha256(Path(__file__).resolve()),
             "manifest_sha256": file_sha256(manifest_path),
-            "preparation_script_sha256": file_sha256(ROOT / "benchmarks/prepare_longbench_v2_minimax.py"),
+            "protocol_sha256": file_sha256(ROOT / manifest["harness"]["protocol_path"]),
+            "sample_preparation_script_sha256": file_sha256(
+                ROOT / manifest["harness"]["preparation_script"]
+            ),
+            "dataset_preparation_module_sha256": file_sha256(
+                ROOT / manifest["harness"]["dataset_preparation_module_path"]
+            ),
+            "m3_renderer_module_sha256": file_sha256(
+                ROOT / manifest["harness"]["m3_renderer_module_path"]
+            ),
             "sift_core_sha256": hashlib.sha256((ROOT / "src/sift/core.py").read_bytes()).hexdigest(),
             "tokenizer_sha256": file_sha256(tokenizer_path),
             "chat_template_sha256": file_sha256(template_path),
@@ -511,6 +578,8 @@ def run(manifest_path: Path, dataset_path: Path, tokenizer_path: Path,
             "full_context_local_token_cap": MAX_FULL_LOCAL_TOKENS,
             "sift_safety_margin_tokens": SAFETY_MARGIN,
             "repeats": repeats, "concurrency": workers,
+            "cli_seed": seed,
+            "generation_seed_formula": "cli_seed + repeat + 1; paired arms share each case/repeat seed",
             "request_order": "seeded shuffle across cases, arms, and repeats",
             "temperature": 0.1, "top_p": 0.8, "reasoning": "disabled",
             "max_output_tokens": OUTPUT_TOKENS, "retries": 0,
@@ -521,11 +590,13 @@ def run(manifest_path: Path, dataset_path: Path, tokenizer_path: Path,
         },
         "preparation": {
             "tokenizer_count": "MiniMax published tokenizer over published rendered chat template",
+            "job_generation_wall_ms": job_preparation_wall_ms,
+            "sift_preprocessing_metric": "per-request job.sift_preprocessing_ms measures compact_messages plus post-compaction token recount; null for full-context arm",
             "provider_count_note": "Per-request OpenRouter usage is authoritative; local token counts include a 128-token safety margin for Sift targets.",
             "context_projection": {
                 "factor": PROVIDER_CONTEXT_ESTIMATE_FACTOR,
                 "observed_request_token_limit": OPENROUTER_REQUEST_TOKEN_LIMIT,
-                "note": "This best-effort preflight is based on prior observed local/provider divergence; actual provider usage is captured per request and may differ.",
+                "note": "The 3.25x projection is a conservative client-side check against the current provider-specific endpoint metadata; actual provider usage is captured per request.",
             },
         },
         "samples": [],
@@ -548,6 +619,7 @@ def run(manifest_path: Path, dataset_path: Path, tokenizer_path: Path,
     guard_spend = 0.0
     stopped_for_budget = False
     budget_gate_closed = False
+    safety_stop_reasons: list[str] = []
     with ThreadPoolExecutor(max_workers=workers) as pool:
         while pending_jobs or in_flight:
             while pending_jobs and len(in_flight) < workers:
@@ -602,13 +674,49 @@ def run(manifest_path: Path, dataset_path: Path, tokenizer_path: Path,
                 receipt_reported = actual_cost is not None
                 guard_charge = actual_cost if receipt_reported else reservation
                 guard_spend += guard_charge
+                usage = result.get("usage")
+                provider_prompt_tokens = usage.get("prompt_tokens") if isinstance(usage, dict) else None
+                ratio = (
+                    provider_prompt_tokens / job["estimated_tokens"]
+                    if type(provider_prompt_tokens) is int and provider_prompt_tokens > 0
+                    and job["estimated_tokens"] > 0
+                    else None
+                )
+                route_valid = (
+                    result.get("http_status") == 200
+                    and result.get("model") == REQUESTED_MODEL
+                    and isinstance(result.get("provider"), str)
+                    and result["provider"].strip().casefold() == "minimax"
+                )
+                if not route_valid and "route_attribution_mismatch" not in safety_stop_reasons:
+                    safety_stop_reasons.append("route_attribution_mismatch")
+                if ratio is None and "missing_provider_prompt_usage" not in safety_stop_reasons:
+                    safety_stop_reasons.append("missing_provider_prompt_usage")
+                elif ratio is not None and ratio > MAX_PROVIDER_LOCAL_INPUT_RATIO:
+                    if "provider_local_input_ratio_exceeded" not in safety_stop_reasons:
+                        safety_stop_reasons.append("provider_local_input_ratio_exceeded")
+                if not receipt_reported:
+                    cost_reason = (
+                        "invalid_provider_cost_receipt"
+                        if receipt_source == "invalid_cost_receipt"
+                        else "missing_provider_cost_receipt"
+                    )
+                    if cost_reason not in safety_stop_reasons:
+                        safety_stop_reasons.append(cost_reason)
+                if safety_stop_reasons:
+                    budget_gate_closed = True
+                    stopped_for_budget = True
                 result.update({
                     "job_id": f"{job['case_id']}:{job['arm']}:{job['repeat']}",
                     "case_id": job["case_id"], "domain": job["domain"], "arm": job["arm"],
                     "target_tokens": job["target"], "repeat": job["repeat"],
+                    "generation_seed": job["generation_seed"],
+                    "request_messages_sha256": job["request_messages_sha256"],
+                    "sift_preprocessing_ms": job["sift_preprocessing_ms"],
                     "expected": job["expected"],
                     "correct": result.get("normal") is True and result.get("choice") == job["expected"],
                     "local_rendered_prompt_tokens": job["estimated_tokens"],
+                    "provider_local_input_token_ratio": ratio,
                     "projected_provider_prompt_tokens": job["projected_provider_tokens"],
                     "sift_passthrough": job["passthrough"] if job["arm"] == "sift" else False,
                     "full_prompt_below_target_before_selection": (
@@ -622,6 +730,13 @@ def run(manifest_path: Path, dataset_path: Path, tokenizer_path: Path,
                 })
                 report["samples"].append(result)
                 update_actual_budget(report)
+                report["budget"]["stop_reasons"] = list(safety_stop_reasons)
+                ratios = [
+                    sample["provider_local_input_token_ratio"]
+                    for sample in report["samples"]
+                    if isinstance(sample.get("provider_local_input_token_ratio"), (int, float))
+                ]
+                report["budget"]["max_provider_local_input_ratio"] = max(ratios) if ratios else None
                 report["budget"]["in_flight_reserved_cost_usd"] = sum(
                     amount for _, amount in in_flight.values()
                 )
@@ -658,7 +773,8 @@ def run(manifest_path: Path, dataset_path: Path, tokenizer_path: Path,
                 "reserved_cost_usd": estimate_job_guard_cost(
                     job, input_price_per_million, output_price_per_million
                 ),
-                "reason": "actual_usage_plus_in_flight_reservations_reached_budget_ceiling",
+                "reason": ";".join(safety_stop_reasons) if safety_stop_reasons
+                else "actual_usage_plus_in_flight_reservations_reached_budget_ceiling",
             }
             for job in pending_jobs
         ]
@@ -667,6 +783,8 @@ def run(manifest_path: Path, dataset_path: Path, tokenizer_path: Path,
     )
     if guard_spend > estimated_spend_ceiling_usd:
         report["status"] = "budget_guard_overrun"
+    elif safety_stop_reasons:
+        report["status"] = "safety_guard_stopped"
     elif pending_jobs:
         report["status"] = "budget_guard_stopped"
     else:

@@ -30,7 +30,13 @@
     "preparation_script": "benchmarks/prepare_longbench_v2_minimax_100.py",
     "preparation_script_sha256": "5c8bb308c24685bbc385c19f61da2548a191c516f8085cb94442943890835de1",
     "runner_path": "benchmarks/run_longbench_v2_minimax.py",
-    "runner_sha256": "ab6dda35594548805f2f1e4a0a86807b972ce3c1b040e3744827ee75bf49c88e"
+    "runner_sha256": "2e0a6b48f37aaafc91bda39bf4729605cf3618723c22884cd3e41751ee098ff7",
+    "protocol_path": "docs/evals/longbench-v2-minimax-m3-100-protocol-2026-10-16.md",
+    "protocol_sha256": "51a3590c48bb83c94449f0f135ec22c690d38f4453a41e1f622c382464fc5596",
+    "dataset_preparation_module_path": "benchmarks/prepare_longbench_v2.py",
+    "dataset_preparation_module_sha256": "b913c0c89ed6bea2a7b74b54b64516bfcaad7f7894067ebbac9c5085e47ae069",
+    "m3_renderer_module_path": "benchmarks/prepare_longbench_v2_minimax.py",
+    "m3_renderer_module_sha256": "2eb34e08fbdb3d1acb69339505e1e228030b930e2d967b174e67490006adee77"
   },
   "selection": {
     "seed": 20261021,
@@ -139,17 +145,23 @@
     "max_sift_request_projected_tokens_including_output": 106096,
     "max_sift_request_headroom_tokens": 418192,
     "input_price_per_million_usd": 0.3,
-    "input_cost_reserve_multiplier": 4,
+    "input_cost_reserve_multiplier": 1.5,
     "output_price_per_million_usd": 1.2,
     "total_full_local_input_tokens": 8081870,
     "full_plus_32k_sift_input_tokens_per_repeat": 11358670,
-    "three_repeat_input_tokens_after_4x_projection": 136304040,
     "three_repeat_output_tokens_at_max_output": 9600,
-    "three_repeat_projected_input_cost_usd": 40.891212,
+    "three_repeat_projected_input_cost_usd": 15.3342045,
     "three_repeat_projected_output_cost_usd": 0.01152,
-    "three_repeat_projected_total_cost_usd": 40.902732,
-    "20_usd_ceiling_covers_three_repeats": false,
-    "note": "Planning estimate based on live MiniMax endpoint metadata checked 2026-10-16; actual provider-reported usage and pricing govern. No API calls were made during preparation."
+    "three_repeat_projected_total_cost_usd": 15.345724500000001,
+    "20_usd_ceiling_covers_three_repeats": true,
+    "note": "Planning estimate at endpoint metadata checked 2026-10-16. The primary-run ceiling is $19.00; the two paired smoke receipts total $0.06408108, keeping the combined working budget below $20 with room for in-flight exposure.",
+    "three_repeat_input_tokens_after_1_5x_projection": 51114015.0,
+    "cost_reserve_basis": "47 earlier M3 receipts and four requests across two longest-case paired smokes matched local/provider prompt counts exactly; runtime guard closes new dispatch above 1.05 ratio.",
+    "run_cli_seed": 20261022,
+    "primary_run_workers": 2,
+    "primary_run_spend_ceiling_usd": 19.0,
+    "two_smoke_upstream_costs_usd": 0.06408108,
+    "working_budget_usd": 20.0
   },
   "cases": [
     {
