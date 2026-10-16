@@ -50,6 +50,7 @@ _MAX_CSV_PHYSICAL_LINES = 100_000
 _CSV_LINE_BREAKS = ("\n", "\r", "\v", "\f", "\x1c", "\x1d", "\x1e",
                     "\x85", "\u2028", "\u2029")
 _MAX_CANDIDATES = 512
+_MAX_LATE_INSTRUCTIONS = 64
 _DEDUP_WINDOW = 65_536
 _QUOTED_QUERY_BONUS = 500
 _MESSAGE_KEYS = frozenset({
@@ -567,6 +568,114 @@ def _summary(candidates: list[_Candidate]) -> dict[str, str]:
     return {"role": "user", "content": "\n".join(lines)}
 
 
+def _compact_with_late_instruction_anchors(
+    messages: list[dict[str, Any]], count_tokens: TokenCounter, *, target: int,
+    protocol: Protocol, instruction_end: int, latest_user: int, raw: int,
+) -> CompactionResult:
+    """Compact dialogue spans while leaving late instructions in their positions."""
+    late_indices = [
+        index for index in range(instruction_end, latest_user)
+        if messages[index].get("role") in {"system", "developer"}
+    ]
+    if len(late_indices) > _MAX_LATE_INSTRUCTIONS:
+        raise CompactionError(
+            "too many late instruction anchors",
+            code="late_instruction_limit",
+        )
+
+    # Split old history at instruction messages. Candidate scoring and
+    # identifier joins stay inside each span, while selected excerpts are
+    # reinserted before the instruction that followed their source span.
+    segments: list[tuple[int, int, int | None]] = []
+    segment_start = instruction_end
+    for index in late_indices:
+        segments.append((segment_start, index, index))
+        segment_start = index + 1
+    segments.append((segment_start, latest_user, None))
+
+    prefix = messages[:instruction_end]
+    active = messages[latest_user:]
+    candidate_segments: dict[tuple[int, int], int] = {}
+    options: list[_Candidate] = []
+
+    def build(selected_count: int) -> list[dict[str, Any]]:
+        selected = options[:selected_count]
+        by_segment: dict[int, list[_Candidate]] = {}
+        for item in selected:
+            segment_index = candidate_segments[(item.message_index, item.part_index)]
+            by_segment.setdefault(segment_index, []).append(item)
+        output = list(prefix)
+        for segment_index, (_, _, anchor_index) in enumerate(segments):
+            if segment_index in by_segment:
+                output.append(_summary(by_segment[segment_index]))
+            if anchor_index is not None:
+                output.append(messages[anchor_index])
+        output.extend(active)
+        return output
+
+    base_count = _count(count_tokens, build(0))
+    if base_count >= target - 256:
+        raise CompactionError(
+            "late instructions and active history exceed target",
+            code="active_too_large",
+        )
+
+    query = _render(messages[latest_user])
+    for segment_index, (start, end, _) in enumerate(segments):
+        if start == end:
+            continue
+        candidates = _linked_candidates(messages[start:end], query)
+        for item in candidates:
+            candidate = _Candidate(
+                item.message_index + start, item.part_index, item.role,
+                item.text, item.score, item.center, item.prefix,
+            )
+            options.append(candidate)
+            candidate_segments[(candidate.message_index, candidate.part_index)] = segment_index
+    options = heapq.nsmallest(
+        _MAX_CANDIDATES, options,
+        key=lambda item: (-item.score, item.message_index, item.part_index),
+    )
+    if not options:
+        raise CompactionError(
+            "no extractable history between late instructions",
+            code="active_too_large",
+        )
+
+    low, high = 1, len(options)
+    best: tuple[list[dict[str, Any]], int] | None = None
+    selected_count = 0
+    while low <= high:
+        middle = (low + high) // 2
+        output = build(middle)
+        forwarded = _count(count_tokens, output)
+        if forwarded <= target:
+            best = output, forwarded
+            selected_count = middle
+            low = middle + 1
+        else:
+            high = middle - 1
+    if best is None:
+        raise CompactionError(
+            "no historical excerpts fit between late instructions",
+            code="active_too_large",
+        )
+
+    output, forwarded = best
+    preserved_turns = sum(_real_user(message, protocol) for message in active) - 1
+    preserved_cycles = sum(_starts_tool_cycle(message, protocol) for message in active)
+    return CompactionResult(deepcopy(output), {
+        "compacted": True,
+        "input_tokens": raw,
+        "forwarded_tokens": forwarded,
+        "omitted_estimated_tokens": max(0, raw - forwarded),
+        "preserved_recent_turns": max(0, preserved_turns),
+        "preserved_recent_tool_cycles": preserved_cycles,
+        "selected_excerpts": selected_count,
+        "method": "late_instruction_anchors",
+    })
+
+
 def compact_messages(
     messages: list[dict[str, Any]], count_tokens: TokenCounter, *,
     target: int = 24_576, raw_limit: int = 1_000_000,
@@ -599,12 +708,15 @@ def compact_messages(
     instruction_end = 0
     while instruction_end < len(messages) and messages[instruction_end].get("role") in {"system", "developer"}:
         instruction_end += 1
-    if any(msg.get("role") in {"system", "developer"} for msg in messages[instruction_end:]):
-        raise CompactionError("late instruction cannot be compacted", code="late_instruction")
     latest_user = next((i for i in range(len(messages) - 1, instruction_end - 1, -1)
                         if _real_user(messages[i], protocol)), -1)
     if latest_user < instruction_end:
         raise CompactionError("no active user turn", code="active_too_large")
+    if any(msg.get("role") in {"system", "developer"} for msg in messages[instruction_end:latest_user]):
+        return _compact_with_late_instruction_anchors(
+            messages, count_tokens, target=target, protocol=protocol,
+            instruction_end=instruction_end, latest_user=latest_user, raw=raw,
+        )
     active = messages[:instruction_end] + messages[latest_user:]
     active_count = _count(count_tokens, active)
     if active_count >= target - 256:

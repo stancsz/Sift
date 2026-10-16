@@ -247,10 +247,133 @@ class CompactionTests(unittest.TestCase):
         with self.assertRaisesRegex(CompactionError, "content"):
             compact_messages(media, estimate, target=100)
 
-    def test_late_instruction_is_not_silently_moved(self):
-        source = [message("user", "old " * 2000), message("system", "late"), message("user", "now")]
-        with self.assertRaisesRegex(CompactionError, "instruction"):
+    def test_late_instruction_stays_anchored_and_tool_cycle_remains_whole(self):
+        source = [message("system", "Initial instruction."),
+                  message("user", "Historical MIDDLE_KEY evidence was recorded.")]
+        for index in range(8):
+            source.extend([
+                message("assistant", None, tool_calls=[{"id": f"old_{index}", "type": "function",
+                    "function": {"name": "read", "arguments": "{}"}}]),
+                message("tool", f"old diagnostic {index}: " + "routine output " * 100,
+                        tool_call_id=f"old_{index}"),
+            ])
+        source.extend([
+            message("developer", "Late instruction: retain exact source order."),
+            message("user", "What is the MIDDLE_KEY value?"),
+            message("assistant", None, tool_calls=[{"id": "current", "type": "function",
+                "function": {"name": "read", "arguments": "{}"}}]),
+            message("tool", "Current file confirms the value.", tool_call_id="current"),
+            message("assistant", "Ready to answer."),
+        ])
+        original = copy.deepcopy(source)
+        result = compact_messages(source, estimate, target=900)
+
+        self.assertEqual(source, original)
+        self.assertTrue(result.audit["compacted"])
+        self.assertEqual(result.audit["method"], "late_instruction_anchors")
+        self.assertLessEqual(result.audit["forwarded_tokens"], 900)
+        self.assertEqual(result.messages[0], source[0])
+        self.assertIn("MIDDLE_KEY evidence", result.messages[1]["content"])
+        anchor = next(index for index, item in enumerate(result.messages)
+                      if item.get("role") == "developer")
+        self.assertEqual(result.messages[anchor], source[2 + 2 * 8])
+        self.assertEqual(result.messages[anchor + 1:], source[2 + 2 * 8 + 1:])
+        calls = {call["id"] for item in result.messages for call in item.get("tool_calls", [])}
+        outputs = {item["tool_call_id"] for item in result.messages if item.get("role") == "tool"}
+        self.assertEqual(calls, outputs)
+
+    def test_anthropic_late_instruction_stays_after_its_preceding_tool_exchange(self):
+        source = [message("system", "Initial instruction."),
+                  message("user", "Historical RETAINED_KEY evidence.")]
+        for index in range(8):
+            source.extend([
+                message("assistant", [{"type": "tool_use", "id": f"old_{index}",
+                    "name": "Read", "input": {"path": f"file-{index}"}}]),
+                message("user", [{"type": "tool_result", "tool_use_id": f"old_{index}",
+                    "content": f"historical result {index}: " + "routine output " * 100}]),
+            ])
+        source.extend([
+            message("developer", "Late instruction: preserve this position."),
+            message("user", "What is the RETAINED_KEY value?"),
+            message("assistant", [{"type": "tool_use", "id": "current",
+                "name": "Read", "input": {"path": "current-file"}}]),
+            message("user", [{"type": "tool_result", "tool_use_id": "current",
+                "content": "Current file confirms the value."}]),
+        ])
+        result = compact_messages(source, estimate, target=900, protocol="anthropic")
+
+        self.assertLessEqual(result.audit["forwarded_tokens"], 900)
+        self.assertEqual(result.messages[0], source[0])
+        self.assertIn("RETAINED_KEY evidence", result.messages[1]["content"])
+        anchor = next(index for index, item in enumerate(result.messages)
+                      if item.get("role") == "developer")
+        self.assertEqual(result.messages[anchor], source[2 + 2 * 8])
+        self.assertEqual(result.messages[anchor + 1:], source[2 + 2 * 8 + 1:])
+        calls = {block["id"] for item in result.messages if isinstance(item.get("content"), list)
+                 for block in item["content"] if block.get("type") == "tool_use"}
+        outputs = {block["tool_use_id"] for item in result.messages if isinstance(item.get("content"), list)
+                   for block in item["content"] if block.get("type") == "tool_result"}
+        self.assertEqual(calls, outputs)
+
+    def test_late_instruction_after_active_user_keeps_request_and_open_tool_cycle_exact(self):
+        current = [message("user", "What is the RETAINED_KEY value?"),
+                   message("assistant", None, tool_calls=[{"id": "active", "type": "function",
+                       "function": {"name": "read", "arguments": "{}"}}]),
+                   message("developer", "Late instruction: keep this exact position."),
+                   message("tool", "RETAINED_KEY=green", tool_call_id="active"),
+                   message("assistant", "The source says green.")]
+        source = [message("system", "Initial instruction."), message("user", "Old evidence " * 1_000),
+                  message("assistant", "Old work."), *current]
+        result = compact_messages(source, estimate, target=700)
+
+        self.assertLessEqual(result.audit["forwarded_tokens"], 700)
+        self.assertEqual(result.messages[-len(current):], current)
+        self.assertEqual(result.messages[0], source[0])
+        self.assertIn("Old evidence", result.messages[1]["content"])
+
+    def test_oversized_late_instruction_anchor_fails_closed(self):
+        source = [message("user", "Old evidence " * 1_000),
+                  message("developer", "Pinned instruction " * 400),
+                  message("user", "Continue the task.")]
+        with self.assertRaisesRegex(CompactionError, "late instructions") as caught:
             compact_messages(source, estimate, target=300)
+        self.assertEqual(caught.exception.code, "active_too_large")
+
+    def test_multiple_late_instruction_anchors_keep_order_and_compact_each_span(self):
+        source = [
+            message("system", "Initial instruction."),
+            message("user", "ALPHA_KEY=amber; " + "older evidence noise " * 180),
+            message("developer", "First late instruction."),
+            message("assistant", "Acknowledged."),
+            message("user", "BETA_KEY=violet; " + "later evidence noise " * 180),
+            message("system", "Second late instruction."),
+            message("user", "Recover ALPHA_KEY and BETA_KEY."),
+        ]
+        result = compact_messages(source, estimate, target=900)
+
+        self.assertLessEqual(result.audit["forwarded_tokens"], 900)
+        self.assertTrue(result.audit["compacted"])
+        self.assertEqual(result.messages[0], source[0])
+        first = next(index for index, item in enumerate(result.messages)
+                     if item.get("role") == "developer")
+        second = next(index for index, item in enumerate(result.messages)
+                      if item.get("role") == "system" and index > 0)
+        self.assertEqual(result.messages[first], source[2])
+        self.assertEqual(result.messages[second], source[5])
+        self.assertLess(first, second)
+        self.assertEqual(result.messages[-1], source[-1])
+        summaries = [item["content"] for item in result.messages
+                     if item.get("role") == "user" and "Earlier conversation" in item.get("content", "")]
+        self.assertTrue(any("ALPHA_KEY=amber" in text for text in summaries))
+        self.assertTrue(any("BETA_KEY=violet" in text for text in summaries))
+
+    def test_too_many_late_instruction_anchors_fail_closed(self):
+        source = [message("user", "Old evidence " * 400)]
+        source.extend(message("developer", f"Pinned instruction {index}") for index in range(65))
+        source.append(message("user", "Continue the task."))
+        with self.assertRaisesRegex(CompactionError, "too many late instruction") as caught:
+            compact_messages(source, estimate, target=500)
+        self.assertEqual(caught.exception.code, "late_instruction_limit")
 
     def test_deterministic_selection_and_no_mutation(self):
         source = [message("user", "\n".join(f"item {i}: {i*i}" for i in range(600))),
