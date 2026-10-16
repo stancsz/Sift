@@ -1,0 +1,45 @@
+{
+  "title": "Least-privilege rollup native-agent lower-budget calibration",
+  "status": "preregistered-development-calibration",
+  "created_utc": "2026-10-16T14:43:00Z",
+  "purpose": "Determine whether a 16,384-token target causes Sift to compact before the first artifact edit on a frozen, exposed task, while preserving required evidence and accepted output.",
+  "classification": "Public fixture, one run per arm. Calibration only; not held-out evidence or a generalization claim.",
+  "fixture": {
+    "case": "benchmarks/agent_cases/least_privilege_rollup",
+    "gold": "benchmarks/agent_gold/least_privilege_rollup",
+    "manifest": "benchmarks/agent_gold/least_privilege_rollup/manifest.json",
+    "manifest_sha256": "9a5acb2d45fe91cfbbc0bb4c01c2dcad3a22df54df2495d60b604d2374b5393e",
+    "evidence_manifest": "benchmarks/agent_gold/least_privilege_rollup/evidence.json",
+    "evidence_sha256": "fb2ca60a70eb1ae195356e7a942a2c57a5f77a6fd6db0629e921103af9a0e683",
+    "allowed_edits": ["audit_rollup.py"],
+    "allowed_outputs": ["access_rollup.json"]
+  },
+  "runtime": {
+    "client": "Claude Code 2.1.251",
+    "backend_model": "qwen3.8-27b",
+    "selector_model_alias_for_full": "qwen3.8-27b-full",
+    "selector_source_sha256": "35b110236d593e8587d743273b6f78323488391f464439668987f96df83cc427",
+    "target_tokens": 16384,
+    "output_limit_tokens": 3072,
+    "task_timeout_seconds": 1200,
+    "maximum_runs_per_arm": 1,
+    "order_seed": 2026101601,
+    "arm_order": ["recency", "sift", "full"]
+  },
+  "acceptance": {
+    "task": "Native client exits successfully, visible tests pass, independent gold tests pass, only the predeclared file is edited, and the predeclared output is created.",
+    "qualified_sift_compaction": "A Sift request with forwarded_tokens < input_tokens occurs before the first direct edit to audit_rollup.py.",
+    "required_evidence": "All four annotated spans are retained in the first qualifying compacted Sift request before that edit.",
+    "comparison": "Report task acceptance, whole-task wall time, native request count, provider-reported input/cache/output tokens, client-reported TTFT, and selector CPU/wall time for all arms. Provider-reported values are not inferred from client telemetry.",
+    "stop_conditions": [
+      "If Sift does not compact before the first edit, classify the Sift arm as an unqualified no-compaction control.",
+      "Any missing required span in a qualifying pre-edit compacted request, independent-gold failure, unauthorized edit, or timeout fails the arm.",
+      "Do not tune the selector or fixture from these exposed results; require a newly fixed unseen task for generalization."
+    ]
+  },
+  "known_limitations": [
+    "Single public task and one generation per arm cannot establish reliability or causal latency benefit.",
+    "The Qwen gateway is a local development benchmark; Claude client usage and TTFT fields are client-reported and must be labeled as such.",
+    "Full context is not artificially truncated to the Sift target; it is the uncompressed accepted-task control while it fits the backend context."
+  ]
+}

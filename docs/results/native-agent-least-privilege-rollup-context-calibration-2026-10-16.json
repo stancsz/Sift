@@ -1,0 +1,595 @@
+{
+  "title": "Native Claude Code least-privilege rollup context calibration",
+  "date": "2026-10-16",
+  "classification": "Exposed public development fixture; one run per arm; not held-out or causal evidence.",
+  "source": {
+    "git_head": "5dabecd937dd7d872c9e7f17d983c287bca87650",
+    "selector_source_sha256": "35b110236d593e8587d743273b6f78323488391f464439668987f96df83cc427",
+    "fixture_manifest_sha256": "9a5acb2d45fe91cfbbc0bb4c01c2dcad3a22df54df2495d60b604d2374b5393e",
+    "evidence_sha256": "fb2ca60a70eb1ae195356e7a942a2c57a5f77a6fd6db0629e921103af9a0e683",
+    "client": "Claude Code 2.1.251",
+    "backend": "local Qwen 3.8 27B"
+  },
+  "cost_scope": {
+    "provider_api_charge_usd": 0,
+    "basis": "Local Qwen inference; no external model API charge reported. Hardware, electricity and host costs were not measured. Token/TTFT figures below are client-reported, not provider-verified.",
+    "astra_equivalent": {
+      "model": "GPT-6 Astra Standard, short-context rates",
+      "checked_date": "2026-10-16",
+      "source": "https://developers.openai.com/api/docs/pricing",
+      "rates_usd_per_million": {
+        "uncached_input": 10.0,
+        "cached_input": 1.0,
+        "output": 50.0,
+        "cache_write": 12.5
+      },
+      "formula": "(uncached_input_tokens*10 + cached_input_tokens*1 + output_tokens*50) / 1,000,000",
+      "caveat": "Illustrative per-attempt arithmetic applied to client-reported local-Qwen counters, not measured Astra usage or a price quote. Repeated attempts are not modeled. Cache writes were reported as zero."
+    }
+  },
+  "contexts": {
+    "24k": {
+      "target_tokens": 24576,
+      "arms": {
+        "recency": {
+          "run_id": "sift-agent-hqr6fwyj",
+          "accepted": true,
+          "native_terminal_success": true,
+          "wall_seconds": 267.64,
+          "native_exit_code": 0,
+          "timed_out": false,
+          "requests_with_client_ttft": 14,
+          "mean_client_reported_ttft_ms": 3992.285714285714,
+          "client_reported_usage": {
+            "input_tokens": 54743,
+            "cache_read_input_tokens": 223182,
+            "output_tokens": 6846
+          },
+          "visible_tests_passed": true,
+          "gold_tests_passed": true,
+          "observed_test_loop": true,
+          "changed_files": [
+            "audit_rollup.py"
+          ],
+          "created_outputs": [
+            "access_rollup.json"
+          ],
+          "missing_outputs": [],
+          "unauthorized_changes": [],
+          "evidence_trace_sha256": "f0860be9004c526d3e1712f5ae8d4637efd1aa4b888d033783e772bc776f6fbe",
+          "changed_artifact_sha256": {
+            "audit_rollup.py": "cdf592c30bc205fbd553cedde18c63200234e1e536b9eb50083086c806917d57",
+            "access_rollup.json": "d3cd57fa9a8e7eb9c732a206c23a92317fbfa3026632d3682105022477123cb8"
+          },
+          "astra_equivalent_attempt_cost_usd": 1.112912
+        },
+        "sift": {
+          "run_id": "sift-agent-gwwww7ju",
+          "accepted": true,
+          "native_terminal_success": true,
+          "wall_seconds": 191.325,
+          "native_exit_code": 0,
+          "timed_out": false,
+          "requests_with_client_ttft": 14,
+          "mean_client_reported_ttft_ms": 1978.0,
+          "client_reported_usage": {
+            "input_tokens": 25237,
+            "cache_read_input_tokens": 222095,
+            "output_tokens": 5210
+          },
+          "visible_tests_passed": true,
+          "gold_tests_passed": true,
+          "observed_test_loop": true,
+          "changed_files": [
+            "audit_rollup.py"
+          ],
+          "created_outputs": [
+            "access_rollup.json"
+          ],
+          "missing_outputs": [],
+          "unauthorized_changes": [],
+          "evidence_trace_sha256": "bac49421d976c82b9ee63c874e9ec5c49250de0c763d597eef41848afd6d544c",
+          "changed_artifact_sha256": {
+            "audit_rollup.py": "2d22135d3d525fc9e59911a3e81dd185e0ba142499bec40d5f0b343b2e9e0671",
+            "access_rollup.json": "d3cd57fa9a8e7eb9c732a206c23a92317fbfa3026632d3682105022477123cb8"
+          },
+          "astra_equivalent_attempt_cost_usd": 0.734965
+        },
+        "full": {
+          "run_id": "sift-agent-39x6yj17",
+          "accepted": true,
+          "native_terminal_success": true,
+          "wall_seconds": 260.05,
+          "native_exit_code": 0,
+          "timed_out": false,
+          "requests_with_client_ttft": 15,
+          "mean_client_reported_ttft_ms": 2438.8,
+          "client_reported_usage": {
+            "input_tokens": 29658,
+            "cache_read_input_tokens": 280403,
+            "output_tokens": 7048
+          },
+          "visible_tests_passed": true,
+          "gold_tests_passed": true,
+          "observed_test_loop": true,
+          "changed_files": [
+            "audit_rollup.py"
+          ],
+          "created_outputs": [
+            "access_rollup.json"
+          ],
+          "missing_outputs": [],
+          "unauthorized_changes": [],
+          "evidence_trace_sha256": "25cdb1eb13ac7004fb5f0087424104809007ec28a203788dca7d505600742873",
+          "changed_artifact_sha256": {
+            "audit_rollup.py": "f2b314081be25692de4983400e82ba5f26056e05b871314f40ec5a69ee314006",
+            "access_rollup.json": "d3cd57fa9a8e7eb9c732a206c23a92317fbfa3026632d3682105022477123cb8"
+          },
+          "astra_equivalent_attempt_cost_usd": 0.929383
+        }
+      },
+      "selector_events": {
+        "recency": {
+          "selection_event_count": 15,
+          "reduced_request_count": 1,
+          "failed_selection_events": 0,
+          "first_reduction": {
+            "request_seq": 15,
+            "input_tokens": 25604,
+            "forwarded_tokens": 24067
+          },
+          "reduced_requests": [
+            {
+              "request_seq": 15,
+              "input_tokens": 25604,
+              "forwarded_tokens": 24067
+            }
+          ]
+        },
+        "sift": {
+          "selection_event_count": 15,
+          "reduced_request_count": 0,
+          "failed_selection_events": 0,
+          "first_reduction": null,
+          "reduced_requests": []
+        }
+      },
+      "sift_qualification": {
+        "status": "no_compaction_before_edit",
+        "audit_report": {
+          "evidence_span_count": 4,
+          "first_edit_utc_ns": 1792161280797000000,
+          "request_seq": null,
+          "states": {},
+          "status": "no_compaction_before_edit"
+        }
+      }
+    },
+    "16k": {
+      "target_tokens": 16384,
+      "arms": {
+        "recency": {
+          "run_id": "sift-agent-_7al9xz5",
+          "accepted": true,
+          "native_terminal_success": true,
+          "wall_seconds": 987.164,
+          "native_exit_code": 0,
+          "timed_out": false,
+          "requests_with_client_ttft": 50,
+          "mean_client_reported_ttft_ms": 3617.24,
+          "client_reported_usage": {
+            "input_tokens": 224641,
+            "cache_read_input_tokens": 490814,
+            "output_tokens": 29253
+          },
+          "visible_tests_passed": true,
+          "gold_tests_passed": true,
+          "observed_test_loop": true,
+          "changed_files": [
+            "audit_rollup.py"
+          ],
+          "created_outputs": [
+            "access_rollup.json"
+          ],
+          "missing_outputs": [],
+          "unauthorized_changes": [],
+          "evidence_trace_sha256": "b885fca341d847d5a3749849afe311c71e1b86b315f96b58ec27af7656134c28",
+          "changed_artifact_sha256": {
+            "audit_rollup.py": "5177ce106a7c6d0060d209ce5af28f11ca708afaaf6102bec30f7a5b99bcc046",
+            "access_rollup.json": "fa90bbb2a2fb1a7ecff7958f8a6f561d41bff54932fc28ab4c7788f3fbfecd66"
+          },
+          "astra_equivalent_attempt_cost_usd": 4.199874
+        },
+        "sift": {
+          "run_id": "sift-agent-92uh3tz3",
+          "accepted": false,
+          "native_terminal_success": false,
+          "wall_seconds": 288.026,
+          "native_exit_code": 1,
+          "timed_out": false,
+          "requests_with_client_ttft": 15,
+          "mean_client_reported_ttft_ms": 2661.5333333333333,
+          "client_reported_usage": {
+            "input_tokens": 37009,
+            "cache_read_input_tokens": 96679,
+            "output_tokens": 4500
+          },
+          "visible_tests_passed": false,
+          "gold_tests_passed": false,
+          "observed_test_loop": null,
+          "changed_files": [],
+          "created_outputs": [],
+          "missing_outputs": [
+            "access_rollup.json"
+          ],
+          "unauthorized_changes": [],
+          "evidence_trace_sha256": "36581dddc3f757df66606631bed36b202ac0ad4bb438ac5b5972f5028e27f374",
+          "changed_artifact_sha256": {
+            "audit_rollup.py": "a93371894bf364cbc7266a8b5064fdac460ffc29fd7fd1baa523510934784905"
+          },
+          "astra_equivalent_attempt_cost_usd": 0.691769
+        },
+        "full": {
+          "run_id": "sift-agent-pcc1e27f",
+          "accepted": true,
+          "native_terminal_success": true,
+          "wall_seconds": 202.596,
+          "native_exit_code": 0,
+          "timed_out": false,
+          "requests_with_client_ttft": 14,
+          "mean_client_reported_ttft_ms": 2373.8571428571427,
+          "client_reported_usage": {
+            "input_tokens": 26071,
+            "cache_read_input_tokens": 226912,
+            "output_tokens": 5448
+          },
+          "visible_tests_passed": true,
+          "gold_tests_passed": true,
+          "observed_test_loop": true,
+          "changed_files": [
+            "audit_rollup.py"
+          ],
+          "created_outputs": [
+            "access_rollup.json"
+          ],
+          "missing_outputs": [],
+          "unauthorized_changes": [],
+          "evidence_trace_sha256": "f81bb73131554a3ea6c4d52f5743dc7fbc90ff4c0e0c8639fca9e5d4ed3d8762",
+          "changed_artifact_sha256": {
+            "audit_rollup.py": "c9dce3e42719db12b9c5d0e8600e6e36fed4f38867554c28ed1d03080e63a118",
+            "access_rollup.json": "d3cd57fa9a8e7eb9c732a206c23a92317fbfa3026632d3682105022477123cb8"
+          },
+          "astra_equivalent_attempt_cost_usd": 0.760022
+        }
+      },
+      "selector_events": {
+        "recency": {
+          "selection_event_count": 51,
+          "reduced_request_count": 45,
+          "failed_selection_events": 0,
+          "first_reduction": {
+            "request_seq": 7,
+            "input_tokens": 18464,
+            "forwarded_tokens": 15990
+          },
+          "reduced_requests": [
+            {
+              "request_seq": 7,
+              "input_tokens": 18464,
+              "forwarded_tokens": 15990
+            },
+            {
+              "request_seq": 8,
+              "input_tokens": 19095,
+              "forwarded_tokens": 12642
+            },
+            {
+              "request_seq": 9,
+              "input_tokens": 21363,
+              "forwarded_tokens": 14910
+            },
+            {
+              "request_seq": 10,
+              "input_tokens": 21669,
+              "forwarded_tokens": 15216
+            },
+            {
+              "request_seq": 11,
+              "input_tokens": 22329,
+              "forwarded_tokens": 15876
+            },
+            {
+              "request_seq": 12,
+              "input_tokens": 22610,
+              "forwarded_tokens": 16157
+            },
+            {
+              "request_seq": 13,
+              "input_tokens": 22926,
+              "forwarded_tokens": 5698
+            },
+            {
+              "request_seq": 14,
+              "input_tokens": 23754,
+              "forwarded_tokens": 6526
+            },
+            {
+              "request_seq": 15,
+              "input_tokens": 24672,
+              "forwarded_tokens": 7444
+            },
+            {
+              "request_seq": 16,
+              "input_tokens": 25747,
+              "forwarded_tokens": 8519
+            },
+            {
+              "request_seq": 17,
+              "input_tokens": 26946,
+              "forwarded_tokens": 9718
+            },
+            {
+              "request_seq": 18,
+              "input_tokens": 28701,
+              "forwarded_tokens": 11473
+            },
+            {
+              "request_seq": 19,
+              "input_tokens": 29147,
+              "forwarded_tokens": 11919
+            },
+            {
+              "request_seq": 20,
+              "input_tokens": 29312,
+              "forwarded_tokens": 12084
+            },
+            {
+              "request_seq": 21,
+              "input_tokens": 29542,
+              "forwarded_tokens": 12314
+            },
+            {
+              "request_seq": 22,
+              "input_tokens": 29958,
+              "forwarded_tokens": 12730
+            },
+            {
+              "request_seq": 23,
+              "input_tokens": 30263,
+              "forwarded_tokens": 13035
+            },
+            {
+              "request_seq": 24,
+              "input_tokens": 31004,
+              "forwarded_tokens": 13776
+            },
+            {
+              "request_seq": 25,
+              "input_tokens": 31670,
+              "forwarded_tokens": 14442
+            },
+            {
+              "request_seq": 26,
+              "input_tokens": 32310,
+              "forwarded_tokens": 15082
+            },
+            {
+              "request_seq": 27,
+              "input_tokens": 32958,
+              "forwarded_tokens": 15730
+            },
+            {
+              "request_seq": 28,
+              "input_tokens": 33591,
+              "forwarded_tokens": 16363
+            },
+            {
+              "request_seq": 29,
+              "input_tokens": 43494,
+              "forwarded_tokens": 16029
+            },
+            {
+              "request_seq": 30,
+              "input_tokens": 44644,
+              "forwarded_tokens": 16338
+            },
+            {
+              "request_seq": 31,
+              "input_tokens": 45909,
+              "forwarded_tokens": 16141
+            },
+            {
+              "request_seq": 32,
+              "input_tokens": 51756,
+              "forwarded_tokens": 9498
+            },
+            {
+              "request_seq": 33,
+              "input_tokens": 52970,
+              "forwarded_tokens": 10712
+            },
+            {
+              "request_seq": 34,
+              "input_tokens": 53799,
+              "forwarded_tokens": 11541
+            },
+            {
+              "request_seq": 35,
+              "input_tokens": 55887,
+              "forwarded_tokens": 13629
+            },
+            {
+              "request_seq": 36,
+              "input_tokens": 60217,
+              "forwarded_tokens": 15544
+            },
+            {
+              "request_seq": 37,
+              "input_tokens": 60709,
+              "forwarded_tokens": 16036
+            },
+            {
+              "request_seq": 38,
+              "input_tokens": 63883,
+              "forwarded_tokens": 13363
+            },
+            {
+              "request_seq": 39,
+              "input_tokens": 71479,
+              "forwarded_tokens": 12498
+            },
+            {
+              "request_seq": 40,
+              "input_tokens": 72178,
+              "forwarded_tokens": 13197
+            },
+            {
+              "request_seq": 41,
+              "input_tokens": 72788,
+              "forwarded_tokens": 13807
+            },
+            {
+              "request_seq": 42,
+              "input_tokens": 75379,
+              "forwarded_tokens": 15906
+            },
+            {
+              "request_seq": 43,
+              "input_tokens": 75925,
+              "forwarded_tokens": 13278
+            },
+            {
+              "request_seq": 44,
+              "input_tokens": 76609,
+              "forwarded_tokens": 13962
+            },
+            {
+              "request_seq": 45,
+              "input_tokens": 76888,
+              "forwarded_tokens": 14241
+            },
+            {
+              "request_seq": 46,
+              "input_tokens": 79229,
+              "forwarded_tokens": 8986
+            },
+            {
+              "request_seq": 47,
+              "input_tokens": 79992,
+              "forwarded_tokens": 9749
+            },
+            {
+              "request_seq": 48,
+              "input_tokens": 83139,
+              "forwarded_tokens": 12896
+            },
+            {
+              "request_seq": 49,
+              "input_tokens": 84997,
+              "forwarded_tokens": 14754
+            },
+            {
+              "request_seq": 50,
+              "input_tokens": 85555,
+              "forwarded_tokens": 15312
+            },
+            {
+              "request_seq": 51,
+              "input_tokens": 86035,
+              "forwarded_tokens": 15792
+            }
+          ]
+        },
+        "sift": {
+          "selection_event_count": 18,
+          "reduced_request_count": 12,
+          "failed_selection_events": 2,
+          "first_reduction": {
+            "request_seq": 7,
+            "input_tokens": 18416,
+            "forwarded_tokens": 13381
+          },
+          "reduced_requests": [
+            {
+              "request_seq": 7,
+              "input_tokens": 18416,
+              "forwarded_tokens": 13381
+            },
+            {
+              "request_seq": 8,
+              "input_tokens": 18922,
+              "forwarded_tokens": 13887
+            },
+            {
+              "request_seq": 9,
+              "input_tokens": 19865,
+              "forwarded_tokens": 14830
+            },
+            {
+              "request_seq": 10,
+              "input_tokens": 20933,
+              "forwarded_tokens": 15898
+            },
+            {
+              "request_seq": 11,
+              "input_tokens": 21769,
+              "forwarded_tokens": 5266
+            },
+            {
+              "request_seq": 12,
+              "input_tokens": 21980,
+              "forwarded_tokens": 5477
+            },
+            {
+              "request_seq": 13,
+              "input_tokens": 23023,
+              "forwarded_tokens": 6520
+            },
+            {
+              "request_seq": 14,
+              "input_tokens": 23346,
+              "forwarded_tokens": 6843
+            },
+            {
+              "request_seq": 15,
+              "input_tokens": 23509,
+              "forwarded_tokens": 6230
+            },
+            {
+              "request_seq": 16,
+              "input_tokens": 25064,
+              "forwarded_tokens": 7785
+            },
+            {
+              "request_seq": 18,
+              "input_tokens": 26367,
+              "forwarded_tokens": 16290
+            },
+            {
+              "request_seq": 19,
+              "input_tokens": 29294,
+              "forwarded_tokens": 16382
+            }
+          ]
+        }
+      },
+      "sift_qualification": {
+        "status": "task_failed_no_edit",
+        "audit_report": {
+          "evidence_span_count": 4,
+          "first_edit_utc_ns": null,
+          "request_seq": null,
+          "states": {},
+          "status": "unknown_edit_time"
+        },
+        "failure": "Two CompactionError/HTTP 413 events: active task or latest tool cycle exceeds target. No direct edit or artifact was observed; visible and gold tests failed."
+      }
+    }
+  },
+  "limitations": [
+    "One generation per arm on an exposed fixture; sampling variance and development-set tuning prevent generalization.",
+    "Client-reported input/cache/output counts and TTFT are not server-verified.",
+    "The baseline visible test intentionally fails on the starter code; acceptance means the agent completed the task, visible and independent gold tests passed, scope was respected, and the output was created.",
+    "A retained span in a request does not prove the model used it; missing spans do not prove failure if the agent reread source files. Task acceptance is primary."
+  ]
+}
