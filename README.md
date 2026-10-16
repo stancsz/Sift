@@ -6,7 +6,6 @@
 
 **Keep the evidence. Drop the transcript weight.**
 
-[![Tests](https://github.com/stancsz/sift/actions/workflows/test.yml/badge.svg)](https://github.com/stancsz/sift/actions/workflows/test.yml)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](pyproject.toml)
 [![MIT license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Release](https://img.shields.io/github/v/tag/stancsz/sift?label=release)](https://github.com/stancsz/sift/tags)
@@ -176,7 +175,14 @@ python -m unittest discover -s tests -q
 python benchmarks/compare.py
 ```
 
-The tests cover hard budgets, protocol preservation, active tool loops, append-only behavior inside fixed boundaries, diagnostic context, identifier joins, contradictory facts, unsupported inputs, and the optional LiteLLM callback. Install `.[litellm]` to exercise the integration with its pinned dependency.
+All tests run locally from the checkout; the repository does not use GitHub Actions. The unittest command discovers the complete `tests/` suite. To include the pinned LiteLLM integration tests, install the optional dependency before running the same command:
+
+```sh
+python -m pip install -e ".[litellm]"
+python -m unittest discover -s tests -q
+```
+
+The comparison benchmark is a separate local check. The tests cover hard budgets, protocol preservation, active tool loops, append-only behavior inside fixed boundaries, diagnostic context, identifier joins, contradictory facts, unsupported inputs, and the optional LiteLLM callback.
 
 The [native-agent guide](docs/native-agents.md) includes opt-in Claude Code and Codex runs, public development fixtures with separate gold checks, and an isolated LiteLLM comparison gateway. These source-checkout benchmarks are separate from the installed callback and make real model calls.
 

@@ -10,14 +10,17 @@ from copy import deepcopy
 from typing import Any
 
 from sift.core import (
+    DEFAULT_MAX_INPUT_CHARACTERS, DEFAULT_MAX_INPUT_NODES,
     CompactionError, CompactionResult, Protocol, TokenCounter,
-    _count, _real_user, _render, _starts_tool_cycle,
+    _check_precount_size, _count, _real_user, _render, _starts_tool_cycle,
 )
 
 
 def compact_messages(
     messages: list[dict[str, Any]], count_tokens: TokenCounter, *,
     target: int = 24_576, raw_limit: int = 1_000_000,
+    max_input_characters: int = DEFAULT_MAX_INPUT_CHARACTERS,
+    max_input_nodes: int = DEFAULT_MAX_INPUT_NODES,
     protocol: Protocol = "openai",
 ) -> CompactionResult:
     """Keep the newest fitting suffix of complete turns or active tool cycles.
@@ -32,6 +35,8 @@ def compact_messages(
         raise CompactionError("invalid target or raw_limit")
     if not isinstance(messages, list) or not all(isinstance(message, dict) for message in messages):
         raise CompactionError("messages must be a list of objects")
+    _check_precount_size(messages, max_characters=max_input_characters,
+                         max_nodes=max_input_nodes)
     raw = _count(count_tokens, messages)
     if raw > raw_limit:
         raise CompactionError("request exceeds raw_limit", code="raw_limit")
