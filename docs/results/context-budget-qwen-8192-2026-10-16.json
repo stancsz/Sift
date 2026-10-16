@@ -1,0 +1,2376 @@
+{
+  "schema_version": 1,
+  "status": "complete",
+  "evaluation": "public LongBench v2 QA screen; external benchmark, not a blind holdout or agent-task acceptance test",
+  "created_utc": "2026-10-16T08:19:04.651962+00:00",
+  "frozen_manifest_sha256": "6c024df1ce2b884cd0b22242d856979a9e4d743a583492c40ef68cfc9fa74f50",
+  "dataset_revision": "2b48e494f2c7a2f0af81aae178e05c7e1dde0fe9",
+  "dataset_sha256": "15d61c22d92c96900b3c4948b6aeea218d3214b676a65df48e7b8555604c7fe2",
+  "sift_core_sha256": "c37f84829cf75a38f410e4eebb219ebf99c27c89a5c0b62a0ca9b70c36265de7",
+  "runner_sha256": "d939d3abd365cb6bc8674968b3206372a54cc486137fe05ca2c796829b0e551e",
+  "model": "qwen3.8-27b",
+  "model_context_tokens": 32768,
+  "output_reserve_tokens": 4096,
+  "sift_target_estimated_tokens": 8192,
+  "exact_tokenizer": "http://127.0.0.1:8088/v1/chat/completions/input_tokens",
+  "prompt_semantics": "LongBench question adapted to historical context plus final user question; all arms get identical system, role sequence, choices and question.",
+  "execution": {
+    "arms": [
+      "full",
+      "sift"
+    ],
+    "repeats_per_case_arm": 3,
+    "arm_order": "randomized within each case and repeat",
+    "random_seed": 20261016,
+    "temperature": 0.1,
+    "top_p": 0.8,
+    "top_k": 20,
+    "max_output_tokens": 16,
+    "response_format": {
+      "type": "json_schema",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "choice": {
+            "type": "string",
+            "enum": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ]
+          }
+        },
+        "required": [
+          "choice"
+        ],
+        "additionalProperties": false
+      },
+      "strict": true
+    },
+    "thinking": false,
+    "cache_prompt": false,
+    "retries": 0,
+    "provider_api_spend": 0
+  },
+  "llmlingua2": {
+    "model": "microsoft/llmlingua-2-xlm-roberta-large-meetingbank",
+    "revision": "ebaba9b0e874dadd3003ffcff828e4397e568089",
+    "target_start_tokens": 18000,
+    "scope": "compress historical context only; preserve all message roles and the final question"
+  },
+  "cases": [
+    {
+      "id": "66ec21e6821e116aacb1b2d2",
+      "domain": "Multi-Document QA",
+      "sub_domain": "Academic",
+      "difficulty": "hard",
+      "length": "short",
+      "answer_key": "A",
+      "full_exact_input_tokens": 25607
+    },
+    {
+      "id": "66fa6867bb02136c067c6b3b",
+      "domain": "Multi-Document QA",
+      "sub_domain": "Multi-news",
+      "difficulty": "hard",
+      "length": "short",
+      "answer_key": "D",
+      "full_exact_input_tokens": 24636
+    },
+    {
+      "id": "66ebc7445a08c7b9b35df155",
+      "domain": "Single-Document QA",
+      "sub_domain": "Academic",
+      "difficulty": "hard",
+      "length": "short",
+      "answer_key": "D",
+      "full_exact_input_tokens": 28213
+    },
+    {
+      "id": "66ec0d51821e116aacb19b0f",
+      "domain": "Single-Document QA",
+      "sub_domain": "Academic",
+      "difficulty": "hard",
+      "length": "short",
+      "answer_key": "D",
+      "full_exact_input_tokens": 25426
+    },
+    {
+      "id": "66ec0f3c821e116aacb19d70",
+      "domain": "Single-Document QA",
+      "sub_domain": "Academic",
+      "difficulty": "easy",
+      "length": "short",
+      "answer_key": "A",
+      "full_exact_input_tokens": 27078
+    },
+    {
+      "id": "66ec1db2821e116aacb1ad69",
+      "domain": "Single-Document QA",
+      "sub_domain": "Academic",
+      "difficulty": "hard",
+      "length": "short",
+      "answer_key": "C",
+      "full_exact_input_tokens": 26203
+    },
+    {
+      "id": "66ed1556821e116aacb1ea14",
+      "domain": "Single-Document QA",
+      "sub_domain": "Academic",
+      "difficulty": "hard",
+      "length": "short",
+      "answer_key": "A",
+      "full_exact_input_tokens": 25614
+    },
+    {
+      "id": "66eefa2f821e116aacb2284f",
+      "domain": "Single-Document QA",
+      "sub_domain": "Financial",
+      "difficulty": "easy",
+      "length": "short",
+      "answer_key": "A",
+      "full_exact_input_tokens": 27157
+    },
+    {
+      "id": "66f52567821e116aacb329bc",
+      "domain": "Single-Document QA",
+      "sub_domain": "Financial",
+      "difficulty": "hard",
+      "length": "short",
+      "answer_key": "C",
+      "full_exact_input_tokens": 27488
+    },
+    {
+      "id": "66f67c18bb02136c067c21b8",
+      "domain": "Single-Document QA",
+      "sub_domain": "Academic",
+      "difficulty": "easy",
+      "length": "short",
+      "answer_key": "C",
+      "full_exact_input_tokens": 24742
+    }
+  ],
+  "samples": [
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"C\"\n}",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 8931.419599801302,
+      "end_to_end_ms": 9243.078199913725,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 38.50367034848803,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 8161,
+        "total_tokens": 8173,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ec21e6821e116aacb1b2d2",
+      "domain": "Multi-Document QA",
+      "arm": "sift",
+      "repeat": 1,
+      "expected": "A",
+      "correct": false,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 25607,
+          "forwarded_tokens": 8185,
+          "omitted_estimated_tokens": 17422,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 161,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 328.95209989510477,
+        "preprocess_cpu_ms": 62.5,
+        "exact_qwen_input_tokens": 8185,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n\"choice\": \"B\"\n}",
+      "choice": "B",
+      "valid_structured_choice": true,
+      "ttft_ms": 17064.95020003058,
+      "end_to_end_ms": 17391.033600084484,
+      "output_tokens": 11,
+      "client_decode_tokens_per_second": 33.73370124999199,
+      "usage": {
+        "completion_tokens": 11,
+        "prompt_tokens": 25583,
+        "total_tokens": 25594,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ec21e6821e116aacb1b2d2",
+      "domain": "Multi-Document QA",
+      "arm": "full",
+      "repeat": 1,
+      "expected": "A",
+      "correct": false,
+      "preparation": {
+        "preprocess_wall_ms": 0.026900088414549828,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 25607,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"B\"\n}",
+      "choice": "B",
+      "valid_structured_choice": true,
+      "ttft_ms": 16547.769700177014,
+      "end_to_end_ms": 16873.188900062814,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 36.87551319716589,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 25583,
+        "total_tokens": 25595,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ec21e6821e116aacb1b2d2",
+      "domain": "Multi-Document QA",
+      "arm": "full",
+      "repeat": 2,
+      "expected": "A",
+      "correct": false,
+      "preparation": {
+        "preprocess_wall_ms": 0.026900088414549828,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 25607,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"C\"\n}",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 6271.931000053883,
+      "end_to_end_ms": 6577.438599895686,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 39.27889193661235,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 8161,
+        "total_tokens": 8173,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ec21e6821e116aacb1b2d2",
+      "domain": "Multi-Document QA",
+      "arm": "sift",
+      "repeat": 2,
+      "expected": "A",
+      "correct": false,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 25607,
+          "forwarded_tokens": 8185,
+          "omitted_estimated_tokens": 17422,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 161,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 328.95209989510477,
+        "preprocess_cpu_ms": 62.5,
+        "exact_qwen_input_tokens": 8185,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n\"choice\": \"B\"\n}",
+      "choice": "B",
+      "valid_structured_choice": true,
+      "ttft_ms": 17356.984100071713,
+      "end_to_end_ms": 17651.38059994206,
+      "output_tokens": 11,
+      "client_decode_tokens_per_second": 37.3645746632331,
+      "usage": {
+        "completion_tokens": 11,
+        "prompt_tokens": 25583,
+        "total_tokens": 25594,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ec21e6821e116aacb1b2d2",
+      "domain": "Multi-Document QA",
+      "arm": "full",
+      "repeat": 3,
+      "expected": "A",
+      "correct": false,
+      "preparation": {
+        "preprocess_wall_ms": 0.026900088414549828,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 25607,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"A\"\n}",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 5942.150000017136,
+      "end_to_end_ms": 6230.971799930558,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 41.5481103005285,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 8161,
+        "total_tokens": 8173,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ec21e6821e116aacb1b2d2",
+      "domain": "Multi-Document QA",
+      "arm": "sift",
+      "repeat": 3,
+      "expected": "A",
+      "correct": true,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 25607,
+          "forwarded_tokens": 8185,
+          "omitted_estimated_tokens": 17422,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 161,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 328.95209989510477,
+        "preprocess_cpu_ms": 62.5,
+        "exact_qwen_input_tokens": 8185,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"C\"\n}",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 16455.26190008968,
+      "end_to_end_ms": 16776.197400176898,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 37.39069064263354,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 24612,
+        "total_tokens": 24624,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66fa6867bb02136c067c6b3b",
+      "domain": "Multi-Document QA",
+      "arm": "full",
+      "repeat": 1,
+      "expected": "D",
+      "correct": false,
+      "preparation": {
+        "preprocess_wall_ms": 0.02269982360303402,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 24636,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n \"choice\": \"A\"\n}",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 5738.064999924973,
+      "end_to_end_ms": 6009.579899953678,
+      "output_tokens": 11,
+      "client_decode_tokens_per_second": 40.51343038204179,
+      "usage": {
+        "completion_tokens": 11,
+        "prompt_tokens": 8153,
+        "total_tokens": 8164,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66fa6867bb02136c067c6b3b",
+      "domain": "Multi-Document QA",
+      "arm": "sift",
+      "repeat": 1,
+      "expected": "D",
+      "correct": false,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 24636,
+          "forwarded_tokens": 8177,
+          "omitted_estimated_tokens": 16459,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 114,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 355.0482999999076,
+        "preprocess_cpu_ms": 31.25,
+        "exact_qwen_input_tokens": 8177,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n \"choice\": \"A\"\n}",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 4971.170000033453,
+      "end_to_end_ms": 5242.46109998785,
+      "output_tokens": 11,
+      "client_decode_tokens_per_second": 40.546851709654604,
+      "usage": {
+        "completion_tokens": 11,
+        "prompt_tokens": 8153,
+        "total_tokens": 8164,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66fa6867bb02136c067c6b3b",
+      "domain": "Multi-Document QA",
+      "arm": "sift",
+      "repeat": 2,
+      "expected": "D",
+      "correct": false,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 24636,
+          "forwarded_tokens": 8177,
+          "omitted_estimated_tokens": 16459,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 114,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 355.0482999999076,
+        "preprocess_cpu_ms": 31.25,
+        "exact_qwen_input_tokens": 8177,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n \"choice\": \"C\"\n}",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 16627.538700122386,
+      "end_to_end_ms": 16918.856700183824,
+      "output_tokens": 11,
+      "client_decode_tokens_per_second": 37.75942440110174,
+      "usage": {
+        "completion_tokens": 11,
+        "prompt_tokens": 24612,
+        "total_tokens": 24623,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66fa6867bb02136c067c6b3b",
+      "domain": "Multi-Document QA",
+      "arm": "full",
+      "repeat": 2,
+      "expected": "D",
+      "correct": false,
+      "preparation": {
+        "preprocess_wall_ms": 0.02269982360303402,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 24636,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n \"choice\": \"D\"\n}",
+      "choice": "D",
+      "valid_structured_choice": true,
+      "ttft_ms": 5823.9339999854565,
+      "end_to_end_ms": 6094.195700017735,
+      "output_tokens": 11,
+      "client_decode_tokens_per_second": 40.70129063306494,
+      "usage": {
+        "completion_tokens": 11,
+        "prompt_tokens": 8153,
+        "total_tokens": 8164,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66fa6867bb02136c067c6b3b",
+      "domain": "Multi-Document QA",
+      "arm": "sift",
+      "repeat": 3,
+      "expected": "D",
+      "correct": true,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 24636,
+          "forwarded_tokens": 8177,
+          "omitted_estimated_tokens": 16459,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 114,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 355.0482999999076,
+        "preprocess_cpu_ms": 31.25,
+        "exact_qwen_input_tokens": 8177,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"A\"\n}",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 16603.23609993793,
+      "end_to_end_ms": 16918.81849989295,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 38.02493422228358,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 24612,
+        "total_tokens": 24624,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66fa6867bb02136c067c6b3b",
+      "domain": "Multi-Document QA",
+      "arm": "full",
+      "repeat": 3,
+      "expected": "D",
+      "correct": false,
+      "preparation": {
+        "preprocess_wall_ms": 0.02269982360303402,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 24636,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n \"choice\": \"D\"\n}",
+      "choice": "D",
+      "valid_structured_choice": true,
+      "ttft_ms": 5757.32470001094,
+      "end_to_end_ms": 6028.583900071681,
+      "output_tokens": 11,
+      "client_decode_tokens_per_second": 40.551619991273625,
+      "usage": {
+        "completion_tokens": 11,
+        "prompt_tokens": 8151,
+        "total_tokens": 8162,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ebc7445a08c7b9b35df155",
+      "domain": "Single-Document QA",
+      "arm": "sift",
+      "repeat": 1,
+      "expected": "D",
+      "correct": true,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 28213,
+          "forwarded_tokens": 8175,
+          "omitted_estimated_tokens": 20038,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 126,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 333.8006001431495,
+        "preprocess_cpu_ms": 46.875,
+        "exact_qwen_input_tokens": 8175,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n\"choice\": \"D\"\n}",
+      "choice": "D",
+      "valid_structured_choice": true,
+      "ttft_ms": 19169.53090019524,
+      "end_to_end_ms": 19480.109400115907,
+      "output_tokens": 11,
+      "client_decode_tokens_per_second": 35.417776835195696,
+      "usage": {
+        "completion_tokens": 11,
+        "prompt_tokens": 28189,
+        "total_tokens": 28200,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ebc7445a08c7b9b35df155",
+      "domain": "Single-Document QA",
+      "arm": "full",
+      "repeat": 1,
+      "expected": "D",
+      "correct": true,
+      "preparation": {
+        "preprocess_wall_ms": 0.01810002140700817,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 28213,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n \"choice\": \"D\"\n}",
+      "choice": "D",
+      "valid_structured_choice": true,
+      "ttft_ms": 18740.82410009578,
+      "end_to_end_ms": 19037.92510018684,
+      "output_tokens": 11,
+      "client_decode_tokens_per_second": 37.02444622074149,
+      "usage": {
+        "completion_tokens": 11,
+        "prompt_tokens": 28189,
+        "total_tokens": 28200,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ebc7445a08c7b9b35df155",
+      "domain": "Single-Document QA",
+      "arm": "full",
+      "repeat": 2,
+      "expected": "D",
+      "correct": true,
+      "preparation": {
+        "preprocess_wall_ms": 0.01810002140700817,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 28213,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n \"choice\": \"D\"\n}",
+      "choice": "D",
+      "valid_structured_choice": true,
+      "ttft_ms": 5991.88039987348,
+      "end_to_end_ms": 6290.161599870771,
+      "output_tokens": 11,
+      "client_decode_tokens_per_second": 36.87795275096085,
+      "usage": {
+        "completion_tokens": 11,
+        "prompt_tokens": 8151,
+        "total_tokens": 8162,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ebc7445a08c7b9b35df155",
+      "domain": "Single-Document QA",
+      "arm": "sift",
+      "repeat": 2,
+      "expected": "D",
+      "correct": true,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 28213,
+          "forwarded_tokens": 8175,
+          "omitted_estimated_tokens": 20038,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 126,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 333.8006001431495,
+        "preprocess_cpu_ms": 46.875,
+        "exact_qwen_input_tokens": 8175,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n \"choice\": \"D\"\n}",
+      "choice": "D",
+      "valid_structured_choice": true,
+      "ttft_ms": 4976.00800008513,
+      "end_to_end_ms": 5248.167400015518,
+      "output_tokens": 11,
+      "client_decode_tokens_per_second": 40.417490642665854,
+      "usage": {
+        "completion_tokens": 11,
+        "prompt_tokens": 8151,
+        "total_tokens": 8162,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ebc7445a08c7b9b35df155",
+      "domain": "Single-Document QA",
+      "arm": "sift",
+      "repeat": 3,
+      "expected": "D",
+      "correct": true,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 28213,
+          "forwarded_tokens": 8175,
+          "omitted_estimated_tokens": 20038,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 126,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 333.8006001431495,
+        "preprocess_cpu_ms": 46.875,
+        "exact_qwen_input_tokens": 8175,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n\"choice\": \"D\"\n}",
+      "choice": "D",
+      "valid_structured_choice": true,
+      "ttft_ms": 19388.516100123525,
+      "end_to_end_ms": 19683.68440004997,
+      "output_tokens": 11,
+      "client_decode_tokens_per_second": 37.26687453476938,
+      "usage": {
+        "completion_tokens": 11,
+        "prompt_tokens": 28189,
+        "total_tokens": 28200,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ebc7445a08c7b9b35df155",
+      "domain": "Single-Document QA",
+      "arm": "full",
+      "repeat": 3,
+      "expected": "D",
+      "correct": true,
+      "preparation": {
+        "preprocess_wall_ms": 0.01810002140700817,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 28213,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n \"choice\": \"A\"\n}",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 5823.2312998734415,
+      "end_to_end_ms": 6094.4725999142975,
+      "output_tokens": 11,
+      "client_decode_tokens_per_second": 40.55429611325087,
+      "usage": {
+        "completion_tokens": 11,
+        "prompt_tokens": 8021,
+        "total_tokens": 8032,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ec0d51821e116aacb19b0f",
+      "domain": "Single-Document QA",
+      "arm": "sift",
+      "repeat": 1,
+      "expected": "D",
+      "correct": false,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 25426,
+          "forwarded_tokens": 8045,
+          "omitted_estimated_tokens": 17381,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 115,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 390.5023999977857,
+        "preprocess_cpu_ms": 62.5,
+        "exact_qwen_input_tokens": 8045,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"A\"\n}",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 17094.238999998197,
+      "end_to_end_ms": 17415.294100064784,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 37.37676180042361,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 25402,
+        "total_tokens": 25414,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ec0d51821e116aacb19b0f",
+      "domain": "Single-Document QA",
+      "arm": "full",
+      "repeat": 1,
+      "expected": "D",
+      "correct": false,
+      "preparation": {
+        "preprocess_wall_ms": 0.01859990879893303,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 25426,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n \"choice\": \"A\"\n}",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 5886.441100155935,
+      "end_to_end_ms": 6153.904500184581,
+      "output_tokens": 11,
+      "client_decode_tokens_per_second": 41.12712243552528,
+      "usage": {
+        "completion_tokens": 11,
+        "prompt_tokens": 8021,
+        "total_tokens": 8032,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ec0d51821e116aacb19b0f",
+      "domain": "Single-Document QA",
+      "arm": "sift",
+      "repeat": 2,
+      "expected": "D",
+      "correct": false,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 25426,
+          "forwarded_tokens": 8045,
+          "omitted_estimated_tokens": 17381,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 115,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 390.5023999977857,
+        "preprocess_cpu_ms": 62.5,
+        "exact_qwen_input_tokens": 8045,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"A\"\n}",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 17196.050600148737,
+      "end_to_end_ms": 17508.402100065723,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 38.418256365630604,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 25402,
+        "total_tokens": 25414,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ec0d51821e116aacb19b0f",
+      "domain": "Single-Document QA",
+      "arm": "full",
+      "repeat": 2,
+      "expected": "D",
+      "correct": false,
+      "preparation": {
+        "preprocess_wall_ms": 0.01859990879893303,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 25426,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n \"choice\": \"A\"\n}",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 5858.9229001663625,
+      "end_to_end_ms": 6132.302799960598,
+      "output_tokens": 11,
+      "client_decode_tokens_per_second": 40.237047450377084,
+      "usage": {
+        "completion_tokens": 11,
+        "prompt_tokens": 8021,
+        "total_tokens": 8032,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ec0d51821e116aacb19b0f",
+      "domain": "Single-Document QA",
+      "arm": "sift",
+      "repeat": 3,
+      "expected": "D",
+      "correct": false,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 25426,
+          "forwarded_tokens": 8045,
+          "omitted_estimated_tokens": 17381,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 115,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 390.5023999977857,
+        "preprocess_cpu_ms": 62.5,
+        "exact_qwen_input_tokens": 8045,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"A\"\n}",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 17283.911699894816,
+      "end_to_end_ms": 17605.944799957797,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 37.26325026108532,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 25402,
+        "total_tokens": 25414,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ec0d51821e116aacb19b0f",
+      "domain": "Single-Document QA",
+      "arm": "full",
+      "repeat": 3,
+      "expected": "D",
+      "correct": false,
+      "preparation": {
+        "preprocess_wall_ms": 0.01859990879893303,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 25426,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"A\"\n}",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 18532.672200119123,
+      "end_to_end_ms": 18864.591900026426,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 36.15332263602103,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 27054,
+        "total_tokens": 27066,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ec0f3c821e116aacb19d70",
+      "domain": "Single-Document QA",
+      "arm": "full",
+      "repeat": 1,
+      "expected": "A",
+      "correct": true,
+      "preparation": {
+        "preprocess_wall_ms": 0.034499913454055786,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 27078,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"A\"\n}",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 5920.080800075084,
+      "end_to_end_ms": 6210.642500082031,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 41.2993178375302,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 8160,
+        "total_tokens": 8172,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ec0f3c821e116aacb19d70",
+      "domain": "Single-Document QA",
+      "arm": "sift",
+      "repeat": 1,
+      "expected": "A",
+      "correct": true,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 27078,
+          "forwarded_tokens": 8184,
+          "omitted_estimated_tokens": 18894,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 160,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 463.5101000312716,
+        "preprocess_cpu_ms": 31.25,
+        "exact_qwen_input_tokens": 8184,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"A\"\n}",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 18475.081499898806,
+      "end_to_end_ms": 18793.570699868724,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 37.67788672624831,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 27054,
+        "total_tokens": 27066,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ec0f3c821e116aacb19d70",
+      "domain": "Single-Document QA",
+      "arm": "full",
+      "repeat": 2,
+      "expected": "A",
+      "correct": true,
+      "preparation": {
+        "preprocess_wall_ms": 0.034499913454055786,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 27078,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"A\"\n}",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 5914.647200144827,
+      "end_to_end_ms": 6212.464800104499,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 40.29311901521254,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 8160,
+        "total_tokens": 8172,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ec0f3c821e116aacb19d70",
+      "domain": "Single-Document QA",
+      "arm": "sift",
+      "repeat": 2,
+      "expected": "A",
+      "correct": true,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 27078,
+          "forwarded_tokens": 8184,
+          "omitted_estimated_tokens": 18894,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 160,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 463.5101000312716,
+        "preprocess_cpu_ms": 31.25,
+        "exact_qwen_input_tokens": 8184,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"A\"\n}",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 18536.68939997442,
+      "end_to_end_ms": 18851.955800084397,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 38.063047618820015,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 27054,
+        "total_tokens": 27066,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ec0f3c821e116aacb19d70",
+      "domain": "Single-Document QA",
+      "arm": "full",
+      "repeat": 3,
+      "expected": "A",
+      "correct": true,
+      "preparation": {
+        "preprocess_wall_ms": 0.034499913454055786,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 27078,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"A\"\n}",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 5903.940899996087,
+      "end_to_end_ms": 6192.914500134066,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 41.52628473421189,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 8160,
+        "total_tokens": 8172,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ec0f3c821e116aacb19d70",
+      "domain": "Single-Document QA",
+      "arm": "sift",
+      "repeat": 3,
+      "expected": "A",
+      "correct": true,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 27078,
+          "forwarded_tokens": 8184,
+          "omitted_estimated_tokens": 18894,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 160,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 463.5101000312716,
+        "preprocess_cpu_ms": 31.25,
+        "exact_qwen_input_tokens": 8184,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"B\"\n}",
+      "choice": "B",
+      "valid_structured_choice": true,
+      "ttft_ms": 17724.018899956718,
+      "end_to_end_ms": 18052.340799942613,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 36.54949609062188,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 26179,
+        "total_tokens": 26191,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ec1db2821e116aacb1ad69",
+      "domain": "Single-Document QA",
+      "arm": "full",
+      "repeat": 1,
+      "expected": "C",
+      "correct": false,
+      "preparation": {
+        "preprocess_wall_ms": 0.01910002902150154,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 26203,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n \"choice\": \"B\"\n}",
+      "choice": "B",
+      "valid_structured_choice": true,
+      "ttft_ms": 5847.44119993411,
+      "end_to_end_ms": 6121.432800078765,
+      "output_tokens": 11,
+      "client_decode_tokens_per_second": 40.147216170833424,
+      "usage": {
+        "completion_tokens": 11,
+        "prompt_tokens": 8117,
+        "total_tokens": 8128,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ec1db2821e116aacb1ad69",
+      "domain": "Single-Document QA",
+      "arm": "sift",
+      "repeat": 1,
+      "expected": "C",
+      "correct": false,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 26203,
+          "forwarded_tokens": 8141,
+          "omitted_estimated_tokens": 18062,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 155,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 339.7710002027452,
+        "preprocess_cpu_ms": 62.5,
+        "exact_qwen_input_tokens": 8141,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"B\"\n}",
+      "choice": "B",
+      "valid_structured_choice": true,
+      "ttft_ms": 17906.17770003155,
+      "end_to_end_ms": 18223.855499876663,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 37.77412210060215,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 26179,
+        "total_tokens": 26191,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ec1db2821e116aacb1ad69",
+      "domain": "Single-Document QA",
+      "arm": "full",
+      "repeat": 2,
+      "expected": "C",
+      "correct": false,
+      "preparation": {
+        "preprocess_wall_ms": 0.01910002902150154,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 26203,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n \"choice\": \"B\"\n}",
+      "choice": "B",
+      "valid_structured_choice": true,
+      "ttft_ms": 5842.4380999058485,
+      "end_to_end_ms": 6109.795099822804,
+      "output_tokens": 11,
+      "client_decode_tokens_per_second": 41.1434898035837,
+      "usage": {
+        "completion_tokens": 11,
+        "prompt_tokens": 8117,
+        "total_tokens": 8128,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ec1db2821e116aacb1ad69",
+      "domain": "Single-Document QA",
+      "arm": "sift",
+      "repeat": 2,
+      "expected": "C",
+      "correct": false,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 26203,
+          "forwarded_tokens": 8141,
+          "omitted_estimated_tokens": 18062,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 155,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 339.7710002027452,
+        "preprocess_cpu_ms": 62.5,
+        "exact_qwen_input_tokens": 8141,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"B\"\n}",
+      "choice": "B",
+      "valid_structured_choice": true,
+      "ttft_ms": 17954.808099893853,
+      "end_to_end_ms": 18274.808699963614,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 37.49992967945672,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 26179,
+        "total_tokens": 26191,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ec1db2821e116aacb1ad69",
+      "domain": "Single-Document QA",
+      "arm": "full",
+      "repeat": 3,
+      "expected": "C",
+      "correct": false,
+      "preparation": {
+        "preprocess_wall_ms": 0.01910002902150154,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 26203,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n \"choice\": \"B\"\n}",
+      "choice": "B",
+      "valid_structured_choice": true,
+      "ttft_ms": 5845.288900192827,
+      "end_to_end_ms": 6093.439500080422,
+      "output_tokens": 11,
+      "client_decode_tokens_per_second": 44.32792024271833,
+      "usage": {
+        "completion_tokens": 11,
+        "prompt_tokens": 8117,
+        "total_tokens": 8128,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ec1db2821e116aacb1ad69",
+      "domain": "Single-Document QA",
+      "arm": "sift",
+      "repeat": 3,
+      "expected": "C",
+      "correct": false,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 26203,
+          "forwarded_tokens": 8141,
+          "omitted_estimated_tokens": 18062,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 155,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 339.7710002027452,
+        "preprocess_cpu_ms": 62.5,
+        "exact_qwen_input_tokens": 8141,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n \"choice\": \"C\"\n}",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 5500.052799936384,
+      "end_to_end_ms": 5812.458399916068,
+      "output_tokens": 11,
+      "client_decode_tokens_per_second": 35.210636431342294,
+      "usage": {
+        "completion_tokens": 11,
+        "prompt_tokens": 8168,
+        "total_tokens": 8179,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ed1556821e116aacb1ea14",
+      "domain": "Single-Document QA",
+      "arm": "sift",
+      "repeat": 1,
+      "expected": "A",
+      "correct": false,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 25614,
+          "forwarded_tokens": 8192,
+          "omitted_estimated_tokens": 17422,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 156,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 306.00720015354455,
+        "preprocess_cpu_ms": 78.125,
+        "exact_qwen_input_tokens": 8192,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"C\"\n}",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 17183.041600044817,
+      "end_to_end_ms": 17512.165899854153,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 36.46038899878149,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 25590,
+        "total_tokens": 25602,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ed1556821e116aacb1ea14",
+      "domain": "Single-Document QA",
+      "arm": "full",
+      "repeat": 1,
+      "expected": "A",
+      "correct": false,
+      "preparation": {
+        "preprocess_wall_ms": 0.017799902707338333,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 25614,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"A\"\n}",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 16623.598699923605,
+      "end_to_end_ms": 16930.70279993117,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 39.07469812257292,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 25590,
+        "total_tokens": 25602,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ed1556821e116aacb1ea14",
+      "domain": "Single-Document QA",
+      "arm": "full",
+      "repeat": 2,
+      "expected": "A",
+      "correct": true,
+      "preparation": {
+        "preprocess_wall_ms": 0.017799902707338333,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 25614,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n \"choice\": \"C\"\n}",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 5990.458599990234,
+      "end_to_end_ms": 6299.324999796227,
+      "output_tokens": 11,
+      "client_decode_tokens_per_second": 35.61410372545991,
+      "usage": {
+        "completion_tokens": 11,
+        "prompt_tokens": 8168,
+        "total_tokens": 8179,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ed1556821e116aacb1ea14",
+      "domain": "Single-Document QA",
+      "arm": "sift",
+      "repeat": 2,
+      "expected": "A",
+      "correct": false,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 25614,
+          "forwarded_tokens": 8192,
+          "omitted_estimated_tokens": 17422,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 156,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 306.00720015354455,
+        "preprocess_cpu_ms": 78.125,
+        "exact_qwen_input_tokens": 8192,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"C\"\n}",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 17358.818399952725,
+      "end_to_end_ms": 17692.31569999829,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 35.982300301563086,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 25590,
+        "total_tokens": 25602,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ed1556821e116aacb1ea14",
+      "domain": "Single-Document QA",
+      "arm": "full",
+      "repeat": 3,
+      "expected": "A",
+      "correct": false,
+      "preparation": {
+        "preprocess_wall_ms": 0.017799902707338333,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 25614,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n \"choice\": \"C\"\n}",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 5915.510899852961,
+      "end_to_end_ms": 6223.342400044203,
+      "output_tokens": 11,
+      "client_decode_tokens_per_second": 35.73383488423442,
+      "usage": {
+        "completion_tokens": 11,
+        "prompt_tokens": 8168,
+        "total_tokens": 8179,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66ed1556821e116aacb1ea14",
+      "domain": "Single-Document QA",
+      "arm": "sift",
+      "repeat": 3,
+      "expected": "A",
+      "correct": false,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 25614,
+          "forwarded_tokens": 8192,
+          "omitted_estimated_tokens": 17422,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 156,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 306.00720015354455,
+        "preprocess_cpu_ms": 78.125,
+        "exact_qwen_input_tokens": 8192,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"A\"\n}",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 18369.49019995518,
+      "end_to_end_ms": 18706.73680002801,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 35.58227124427203,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 27133,
+        "total_tokens": 27145,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66eefa2f821e116aacb2284f",
+      "domain": "Single-Document QA",
+      "arm": "full",
+      "repeat": 1,
+      "expected": "A",
+      "correct": true,
+      "preparation": {
+        "preprocess_wall_ms": 0.018300022929906845,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 27157,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"A\"\n}",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 5840.902499854565,
+      "end_to_end_ms": 6200.023900019005,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 33.41488419934108,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 8094,
+        "total_tokens": 8106,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66eefa2f821e116aacb2284f",
+      "domain": "Single-Document QA",
+      "arm": "sift",
+      "repeat": 1,
+      "expected": "A",
+      "correct": true,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 27157,
+          "forwarded_tokens": 8118,
+          "omitted_estimated_tokens": 19039,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 72,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 382.1360000874847,
+        "preprocess_cpu_ms": 62.5,
+        "exact_qwen_input_tokens": 8118,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"A\"\n}",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 4998.959499876946,
+      "end_to_end_ms": 5317.775300005451,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 37.63928887829015,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 8094,
+        "total_tokens": 8106,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66eefa2f821e116aacb2284f",
+      "domain": "Single-Document QA",
+      "arm": "sift",
+      "repeat": 2,
+      "expected": "A",
+      "correct": true,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 27157,
+          "forwarded_tokens": 8118,
+          "omitted_estimated_tokens": 19039,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 72,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 382.1360000874847,
+        "preprocess_cpu_ms": 62.5,
+        "exact_qwen_input_tokens": 8118,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"A\"\n}",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 18548.947300063446,
+      "end_to_end_ms": 18862.38029995002,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 38.285694245158155,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 27133,
+        "total_tokens": 27145,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66eefa2f821e116aacb2284f",
+      "domain": "Single-Document QA",
+      "arm": "full",
+      "repeat": 2,
+      "expected": "A",
+      "correct": true,
+      "preparation": {
+        "preprocess_wall_ms": 0.018300022929906845,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 27157,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"A\"\n}",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 5857.089099939913,
+      "end_to_end_ms": 6174.655599985272,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 37.78736106700801,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 8094,
+        "total_tokens": 8106,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66eefa2f821e116aacb2284f",
+      "domain": "Single-Document QA",
+      "arm": "sift",
+      "repeat": 3,
+      "expected": "A",
+      "correct": true,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 27157,
+          "forwarded_tokens": 8118,
+          "omitted_estimated_tokens": 19039,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 72,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 382.1360000874847,
+        "preprocess_cpu_ms": 62.5,
+        "exact_qwen_input_tokens": 8118,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"A\"\n}",
+      "choice": "A",
+      "valid_structured_choice": true,
+      "ttft_ms": 18512.947000097483,
+      "end_to_end_ms": 18844.333699904382,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 36.21147139276403,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 27133,
+        "total_tokens": 27145,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66eefa2f821e116aacb2284f",
+      "domain": "Single-Document QA",
+      "arm": "full",
+      "repeat": 3,
+      "expected": "A",
+      "correct": true,
+      "preparation": {
+        "preprocess_wall_ms": 0.018300022929906845,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 27157,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"C\"\n}",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 5787.082699825987,
+      "end_to_end_ms": 6104.1536999400705,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 37.84641293490214,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 8114,
+        "total_tokens": 8126,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66f52567821e116aacb329bc",
+      "domain": "Single-Document QA",
+      "arm": "sift",
+      "repeat": 1,
+      "expected": "C",
+      "correct": true,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 27488,
+          "forwarded_tokens": 8138,
+          "omitted_estimated_tokens": 19350,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 129,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 386.00339996628463,
+        "preprocess_cpu_ms": 62.5,
+        "exact_qwen_input_tokens": 8138,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"C\"\n}",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 18704.994400031865,
+      "end_to_end_ms": 19028.691600076854,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 37.07168303690041,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 27464,
+        "total_tokens": 27476,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66f52567821e116aacb329bc",
+      "domain": "Single-Document QA",
+      "arm": "full",
+      "repeat": 1,
+      "expected": "C",
+      "correct": true,
+      "preparation": {
+        "preprocess_wall_ms": 0.019300030544400215,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 27488,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"C\"\n}",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 18201.973100192845,
+      "end_to_end_ms": 18532.86280017346,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 36.26586140548635,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 27464,
+        "total_tokens": 27476,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66f52567821e116aacb329bc",
+      "domain": "Single-Document QA",
+      "arm": "full",
+      "repeat": 2,
+      "expected": "C",
+      "correct": true,
+      "preparation": {
+        "preprocess_wall_ms": 0.019300030544400215,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 27488,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"C\"\n}",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 5875.625199871138,
+      "end_to_end_ms": 6196.60050002858,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 37.386054297990654,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 8114,
+        "total_tokens": 8126,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66f52567821e116aacb329bc",
+      "domain": "Single-Document QA",
+      "arm": "sift",
+      "repeat": 2,
+      "expected": "C",
+      "correct": true,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 27488,
+          "forwarded_tokens": 8138,
+          "omitted_estimated_tokens": 19350,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 129,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 386.00339996628463,
+        "preprocess_cpu_ms": 62.5,
+        "exact_qwen_input_tokens": 8138,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"C\"\n}",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 4995.883200084791,
+      "end_to_end_ms": 5313.647700008005,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 37.76381566505925,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 8114,
+        "total_tokens": 8126,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66f52567821e116aacb329bc",
+      "domain": "Single-Document QA",
+      "arm": "sift",
+      "repeat": 3,
+      "expected": "C",
+      "correct": true,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 27488,
+          "forwarded_tokens": 8138,
+          "omitted_estimated_tokens": 19350,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 129,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 386.00339996628463,
+        "preprocess_cpu_ms": 62.5,
+        "exact_qwen_input_tokens": 8138,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"C\"\n}",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 18837.730600032955,
+      "end_to_end_ms": 19162.081700051203,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 36.9969455917519,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 27464,
+        "total_tokens": 27476,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66f52567821e116aacb329bc",
+      "domain": "Single-Document QA",
+      "arm": "full",
+      "repeat": 3,
+      "expected": "C",
+      "correct": true,
+      "preparation": {
+        "preprocess_wall_ms": 0.019300030544400215,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 27488,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"C\"\n}",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 16847.778900060803,
+      "end_to_end_ms": 17177.02820012346,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 36.44654672831921,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 24718,
+        "total_tokens": 24730,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66f67c18bb02136c067c21b8",
+      "domain": "Single-Document QA",
+      "arm": "full",
+      "repeat": 1,
+      "expected": "C",
+      "correct": true,
+      "preparation": {
+        "preprocess_wall_ms": 0.018799910321831703,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 24742,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"C\"\n}",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 5831.592699978501,
+      "end_to_end_ms": 6127.358099911362,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 40.57269715363594,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 8148,
+        "total_tokens": 8160,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66f67c18bb02136c067c21b8",
+      "domain": "Single-Document QA",
+      "arm": "sift",
+      "repeat": 1,
+      "expected": "C",
+      "correct": true,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 24742,
+          "forwarded_tokens": 8172,
+          "omitted_estimated_tokens": 16570,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 119,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 312.1599000878632,
+        "preprocess_cpu_ms": 78.125,
+        "exact_qwen_input_tokens": 8172,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"C\"\n}",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 5010.402500163764,
+      "end_to_end_ms": 5301.522900117561,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 41.22005878634569,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 8148,
+        "total_tokens": 8160,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66f67c18bb02136c067c21b8",
+      "domain": "Single-Document QA",
+      "arm": "sift",
+      "repeat": 2,
+      "expected": "C",
+      "correct": true,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 24742,
+          "forwarded_tokens": 8172,
+          "omitted_estimated_tokens": 16570,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 119,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 312.1599000878632,
+        "preprocess_cpu_ms": 78.125,
+        "exact_qwen_input_tokens": 8172,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"C\"\n}",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 16767.279600026086,
+      "end_to_end_ms": 17080.873199971393,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 38.266087069675194,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 24718,
+        "total_tokens": 24730,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66f67c18bb02136c067c21b8",
+      "domain": "Single-Document QA",
+      "arm": "full",
+      "repeat": 2,
+      "expected": "C",
+      "correct": true,
+      "preparation": {
+        "preprocess_wall_ms": 0.018799910321831703,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 24742,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"C\"\n}",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 5858.254099963233,
+      "end_to_end_ms": 6149.161700159311,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 41.25021137952987,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 8148,
+        "total_tokens": 8160,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66f67c18bb02136c067c21b8",
+      "domain": "Single-Document QA",
+      "arm": "sift",
+      "repeat": 3,
+      "expected": "C",
+      "correct": true,
+      "preparation": {
+        "selector_audit": {
+          "compacted": true,
+          "input_tokens": 24742,
+          "forwarded_tokens": 8172,
+          "omitted_estimated_tokens": 16570,
+          "preserved_recent_turns": 0,
+          "preserved_recent_tool_cycles": 0,
+          "selected_excerpts": 119,
+          "method": "query_aware_extract"
+        },
+        "preprocess_wall_ms": 312.1599000878632,
+        "preprocess_cpu_ms": 78.125,
+        "exact_qwen_input_tokens": 8172,
+        "fits_arm_limit": true
+      }
+    },
+    {
+      "http_status": 200,
+      "normal": true,
+      "finish_reason": "stop",
+      "answer": "{\n  \"choice\": \"C\"\n}",
+      "choice": "C",
+      "valid_structured_choice": true,
+      "ttft_ms": 16691.137599991634,
+      "end_to_end_ms": 17010.20329981111,
+      "output_tokens": 12,
+      "client_decode_tokens_per_second": 37.60980891016958,
+      "usage": {
+        "completion_tokens": 12,
+        "prompt_tokens": 24718,
+        "total_tokens": 24730,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "case_id": "66f67c18bb02136c067c21b8",
+      "domain": "Single-Document QA",
+      "arm": "full",
+      "repeat": 3,
+      "expected": "C",
+      "correct": true,
+      "preparation": {
+        "preprocess_wall_ms": 0.018799910321831703,
+        "preprocess_cpu_ms": 0.0,
+        "exact_qwen_input_tokens": 24742,
+        "fits_arm_limit": true
+      }
+    }
+  ]
+}
