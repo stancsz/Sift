@@ -425,8 +425,10 @@ def event_evidence(client: str, stdout: str) -> dict:
                             active_stream["output_tokens"],
                         )
                         if (first_delta is not None and last_delta is not None and
-                                type(output_count) is int and output_count > 0 and last_delta > first_delta):
-                            decode_tps.append(output_count / (last_delta - first_delta))
+                                type(output_count) is int and output_count > 1 and last_delta > first_delta):
+                            # The stream interval starts when token one arrives, so
+                            # it spans N-1 token intervals through token N.
+                            decode_tps.append((output_count - 1) / (last_delta - first_delta))
                         active_stream = None
         final = next((event for event in reversed(events) if event.get("type") == "result"), {})
         terminal = final.get("subtype") == "success" and final.get("is_error") is False

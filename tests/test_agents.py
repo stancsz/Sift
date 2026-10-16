@@ -241,8 +241,8 @@ class AgentEvidenceTests(unittest.TestCase):
         result = agents.event_evidence("claude", "\n".join(map(json.dumps, events)))
 
         self.assertEqual(result["client_reported_ttft_ms"], [250.0])
-        self.assertEqual(result["client_reported_decode_tokens_per_second"], [40.0])
-        self.assertEqual(result["mean_client_reported_decode_tokens_per_second"], 40.0)
+        self.assertEqual(result["client_reported_decode_tokens_per_second"], [38.0])
+        self.assertEqual(result["mean_client_reported_decode_tokens_per_second"], 38.0)
         self.assertEqual(result["client_reported_cost_usd"], 0.0123)
         self.assertEqual(result["client_reported_cost_source"], "Claude Code result.total_cost_usd")
 
