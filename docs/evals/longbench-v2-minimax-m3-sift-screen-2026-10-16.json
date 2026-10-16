@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "status": "frozen public development sample; no generations made during preparation",
+  "created_utc": "2026-10-16T09:10:15.770352+00:00",
+  "dataset": {
+    "id": "zai-org/LongBench-v2",
+    "revision": "2b48e494f2c7a2f0af81aae178e05c7e1dde0fe9",
+    "split": "train (503 public rows)",
+    "data_file_sha256": "15d61c22d92c96900b3c4948b6aeea218d3214b676a65df48e7b8555604c7fe2",
+    "license": "apache-2.0"
+  },
+  "model": {
+    "id": "minimax/minimax-m3",
+    "context_tokens": 1048576,
+    "tokenizer_source": "https://huggingface.co/MiniMaxAI/MiniMax-M3/resolve/main/tokenizer.json",
+    "tokenizer_sha256": "bb1f1626cf01448f1e3b6036d0a061ffc66c91d9046aada14ea23a5441b5ad6e",
+    "chat_template_source": "https://huggingface.co/MiniMaxAI/MiniMax-M3/resolve/main/chat_template.jinja",
+    "chat_template_sha256": "11421244f67553498e5c8112dae02802025bcc4305ec45ad380af95c96f9fe64",
+    "counting_note": "Tokenizer counts the rendered published M3 chat template, with reasoning disabled. Provider-reported prompt usage is authoritative and will be recorded per request."
+  },
+  "sift": {
+    "core_sha256": "c37f84829cf75a38f410e4eebb219ebf99c27c89a5c0b62a0ca9b70c36265de7",
+    "targets": [
+      16384,
+      24576,
+      32768,
+      49152,
+      65536
+    ],
+    "safety_margin_tokens": 128
+  },
+  "selection": {
+    "seed": 20261016,
+    "scanned_rows": 503,
+    "eligible_rows_16k_to_900k": 438,
+    "sample_per_stratum": 2,
+    "strata": [
+      "16-32k",
+      "32-64k",
+      "64-128k",
+      "128-256k",
+      "256k-900k"
+    ],
+    "selected_by_stratum": {
+      "128-256k": 2,
+      "16-32k": 2,
+      "256k-900k": 2,
+      "32-64k": 2,
+      "64-128k": 2
+    },
+    "policy": "Select two deterministic random rows per MiniMax-tokenizer prompt-length stratum; public development data only."
+  },
+  "cases": [
+    {
+      "id": "66f3e58c821e116aacb2fabc",
+      "domain": "Multi-Document QA",
+      "sub_domain": "Governmental",
+      "difficulty": "easy",
+      "length": "medium",
+      "answer_key": "B",
+      "context_chars": 645893,
+      "m3_rendered_prompt_tokens": 158694,
+      "prompt_sha256": "200f06b31aea588bf85b91c08ac34b3412c600496e3e84a352745a84e8248e3c",
+      "stratum": "128-256k"
+    },
+    {
+      "id": "66f41108821e116aacb30c41",
+      "domain": "Multi-Document QA",
+      "sub_domain": "Financial",
+      "difficulty": "easy",
+      "length": "medium",
+      "answer_key": "D",
+      "context_chars": 762530,
+      "m3_rendered_prompt_tokens": 163549,
+      "prompt_sha256": "98e96d49197420865dad4fab06dcfab5a3405eefd5576fa839a9752acaa43850",
+      "stratum": "128-256k"
+    },
+    {
+      "id": "66ebcc1e5a08c7b9b35df87d",
+      "domain": "Single-Document QA",
+      "sub_domain": "Academic",
+      "difficulty": "hard",
+      "length": "short",
+      "answer_key": "C",
+      "context_chars": 77078,
+      "m3_rendered_prompt_tokens": 23377,
+      "prompt_sha256": "4b0e75e4269fb0c8bc9b181c788e61550d031e8c152ed92c817744ad37501111",
+      "stratum": "16-32k"
+    },
+    {
+      "id": "66ebd22e5a08c7b9b35e0126",
+      "domain": "Single-Document QA",
+      "sub_domain": "Legal",
+      "difficulty": "hard",
+      "length": "short",
+      "answer_key": "B",
+      "context_chars": 83034,
+      "m3_rendered_prompt_tokens": 17362,
+      "prompt_sha256": "d94346c465ddbe74208bcea2942fd252b9944057a41f82f707fb6b567b2e8f3f",
+      "stratum": "16-32k"
+    },
+    {
+      "id": "66f24538821e116aacb2865e",
+      "domain": "Multi-Document QA",
+      "sub_domain": "Academic",
+      "difficulty": "hard",
+      "length": "long",
+      "answer_key": "D",
+      "context_chars": 1457493,
+      "m3_rendered_prompt_tokens": 327320,
+      "prompt_sha256": "2f9a710694806d4603b8389bb226793511d9fa67f02ac143611221250ee7d22f",
+      "stratum": "256k-900k"
+    },
+    {
+      "id": "66f2a46d821e116aacb2a41a",
+      "domain": "Long Structured Data Understanding",
+      "sub_domain": "Table QA",
+      "difficulty": "hard",
+      "length": "long",
+      "answer_key": "B",
+      "context_chars": 1335096,
+      "m3_rendered_prompt_tokens": 407264,
+      "prompt_sha256": "0f7c2210defde77df9d4f4c1804d608c5f27a3e54f4d6b8a316f067f24651ccd",
+      "stratum": "256k-900k"
+    },
+    {
+      "id": "670397b5bb02136c067ccec6",
+      "domain": "Single-Document QA",
+      "sub_domain": "Literary",
+      "difficulty": "easy",
+      "length": "medium",
+      "answer_key": "B",
+      "context_chars": 192211,
+      "m3_rendered_prompt_tokens": 47763,
+      "prompt_sha256": "b3bc4571911929f4c034e47134f808e7982e6a1226c5a6725da520af7b02246d",
+      "stratum": "32-64k"
+    },
+    {
+      "id": "671b2c05bb02136c067d50c8",
+      "domain": "Long-dialogue History Understanding",
+      "sub_domain": "Agent history QA",
+      "difficulty": "easy",
+      "length": "short",
+      "answer_key": "A",
+      "context_chars": 111001,
+      "m3_rendered_prompt_tokens": 39280,
+      "prompt_sha256": "68c533308becf64193c7160c6ad6caec3b2bcc2a9c4b90495193ecdd4796853a",
+      "stratum": "32-64k"
+    },
+    {
+      "id": "66ec1eb9821e116aacb1af36",
+      "domain": "Single-Document QA",
+      "sub_domain": "Literary",
+      "difficulty": "hard",
+      "length": "medium",
+      "answer_key": "C",
+      "context_chars": 484719,
+      "m3_rendered_prompt_tokens": 127454,
+      "prompt_sha256": "e7d13b38fef2d3811f1f550e3c3dbd5c1637ec6c980e3615b1f9aa1f68cdda50",
+      "stratum": "64-128k"
+    },
+    {
+      "id": "66f2a7a9821e116aacb2a721",
+      "domain": "Multi-Document QA",
+      "sub_domain": "Academic",
+      "difficulty": "easy",
+      "length": "medium",
+      "answer_key": "A",
+      "context_chars": 325270,
+      "m3_rendered_prompt_tokens": 88818,
+      "prompt_sha256": "45f23daad90da2767e88a51fcbf4bc9d91fa59d69d14b34c6c49b8eda683626b",
+      "stratum": "64-128k"
+    }
+  ]
+}
