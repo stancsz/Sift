@@ -1,0 +1,298 @@
+{
+  "status": "accepted randomized-arm development run; exposed synthetic task, one sample",
+  "date": "2026-10-16",
+  "arm": "sift",
+  "randomization_seed": 746733631,
+  "arm_order": [
+    "recency",
+    "sift",
+    "full"
+  ],
+  "selector_target_tokens": 24576,
+  "output_limit_tokens": 3072,
+  "model": "Qwen3.8-27B IQ3_S local via LiteLLM",
+  "client": "Claude Code CLI 2.1.251",
+  "fixture": "least_privilege_rollup",
+  "fixture_manifest_sha256": "2c82403fba61c4ef6c5c89b04d036cc6e691aacee64a26fa9a41b55b7b71fb96",
+  "run_directory": "C:\\Users\\stanc\\.cache\\sift-agent-runs\\sift-agent-3zg6wpyi",
+  "accepted": true,
+  "native_exit_code": 0,
+  "native_seconds": 214.11552410013974,
+  "visible_tests_passed": true,
+  "gold_tests_passed": true,
+  "visible_test_output": "----------------------------------------------------------------------\nRan 4 tests in 0.219s\n\nOK\n",
+  "gold_test_output": "----------------------------------------------------------------------\nRan 9 tests in 0.304s\n\nOK\n",
+  "requests": [
+    {
+      "input_tokens": 1283,
+      "forwarded_tokens": 1283,
+      "selector_wall_ms": 5.692,
+      "selector_thread_cpu_ms": 1.461
+    },
+    {
+      "input_tokens": 1238,
+      "forwarded_tokens": 1238,
+      "selector_wall_ms": 5.865,
+      "selector_thread_cpu_ms": 1.998
+    },
+    {
+      "input_tokens": 1686,
+      "forwarded_tokens": 1686,
+      "selector_wall_ms": 1.638,
+      "selector_thread_cpu_ms": 1.638
+    },
+    {
+      "input_tokens": 2861,
+      "forwarded_tokens": 2861,
+      "selector_wall_ms": 2.486,
+      "selector_thread_cpu_ms": 2.489
+    },
+    {
+      "input_tokens": 3757,
+      "forwarded_tokens": 3757,
+      "selector_wall_ms": 2.416,
+      "selector_thread_cpu_ms": 2.42
+    },
+    {
+      "input_tokens": 7744,
+      "forwarded_tokens": 7744,
+      "selector_wall_ms": 4.578,
+      "selector_thread_cpu_ms": 4.587
+    },
+    {
+      "input_tokens": 10996,
+      "forwarded_tokens": 10996,
+      "selector_wall_ms": 7.47,
+      "selector_thread_cpu_ms": 7.487
+    },
+    {
+      "input_tokens": 18516,
+      "forwarded_tokens": 18516,
+      "selector_wall_ms": 7.456,
+      "selector_thread_cpu_ms": 7.432
+    },
+    {
+      "input_tokens": 19154,
+      "forwarded_tokens": 19154,
+      "selector_wall_ms": 7.997,
+      "selector_thread_cpu_ms": 8.012
+    },
+    {
+      "input_tokens": 20908,
+      "forwarded_tokens": 20908,
+      "selector_wall_ms": 8.358,
+      "selector_thread_cpu_ms": 8.341
+    },
+    {
+      "input_tokens": 21113,
+      "forwarded_tokens": 21113,
+      "selector_wall_ms": 7.569,
+      "selector_thread_cpu_ms": 7.566
+    },
+    {
+      "input_tokens": 21452,
+      "forwarded_tokens": 21452,
+      "selector_wall_ms": 8.391,
+      "selector_thread_cpu_ms": 8.401
+    },
+    {
+      "input_tokens": 22306,
+      "forwarded_tokens": 22306,
+      "selector_wall_ms": 9.75,
+      "selector_thread_cpu_ms": 9.73
+    },
+    {
+      "input_tokens": 22489,
+      "forwarded_tokens": 22489,
+      "selector_wall_ms": 8.227,
+      "selector_thread_cpu_ms": 8.228
+    },
+    {
+      "input_tokens": 22557,
+      "forwarded_tokens": 22557,
+      "selector_wall_ms": 8.753,
+      "selector_thread_cpu_ms": 8.759
+    },
+    {
+      "input_tokens": 23088,
+      "forwarded_tokens": 23088,
+      "selector_wall_ms": 8.362,
+      "selector_thread_cpu_ms": 8.369
+    },
+    {
+      "input_tokens": 23625,
+      "forwarded_tokens": 23625,
+      "selector_wall_ms": 10.32,
+      "selector_thread_cpu_ms": 10.344
+    },
+    {
+      "input_tokens": 23927,
+      "forwarded_tokens": 23927,
+      "selector_wall_ms": 8.949,
+      "selector_thread_cpu_ms": 8.945
+    },
+    {
+      "input_tokens": 26063,
+      "forwarded_tokens": 14094,
+      "selector_wall_ms": 81.208,
+      "selector_thread_cpu_ms": 80.731
+    }
+  ],
+  "request_count": 19,
+  "client_ttft_sample_count": 18,
+  "largest_raw_input_tokens": 26063,
+  "largest_forwarded_input_tokens": 23927,
+  "sum_raw_estimated_input_tokens": 294763,
+  "sum_forwarded_estimated_input_tokens": 282794,
+  "mean_client_reported_ttft_ms": 2339.5,
+  "median_client_reported_ttft_ms": 774.5,
+  "client_reported_ttft_ms": [
+    9673,
+    420,
+    834,
+    656,
+    2940,
+    2568,
+    6430,
+    439,
+    1648,
+    468,
+    418,
+    919,
+    489,
+    390,
+    759,
+    790,
+    368,
+    11902
+  ],
+  "mean_selector_thread_cpu_ms": 10.365157894736841,
+  "cost_note": "Local provider API spend was $0; hardware/electricity unmeasured. Client-side estimates are not billable usage.",
+  "evidence_limit": "One public synthetic task and one randomized arm sample; does not establish general quality, answer sharpness, or speed.",
+  "native_start_utc": "2026-10-16T07:50:22.061187+00:00",
+  "native_end_utc": "2026-10-16T07:53:56.180460+00:00",
+  "client_reported_usage": {
+    "input_tokens": 40900,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 297662,
+    "output_tokens": 7053,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "",
+    "iterations": [],
+    "speed": "standard"
+  },
+  "client_reported_input_plus_cached_input_tokens": 338562,
+  "qwen_decode_sample_count": 19,
+  "qwen_mean_decode_tokens_per_second": 44.02473684210526,
+  "qwen_weighted_decode_tokens_per_second": 43.12839683636402,
+  "qwen_decode_samples": [
+    {
+      "eval_ms": 4311.02,
+      "tokens": 209,
+      "tokens_per_second": 48.25
+    },
+    {
+      "eval_ms": 1918.34,
+      "tokens": 94,
+      "tokens_per_second": 48.48
+    },
+    {
+      "eval_ms": 3634.7,
+      "tokens": 177,
+      "tokens_per_second": 48.42
+    },
+    {
+      "eval_ms": 2546.4,
+      "tokens": 123,
+      "tokens_per_second": 47.91
+    },
+    {
+      "eval_ms": 2819.96,
+      "tokens": 136,
+      "tokens_per_second": 47.87
+    },
+    {
+      "eval_ms": 2677.5,
+      "tokens": 124,
+      "tokens_per_second": 45.94
+    },
+    {
+      "eval_ms": 1791.47,
+      "tokens": 82,
+      "tokens_per_second": 45.21
+    },
+    {
+      "eval_ms": 13097.92,
+      "tokens": 562,
+      "tokens_per_second": 42.83
+    },
+    {
+      "eval_ms": 41173.86,
+      "tokens": 1749,
+      "tokens_per_second": 42.45
+    },
+    {
+      "eval_ms": 1788.73,
+      "tokens": 76,
+      "tokens_per_second": 41.93
+    },
+    {
+      "eval_ms": 4944.2,
+      "tokens": 209,
+      "tokens_per_second": 42.07
+    },
+    {
+      "eval_ms": 19908.48,
+      "tokens": 833,
+      "tokens_per_second": 41.79
+    },
+    {
+      "eval_ms": 3499.2,
+      "tokens": 145,
+      "tokens_per_second": 41.15
+    },
+    {
+      "eval_ms": 1749.16,
+      "tokens": 74,
+      "tokens_per_second": 41.73
+    },
+    {
+      "eval_ms": 2228.87,
+      "tokens": 94,
+      "tokens_per_second": 41.73
+    },
+    {
+      "eval_ms": 12740.78,
+      "tokens": 529,
+      "tokens_per_second": 41.44
+    },
+    {
+      "eval_ms": 7472.03,
+      "tokens": 311,
+      "tokens_per_second": 41.49
+    },
+    {
+      "eval_ms": 15559.89,
+      "tokens": 644,
+      "tokens_per_second": 41.32
+    },
+    {
+      "eval_ms": 24518.43,
+      "tokens": 1091,
+      "tokens_per_second": 44.46
+    }
+  ],
+  "astra_short_context_price_sensitivity_usd": 1.059312,
+  "astra_price_sensitivity_assumptions": "Substitutes local client-reported usage into Astra short-context rates: $10/M uncached input, $1/M cached input, $50/M output; cache writes zero; no Astra request made."
+}
