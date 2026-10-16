@@ -34,6 +34,7 @@ predict the model answer.
   `88521ac93678bbc241149248e0b7162dfe3a79595b400559f98811be3b6fc9d5`.
 - Research-only whole-record candidate SHA-256:
   `adb0668cf30fb07d7af9a0be6920e4f217b47ca94e893e80532f7957b4a630e4`.
+  Its source and two boundary tests are tracked in commit `bbdb1eb`.
 - Runner: `benchmarks/run_relation_binding_public_dev.py`, SHA-256
   `89afc734a86676e8d6619a6343a1b0e81083db00b3427e07f21893bc19a34921`.
 - Source: `tests/test_relation_binding_public_dev.py` checks exact ordered
@@ -89,4 +90,34 @@ python benchmarks\run_relation_binding_public_dev.py --output docs\results\relat
 
 The runner validates the dataset, core, and candidate hashes before inference.
 The preflight currently passes the token bounds and structural checks. Its
-diagnostic tests pass 4/4 together with the two whole-record candidate tests.
+targeted test set passes 4/4 total: two retention-audit checks and two
+whole-record candidate boundary checks.
+The [completed result](relation-binding-public-development-results-2026-10-16.md)
+and [raw call record](../results/relation-binding-public-development-2026-10-16.json)
+are published separately.
+
+To materialize the exact committed core bytes before running the commands,
+create `.runs/relation-binding-frozen-source/src/sift` and copy the package
+initializer and core blob from Git without text conversion:
+
+```powershell
+@'
+from pathlib import Path
+from subprocess import run
+
+commit = "59494ba60474404d9330b36304a39d46ad0cfcfe"
+target = Path(".runs/relation-binding-frozen-source/src/sift")
+target.mkdir(parents=True, exist_ok=True)
+for name in ("__init__.py", "core.py"):
+    blob = run(["git", "cat-file", "blob", f"{commit}:src/sift/{name}"],
+               check=True, capture_output=True).stdout
+    (target / name).write_bytes(blob)
+'@ | python -
+```
+
+The installed `python` command needs the repository's evaluation dependencies,
+including `requests` and `pytest` for the checks.
+
+The artifact links and the source-materialization instructions above were
+added after inference. The exact pre-inference protocol snapshot is recorded
+by commit and SHA-256 in the [result report](relation-binding-public-development-results-2026-10-16.md).

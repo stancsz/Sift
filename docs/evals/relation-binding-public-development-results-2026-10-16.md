@@ -57,7 +57,11 @@ not be generalized into a per-task success rate.
 
 - [Frozen protocol](relation-binding-public-development-2026-10-16.md)
 - [Raw machine-readable calls](../results/relation-binding-public-development-2026-10-16.json)
+- Pre-inference protocol snapshot: commit `61176ca`, SHA-256
+  `f9075e06672559d38d4e7e962f245714fa3e05cffdc9d1d174a707e7a0395e17`.
 - Frozen selector commit: `59494ba60474404d9330b36304a39d46ad0cfcfe`.
+- The candidate source was tracked after inference in `bbdb1eb`; its bytes match
+  the SHA-256 recorded in the frozen protocol.
 - Runner SHA-256: `89afc734a86676e8d6619a6343a1b0e81083db00b3427e07f21893bc19a34921`.
 - Raw result SHA-256: `b9f1670edd820bb26fea84e958f296d47f0a87385cc24727776f1f2df8525f7d`.
 
