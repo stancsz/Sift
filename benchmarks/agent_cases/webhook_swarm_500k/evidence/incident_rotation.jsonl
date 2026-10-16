@@ -1,0 +1,6 @@
+{"ts":"2026-09-04T10:00:00Z","event":"accepted","tenant":"north","event_id":"evt-rotate","delivery_id":41,"endpoint_key":"primary","generation":7}
+{"ts":"2026-09-04T10:00:01Z","event":"remote_2xx","tenant":"north","event_id":"evt-rotate","status":204,"receiver_dedupe_key":"north/evt-rotate"}
+{"ts":"2026-09-05T10:00:00Z","event":"config_published","endpoint_key":"primary","generation":8,"secret_ref":"webhook/primary/current"}
+{"ts":"2026-09-05T10:00:03Z","event":"retry_claimed","tenant":"north","event_id":"evt-rotate","delivery_id":41,"endpoint_key":"primary","generation":8}
+{"ts":"2026-09-05T10:00:04Z","event":"remote_409","tenant":"north","event_id":"evt-rotate","receiver_dedupe_key":"north/evt-rotate","meaning":"already accepted"}
+{"ts":"2026-09-05T10:00:05Z","event":"operator_note","text":"A 409 from the receiver is not a local 2xx; inspect receiver idempotency before replay."}

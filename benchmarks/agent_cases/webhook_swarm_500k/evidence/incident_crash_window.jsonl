@@ -1,0 +1,6 @@
+{"ts":"2026-09-24T16:00:00Z","event":"worker_send","delivery_id":141,"tenant":"west","event_id":"evt-141","receiver_status":202}
+{"ts":"2026-09-24T16:00:00.200Z","event":"worker_crash","delivery_id":141,"phase":"before_local_ack"}
+{"ts":"2026-09-24T16:00:30Z","event":"lease_expired","delivery_id":141}
+{"ts":"2026-09-24T16:00:32Z","event":"worker_retry","delivery_id":141,"receiver_status":409,"receiver_dedupe_key":"west/evt-141"}
+{"ts":"2026-09-24T16:00:33Z","event":"current_behavior","delivery_id":141,"state":"delivered","attempts":2,"duplicate_remote_effect":false}
+{"ts":"2026-09-24T16:01:00Z","event":"architecture_note","text":"Remote send and local acknowledgement cannot share a transaction. Expose at-least-once behavior and use a stable receiver idempotency key."}

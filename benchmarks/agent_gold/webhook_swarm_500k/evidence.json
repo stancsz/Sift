@@ -1,0 +1,194 @@
+{
+  "schema_version": 1,
+  "fixture": "webhook_swarm_500k",
+  "data_notice": "Fictional deterministic controlled corpus, not production telemetry. Every source row must be accounted for by the migration.",
+  "required_spans": [
+    {
+      "id": "identity_payload_contract",
+      "source": {
+        "file": "docs/delivery_contract.md",
+        "start_char": 53,
+        "end_char": 589
+      },
+      "sha256": "ba4bb0add21a88c0927d1024a2ad57d129f4b118d2be3fca6cb9327967a2dd60"
+    },
+    {
+      "id": "retry_contract",
+      "source": {
+        "file": "docs/delivery_contract.md",
+        "start_char": 1705,
+        "end_char": 2297
+      },
+      "sha256": "d76c8ce3c498e65d742be996a12de9ad5626ae9a7e3150e1123be65ecd501e0a"
+    },
+    {
+      "id": "lease_contract",
+      "source": {
+        "file": "docs/delivery_contract.md",
+        "start_char": 2299,
+        "end_char": 2620
+      },
+      "sha256": "9f76ee41aa7b4f1c9db6c5395cd4bae46f01e5f5e8b2fe29d3550b1ec8e2af21"
+    },
+    {
+      "id": "migration_reconcile_contract",
+      "source": {
+        "file": "docs/migration_contract.md",
+        "start_char": 1589,
+        "end_char": 3116
+      },
+      "sha256": "447a59081b71e50d91f3cb8bbb6d55e29df7601bd3565ba0a29215f44c0aa0cb"
+    },
+    {
+      "id": "migration_schema_contract",
+      "source": {
+        "file": "docs/migration_contract.md",
+        "start_char": 3116,
+        "end_char": 3712
+      },
+      "sha256": "26221692c072917a32f365f138868fcbb6ebdc47802c024b89fa5eeb9af7d0d0"
+    },
+    {
+      "id": "snapshot_cohorts",
+      "source": {
+        "file": "data/snapshot_readme.md",
+        "start_char": 1236,
+        "end_char": 1790
+      },
+      "sha256": "27d1d5913796c0a566e94aefd23d2500c7acb2730b35bfcad4c9a92d2a117b93"
+    },
+    {
+      "id": "metrics_contract",
+      "source": {
+        "file": "docs/operations.md",
+        "start_char": 41,
+        "end_char": 417
+      },
+      "sha256": "d28cf672be050ebf00f1aada1cda578feb3f45410cf14dfc11733286165c1a0c"
+    },
+    {
+      "id": "rollout_contract",
+      "source": {
+        "file": "docs/rollout_plan.md",
+        "start_char": 23,
+        "end_char": 921
+      },
+      "sha256": "5358868186aff44ab93b750376df5f2a82df84648dd19bfa0257294e782704ba"
+    },
+    {
+      "id": "rotation_evidence",
+      "source": {
+        "file": "evidence/incident_rotation.jsonl",
+        "start_char": 610,
+        "end_char": 742
+      },
+      "sha256": "f5e298de596a2ecc704233049e1b167546d7768697925617020ba85c96739b2b"
+    },
+    {
+      "id": "tenant_collision_evidence",
+      "source": {
+        "file": "evidence/incident_tenant_collision.jsonl",
+        "start_char": 239,
+        "end_char": 293
+      },
+      "sha256": "d3356e7971750c3e79643b2a6e60b93a4bfd9948dbbbfbc3a947b4830ebe8d95"
+    },
+    {
+      "id": "retry_early_evidence",
+      "source": {
+        "file": "evidence/incident_retry_backlog.jsonl",
+        "start_char": 369,
+        "end_char": 392
+      },
+      "sha256": "c1208840f924377d00d5b14f0a2b855f3c990e063432eb77fafa6ea61ddb324e"
+    },
+    {
+      "id": "crash_window_evidence",
+      "source": {
+        "file": "evidence/incident_crash_window.jsonl",
+        "start_char": 203,
+        "end_char": 230
+      },
+      "sha256": "cb775bccf01342211b9d31e3518105bfc7c0d1a9e3200e782c3e2a4a2db2ab79"
+    },
+    {
+      "id": "migration_recovery_evidence",
+      "source": {
+        "file": "evidence/incident_migration.jsonl",
+        "start_char": 574,
+        "end_char": 602
+      },
+      "sha256": "69aec27aefedab61655e917a9a26d6895a92c39ff3d5d48d7cff9fa86b7a3bf1"
+    },
+    {
+      "id": "base_source_row",
+      "source": {
+        "file": "data/legacy_delivery_snapshot.jsonl",
+        "start_char": 0,
+        "end_char": 854
+      },
+      "sha256": "f1ce7dea8be99b69522c1fb665f809635add4c67953d2fa9db968a8b32132fdf"
+    },
+    {
+      "id": "identical_replay_row",
+      "source": {
+        "file": "data/legacy_delivery_snapshot.jsonl",
+        "start_char": 1751965,
+        "end_char": 1752822
+      },
+      "sha256": "c77e612ec2f8cec230d309e6420a0824433cb4efe53220b9ee2072efbd972326"
+    },
+    {
+      "id": "changed_payload_conflict_row",
+      "source": {
+        "file": "data/legacy_delivery_snapshot.jsonl",
+        "start_char": 1787032,
+        "end_char": 1787881
+      },
+      "sha256": "4740eac3ebf7b2632b6b72c881cc491ceac1451091940c82a7ca40b03dc586c2"
+    }
+  ],
+  "acceptance_traceability": {
+    "test_api_worker_round_trip_preserves_identity_through_rotation": [
+      "identity_payload_contract",
+      "lease_contract",
+      "rotation_evidence"
+    ],
+    "test_payload_mismatch_is_conflict_without_mutating_original": [
+      "identity_payload_contract",
+      "migration_reconcile_contract"
+    ],
+    "test_parallel_identical_and_conflicting_intake_has_one_winner": [
+      "identity_payload_contract"
+    ],
+    "test_migration_preserves_legacy_rows_and_can_resume": [
+      "migration_reconcile_contract",
+      "snapshot_cohorts",
+      "base_source_row"
+    ],
+    "test_worker_respects_lease_recovery_and_attempt_accounting": [
+      "retry_contract",
+      "lease_contract",
+      "retry_early_evidence"
+    ],
+    "test_expired_lease_reclaims_but_live_lease_does_not": [
+      "lease_contract"
+    ],
+    "test_retry_matrix_permanent_status_network_and_dead_letter": [
+      "retry_contract",
+      "crash_window_evidence"
+    ],
+    "test_metrics_count_due_age_and_exclude_sensitive_dimensions": [
+      "metrics_contract"
+    ],
+    "test_snapshot_is_fully_accounted_for_and_rerunnable": [
+      "snapshot_cohorts",
+      "base_source_row",
+      "identical_replay_row",
+      "changed_payload_conflict_row"
+    ],
+    "test_snapshot_checksum_failure_is_atomic": [
+      "migration_reconcile_contract"
+    ]
+  }
+}

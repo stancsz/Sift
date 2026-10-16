@@ -1,0 +1,5 @@
+{"ts":"2026-09-11T13:20:00Z","event":"accepted","tenant":"north","event_id":"evt-93","delivery_id":78,"payload_hash":"f5d92c","state":"delivered"}
+{"ts":"2026-09-11T13:21:00Z","event":"intake_rejected","tenant":"south","event_id":"evt-93","reason":"global_unique_constraint","http_status":500}
+{"ts":"2026-09-11T13:22:00Z","event":"customer_report","tenant":"south","event_id":"evt-93","payload_hash":"8ae311","retry_count":3}
+{"ts":"2026-09-11T13:24:00Z","event":"db_inspection","index":"ux_deliveries_event_id","columns":["event_id"],"note":"tenant is absent from current uniqueness"}
+{"ts":"2026-09-11T13:25:00Z","event":"review","text":"The two tenants are allowed to reuse an event ID. Same tenant plus same ID with a changed body is a conflict, not a duplicate."}

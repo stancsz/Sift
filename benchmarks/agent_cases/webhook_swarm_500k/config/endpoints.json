@@ -1,0 +1,17 @@
+{
+  "primary": {
+    "url": "https://hooks.example.invalid/v1/events",
+    "signing_key_ref": "webhook/primary/current",
+    "generation": 8
+  },
+  "backup": {
+    "url": "https://hooks-backup.example.invalid/v1/events",
+    "signing_key_ref": "webhook/backup/current",
+    "generation": 3
+  },
+  "retired": {
+    "url": "https://hooks-old.example.invalid/v1/events",
+    "signing_key_ref": "webhook/primary/previous",
+    "generation": 7
+  }
+}

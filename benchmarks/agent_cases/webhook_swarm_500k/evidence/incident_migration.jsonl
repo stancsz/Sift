@@ -1,0 +1,6 @@
+{"ts":"2026-10-01T09:00:00Z","event":"migration_started","deployment":"webhook-2026.10.1","row_count":2841}
+{"ts":"2026-10-01T09:00:02Z","event":"migration_error","step":"drop_old_index","reason":"new_index_not_verified"}
+{"ts":"2026-10-01T09:01:00Z","event":"inspection","legacy_row_count":2841,"rows_with_null_tenant":0,"rows_with_null_event":0}
+{"ts":"2026-10-01T09:03:00Z","event":"restart","phase":"backfill","completed_rows":1067}
+{"ts":"2026-10-01T09:03:05Z","event":"migration_state","target_columns":["payload_sha256","idempotency_key","lease_until","last_status"],"transaction":"rolled_back"}
+{"ts":"2026-10-01T09:05:00Z","event":"operator_note","text":"Migration must be retryable and preserve row IDs, attempts, original timestamps and payload JSON."}

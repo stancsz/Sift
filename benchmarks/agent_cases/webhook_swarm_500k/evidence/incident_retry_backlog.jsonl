@@ -1,0 +1,6 @@
+{"ts":"2026-09-18T08:00:00Z","event":"remote_response","delivery_id":101,"status":429,"retry_after":"90","attempt":1,"endpoint_key":"primary"}
+{"ts":"2026-09-18T08:00:01Z","event":"schedule_written","delivery_id":101,"next_attempt_at":"2026-09-18T08:00:31Z","observed_delay_seconds":30}
+{"ts":"2026-09-18T08:00:20Z","event":"worker_claim","delivery_id":101,"attempt":2,"outcome":"sent_early"}
+{"ts":"2026-09-18T08:00:21Z","event":"remote_response","delivery_id":101,"status":429,"retry_after":"invalid","attempt":2}
+{"ts":"2026-09-18T08:01:00Z","event":"summary","due_backlog":42,"oldest_due_age_seconds":73,"dead_letter_count":2}
+{"ts":"2026-09-18T08:02:00Z","event":"operator_note","text":"The early claim erased the intended delay and amplified throttling. Use persisted due time; invalid Retry-After uses exponential backoff."}
