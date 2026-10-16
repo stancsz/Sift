@@ -12,12 +12,14 @@ gateway key; no provider API was used. The call stopped at the configured
 `total_cost_usd` model-map estimate was $0.8058255; it is not a provider bill.
 Hardware and electricity costs were not measured.
 
-The generated `coldchain-excursion-audit` candidate has ten task input files
-and 15,675 characters. Local llama.cpp tokenization of the task and each input
-file once produced **6,061 Qwen tokens**, before native-client tool schemas and
-other conversation overhead. This is far below Sift's 24,576-token trigger and
-cannot exercise compaction. The candidate author explicitly described the
-evidence corpus as compact and under the 32,768-token context window.
+The generated `coldchain-excursion-audit` candidate has eleven task input files
+and 16,580 characters. The new preflight utility counted the task files once
+with the local Qwen tokenizer and returned **6,391 tokens**, before
+native-client tool schemas and other conversation overhead. This is far below
+Sift's 24,576-token trigger and cannot exercise compaction. The candidate
+author explicitly described the evidence corpus as compact and under the
+32,768-token context window. This canonical preflight supersedes the earlier
+ad hoc count, which omitted `data/manifest.json`.
 
 The generated manifest is unusable for the native runner. It records SHA values
 as `unverified`, uses a `files` map instead of the runner's required
@@ -35,11 +37,23 @@ acceptance result exists.
 ## Changed authoring requirement
 
 The next authoring assignment needs a numeric context range and an exact local
-tokenizer preflight, not a qualitative request for a “long” corpus. Require the
-full rendered history to exceed 24,576 tokens while staying below the matched
-full-context ceiling, and reject the candidate before task inference if that
-preflight or the standard manifest verifier fails. Give the author a bounded
-local token-count and hash utility so both can be verified without exposing
-provider credentials. Preserve this candidate only in the local temporary
+tokenizer preflight, not a qualitative request for a “long” corpus. The new
+[fixture preflight command](../../benchmarks/freeze_agent_fixture.py) computes
+the flattened source count and writes the native runner's `input_sha256` and
+`acceptance_sha256` schema only when an explicit range passes. For example:
+
+```powershell
+python benchmarks/freeze_agent_fixture.py `
+  --case benchmarks/agent_cases/<case> `
+  --gold benchmarks/agent_gold/<case> `
+  --manifest benchmarks/agent_gold/<case>/manifest.json `
+  --min-source-tokens 18000 --max-source-tokens 22000
+```
+
+The flattened count is a corpus-sizing gate, not a rendered native request
+count. Require an actual multi-turn run to show the full context crossing the
+target while staying below the matched full-context ceiling. Reject the
+candidate before task inference if the corpus range or standard manifest
+verification fails. Preserve this candidate only in the local temporary
 directory `sift-independent-author-20261016`; it is not part of the benchmark
 corpus.

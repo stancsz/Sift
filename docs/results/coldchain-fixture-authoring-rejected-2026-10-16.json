@@ -17,9 +17,9 @@
     "hardware_cost": "not measured"
   },
   "context_preflight": {
-    "case_input_file_count": 10,
-    "case_input_characters": 15675,
-    "qwen_tokens_task_plus_each_case_input_once": 6061,
+    "case_input_file_count": 11,
+    "case_input_characters": 16580,
+    "qwen_tokens_task_plus_each_case_input_once": 6391,
     "tokenizer": "local llama.cpp Qwen 3.8 27B input_tokens endpoint",
     "includes_native_tool_schema": false,
     "compaction_target_tokens": 24576,
