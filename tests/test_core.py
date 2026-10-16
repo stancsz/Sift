@@ -15,6 +15,19 @@ def message(role, content, **extra):
     return {"role": role, "content": content, **extra}
 
 
+def topic_history():
+    history = [message("system", "Keep recorded facts exact.")]
+    for index in range(20):
+        if index < 10:
+            record = (f"PAYMENT invoice billing PAYMENT_FACT_{index:02d} "
+                      f"settled at window 2026-10-{index + 1:02d}; ")
+        else:
+            record = (f"INCIDENT rollback alert INCIDENT_FACT_{index:02d} "
+                      f"restored at window 2026-11-{index + 1:02d}; ")
+        history.append(message("user", f"Record {index}: " + record * 18))
+    return history
+
+
 class CompactionTests(unittest.TestCase):
     def test_small_input_is_unchanged_and_audited(self):
         source = [message("system", "Follow project policy"), message("user", "hello")]
@@ -36,8 +49,12 @@ class CompactionTests(unittest.TestCase):
         self.assertLessEqual(result.audit["forwarded_tokens"], 500)
         self.assertEqual(result.messages[0], source[0])
         self.assertEqual(result.messages[-1], source[-1])
-        self.assertIn("azure-73", result.messages[1]["content"])
-        self.assertIn("untrusted", result.messages[1]["content"].lower())
+        summaries = "\n".join(
+            item.get("content", "") for item in result.messages
+            if item.get("role") == "user" and isinstance(item.get("content"), str)
+        )
+        self.assertIn("azure-73", summaries)
+        self.assertIn("untrusted", summaries.lower())
 
     def test_selected_failure_keeps_neighboring_diagnostic(self):
         lines = [f"routine build output {i}" for i in range(1_000)]
@@ -219,7 +236,7 @@ class CompactionTests(unittest.TestCase):
         b = compact_messages(source, estimate, target=400)
         self.assertEqual(a, b)
         self.assertEqual(source, before)
-        self.assertIn("item 317", a.messages[0]["content"])
+        self.assertIn("item 317", str(a.messages))
 
     def test_csv_rows_stay_atomic_and_keep_the_column_header(self):
         stream = StringIO(newline="")
@@ -243,7 +260,9 @@ class CompactionTests(unittest.TestCase):
         self.assertLessEqual(result.audit["forwarded_tokens"], 900)
         excerpts = [
             json.loads(line.split("] ", 1)[1])
-            for line in result.messages[0]["content"].splitlines()
+            for item in result.messages
+            if item.get("role") == "user" and isinstance(item.get("content"), str)
+            for line in item["content"].splitlines()
             if line.startswith("[message ")
         ]
         joined = "\n".join(excerpts)
@@ -310,6 +329,76 @@ class CompactionTests(unittest.TestCase):
 
         self.assertTrue(pieces)
         self.assertFalse(any(piece.structured for piece in pieces))
+
+    def test_topic_shift_keeps_query_independent_prefix_and_targeted_evidence(self):
+        history = topic_history()
+        questions = (
+            "What payment invoice fact and billing window were recorded?",
+            "What incident rollback fact and alert window were recorded?",
+        )
+        results = [compact_messages(
+            history + [message("user", question)], estimate,
+            target=2_000, raw_limit=50_000,
+        ) for question in questions]
+        payment, incident = results
+
+        self.assertEqual(payment.audit["method"], "query_aware_extract")
+        self.assertEqual(incident.audit["method"], "query_aware_extract")
+        self.assertEqual(payment.audit["stable_prefix_excerpts"], 1)
+        self.assertEqual(incident.audit["stable_prefix_excerpts"], 1)
+        self.assertEqual(payment.messages[1], incident.messages[1])
+        self.assertNotEqual(payment.messages[2], incident.messages[2])
+        self.assertIn("PAYMENT_FACT_", payment.messages[2]["content"])
+        self.assertIn("INCIDENT_FACT_", incident.messages[2]["content"])
+        self.assertEqual(payment.messages[-1]["content"], questions[0])
+        self.assertEqual(incident.messages[-1]["content"], questions[1])
+        self.assertLessEqual(payment.audit["forwarded_tokens"], 2_000)
+        self.assertLessEqual(incident.audit["forwarded_tokens"], 2_000)
+
+    def test_tool_history_keeps_stable_anchor_before_query_ranked_history(self):
+        history = topic_history()
+        questions = (
+            "What payment invoice fact and billing window were recorded?",
+            "What incident rollback fact and alert window were recorded?",
+        )
+        results = []
+        for question in questions:
+            messages = history + [message(
+                "user", question + " " + "Current task detail. " * 20)]
+            for index in range(48):
+                tool_id = f"read_{index}"
+                messages.extend([
+                    message("assistant", None, tool_calls=[{
+                        "id": tool_id,
+                        "type": "function",
+                        "function": {"name": "Read", "arguments": "{}"},
+                    }]),
+                    message("tool", f"Routine output {index}. " * 35,
+                            tool_call_id=tool_id),
+                ])
+            results.append(compact_messages(
+                messages, estimate, target=6_000, raw_limit=100_000))
+
+        payment, incident = results
+        summaries = [
+            [item["content"] for item in result.messages
+             if item.get("role") == "user"
+             and isinstance(item.get("content"), str)
+             and item["content"].startswith("Earlier conversation")]
+            for result in results
+        ]
+        self.assertEqual(payment.audit["method"], "epoch_extract")
+        self.assertEqual(incident.audit["method"], "epoch_extract")
+        self.assertEqual(payment.audit["stable_prefix_excerpts"], 1)
+        self.assertEqual(incident.audit["stable_prefix_excerpts"], 1)
+        self.assertEqual(summaries[0][0], summaries[1][0])
+        self.assertNotEqual(summaries[0][1], summaries[1][1])
+        self.assertIn("PAYMENT_FACT_", summaries[0][1])
+        self.assertIn("INCIDENT_FACT_", summaries[1][1])
+        self.assertEqual(len(summaries[0]), 3)
+        self.assertEqual(len(summaries[1]), 3)
+        self.assertLessEqual(payment.audit["forwarded_tokens"], 6_000)
+        self.assertLessEqual(incident.audit["forwarded_tokens"], 6_000)
 
 
 if __name__ == "__main__":

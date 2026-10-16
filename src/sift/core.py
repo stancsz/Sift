@@ -524,6 +524,23 @@ def _diagnostic_candidates(old: list[dict[str, Any]], offset: int,
     return output
 
 
+def _stable_anchor(old: list[dict[str, Any]], offset: int) -> _Candidate | None:
+    """Choose one query-independent historical excerpt that survives topic shifts."""
+    diagnostics = _diagnostic_candidates(old, offset, limit=1)
+    if diagnostics:
+        return diagnostics[0]
+    if not old:
+        return None
+    candidates = _candidates(old[:1], set(), Counter(), 1)
+    if not candidates:
+        return None
+    item = candidates[0]
+    if item.prefix:
+        return None
+    return _Candidate(item.message_index + offset, item.part_index,
+                      item.role, item.text, item.score, item.center, item.prefix)
+
+
 def _summary(candidates: list[_Candidate]) -> dict[str, str]:
     header = (
         "Earlier conversation, lossily excerpted and extractively compacted by Sift. "
@@ -626,11 +643,13 @@ def compact_messages(
             messages[latest_user + 1:tail_start], latest_user + 1, limit=1)
         baseline_message = _summary(baseline) if baseline else None
         old_before = messages[instruction_end:latest_user]
+        prior_anchor = _stable_anchor(old_before, instruction_end)
         prior_options = [
             _Candidate(item.message_index + instruction_end, item.part_index,
                        item.role, item.text, item.score, item.center, item.prefix)
             for item in _linked_candidates(old_before, task_query)
         ]
+        prior_anchor_message = _summary([prior_anchor]) if prior_anchor else None
         task_prefix = messages[:instruction_end] + [messages[latest_user]]
         task_count = _count(count_tokens, task_prefix)
         if baseline_message and _count(
@@ -639,6 +658,25 @@ def compact_messages(
             baseline = []
             baseline_message = None
         base = task_prefix + ([baseline_message] if baseline_message else []) + messages[tail_start:]
+        if prior_anchor_message:
+            anchor_tokens = _count(
+                count_tokens,
+                messages[:instruction_end] + [prior_anchor_message] + base[instruction_end:],
+            ) - _count(count_tokens, base)
+            if anchor_tokens > target // 8 or _count(
+                count_tokens,
+                messages[:instruction_end] + [prior_anchor_message] + base[instruction_end:],
+            ) > target - 256:
+                prior_anchor_message = None
+        if prior_anchor_message and prior_anchor:
+            remaining_options = [item for item in prior_options if (
+                item.message_index, item.part_index
+            ) != (prior_anchor.message_index, prior_anchor.part_index)]
+            if remaining_options:
+                prior_options = remaining_options
+        base = (messages[:instruction_end]
+                + ([prior_anchor_message] if prior_anchor_message else [])
+                + base[instruction_end:])
         available = max(0, target - _count(count_tokens, base) - 256)
         prior_quota = min(target // 8, available // 4) if not stable_barrier else target // 8
         low, high = 0, len(prior_options)
@@ -646,6 +684,8 @@ def compact_messages(
         while low <= high:
             middle = (low + high) // 2
             trial = messages[:instruction_end]
+            if prior_anchor_message:
+                trial.append(prior_anchor_message)
             if middle:
                 trial += [_summary(prior_options[:middle])]
             trial += [messages[latest_user]]
@@ -705,6 +745,8 @@ def compact_messages(
         def build_tool_history(drop_epochs: int, number: int) -> tuple[list[dict[str, Any]], int]:
             stable = [item for group in epochs[drop_epochs:] for item in group]
             output = messages[:instruction_end]
+            if prior_anchor_message:
+                output.append(prior_anchor_message)
             if prior_selected:
                 output += [_summary(prior_selected)]
             output += [messages[latest_user]]
@@ -719,6 +761,8 @@ def compact_messages(
         def stable_prefix_count(drop_epochs: int) -> int:
             stable = [item for group in epochs[drop_epochs:] for item in group]
             output = messages[:instruction_end]
+            if prior_anchor_message:
+                output.append(prior_anchor_message)
             if prior_selected:
                 output += [_summary(prior_selected)]
             output += [messages[latest_user]]
@@ -757,7 +801,8 @@ def compact_messages(
             trial = build_tool_history(drop_epochs, middle)
             if trial[1] <= target:
                 best = trial
-                selected_count = prior_count + len(baseline) + stable_count + middle
+                selected_count = (prior_count + len(baseline) + stable_count + middle
+                                  + int(prior_anchor_message is not None))
                 low = middle + 1
             else:
                 high = middle - 1
@@ -770,6 +815,7 @@ def compact_messages(
             "preserved_recent_turns": 0,
             "preserved_recent_tool_cycles": retained_cycles,
             "stable_epoch_excerpts": stable_count,
+            "stable_prefix_excerpts": int(prior_anchor_message is not None),
             "selected_excerpts": selected_count,
             "method": "epoch_extract",
         })
@@ -791,13 +837,30 @@ def compact_messages(
     old = messages[instruction_end:recent_start]
     preserved = messages[recent_start:]
     query = _render(messages[latest_user])
+    anchor = _stable_anchor(old, 0)
     options = _linked_candidates(old, query)
     if not options:
         raise CompactionError("no extractable historical content", code="active_too_large")
     prefix = messages[:instruction_end]
+    anchor_message = _summary([anchor]) if anchor else None
+    if anchor_message:
+        anchor_tokens = _count(
+            count_tokens, prefix + [anchor_message] + preserved
+        ) - _count(count_tokens, prefix + preserved)
+        if anchor_tokens > target // 8 or _count(
+            count_tokens, prefix + [anchor_message] + preserved
+        ) > target - 256:
+            anchor_message = None
+    if anchor_message and anchor:
+        remaining_options = [item for item in options if (
+            item.message_index, item.part_index
+        ) != (anchor.message_index, anchor.part_index)]
+        if remaining_options:
+            options = remaining_options
 
     def build(number: int) -> tuple[list[dict[str, Any]], int]:
-        output = prefix + [_summary(options[:number])] + preserved
+        output = prefix + ([anchor_message] if anchor_message else [])
+        output += [_summary(options[:number])] + preserved
         return output, _count(count_tokens, output)
 
     low, high = 0, len(options)
@@ -820,6 +883,7 @@ def compact_messages(
         "omitted_estimated_tokens": max(0, raw - forwarded),
         "preserved_recent_turns": retained,
         "preserved_recent_tool_cycles": 0,
-        "selected_excerpts": high,
+        "stable_prefix_excerpts": int(anchor_message is not None),
+        "selected_excerpts": high + int(anchor_message is not None),
         "method": "query_aware_extract",
     })
