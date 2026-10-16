@@ -9,6 +9,7 @@ question. It makes no model requests.
 from __future__ import annotations
 
 import csv
+from contextlib import contextmanager
 import hashlib
 import json
 from pathlib import Path
@@ -35,6 +36,7 @@ from prepare_longbench_v2_minimax import (  # noqa: E402
     render_minimax,
 )
 from sift import compact_messages  # noqa: E402
+from sift import core as sift_core  # noqa: E402
 
 
 MANIFEST = ROOT / "docs/evals/longbench-v2-minimax-m3-sift-screen-2026-10-16.json"
@@ -44,6 +46,23 @@ TEMPLATE = ROOT / "tmp/minimax-m3-chat-template.jinja"
 CASE_CSV = "66f2a46d821e116aacb2a41a"
 CASE_GAME = "671b2c05bb02136c067d50c8"
 SAFETY_MARGIN = 128
+
+
+@contextmanager
+def selector_variant(*, csv_record_retention: bool):
+    """Reproduce a local CSV-feature ablation without adding a runtime option."""
+    if csv_record_retention:
+        yield
+        return
+    original_csv_pieces = sift_core._csv_pieces
+    original_quoted_bonus = sift_core._QUOTED_QUERY_BONUS
+    sift_core._csv_pieces = lambda _text: None
+    sift_core._QUOTED_QUERY_BONUS = 0
+    try:
+        yield
+    finally:
+        sift_core._csv_pieces = original_csv_pieces
+        sift_core._QUOTED_QUERY_BONUS = original_quoted_bonus
 
 
 def exact_count(tokenizer: Tokenizer, messages: list[dict[str, Any]]) -> int:
@@ -81,9 +100,9 @@ def _csv_evidence(context: str) -> dict[str, Any]:
     # The dataset task says comments count as identical only when the text is
     # exactly identical. Do not case-fold or normalize punctuation/whitespace.
     unique = sorted(set(text for _, text, _ in matches))
-    raw_by_text = {}
+    raw_by_text: dict[str, set[str]] = {}
     for _, text, raw in matches:
-        raw_by_text.setdefault(text, raw)
+        raw_by_text.setdefault(text, set()).add(raw)
     return {
         "kind": "complete_unique_csv_field_values",
         "matching_comment_rows": len(matches),
@@ -93,7 +112,9 @@ def _csv_evidence(context: str) -> dict[str, Any]:
         ],
         "matching_review_ids": sorted(review_id for review_id, _, _ in matches),
         "required_unique_comment_texts": unique,
-        "required_unique_comment_raw_records": [raw_by_text[text] for text in unique],
+        "required_unique_comment_raw_records": [
+            {"text": text, "records": sorted(raw_by_text[text])} for text in unique
+        ],
     }
 
 
@@ -124,12 +145,27 @@ def _game_evidence(context: str) -> dict[str, Any]:
 
 
 def _retention(evidence: dict[str, Any], forwarded_messages: list[dict[str, Any]]) -> dict[str, Any]:
-    content = "\n".join(
-        message["content"] for message in forwarded_messages
-        if isinstance(message.get("content"), str)
-    )
+    retained = []
+    for message in forwarded_messages:
+        content = message.get("content")
+        if not isinstance(content, str):
+            continue
+        retained.append(content)
+        for line in content.splitlines():
+            if not line.startswith("[message ") or "] " not in line:
+                continue
+            try:
+                excerpt = json.loads(line.split("] ", 1)[1])
+            except json.JSONDecodeError:
+                continue
+            if isinstance(excerpt, str):
+                retained.append(excerpt)
+    content = "\n".join(retained)
     if evidence["kind"] == "complete_unique_csv_field_values":
-        kept = sum(record in content for record in evidence["required_unique_comment_raw_records"])
+        kept = sum(
+            any(record in content for record in item["records"])
+            for item in evidence["required_unique_comment_raw_records"]
+        )
         required = evidence["unique_exact_comment_count"]
     else:
         # Compare ordered vectors as complete JSON values, not scattered digits.
@@ -214,7 +250,7 @@ def run(dataset_path: Path = DATASET, manifest_path: Path = MANIFEST,
         "dataset_sha256": DATASET_SHA256,
         "manifest_sha256": file_sha256(manifest_path),
         "sift_core_sha256": core_hash,
-        "method": "Exact full-text CSV comment containment and complete per-round contribution-vector containment; no paraphrase or answer correctness adjudication.",
+        "method": "Decode Sift's JSON-quoted excerpts; compare complete original CSV row alternatives for every exact unique comment and complete per-round contribution vectors. No paraphrase or answer correctness adjudication.",
         "cases": results,
     }
 
@@ -228,8 +264,15 @@ if __name__ == "__main__":
     parser.add_argument("--manifest", type=Path, default=MANIFEST)
     parser.add_argument("--tokenizer", type=Path, default=TOKENIZER)
     parser.add_argument("--template", type=Path, default=TEMPLATE)
+    parser.add_argument("--disable-csv-record-retention", action="store_true",
+                        help="Run the selector ablation without atomic CSV rows or quoted-anchor boost")
     args = parser.parse_args()
-    report = run(args.dataset, args.manifest, args.tokenizer, args.template)
+    with selector_variant(csv_record_retention=not args.disable_csv_record_retention):
+        report = run(args.dataset, args.manifest, args.tokenizer, args.template)
+    report["selector_variant"] = (
+        "csv_record_retention" if not args.disable_csv_record_retention
+        else "csv_retention_disabled_ablation"
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({case["case_id"]: {

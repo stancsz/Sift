@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "evaluation": "public synthetic selector development screen; no provider calls",
+  "target_estimated_tokens": 4000,
+  "counter": "ceil(len(json.dumps(messages, ensure_ascii=False))/4)",
+  "fixture_sha256": "3e7a9d67b5d7fbd40d38ab9becf55ffbd56a0e68618ae35801d77285ce6dd843",
+  "generated_inputs_sha256": "64833f12b4b77abb40e3b5b3cc6938231ff870bdee60bacdfcf2afd2451e2501",
+  "core_sha256": "c37f84829cf75a38f410e4eebb219ebf99c27c89a5c0b62a0ca9b70c36265de7",
+  "core_ref": null,
+  "aggregate": {
+    "exact_spans": 6,
+    "required_spans": 6,
+    "complete_cases": 6,
+    "cases": 6,
+    "budget_passes": 6,
+    "protected_task_passes": 6,
+    "latest_cycle_passes": 6,
+    "immutable_input_passes": 6
+  },
+  "supplemental_tokenizer_check": {
+    "model": "qwen3.8-27b",
+    "method": "llama.cpp /v1/chat/completions/input_tokens exact rendered prompt count; no inference",
+    "comparison_cap": 4096,
+    "counts_by_case": {
+      "deployment_cadence": 2085,
+      "refund_retention": 2029,
+      "temperature_adjustment": 2003,
+      "international_refund_route": 2012,
+      "trial_export_path": 1995,
+      "timezone_precedence": 2001
+    },
+    "note": "Supplemental exact tokenizer counts; separate from the selector's 4000 estimated-token target and not used for selection."
+  },
+  "cases": [
+    {
+      "name": "deployment_cadence",
+      "raw_estimated_tokens": 16077,
+      "forwarded_estimated_tokens": 2382,
+      "selected_excerpts": 8,
+      "method": "epoch_extract",
+      "span_retained": true,
+      "complete_case": true,
+      "required_spans": 1,
+      "protected_task_exact": true,
+      "latest_tool_cycle_exact": true,
+      "input_unchanged": true
+    },
+    {
+      "name": "refund_retention",
+      "raw_estimated_tokens": 16089,
+      "forwarded_estimated_tokens": 2384,
+      "selected_excerpts": 8,
+      "method": "epoch_extract",
+      "span_retained": true,
+      "complete_case": true,
+      "required_spans": 1,
+      "protected_task_exact": true,
+      "latest_tool_cycle_exact": true,
+      "input_unchanged": true
+    },
+    {
+      "name": "temperature_adjustment",
+      "raw_estimated_tokens": 15678,
+      "forwarded_estimated_tokens": 2313,
+      "selected_excerpts": 8,
+      "method": "epoch_extract",
+      "span_retained": true,
+      "complete_case": true,
+      "required_spans": 1,
+      "protected_task_exact": true,
+      "latest_tool_cycle_exact": true,
+      "input_unchanged": true
+    },
+    {
+      "name": "international_refund_route",
+      "raw_estimated_tokens": 15747,
+      "forwarded_estimated_tokens": 2323,
+      "selected_excerpts": 8,
+      "method": "epoch_extract",
+      "span_retained": true,
+      "complete_case": true,
+      "required_spans": 1,
+      "protected_task_exact": true,
+      "latest_tool_cycle_exact": true,
+      "input_unchanged": true
+    },
+    {
+      "name": "trial_export_path",
+      "raw_estimated_tokens": 15571,
+      "forwarded_estimated_tokens": 2287,
+      "selected_excerpts": 8,
+      "method": "epoch_extract",
+      "span_retained": true,
+      "complete_case": true,
+      "required_spans": 1,
+      "protected_task_exact": true,
+      "latest_tool_cycle_exact": true,
+      "input_unchanged": true
+    },
+    {
+      "name": "timezone_precedence",
+      "raw_estimated_tokens": 15675,
+      "forwarded_estimated_tokens": 2311,
+      "selected_excerpts": 8,
+      "method": "epoch_extract",
+      "span_retained": true,
+      "complete_case": true,
+      "required_spans": 1,
+      "protected_task_exact": true,
+      "latest_tool_cycle_exact": true,
+      "input_unchanged": true
+    }
+  ]
+}

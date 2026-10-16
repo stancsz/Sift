@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "evaluation": "public synthetic selector development screen; no provider calls",
+  "target_estimated_tokens": 4000,
+  "counter": "ceil(len(json.dumps(messages, ensure_ascii=False))/4)",
+  "fixture_sha256": "3e7a9d67b5d7fbd40d38ab9becf55ffbd56a0e68618ae35801d77285ce6dd843",
+  "generated_inputs_sha256": "64833f12b4b77abb40e3b5b3cc6938231ff870bdee60bacdfcf2afd2451e2501",
+  "core_sha256": "6c856b8bebc61c9ade96c1f6bc51438dffa1c9b9cc86f9ec0d12872619ea3003",
+  "core_ref": null,
+  "aggregate": {
+    "exact_spans": 5,
+    "required_spans": 6,
+    "complete_cases": 5,
+    "cases": 6,
+    "budget_passes": 6,
+    "protected_task_passes": 6,
+    "latest_cycle_passes": 6,
+    "immutable_input_passes": 6
+  },
+  "cases": [
+    {
+      "name": "deployment_cadence",
+      "raw_estimated_tokens": 16077,
+      "forwarded_estimated_tokens": 2382,
+      "selected_excerpts": 8,
+      "method": "epoch_extract",
+      "span_retained": true,
+      "complete_case": true,
+      "required_spans": 1,
+      "protected_task_exact": true,
+      "latest_tool_cycle_exact": true,
+      "input_unchanged": true
+    },
+    {
+      "name": "refund_retention",
+      "raw_estimated_tokens": 16089,
+      "forwarded_estimated_tokens": 2431,
+      "selected_excerpts": 8,
+      "method": "epoch_extract",
+      "span_retained": false,
+      "complete_case": false,
+      "required_spans": 1,
+      "protected_task_exact": true,
+      "latest_tool_cycle_exact": true,
+      "input_unchanged": true
+    },
+    {
+      "name": "temperature_adjustment",
+      "raw_estimated_tokens": 15678,
+      "forwarded_estimated_tokens": 2313,
+      "selected_excerpts": 8,
+      "method": "epoch_extract",
+      "span_retained": true,
+      "complete_case": true,
+      "required_spans": 1,
+      "protected_task_exact": true,
+      "latest_tool_cycle_exact": true,
+      "input_unchanged": true
+    },
+    {
+      "name": "international_refund_route",
+      "raw_estimated_tokens": 15747,
+      "forwarded_estimated_tokens": 2323,
+      "selected_excerpts": 8,
+      "method": "epoch_extract",
+      "span_retained": true,
+      "complete_case": true,
+      "required_spans": 1,
+      "protected_task_exact": true,
+      "latest_tool_cycle_exact": true,
+      "input_unchanged": true
+    },
+    {
+      "name": "trial_export_path",
+      "raw_estimated_tokens": 15571,
+      "forwarded_estimated_tokens": 2287,
+      "selected_excerpts": 8,
+      "method": "epoch_extract",
+      "span_retained": true,
+      "complete_case": true,
+      "required_spans": 1,
+      "protected_task_exact": true,
+      "latest_tool_cycle_exact": true,
+      "input_unchanged": true
+    },
+    {
+      "name": "timezone_precedence",
+      "raw_estimated_tokens": 15675,
+      "forwarded_estimated_tokens": 2311,
+      "selected_excerpts": 8,
+      "method": "epoch_extract",
+      "span_retained": true,
+      "complete_case": true,
+      "required_spans": 1,
+      "protected_task_exact": true,
+      "latest_tool_cycle_exact": true,
+      "input_unchanged": true
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "purpose": "Public development cases for weak-overlap evidence retention across tool-cycle epochs. Not held-out validation.",
+  "cases": [
+    {
+      "name": "deployment_cadence",
+      "task": "Inspect the deployment archive. In the final handoff, tell me how we scheduled the cutover.",
+      "fact_cycle": 0,
+      "required_span": "Decision: release in three rings, checking the ledger between each ring."
+    },
+    {
+      "name": "refund_retention",
+      "task": "Audit the refund memorandum and report how long supporting material must remain available.",
+      "fact_cycle": 1,
+      "required_span": "Must retain receipt snapshots for eighteen months, then shred the copies."
+    },
+    {
+      "name": "temperature_adjustment",
+      "task": "Explain the change needed before the room survey begins.",
+      "fact_cycle": 2,
+      "required_span": "WARNING: thermocouple C2 needs a negative 1.7 C offset before ambient measurements are logged."
+    },
+    {
+      "name": "international_refund_route",
+      "task": "Summarize the destination selected for cross-border reversals.",
+      "fact_cycle": 3,
+      "required_span": "Decision: international refunds go to reserve R4 rather than daily settlement."
+    },
+    {
+      "name": "trial_export_path",
+      "task": "Where should the trial data package be written?",
+      "fact_cycle": 0,
+      "required_span": "Path: archive/clients/{id}/staging; exclude the live profile."
+    },
+    {
+      "name": "timezone_precedence",
+      "task": "Which precedence rule was agreed for the release check?",
+      "fact_cycle": 2,
+      "required_span": "Regression note: the configured calendar zone overrides the operating system default."
+    }
+  ]
+}

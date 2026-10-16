@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "scope": "synthetic selector CPU comparison; no provider calls",
+  "baseline_ref": "3bc15e3",
+  "baseline_core_sha256": "010b7dda0336362d0334fc7054c2957ce40bbee86a07647f83ff8e01b2165f18",
+  "candidate_core_sha256": "6c856b8bebc61c9ade96c1f6bc51438dffa1c9b9cc86f9ec0d12872619ea3003",
+  "raw_estimated_tokens": 991386,
+  "target_estimated_tokens": 24576,
+  "cycles": 72,
+  "lines_per_tool_result": 1000,
+  "repeats": 3,
+  "counter": "ceil(len(json.dumps(messages, ensure_ascii=False))/4)",
+  "selector_process_cpu_seconds": {
+    "baseline": [
+      1.03125,
+      1.0625,
+      1.046875
+    ],
+    "candidate": [
+      1.109375,
+      0.984375,
+      1.0
+    ],
+    "baseline_median": 1.046875,
+    "candidate_median": 1.0,
+    "candidate_change_percent": -4.477611940298509
+  }
+}

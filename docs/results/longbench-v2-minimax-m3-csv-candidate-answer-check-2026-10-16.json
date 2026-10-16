@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "evaluation": "post-hoc single-case MiniMax M3 correctness check; not part of frozen benchmark",
+  "case_id": "66f2a46d821e116aacb2a41a",
+  "model": "minimax/minimax-m3",
+  "provider_route": "OpenRouter sort throughput, fallbacks enabled",
+  "manifest_sha256": "566de441741e6ea9d7ff9c2a3bdb24e79d9ec250cae29ac39b135f961594052f",
+  "sift_core_sha256": "eed3abfcd20b7a2db5517efddd83854af72d9fce31e7fff847380ecbd2af7d5a",
+  "generation_seed": 20261023,
+  "results": [
+    {
+      "arm": "sift",
+      "target_tokens": 65536,
+      "estimated_prompt_tokens": 65381,
+      "expected": "B",
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 407264,
+        "forwarded_tokens": 65381,
+        "omitted_estimated_tokens": 341883,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 259,
+        "method": "query_aware_extract"
+      },
+      "result": {
+        "http_status": 200,
+        "normal": true,
+        "finish_reason": "stop",
+        "answer": "D",
+        "choice": "D",
+        "valid_structured_choice": true,
+        "ttft_ms": 2135.3365001268685,
+        "end_to_end_ms": 2155.2869000006467,
+        "completion_tokens_per_second": 100.24861720334222,
+        "provider": "Minimax",
+        "usage": {
+          "prompt_tokens": 65381,
+          "completion_tokens": 2,
+          "total_tokens": 65383,
+          "cost": 0,
+          "is_byok": true,
+          "prompt_tokens_details": {
+            "cached_tokens": 65380,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0039255,
+            "upstream_inference_prompt_cost": 0.0039231,
+            "upstream_inference_completions_cost": 2.4e-06
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        }
+      }
+    },
+    {
+      "arm": "sift",
+      "target_tokens": 16384,
+      "estimated_prompt_tokens": 16105,
+      "expected": "B",
+      "selector_audit": {
+        "compacted": true,
+        "input_tokens": 407264,
+        "forwarded_tokens": 16105,
+        "omitted_estimated_tokens": 391159,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 66,
+        "method": "query_aware_extract"
+      },
+      "result": {
+        "http_status": 200,
+        "normal": true,
+        "finish_reason": "stop",
+        "answer": "B",
+        "choice": "B",
+        "valid_structured_choice": true,
+        "ttft_ms": 2369.149500038475,
+        "end_to_end_ms": 2624.5019000489265,
+        "completion_tokens_per_second": 7.832313304743324,
+        "provider": "Minimax",
+        "usage": {
+          "prompt_tokens": 16105,
+          "completion_tokens": 2,
+          "total_tokens": 16107,
+          "cost": 0,
+          "is_byok": true,
+          "prompt_tokens_details": {
+            "cached_tokens": 16104,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.00096894,
+            "upstream_inference_prompt_cost": 0.00096654,
+            "upstream_inference_completions_cost": 2.4e-06
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        }
+      }
+    },
+    {
+      "arm": "full",
+      "target_tokens": null,
+      "estimated_prompt_tokens": 407264,
+      "expected": "B",
+      "selector_audit": null,
+      "result": {
+        "http_status": 200,
+        "normal": true,
+        "finish_reason": "stop",
+        "answer": "D",
+        "choice": "D",
+        "valid_structured_choice": true,
+        "ttft_ms": 4676.116100046784,
+        "end_to_end_ms": 4710.741200018674,
+        "completion_tokens_per_second": 28.88078303923529,
+        "provider": "Minimax",
+        "usage": {
+          "prompt_tokens": 407264,
+          "completion_tokens": 1,
+          "total_tokens": 407265,
+          "cost": 0,
+          "is_byok": true,
+          "prompt_tokens_details": {
+            "cached_tokens": 407249,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.02444064,
+            "upstream_inference_prompt_cost": 0.02443944,
+            "upstream_inference_completions_cost": 1.2e-06
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        }
+      }
+    }
+  ]
+}

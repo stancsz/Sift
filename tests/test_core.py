@@ -1,5 +1,7 @@
 import copy
+import csv
 import json
+from io import StringIO
 import unittest
 
 from sift import CompactionError, compact_messages
@@ -218,6 +220,96 @@ class CompactionTests(unittest.TestCase):
         self.assertEqual(a, b)
         self.assertEqual(source, before)
         self.assertIn("item 317", a.messages[0]["content"])
+
+    def test_csv_rows_stay_atomic_and_keep_the_column_header(self):
+        stream = StringIO(newline="")
+        writer = csv.writer(stream, lineterminator="\n")
+        writer.writerow(["review_id", "text"])
+        for index in range(40):
+            writer.writerow([f"REV-{index}", "routine update " * 40])
+        target_text = 'Customer reported "crate, not pallet".\nReference XQ-882 is missing.'
+        writer.writerow(["REV-204", target_text])
+        content = stream.getvalue()
+        target_lines = content.splitlines(keepends=True)
+        target_record = target_lines[-2] + target_lines[-1]
+        messages = [
+            message("user", content),
+            message("assistant", "CSV received."),
+            message("user", "What does review REV-204 say about reference XQ-882?"),
+        ]
+
+        result = compact_messages(messages, estimate, target=900)
+
+        self.assertLessEqual(result.audit["forwarded_tokens"], 900)
+        excerpts = [
+            json.loads(line.split("] ", 1)[1])
+            for line in result.messages[0]["content"].splitlines()
+            if line.startswith("[message ")
+        ]
+        joined = "\n".join(excerpts)
+        self.assertIn("review_id,text\n", joined)
+        self.assertEqual(joined.count("review_id,text\n"), 1)
+        self.assertIn(target_record, joined)
+        self.assertTrue(any("XQ-882" in excerpt for excerpt in excerpts))
+
+    def test_quoted_csv_anchor_preserves_all_matching_distinct_rows_under_budget(self):
+        stream = StringIO(newline="")
+        writer = csv.writer(stream, lineterminator="\n")
+        writer.writerow(["review_id", "text"])
+        for index in range(600):
+            writer.writerow([f"NOISE-{index}", f"routine service note {index} with no cuisine keyword"])
+        unique_comments = [
+            f"This mexican review has distinct evidence marker {index:02d}."
+            for index in range(41)
+        ]
+        for index, comment in enumerate(unique_comments + unique_comments[:4]):
+            writer.writerow([f"MATCH-{index}", comment])
+        messages = [
+            message("user", "<text>\n" + stream.getvalue() + "</text>"),
+            message("assistant", "Dataset received."),
+            message("user", 'How many different comments mention "mexican"? Count identical text once.'),
+        ]
+
+        result = compact_messages(messages, estimate, target=5_000)
+
+        self.assertTrue(result.audit["compacted"])
+        self.assertLessEqual(result.audit["forwarded_tokens"], 5_000)
+        summary = "\n".join(
+            json.loads(line.split("] ", 1)[1])
+            for item in result.messages
+            if item.get("role") == "user" and isinstance(item.get("content"), str)
+            for line in item["content"].splitlines()
+            if line.startswith("[message ")
+        )
+        self.assertTrue(all(comment in summary for comment in unique_comments))
+
+    def test_non_csv_text_falls_back_to_bounded_pieces(self):
+        from sift.core import _pieces
+
+        text = "not a table\n" + "ordinary prose, with commas " * 40
+        pieces = list(_pieces(text))
+
+        self.assertTrue(pieces)
+        self.assertFalse(any(piece.structured for piece in pieces))
+        self.assertTrue(all(len(piece.text) <= 360 for piece in pieces))
+
+    def test_inconsistent_csv_rows_fall_back_without_partial_table_mode(self):
+        from sift.core import _pieces
+
+        text = "id,text\n1,valid row\n2,too,many,columns\n"
+        pieces = list(_pieces(text))
+
+        self.assertTrue(pieces)
+        self.assertFalse(any(piece.structured for piece in pieces))
+
+    def test_csv_splitline_separators_obey_the_physical_line_bound(self):
+        from sift.core import _pieces
+
+        text = "id,text\n" + ("1,short\v" * 100_001)
+        pieces = list(_pieces(text))
+
+        self.assertTrue(pieces)
+        self.assertFalse(any(piece.structured for piece in pieces))
 
 
 if __name__ == "__main__":

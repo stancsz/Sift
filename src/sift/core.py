@@ -9,6 +9,7 @@ from __future__ import annotations
 from collections import Counter, deque
 from copy import deepcopy
 from dataclasses import dataclass
+import csv
 import hashlib
 import heapq
 import json
@@ -31,6 +32,10 @@ _SIGNALS = re.compile(
     r"must|todo|fix|regression|warning|path|file|test)\b",
     re.IGNORECASE,
 )
+_COVERAGE_SIGNALS = re.compile(
+    r"\b(retain(?:ed|s|ing)?|retention|shred(?:s|ded|ding)?)\b",
+    re.IGNORECASE,
+)
 _TEST_FAILURE = re.compile(
     r"^\s*(?:tool_result\s+\S+\s+)?(?P<failure>(?:ERROR|FAIL|FAILED)\s*:?\s+"
     r"(?:test_[A-Za-z0-9_]+|\S+::test_[A-Za-z0-9_]+))",
@@ -38,8 +43,15 @@ _TEST_FAILURE = re.compile(
 )
 _PYTHON_BLOCK = re.compile(r"^[ \t]*(?:async[ \t]+def|def|class)[ \t]+[A-Za-z_]\w*")
 _MAX_PIECE_CHARS = 360
+_MAX_CSV_RECORD_CHARS = 8_192
+_MAX_CSV_ROWS = 20_000
+_MAX_CSV_SOURCE_CHARS = 8_000_000
+_MAX_CSV_PHYSICAL_LINES = 100_000
+_CSV_LINE_BREAKS = ("\n", "\r", "\v", "\f", "\x1c", "\x1d", "\x1e",
+                    "\x85", "\u2028", "\u2029")
 _MAX_CANDIDATES = 512
 _DEDUP_WINDOW = 65_536
+_QUOTED_QUERY_BONUS = 500
 _MESSAGE_KEYS = frozenset({
     "role", "content", "name", "tool_calls", "tool_call_id", "cache_control",
 })
@@ -67,6 +79,7 @@ class _Candidate:
     text: str
     score: float
     center: str = ""
+    prefix: str = ""
 
 
 @dataclass(frozen=True)
@@ -74,6 +87,8 @@ class _Piece:
     text: str
     start: int
     end: int
+    prefix: str = ""
+    structured: bool = False
 
 
 def _count(counter: TokenCounter, messages: list[dict[str, Any]]) -> int:
@@ -165,6 +180,75 @@ def _record_line(text: str) -> bool:
         return False
 
 
+def _csv_pieces(text: str) -> list[_Piece] | None:
+    """Keep modest, consistently shaped CSV data rows atomic with their header."""
+    if len(text) > _MAX_CSV_SOURCE_CHARS:
+        return None
+    start_line = 0
+    header = None
+    cursor = 0
+    for line_index in range(8):
+        if cursor >= len(text):
+            break
+        newline = text.find("\n", cursor)
+        end = len(text) if newline < 0 else newline + 1
+        line = text[cursor:end]
+        cursor = end
+        if "," not in line:
+            continue
+        try:
+            candidate = next(csv.reader([line], strict=True))
+        except (csv.Error, StopIteration):
+            continue
+        normalized = [field.strip().casefold() for field in candidate]
+        nonempty = [field for field in normalized if field]
+        if (len(nonempty) < 2 or len(set(nonempty)) != len(nonempty)
+                or any(len(field) > 64 or not re.fullmatch(r"[\w.-]+", field)
+                       for field in nonempty)):
+            continue
+        start_line = line_index
+        header = candidate
+        break
+    if header is None:
+        return None
+
+    physical_breaks = sum(text.count(separator) for separator in _CSV_LINE_BREAKS)
+    physical_breaks -= text.count("\r\n")  # splitlines treats CRLF as one boundary
+    if physical_breaks > _MAX_CSV_PHYSICAL_LINES:
+        return None
+
+    lines = text.splitlines(keepends=True)
+    reader = csv.reader(lines[start_line:], strict=True)
+    try:
+        if next(reader) != header:
+            return None
+        header_end_line = start_line + reader.line_num
+        header_text = "".join(lines[:header_end_line])
+        if len(header_text) > _MAX_CSV_RECORD_CHARS:
+            return None
+        pieces: list[_Piece] = []
+        previous_end_line = header_end_line
+        offset = len(header_text)
+        saw_data = False
+        for row in reader:
+            end_line = start_line + reader.line_num
+            if row == ["</text>"] and end_line == len(lines):
+                return pieces if saw_data else None
+            raw_record = "".join(lines[previous_end_line:end_line])
+            previous_end_line = end_line
+            if len(row) != len(header) or len(raw_record) > _MAX_CSV_RECORD_CHARS:
+                return None
+            saw_data = True
+            pieces.append(_Piece(raw_record, offset, offset + len(raw_record),
+                                 prefix=header_text, structured=True))
+            offset += len(raw_record)
+            if len(pieces) > _MAX_CSV_ROWS:
+                return None
+        return pieces if saw_data else None
+    except (csv.Error, StopIteration):
+        return None
+
+
 def _python_block_end(source: str, piece: _Piece) -> int:
     """Include a bounded indented Python block when its declaration is selected."""
     if not _PYTHON_BLOCK.match(piece.text):
@@ -196,6 +280,10 @@ def _python_block_end(source: str, piece: _Piece) -> int:
 
 def _pieces(text: str):
     """Yield bounded source slices without building a list of all lines."""
+    csv_rows = _csv_pieces(text)
+    if csv_rows is not None:
+        yield from csv_rows
+        return
     offset = 0
     while offset < len(text):
         newline = text.find("\n", offset)
@@ -205,7 +293,7 @@ def _pieces(text: str):
         # JSONL records carry their own field context. Keep a bounded record
         # exact rather than inserting newlines inside its strings and keys.
         if end - offset <= 2_048 and _record_line(text[offset:end]):
-            yield _Piece(text[offset:end], offset, end)
+            yield _Piece(text[offset:end], offset, end, structured=True)
             offset = len(text) if newline < 0 else newline + 1
             continue
         cursor = offset
@@ -229,6 +317,12 @@ def _query_terms(query: str) -> set[str]:
             if term.lower() not in _STOPWORDS}
 
 
+def _quoted_query_terms(query: str) -> set[str]:
+    """Treat terms explicitly quoted by the user as strong retrieval anchors."""
+    quoted = re.findall(r"['\"]([^'\"]{1,160})['\"]", query)
+    return {term.lower() for phrase in quoted for term in _TERMS.findall(phrase)}
+
+
 def _term_frequencies(old: list[dict[str, Any]], terms: set[str]) -> tuple[Counter[str], int]:
     frequencies: Counter[str] = Counter()
     total = 0
@@ -243,12 +337,16 @@ def _term_frequencies(old: list[dict[str, Any]], terms: set[str]) -> tuple[Count
 
 def _candidates(old: list[dict[str, Any]], terms: set[str],
                 frequencies: Counter[str], total: int,
-                bridge_ids: tuple[str, ...] = ()) -> list[_Candidate]:
+                bridge_ids: tuple[str, ...] = (), *,
+                quoted_terms: set[str] | None = None,
+                with_coverage: bool = False
+                ) -> list[_Candidate] | tuple[list[_Candidate], _Candidate | None]:
     bridge_match = (re.compile(r"\b(?:" + "|".join(map(re.escape, bridge_ids)) + r")\b", re.IGNORECASE)
                     if bridge_ids else None)
     heap: list[tuple[float, int, _Candidate]] = []
     seen: set[bytes] = set()
     recent_hashes: deque[bytes] = deque()
+    coverage_best: tuple[float, int, _Candidate] | None = None
     serial = 0
     for message_index, message in enumerate(old):
         role = str(message.get("role", "unknown"))
@@ -273,9 +371,16 @@ def _candidates(old: list[dict[str, Any]], terms: set[str],
             matching = terms.intersection(term.lower() for term in _TERMS.findall(piece.text))
             # Repeated field names and routine log vocabulary should not
             # outscore rarer evidence merely by matching more common words.
-            score = sum(100 * math.log1p(total / (1 + frequencies[term]))
-                        for term in matching)
-            score += 8 * bool(_SIGNALS.search(piece.text))
+            weights = [100 * math.log1p(total / (1 + frequencies[term]))
+                       for term in matching]
+            # In a structured table, matching one rare query term is often the
+            # row-selection predicate. Summing every overlap lets unrelated
+            # rows with several common words crowd out that complete row set.
+            score = (max(weights) if piece.prefix and weights else sum(weights))
+            if piece.prefix and quoted_terms and matching.intersection(quoted_terms):
+                score += _QUOTED_QUERY_BONUS
+            has_signal = bool(_SIGNALS.search(piece.text))
+            score += 8 * has_signal
             if bridge_match is not None and bridge_match.search(piece.text):
                 score += 120
             score += 2 * (message_index + 1) / max(1, len(old))
@@ -285,15 +390,29 @@ def _candidates(old: list[dict[str, Any]], terms: set[str],
             # Rank the center only, so surrounding noise does not win selection.
             # Adjacent structured records are independent evidence. Charging
             # their neighbors repeatedly wastes budget and obscures citations.
-            structured = _record_line(piece.text)
+            structured = piece.structured or _record_line(piece.text)
             before = (previous if previous and piece.start - previous.end <= 2 and
                       (not structured or not _record_line(previous.text)) else piece)
             after = (following if following and following.start - piece.end <= 2 and
                      (not structured or not _record_line(following.text)) else piece)
             start, end = before.start, max(after.end, _python_block_end(source, piece))
             span = source[start:end]
-            candidate = _Candidate(message_index, part_index, role, span, score,
-                                   piece.text)
+            candidate_text = piece.text if piece.prefix else (
+                piece.prefix + piece.text if piece.structured else span)
+            candidate = _Candidate(message_index, part_index, role, candidate_text,
+                                   score, piece.text, piece.prefix)
+            coverage_signals = _SIGNALS.findall(piece.text) + _COVERAGE_SIGNALS.findall(piece.text)
+            independent_signal = any(match.casefold() not in terms for match in coverage_signals)
+            if with_coverage and role in {"tool", "user"} and independent_signal:
+                coverage_score = 8 + 2 * (message_index + 1) / max(1, len(old))
+                if serial == 0:
+                    coverage_score += 3
+                coverage_item = _Candidate(message_index, part_index, role,
+                                           candidate_text, coverage_score,
+                                           piece.text, piece.prefix)
+                coverage_rank = (coverage_score, serial, coverage_item)
+                if coverage_best is None or coverage_rank[:2] > coverage_best[:2]:
+                    coverage_best = coverage_rank
             item = (score, serial, candidate)
             if len(heap) < _MAX_CANDIDATES:
                 heapq.heappush(heap, item)
@@ -305,16 +424,27 @@ def _candidates(old: list[dict[str, Any]], terms: set[str],
             part_index += 1
     selected = [item[2] for item in heap]
     selected.sort(key=lambda item: (-item.score, item.message_index, item.part_index))
+    if with_coverage:
+        return selected, coverage_best[2] if coverage_best is not None else None
     return selected
 
 
-def _linked_candidates(old: list[dict[str, Any]], query: str) -> list[_Candidate]:
+def _linked_candidates(
+    old: list[dict[str, Any]], query: str, *, with_coverage: bool = False,
+) -> list[_Candidate] | tuple[list[_Candidate], _Candidate | None]:
     """Reserve a few excerpts joined by IDs in high-ranked source evidence."""
     terms = _query_terms(query)
+    quoted_terms = _quoted_query_terms(query)
     frequencies, total = _term_frequencies(old, terms)
-    primary = _candidates(old, terms, frequencies, total)
+    primary_result = _candidates(old, terms, frequencies, total,
+                                 quoted_terms=quoted_terms,
+                                 with_coverage=with_coverage)
+    if with_coverage:
+        primary, coverage = primary_result
+    else:
+        primary, coverage = primary_result, None
     if not primary:
-        return primary
+        return (primary, coverage) if with_coverage else primary
     bridge_ids: list[str] = []
     query_ids = {identifier.lower() for identifier in _LINK_IDS.findall(query)}
     bridge_seen: set[str] = set()
@@ -329,8 +459,9 @@ def _linked_candidates(old: list[dict[str, Any]], query: str) -> list[_Candidate
         if len(bridge_ids) == 4:
             break
     if not bridge_ids:
-        return primary
-    second_pass = _candidates(old, terms, frequencies, total, tuple(bridge_ids))
+        return (primary, coverage) if with_coverage else primary
+    second_pass = _candidates(old, terms, frequencies, total, tuple(bridge_ids),
+                              quoted_terms=quoted_terms)
     matched = re.compile(r"\b(?:" + "|".join(map(re.escape, bridge_ids)) + r")\b", re.IGNORECASE)
     output: list[_Candidate] = []
     seen: set[tuple[int, int]] = set()
@@ -352,7 +483,7 @@ def _linked_candidates(old: list[dict[str, Any]], query: str) -> list[_Candidate
         add(candidate)
         if len(output) == _MAX_CANDIDATES:
             break
-    return output
+    return (output, coverage) if with_coverage else output
 
 
 def _diagnostic_candidates(old: list[dict[str, Any]], offset: int,
@@ -401,7 +532,14 @@ def _summary(candidates: list[_Candidate]) -> dict[str, str]:
     )
     selected = sorted(candidates, key=lambda item: (item.message_index, item.part_index))
     lines = [header]
+    emitted_prefixes: set[tuple[int, str]] = set()
     for item in selected:
+        if item.prefix:
+            key = (item.message_index, item.prefix)
+            if key not in emitted_prefixes:
+                lines.append(f"[message {item.message_index} {item.role} schema] "
+                             + json.dumps(item.prefix, ensure_ascii=False))
+                emitted_prefixes.add(key)
         lines.append(f"[message {item.message_index} {item.role}] "
                      + json.dumps(item.text, ensure_ascii=False))
     return {"role": "user", "content": "\n".join(lines)}
@@ -490,7 +628,7 @@ def compact_messages(
         old_before = messages[instruction_end:latest_user]
         prior_options = [
             _Candidate(item.message_index + instruction_end, item.part_index,
-                       item.role, item.text, item.score, item.center)
+                       item.role, item.text, item.score, item.center, item.prefix)
             for item in _linked_candidates(old_before, task_query)
         ]
         task_prefix = messages[:instruction_end] + [messages[latest_user]]
@@ -537,16 +675,30 @@ def compact_messages(
             if baseline:
                 diagnostics = [item for item in diagnostics
                                if item.message_index != baseline[0].message_index]
+            epoch_candidates, coverage = _linked_candidates(
+                messages[start:end], task_query, with_coverage=True)
             task_options = [
                 _Candidate(item.message_index + start, item.part_index,
-                           item.role, item.text, item.score, item.center)
-                for item in _linked_candidates(messages[start:end], task_query)[:per_epoch]
+                           item.role, item.text, item.score, item.center, item.prefix)
+                for item in epoch_candidates[:per_epoch]
             ]
+            optional_limit = max(0, per_epoch - len(diagnostics))
+            # Preserve one older signal even when the current task query does
+            # not share its vocabulary. The fixed one-per-epoch reserve replaces
+            # the lowest-ranked optional excerpt, so it cannot grow the epoch
+            # allowance or change protected messages.
+            if coverage is not None:
+                coverage = _Candidate(coverage.message_index + start, coverage.part_index,
+                                      coverage.role, coverage.text, coverage.score,
+                                      coverage.center, coverage.prefix)
+                key = (coverage.message_index, coverage.part_index)
+                if not any((item.message_index, item.part_index) == key for item in task_options):
+                    task_options = task_options[:max(0, optional_limit - 1)] + [coverage]
             epochs.append((diagnostics + task_options)[:per_epoch])
         query = task_query + "\n" + _render(messages[-1])
         dynamic_options = _diagnostic_candidates(messages[epoch_start:tail_start], epoch_start) + [
             _Candidate(item.message_index + epoch_start, item.part_index,
-                       item.role, item.text, item.score, item.center)
+                       item.role, item.text, item.score, item.center, item.prefix)
             for item in _linked_candidates(messages[epoch_start:tail_start], query)
         ]
 

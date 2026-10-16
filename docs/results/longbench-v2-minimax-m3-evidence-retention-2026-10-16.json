@@ -4,9 +4,9 @@
   "model_context": "minimax/minimax-m3",
   "dataset_revision": "2b48e494f2c7a2f0af81aae178e05c7e1dde0fe9",
   "dataset_sha256": "15d61c22d92c96900b3c4948b6aeea218d3214b676a65df48e7b8555604c7fe2",
-  "manifest_sha256": "c947b4c2a61ffe05964318afb79457aa0355e7e589206a1cf4320339d369cd38",
-  "sift_core_sha256": "c37f84829cf75a38f410e4eebb219ebf99c27c89a5c0b62a0ca9b70c36265de7",
-  "method": "Exact full-text CSV comment containment and complete per-round contribution-vector containment; no paraphrase or answer correctness adjudication.",
+  "manifest_sha256": "7b3dd74ad96961006c4c7dee01c06f3ecd7cf161d11811c4d4f72b0b3ba874f1",
+  "sift_core_sha256": "efd224e19f96d86e0c4836fc1ff654ed9743db95b190365b88e9d06b2c035179",
+  "method": "Decode Sift's JSON-quoted excerpts; compare complete original CSV row alternatives for every exact unique comment and complete per-round contribution vectors. No paraphrase or answer correctness adjudication.",
   "cases": [
     {
       "case_id": "66f2a46d821e116aacb2a41a",
@@ -125,7 +125,7 @@
           "forwarded_tokens": 16184,
           "selected_excerpts": 72,
           "retention": {
-            "retained_evidence_items": 0,
+            "retained_evidence_items": 6,
             "required_evidence_items": 41,
             "complete_evidence_set": false
           }
@@ -137,7 +137,7 @@
           "forwarded_tokens": 24423,
           "selected_excerpts": 109,
           "retention": {
-            "retained_evidence_items": 0,
+            "retained_evidence_items": 7,
             "required_evidence_items": 41,
             "complete_evidence_set": false
           }
@@ -149,7 +149,7 @@
           "forwarded_tokens": 32498,
           "selected_excerpts": 149,
           "retention": {
-            "retained_evidence_items": 0,
+            "retained_evidence_items": 7,
             "required_evidence_items": 41,
             "complete_evidence_set": false
           }
@@ -161,7 +161,7 @@
           "forwarded_tokens": 48994,
           "selected_excerpts": 219,
           "retention": {
-            "retained_evidence_items": 0,
+            "retained_evidence_items": 8,
             "required_evidence_items": 41,
             "complete_evidence_set": false
           }
@@ -173,7 +173,7 @@
           "forwarded_tokens": 65403,
           "selected_excerpts": 291,
           "retention": {
-            "retained_evidence_items": 0,
+            "retained_evidence_items": 8,
             "required_evidence_items": 41,
             "complete_evidence_set": false
           }
@@ -222,7 +222,7 @@
           "forwarded_tokens": 7424,
           "selected_excerpts": 108,
           "retention": {
-            "retained_evidence_items": 16,
+            "retained_evidence_items": 17,
             "required_evidence_items": 20,
             "complete_evidence_set": false
           }
@@ -234,7 +234,7 @@
           "forwarded_tokens": 7424,
           "selected_excerpts": 108,
           "retention": {
-            "retained_evidence_items": 16,
+            "retained_evidence_items": 17,
             "required_evidence_items": 20,
             "complete_evidence_set": false
           }
@@ -246,7 +246,7 @@
           "forwarded_tokens": 7424,
           "selected_excerpts": 108,
           "retention": {
-            "retained_evidence_items": 16,
+            "retained_evidence_items": 17,
             "required_evidence_items": 20,
             "complete_evidence_set": false
           }
@@ -265,5 +265,6 @@
         }
       ]
     }
-  ]
+  ],
+  "selector_variant": "csv_retention_disabled_ablation"
 }
