@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "route": "OpenRouter minimax/minimax-m3 pinned to provider minimax; fallbacks disabled",
+  "checked_route_snapshot": "docs/evals/longbench-v2-minimax-stage1-v2-route-2026-10-17.json",
+  "canaries": [
+    {
+      "receipt": ".runs/minimax-json-schema-canary-2026-10-17.json",
+      "purpose": "non-scored MiniMax JSON Schema canary; synthetic multiple-choice prompt",
+      "request_sha256": "227f3c40713524c4ac6c9ba370ae26442a27a5e5089474e069fcff6f8960cfe8",
+      "request_model": "minimax/minimax-m3",
+      "response_format": {
+        "type": "json_schema",
+        "json_schema": {
+          "name": "longbench_choice",
+          "strict": true,
+          "schema": {
+            "type": "object",
+            "properties": {
+              "answer": {
+                "type": "string",
+                "enum": [
+                  "A",
+                  "B",
+                  "C",
+                  "D"
+                ]
+              }
+            },
+            "required": [
+              "answer"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "max_tokens": 128,
+      "http_status": 200,
+      "model": "minimax/minimax-m3",
+      "provider": "Minimax",
+      "finish_reason": "stop",
+      "content": "**B) 4**",
+      "prompt_tokens": 193,
+      "completion_tokens": 7,
+      "upstream_inference_cost_usd": 3.558e-05,
+      "strict_json_object_enforced": false
+    },
+    {
+      "receipt": ".runs/minimax-json-object-canary-2026-10-17.json",
+      "purpose": "non-scored MiniMax JSON object mode canary; synthetic multiple-choice prompt",
+      "request_sha256": "6f7ea0031f1d682f713ed1d355abf11115edca11ff702e83d068904391e83c4d",
+      "request_model": "minimax/minimax-m3",
+      "response_format": {
+        "type": "json_object"
+      },
+      "max_tokens": 128,
+      "http_status": 200,
+      "model": "minimax/minimax-m3",
+      "provider": "Minimax",
+      "finish_reason": "stop",
+      "content": "{\"answer\": \"B\"}",
+      "prompt_tokens": 215,
+      "completion_tokens": 7,
+      "upstream_inference_cost_usd": 4.218e-05,
+      "strict_json_object_enforced": false
+    },
+    {
+      "receipt": ".runs/minimax-longbench-json-object-real-prompt-canary-2026-10-17.json",
+      "purpose": "non-scored actual LongBench compacted-prompt JSON-object compatibility canary",
+      "job_id": "6724c4aabb02136c067d78a6:3:sift_relation_followup",
+      "case_id": "6724c4aabb02136c067d78a6",
+      "arm": "sift_relation_followup",
+      "request_sha256": "42c4bf57c1ff186c7ff56f4c67fcc6dd2f8b9cc39f582b9e3b055746c3382a2c",
+      "request_messages_sha256": "88765e2477c4e35325cbac286d3c8eeb5da483029da9b5fa10ff38b72706d3e9",
+      "request_format": {
+        "type": "json_object"
+      },
+      "max_tokens": 128,
+      "local_rendered_prompt_tokens": 7031,
+      "http_status": 200,
+      "model": "minimax/minimax-m3",
+      "provider": "Minimax",
+      "finish_reason": "stop",
+      "normal": true,
+      "content": "{\"answer\": \"A\"}",
+      "parsed_choice": "A",
+      "valid_structured_choice": true,
+      "prompt_tokens": 7031,
+      "completion_tokens": 6,
+      "cached_tokens": 6973,
+      "upstream_inference_cost_usd": 0.00044298,
+      "scored": false
+    }
+  ],
+  "accounting": {
+    "synthetic_json_schema_cost_usd": 3.558e-05,
+    "synthetic_json_object_cost_usd": 4.218e-05,
+    "actual_longbench_prompt_cost_usd": 0.00044298,
+    "total_upstream_reported_cost_usd": 0.00052074,
+    "note": "Provider-reported BYOK upstream costs; not invoice-verified."
+  }
+}
