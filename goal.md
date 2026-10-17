@@ -174,4 +174,42 @@ The corrected analysis implementation and gzip-aware historical integrity check 
 
 Actual task-scoped exposure after completion was `$16.20458423` of the user's `$20` aggregate cap, leaving `$3.79541577`; the Stage 2 run cost `$1.31586798`, below the `$4` run guard. OpenRouter upstream receipts are provider-reported cache-inclusive pass-through data, not an invoice. The saved key-usage counters are aggregate and unitemized.
 
-The implementation, raw compressed result, analysis, README, and evaluation-method update are prepared for a scoped commit and push. Keep unrelated working-tree changes unstaged.
+The implementation, raw compressed result, analysis, README, and evaluation-method update were committed and pushed in `705773a`. Keep unrelated working-tree changes unstaged.
+
+### 2026-10-17 post-publication continuation and council review
+
+Commit `705773a` is on `origin/main`; it publishes the 100-task MiniMax Stage 2 analysis, raw compressed report, corrected analyzer, tests, and README/evaluation updates. The focused suite passed (35 tests). The pushed sample satisfies the earlier minimum of 100 public tasks, but it is not the 503-task LongBench v2 suite.
+
+The first periodic Gemini-first / GPT-6.1 Sol council advised closing the accepted 100-task milestone and using any further authorized spend only for a pre-registered controlled retest; it cautioned that the current ledger leaves `$3.79541577`, and that broader full-suite dispatch cannot be justified from average cached cost. Sol rejected cache-hit share as a success requirement and requested a matched baseline/candidate comparison if a candidate is retested. Receipt usage: Gemini 3,313 tokens; Sol 987 tokens; packet: `.runs/longbench-active-goal-advisor-20261017.txt`.
+
+A source audit of the nine hybrid-majority losses against historical Full found all nine used default Sift. Three clearly omitted complete linked evidence needed for aggregation: a sibling-row table comparison, player utility totals, and bar-game player utility totals. A fourth game-count case plausibly omitted a complete per-player round array. One many-shot case omitted a relevant labeled example; the other losses were retained-evidence/model uncertainty or insufficient attribution evidence. This is evidence of a repeated failure mechanism, not proof of causal benchmark impact. The audit cites the frozen analysis, raw requests, and pinned dataset.
+
+A second periodic council favored prototyping opt-in complete-record/group retention offline before cache tuning. It recommended 100% required-record recall on the four structured cases and independent sibling/array fixtures, zero regression in retained baseline evidence, and no more than 10% token growth. A small paired MiniMax rerun is considered only if that offline gate passes and refreshed reservations fit both caps. It warned against treating all four task losses as causally established. Receipt usage: Gemini 3,220 tokens; Sol 889 tokens; packet: `.runs/longbench-active-goal-advisor-followup-20261017.txt`.
+
+Current next action: build a bounded research-only, default-off complete-group retention candidate in Sift and test it locally on the observed failure patterns plus held-out synthetic fixtures. Do not spend API budget or change README performance claims until this offline gate and independent code review pass. The remaining spend number is a dated ledger, not current dispatch authorization; refresh all route and budget evidence before any new calls.
+
+## Next OpenRouter MiniMax LongBench plan
+
+### Purpose and scope
+
+Use OpenRouter's MiniMax M3 route for the next controlled LongBench v2 experiment. The completed 100-task Stage 2 result is the current public training-split evidence; the next run is a targeted Sift improvement check, not a replacement score for the full benchmark. The full 503-task suite remains a separate future milestone and may be scheduled only after a fresh cost/runtime estimate and sufficient explicit budget are available. Do not infer its cost from average cache-hit cost or describe the current sample as full-suite coverage.
+
+### Work before any API dispatch
+
+1. Finish the opt-in, default-off complete-record/group retention prototype. Test it locally against the four audited structured-data cases and independently authored held-out table/array fixtures. Require complete recall of the records needed by each question, no loss of evidence the default selector retained, no more than 10% prompt-token growth on the fixtures, and safe behavior when a group cannot fit the configured target.
+2. Have an independent reviewer inspect the candidate, its tests, and the offline evidence. Reject the candidate if it needs benchmark-ID/answer hardcoding, changes default Sift behavior, or fails any offline gate. Do not use LongBench outcomes to tune and then call those same cases held-out evidence.
+3. Before planning a paid run, refresh OpenRouter's live route/model metadata, provider pin, prices, limits, credentials-presence status, aggregate key-usage snapshot, unsettled exposure, and task-scoped spend ledger. The prior ledger recorded `$16.20458423` of the `$20` aggregate authorization, but that figure is dated and is not live dispatch approval. Count in-flight reservations and use a conservative uncached reserve; if the whole frozen run cannot fit beneath both the task cap and per-run guard, do not dispatch any of it.
+
+### Proposed matched pilot, if the gates and budget allow
+
+- Route every request through OpenRouter to `minimax/minimax-m3`, pinned to provider `minimax`, with provider fallbacks disabled. Confirm the returned provider/model per response.
+- Use four preselected structured-data LongBench v2 development tasks, three matched repeat seeds, and three arms: full context, unchanged default Sift, and the candidate Sift policy. This is 36 frozen requests. Randomize/interleave arm order within each task/repeat block, use one worker, and do not retry or substitute calls.
+- Freeze task IDs, original prompts, source hashes, candidate configuration, exact request bodies, generation settings, answer keys, analyzer version, and request hashes before dispatch. Keep the question, choices, and answer format unchanged across arms.
+- Save every request and response, including malformed or invalid answers, plus task/repeat/arm, provider/model, prompt and completion tokens, cache tokens, provider cost receipt, latency, preprocessing time, total pipeline time, selector audit, and scorer output. Invalid or truncated responses count as incorrect; do not repair or retry them.
+- Stop new dispatch on route drift, request/prompt-limit mismatch, receipt or usage inconsistency, transport integrity failure, or spend-guard breach. Preserve any complete partial artifact and account for already in-flight exposure.
+
+### Analysis and decision
+
+Score the published A–D answer exactly and report per-repeat and per-task outcomes, task-majority results, paired candidate/default/full-context comparisons, invalid answers, and the retained-record evidence audit. Report provider prompt-token reduction, cache-inclusive upstream-reported pass-through cost, reconstructed uncached cost, preprocessing time, model latency, and end-to-end runtime separately. Show the cache accounting beside cost; do not label provider-reported pass-through as an invoice or claim a universal saving from a small targeted sample.
+
+An independent analysis review is required before using the pilot to change Sift or publish a claim. A candidate that improves the targeted tasks without regression may justify a broader, separately budgeted validation. It does not establish a LongBench-wide gain. Any later 100-task or full-suite comparison must freeze its sample and scoring in advance, use an adequately matched baseline, retain all attempts, and pass a fresh route/budget review. Update the README only with reviewed results and their sample, route, cache, and timing limits, then commit and push the scoped changes.
