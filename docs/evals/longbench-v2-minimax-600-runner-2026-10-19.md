@@ -40,10 +40,19 @@ an HTTP status, response ID, or usage receipt. Its token outcome is unknown and
 is not counted as zero. The original report is
 `.runs/longbench-v2-minimax-600-run.json`.
 
-Among the completed responses, Full scored 18/44 scorable responses (40.9%
-response accuracy; 41.1% equal-task-weighted across 15 tasks). Sift scored
-12/42 (28.6%; 26.7% equal-task-weighted across 15 tasks). These are incomplete,
-exposed-sample diagnostics, not a LongBench comparison result.
+The first continuation resumed the same frozen schedule, successfully retried
+job 89, then stopped at job 198 (`672494e5bb02136c067d7697:full:2`) after a
+second `ConnectionError` with no HTTP response or provider usage receipt. The
+continuation report is `.runs/longbench-v2-minimax-600-continuation.json`.
+Combined status is **200 attempts, 198 unique scheduled jobs completed**. The
+two network-failed attempts (job 89's original attempt and job 198) have unknown
+token usage. Across 198 usage receipts, MiniMax reported **11,290,863 prompt +
+297 completion = 11,291,160 tokens**.
+
+Among completed responses, Full scored 37/97 scorable responses (38.1% response
+accuracy; 37.9% equal-task-weighted across 33 tasks). Sift scored 26/97 (26.8%;
+26.3% equal-task-weighted across 33 tasks). This is an incomplete, exposed-sample
+diagnostic, not a LongBench comparison result.
 
 Continuation explicitly retries only the saved unknown SSL attempt. It checks
 the exact saved prefix against schedule hashes, row identities and request body
