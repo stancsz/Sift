@@ -481,3 +481,22 @@ The reproducible report is [`docs/evals/longbench-v2-candidate-subset-retrospect
 The OpenRouter endpoint metadata had also been refreshed in an earlier check. That snapshot reported `minimax/minimax-m3-20260531` (`minimax/fp8`), 524,288 maximum prompt tokens, $0.30/M input, $1.20/M output, and $0.06/M cache-read pricing. Later authenticated endpoint responses omitted the cache-read field, while MiniMax's current official pricing page lists $0.06/M for standard M3 cache reads up to 512K input; the study reserve still uses uncached input pricing. Answer-blind local fit yields a modeled 455-task pool: 344 historically screened prompts at or below 150K plus 111 above 150K through the endpoint limit; 48 Full prompts exceed the endpoint limit and 31 default-Sift prompts fail closed. Historical pinned no-fallback receipts verify local/provider token equality only through 150K, so the 111-task extension is conditional on a separate in-run route and usage canary. The current 344-task study remains the primary plan; do not extend to 455 or use the older 16-token output cap. The current schedule uses a 64-token output cap and its $41.86563525 reserve is dated planning arithmetic, not a quote or authorization.
 
 For a later extension, freeze the additional 111 IDs and exact requests separately, then run a sufficiently funded pinned no-fallback canary above 150K and verify provider acceptance plus exact usage before expanding. Stop on mismatch. The existing $20/$4 authorization is exhausted and does not cover the current 344-task plan. No further paid inference may be dispatched without fresh route/account/in-flight reconciliation and explicit user approval for the entire selected run reserve. If no new budget is authorized, limit work to reproducible offline audits and do not update README quality/savings claims.
+# LongBench v2 remaining work — 2026-10-17
+
+## Latest checkpoint
+
+The frozen MiniMax M3 schedule contains all 503 dataset questions and 1,006 Full/Sift slots at one repeat. The latest saved checkpoint records 923 completed jobs, four attempts with unknown usage, three runtime context-limit rejections, and 446 matched scoreable questions. It is not a complete suite. See [`docs/results/longbench-v2-minimax-m3-fullsuite-progress-2026-10-17.md`](docs/results/longbench-v2-minimax-m3-fullsuite-progress-2026-10-17.md) and [`handoff.md`](handoff.md).
+
+Interim evidence on those 446 matched answers: Full scored 198/446 (44.4%) and Sift scored 193/446 (43.3%); Sift used 75.8% fewer provider prompt tokens and showed 76.8% lower provider-reported upstream inference cost. These are one-repeat, incomplete-schedule results with implicit caching and four unknown-usage attempts. They do not establish quality parity, uncached dollar savings, or end-to-end speedup. Keep README claims provisional pending full completion and independent review.
+
+## Remaining work
+
+1. Reduce repeated resume preflight cost by caching prepared request data keyed to every frozen source/configuration hash; verify request body hashes exactly against reconstruction before trusting cache entries.
+2. Independently review the cache implementation and run offline equivalence checks. No paid requests during this step.
+3. Reconcile the four unknown attempts with provider billing if receipts become available; retain them as unknown otherwise. Recheck account budget, provider route, context cap, price metadata, and in-flight requests before any resume.
+4. Resume the exact frozen schedule and finish all eligible jobs with existing model, scoring, retries, and stop rules. Preserve each response and receipt. Keep the 79 preflight-ineligible slots and three runtime context-limit rejections visible as exclusions.
+5. Create the final paired quality, token, cache, cost, preprocessing, latency, runtime, and coverage report. Clearly distinguish receipt totals from unknown usage and provider-reported upstream costs from invoices.
+6. Obtain an independent raw-receipt and analysis audit. Update README only with claims supported by the completed, reviewed evidence and explain its one-repeat limitation.
+
+Qwen 27B service is stopped to free VRAM and system RAM. The user requested the goal be stopped gracefully after this handoff; resume only when asked.
+
