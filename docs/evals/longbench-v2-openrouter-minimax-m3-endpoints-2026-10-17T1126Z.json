@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "source": "Sanitized authenticated OpenRouter endpoint metadata response",
+  "checked_utc": "2026-10-17T11:26:16Z",
+  "requested_model": "minimax/minimax-m3",
+  "model_id": "minimax/minimax-m3",
+  "provider_name": "Minimax",
+  "tag": "minimax/fp8",
+  "context_length": 524288,
+  "max_prompt_tokens": 524288,
+  "max_completion_tokens": 512000,
+  "pricing": {
+    "prompt": "0.0000003",
+    "completion": "0.0000012",
+    "cache_read": null
+  },
+  "preflight": {
+    "endpoints_endpoint_response": "ok",
+    "credits_endpoint_response": "ok; diagnostics only",
+    "key_endpoint_response": "ok",
+    "is_management_key": false,
+    "include_byok_in_limit": false,
+    "byok_usage_present": true
+  },
+  "sanitization": "Credentials, account identifiers, exact balances, usage amounts, and request headers omitted. OpenRouter credits are diagnostics only for MiniMax BYOK billing."
+}

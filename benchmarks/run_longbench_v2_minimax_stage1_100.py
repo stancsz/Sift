@@ -36,6 +36,7 @@ from sift import CompactionError, compact_messages  # noqa: E402
 
 MANIFEST = ROOT / "docs/evals/longbench-v2-minimax-stage1-100-manifest-2026-10-18.json"
 MANIFEST_344 = ROOT / "docs/evals/longbench-v2-minimax-344-manifest-2026-10-17.json"
+MANIFEST_344_LIVE_ROUTE = ROOT / "docs/evals/longbench-v2-minimax-344-manifest-live-route-2026-10-17.json"
 PARENT = ROOT / "docs/evals/longbench-v2-minimax-344-manifest-2026-10-17.json"
 HISTORICAL = ROOT / "docs/evals/longbench-v2-minimax-m3-100-manifest-2026-10-16.json"
 DATASET_DEFAULT = ROOT / ".runs/longbench-v2-data-pinned.json"
@@ -57,6 +58,9 @@ PROJECTION = 3.25
 PROVIDER_LIMIT = 524_288
 MANIFEST_SHA256_STAGE1 = "52a7515d9bec715ccc17c85295b2e111d97cb2bffc00bd71fc9ed933cb22fce2"
 MANIFEST_SHA256_344 = "6364b4a21e5775fb4cd574e501286db64320cd4cde2b083250b07ec13ea6abc0"
+MANIFEST_SHA256_344_LIVE_ROUTE = "cb06ebf56023b75227eac849bdfda3b4396e5b3463e795bad90a7b2a411af5c1"
+ROUTE_SNAPSHOT_HISTORICAL = ROOT / "docs/evals/longbench-v2-minimax-stage2-route-2026-10-17.json"
+ROUTE_SNAPSHOT_LIVE = ROOT / "docs/evals/longbench-v2-openrouter-minimax-m3-endpoints-2026-10-17T1126Z.json"
 
 
 class StageError(RuntimeError):
@@ -87,7 +91,15 @@ def verify_provenance(manifest: dict, manifest_path: Path, dataset: Path,
                       tokenizer_path: Path, template_path: Path) -> tuple[str, dict]:
     is_stage1 = "selection" in manifest
     mode = "stage1_100" if is_stage1 else "primary_344"
-    expected_manifest_hash = MANIFEST_SHA256_STAGE1 if is_stage1 else MANIFEST_SHA256_344
+    resolved_manifest = manifest_path.resolve()
+    accepted_manifests = {
+        MANIFEST.resolve(): MANIFEST_SHA256_STAGE1,
+        MANIFEST_344.resolve(): MANIFEST_SHA256_344,
+        MANIFEST_344_LIVE_ROUTE.resolve(): MANIFEST_SHA256_344_LIVE_ROUTE,
+    }
+    expected_manifest_hash = accepted_manifests.get(resolved_manifest)
+    if expected_manifest_hash is None:
+        raise StageError("Only a reviewed frozen Stage 1 or 344-task manifest is accepted")
     if file_sha256(manifest_path) != expected_manifest_hash:
         raise StageError(f"Reviewed {mode} manifest hash mismatch")
     if manifest.get("dispatch_authorized") is not False:
@@ -125,8 +137,8 @@ def verify_provenance(manifest: dict, manifest_path: Path, dataset: Path,
         if set(by_id) != set(ids):
             raise StageError("Stage case metadata does not match selected ID set")
     else:
-        if manifest_path.resolve() != MANIFEST_344.resolve():
-            raise StageError("The 344-task mode accepts only the frozen primary manifest")
+        if manifest_path.resolve() not in {MANIFEST_344.resolve(), MANIFEST_344_LIVE_ROUTE.resolve()}:
+            raise StageError("The 344-task mode accepts only a reviewed frozen primary manifest")
         ids = [case.get("id") for case in manifest.get("cases", [])]
         if len(ids) != 344 or len(set(ids)) != 344:
             raise StageError("Primary manifest must contain exactly 344 distinct cases")
@@ -163,12 +175,46 @@ def verify_provenance(manifest: dict, manifest_path: Path, dataset: Path,
         raise StageError("Dataset source hash mismatch")
     route = manifest.get("route_assumptions", {})
     route_path = safe_repo_path(route.get("snapshot_path", ""))
-    if (file_sha256(route_path) != route.get("snapshot_sha256")
-            or route_path.name != "longbench-v2-minimax-stage2-route-2026-10-17.json"):
+    expected_route_path = ROUTE_SNAPSHOT_LIVE if resolved_manifest == MANIFEST_344_LIVE_ROUTE.resolve() else ROUTE_SNAPSHOT_HISTORICAL
+    if (route_path.resolve() != expected_route_path.resolve()
+            or file_sha256(route_path) != route.get("snapshot_sha256")):
         raise StageError("Dated route snapshot provenance mismatch")
     if (route.get("requested_model") != MODEL or route.get("provider", "").casefold() != "minimax"
             or route.get("authorizes_dispatch") is not False):
         raise StageError("Route assumptions must identify MiniMax and explicitly deny dispatch authorization")
+    route_snapshot = json.loads(route_path.read_text(encoding="utf-8"))
+    snapshot_model = route_snapshot.get("model_id", route_snapshot.get("endpoint_model_id"))
+    if snapshot_model is not None and snapshot_model != route.get("endpoint_model_id"):
+        # The legacy endpoint snapshot distinguishes the requested model alias
+        # from its provider_endpoint string; the refreshed snapshot has a model_id.
+        provider_endpoint = route_snapshot.get("provider_endpoint", "")
+        if route.get("endpoint_model_id") not in provider_endpoint:
+            raise StageError("Route endpoint ID does not match its hashed snapshot")
+    if route_snapshot.get("requested_model") != MODEL:
+        raise StageError("Route snapshot requested model does not match the frozen request model")
+    snapshot_provider = route_snapshot.get("provider_name", route_snapshot.get("provider", ""))
+    if "minimax" not in str(snapshot_provider).casefold():
+        raise StageError("Route snapshot is not a MiniMax provider endpoint")
+    expected_tag = route.get("route_tag")
+    snapshot_tag = route_snapshot.get("tag", route_snapshot.get("endpoint_tag"))
+    if expected_tag and snapshot_tag not in {expected_tag, expected_tag.rsplit("/", 1)[-1]}:
+        raise StageError("Route provider tag does not match its hashed snapshot")
+    snapshot_pricing = route_snapshot.get("pricing")
+    snapshot_prompt = (snapshot_pricing or {}).get("prompt")
+    snapshot_completion = (snapshot_pricing or {}).get("completion")
+    if snapshot_prompt is None or snapshot_completion is None:
+        snapshot_pricing = route_snapshot.get("pricing_usd_per_token", {})
+        snapshot_prompt = snapshot_pricing.get("prompt")
+        snapshot_completion = snapshot_pricing.get("completion")
+        price_scale = 1_000_000
+    else:
+        price_scale = 1_000_000
+    try:
+        if (not math.isclose(float(snapshot_prompt) * price_scale, float(route["input_usd_per_million"]), rel_tol=0, abs_tol=1e-9)
+                or not math.isclose(float(snapshot_completion) * price_scale, float(route["output_usd_per_million"]), rel_tol=0, abs_tol=1e-9)):
+            raise StageError("Route snapshot prices do not match frozen reserve assumptions")
+    except (TypeError, ValueError, KeyError) as error:
+        raise StageError("Route snapshot prices are missing or malformed") from error
     protocol = manifest.get("protocol", {})
     expected = {
         "study_seed": STUDY_SEED, "arms": ["full", "sift"],
@@ -211,7 +257,7 @@ def build_jobs(manifest: dict, mode: str, dataset: Path, tokenizer_path: Path) -
     tokenizer = Tokenizer.from_file(str(tokenizer_path))
     metadata = {case["id"]: case for case in manifest["cases"]}
     cases = []
-    for case_id in ids:
+    for case_index, case_id in enumerate(ids, start=1):
         row, frozen = rows[case_id], metadata[case_id]
         if (row.get("answer") != frozen.get("answer_key")
                 or not isinstance(row.get("answer"), str)
@@ -231,14 +277,22 @@ def build_jobs(manifest: dict, mode: str, dataset: Path, tokenizer_path: Path) -
         frozen_sift_count = frozen.get("sift_local_prompt_tokens", frozen.get("sift_local_tokens"))
         if full_count != frozen_full_count:
             raise StageError(f"Full prompt token count mismatch: {case_id}")
+        def count_candidate(candidate: list[dict[str, str]]) -> int:
+            # compact_messages performs its own initial count. Reuse the exact
+            # count already used to validate this unchanged message list.
+            if candidate is messages:
+                return full_count
+            return count_prompt(tokenizer, candidate)
         try:
-            compacted = compact_messages(messages, lambda candidate: count_prompt(tokenizer, candidate),
+            compacted = compact_messages(messages, count_candidate,
                                          target=TARGET - SAFETY_MARGIN, raw_limit=1_000_000,
                                          protocol="openai")
         except CompactionError as error:
             raise StageError(f"Current Sift failed closed for selected case {case_id}: {error.code}") from error
         sift_messages = compacted.messages
-        sift_count = count_prompt(tokenizer, sift_messages)
+        sift_count = compacted.audit.get("forwarded_tokens")
+        if type(sift_count) is not int or sift_count < 0:
+            raise StageError(f"Sift did not return a valid forwarded-token count for {case_id}")
         if sift_count != frozen_sift_count:
             raise StageError(f"Sift prompt token count mismatch: {case_id}")
         sift_hash = frozen.get("sift_prompt_sha256")
@@ -251,6 +305,8 @@ def build_jobs(manifest: dict, mode: str, dataset: Path, tokenizer_path: Path) -
                       "messages": {"full": messages, "sift": sift_messages},
                       "prompt_hashes": {"full": insertion_order_prompt_hash, "sift": sift_prompt_ordered_hash},
                       "counts": {"full": full_count, "sift": sift_count}, "frozen": frozen})
+        if case_index % 25 == 0 or case_index == len(ids):
+            print(f"Reconstructed prompts: {case_index}/{len(ids)} tasks", flush=True)
     rng = random.Random(STUDY_SEED)
     jobs: list[dict] = []
     for case in cases:
@@ -333,33 +389,51 @@ def atomic_write(path: Path, value: dict) -> None:
     temp.replace(path)
 
 
-def live_account_route_preflight(management_key: str, manifest: dict, cap: float,
-                                 jobs: list[dict], no_unsettled_attested: bool) -> dict:
-    """Refresh endpoint/provider/pricing and reject insufficient OpenRouter balance.
+def live_account_route_preflight(api_key: str, manifest: dict, cap: float,
+                                 jobs: list[dict], no_unsettled_attested: bool,
+                                 provider_billing_attested: bool) -> dict:
+    """Refresh MiniMax route metadata and require operator-settlement attestations.
 
-    OpenRouter requires a management key for these read-only metadata endpoints.
+    OpenRouter credits are diagnostics only for BYOK inference, which is billed
+    by the upstream MiniMax account. This preflight cannot verify that account's
+    actual balance or impose a provider-side hard spend cap.
     """
     if not no_unsettled_attested:
         raise StageError("Before dispatch, reconcile all prior/in-flight requests and pass --confirm-no-unsettled-requests")
-    headers = {"Authorization": f"Bearer {management_key}", "Content-Type": "application/json"}
+    if not provider_billing_attested:
+        raise StageError("Before dispatch, confirm MiniMax-side billing headroom covers the full approved cap")
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
     endpoint_url = "https://openrouter.ai/api/v1/models/minimax/minimax-m3/endpoints"
     try:
         endpoint_response = requests.get(endpoint_url, headers=headers, timeout=(10, 30))
         credits_response = requests.get("https://openrouter.ai/api/v1/credits", headers=headers, timeout=(10, 30))
+        key_response = requests.get("https://openrouter.ai/api/v1/key", headers=headers, timeout=(10, 30))
         endpoint_response.raise_for_status()
         credits_response.raise_for_status()
+        key_response.raise_for_status()
         endpoint_data = endpoint_response.json().get("data", {})
         endpoints = endpoint_data.get("endpoints", [])
         credit_data = credits_response.json().get("data", {})
+        key_data = key_response.json().get("data", {})
     except Exception as error:
         raise StageError(f"Live OpenRouter account/route preflight failed closed: {type(error).__name__}: {error}") from error
+    if not isinstance(credit_data, dict) or not isinstance(key_data, dict):
+        raise StageError("OpenRouter credits/key diagnostics returned malformed metadata")
+    if (type(key_data.get("is_management_key")) is not bool
+            or type(key_data.get("include_byok_in_limit")) is not bool):
+        raise StageError("OpenRouter key diagnostics lack BYOK accounting metadata")
+    if key_data["is_management_key"] is not False:
+        raise StageError("Use an OpenRouter inference key for preflight and dispatch")
+    if key_data["include_byok_in_limit"] is not False:
+        raise StageError("OpenRouter BYOK limit semantics changed; re-evaluate account and cap handling")
     candidates = [endpoint for endpoint in endpoints if isinstance(endpoint, dict)
                   and str(endpoint.get("provider_name", "")).strip().casefold() == "minimax"]
     if not candidates:
         raise StageError("Live OpenRouter endpoint list has no MiniMax provider route")
     expected_endpoint_id = manifest.get("route_assumptions", {}).get("endpoint_model_id")
     exact = [endpoint for endpoint in candidates
-             if endpoint.get("model_id") == expected_endpoint_id]
+             if endpoint.get("model_id") == expected_endpoint_id
+             and endpoint.get("tag") == manifest.get("route_assumptions", {}).get("route_tag")]
     if len(exact) != 1:
         raise StageError("Live MiniMax route is missing or ambiguous versus the frozen endpoint model ID")
     endpoint = exact[0]
@@ -381,23 +455,33 @@ def live_account_route_preflight(management_key: str, manifest: dict, cap: float
         raise StageError("Live MiniMax route pricing is malformed") from error
     if not (math.isfinite(input_rate) and math.isfinite(output_rate) and input_rate > 0 and output_rate > 0):
         raise StageError("Live MiniMax route pricing is invalid")
-    credits = credit_data.get("total_credits")
-    usage = credit_data.get("total_usage")
-    if any(isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(float(value))
-           or value < 0 for value in (credits, usage)):
-        raise StageError("OpenRouter account preflight did not return finite credit and usage totals")
-    available = float(credits) - float(usage)
-    if available < cap:
-        raise StageError(f"OpenRouter account available credits ${available:.6f} are below approved cap ${cap:.6f}")
+    cache_rate = pricing.get("cache_read")
+    if cache_rate is not None:
+        try:
+            cache_rate = float(cache_rate)
+        except (TypeError, ValueError) as error:
+            raise StageError("Live MiniMax cache-read pricing is malformed") from error
+        if not math.isfinite(cache_rate) or cache_rate < 0:
+            raise StageError("Live MiniMax cache-read pricing is invalid")
+    # Validate only that a credits diagnostics response arrived. It is not the
+    # settlement source for MiniMax BYOK, and its exact values stay out of logs.
     return {"checked_utc": datetime.now(timezone.utc).isoformat(),
             "endpoint_model_id": endpoint.get("model_id"), "provider": endpoint.get("provider_name"),
+            "route_tag": endpoint.get("tag"),
             "input_usd_per_million": input_rate * 1_000_000,
             "output_usd_per_million": output_rate * 1_000_000,
+            "cache_read_usd_per_million": cache_rate * 1_000_000 if cache_rate is not None else None,
             "max_prompt_tokens": max_prompt_tokens,
             "max_completion_tokens": max_completion_tokens,
-            "available_openrouter_credits_usd": available,
+            "openrouter_credits_endpoint_response": "ok; diagnostics only; excluded from BYOK cap coverage",
+            "openrouter_key_metadata_check": "ok",
+            "is_management_key": key_data["is_management_key"],
+            "include_byok_in_limit": key_data["include_byok_in_limit"],
+            "byok_usage_metadata_present": "byok_usage" in key_data,
+            "provider_billing_headroom_attested": True,
+            "approved_run_cap_usd": cap,
             "prior_in_flight_reconciliation": "explicit operator attestation; API does not prove all upstream settlements",
-            "note": "Live endpoint/credit metadata; BYOK upstream invoices may settle separately."}
+            "note": "Client-side spend guard only; a single upstream request may exceed its reservation before receipt settlement."}
 
 
 def prepare_report(manifest_path: Path, manifest: dict, mode: str, jobs: list[dict], output: Path) -> dict:
@@ -529,6 +613,7 @@ def dispatch(jobs: list[dict], cases: dict, report: dict, output: Path,
             "response_id": response_id, "usage": usage,
             "local_cost_estimate_usd": job["local_cost_estimate_usd"],
             "provider_reported_cost_usd": actual,
+            "reserved_cost_usd": reserve,
             "cost_receipt_source": receipt_source, "local_prompt_tokens": job["local_prompt_tokens"],
             "provider_local_input_ratio": ratio, "answer": text, "choice": choice if choice in "ABCD" and len(choice) == 1 else None,
             "expected": job["expected"],
@@ -562,10 +647,13 @@ def dispatch(jobs: list[dict], cases: dict, report: dict, output: Path,
             elif ratio > MAX_RATIO:
                 report["status"] = "safety_guard_stopped"
                 report["stop_reason"] = "provider_local_input_ratio_exceeded"
+            elif actual > reserve:
+                report["status"] = "budget_guard_overrun"
+                report["stop_reason"] = "actual_request_cost_exceeded_its_reservation"
             elif settled > cap:
                 report["status"] = "budget_guard_overrun"
                 report["stop_reason"] = "actual_reported_cost_exceeded_cap"
-            elif failure is not None or finish_reason != "stop":
+            elif failure is not None or finish_reason not in {"stop", "length"}:
                 report["status"] = "safety_guard_stopped"
                 report["stop_reason"] = "request_failed_or_incomplete"
         atomic_write(output, report)
@@ -596,11 +684,26 @@ def main() -> int:
     parser.add_argument("--spend-cap-usd", type=float, help="User-approved aggregate cap for this run; required with --dispatch.")
     parser.add_argument("--confirm-no-unsettled-requests", action="store_true",
                         help="Attest that prior and in-flight requests from earlier runs have been reconciled before dispatch.")
+    parser.add_argument("--confirm-provider-billing-covers-cap", action="store_true",
+                        help="Attest that MiniMax-side billing headroom covers the full approved BYOK spend cap.")
     args = parser.parse_args()
     if args.dispatch != (args.spend_cap_usd is not None):
         raise StageError("Use --dispatch and --spend-cap-usd together; otherwise run offline")
     if args.confirm_no_unsettled_requests and not args.dispatch:
         raise StageError("--confirm-no-unsettled-requests is valid only with --dispatch")
+    if args.confirm_provider_billing_covers_cap and not args.dispatch:
+        raise StageError("--confirm-provider-billing-covers-cap is valid only with --dispatch")
+    api_key = None
+    if args.dispatch:
+        if not args.confirm_no_unsettled_requests:
+            raise StageError("Before dispatch, reconcile prior/in-flight spend and pass --confirm-no-unsettled-requests")
+        if not args.confirm_provider_billing_covers_cap:
+            raise StageError("Before dispatch, attest MiniMax-side billing headroom with --confirm-provider-billing-covers-cap")
+        if not math.isfinite(args.spend_cap_usd) or args.spend_cap_usd <= 0:
+            raise StageError("--spend-cap-usd must be finite and positive")
+        api_key = os.environ.get("OPENROUTER_API_KEY")
+        if not api_key:
+            raise StageError("OPENROUTER_API_KEY is required for dispatch and read-only preflight")
     prior_report = None
     if args.output.exists():
         if not args.dispatch:
@@ -633,14 +736,9 @@ def main() -> int:
         report["stop_reason"] = "cap_below_preflight_estimate"
         atomic_write(args.output, report)
         raise StageError(f"No requests sent: cap ${args.spend_cap_usd:.6f} < estimate ${estimate:.6f}")
-    api_key = os.environ.get("OPENROUTER_API_KEY")
-    if not api_key:
-        raise StageError("OPENROUTER_API_KEY is required for dispatch")
-    management_key = os.environ.get("OPENROUTER_MANAGEMENT_KEY")
-    if not management_key:
-        raise StageError("OPENROUTER_MANAGEMENT_KEY is required for live endpoint and credits preflight")
-    live_route = live_account_route_preflight(management_key, manifest, args.spend_cap_usd,
-                                              jobs, args.confirm_no_unsettled_requests)
+    live_route = live_account_route_preflight(api_key, manifest, args.spend_cap_usd,
+                                              jobs, args.confirm_no_unsettled_requests,
+                                              args.confirm_provider_billing_covers_cap)
     # Live route metadata must match the dated reserve before any paid request.
     report["live_route_validation"] = live_route
     result = dispatch(jobs, cases, report, args.output, args.spend_cap_usd, api_key, live_route)
