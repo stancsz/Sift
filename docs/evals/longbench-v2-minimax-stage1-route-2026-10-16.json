@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "checked_utc": "2026-10-17T01:06:55.598744Z",
+  "checked_utc": "2026-10-17T01:17:11.087908Z",
   "source": "https://openrouter.ai/api/v1/models/minimax/minimax-m3/endpoints",
-  "response_sha256": "fbdc48eb6dcb282f59d15779a582c8dd44fa362949b969ecbf28df00c6a70f3f",
+  "response_sha256": "1e2c405f89732350eabb5759858d03364042614e31c0554e4a759863f1b1fffe",
   "requested_model": "minimax/minimax-m3",
   "provider": "Minimax",
   "provider_endpoint": "Minimax | minimax/minimax-m3-20260531",
