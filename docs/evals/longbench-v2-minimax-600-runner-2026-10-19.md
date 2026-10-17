@@ -33,37 +33,30 @@ Incomplete runs must not be described as a completed comparison.
 
 The frozen offline bundle contains all 600 scheduled requests. The first paid
 attempt stopped incomplete on 2026-10-17 after **90 requests were attempted and
-89 completed**. It settled **$0.77588364** across 89 receipts. The 90th request,
-Sift job `6725db46bb02136c067d84b4:sift:2`, failed with an SSL exception before
-returning an HTTP status, response ID, or cost receipt. Its outcome is unknown,
-so the runner stopped and did not retry. The local report is
+89 completed**. Provider receipts reported **5,330,954 prompt tokens + 135
+completion tokens = 5,331,089 total tokens**. The 90th request, Sift job
+`6725db46bb02136c067d84b4:sift:2`, failed with an SSL exception before returning
+an HTTP status, response ID, or usage receipt. Its token outcome is unknown and
+is not counted as zero. The original report is
 `.runs/longbench-v2-minimax-600-run.json`.
 
 Among the completed responses, Full scored 18/44 scorable responses (40.9%
 response accuracy; 41.1% equal-task-weighted across 15 tasks). Sift scored
 12/42 (28.6%; 26.7% equal-task-weighted across 15 tasks). These are incomplete,
-exposed-sample diagnostics, not a LongBench comparison result. External billing
-reconciliation is required before continuing because the failed request has no
-generation ID or positive cost receipt. OpenRouter's aggregate BYOK counters do
-not identify this individual call; generation metadata lookup requires a
-generation ID ([OpenRouter API reference](https://openrouter.ai/docs/api/api-reference/generations/get-generation)).
+exposed-sample diagnostics, not a LongBench comparison result.
 
-Dispatch requires an explicit `--dispatch`, an explicit cap, successful live
-OpenRouter route/account preflight, and the operator's billing and
-unsettled-request attestations. Failures stop the run; there is no automatic
-retry or resume because replay could double-charge.
+Continuation explicitly retries only the saved unknown SSL attempt. It checks
+the exact saved prefix against schedule hashes, row identities and request body
+hashes; preserves the original attempt; records the retry as attempt 2; then
+continues in schedule order. It never retries other failures. A new ambiguous
+failure stops the run. The continuation report is saved separately and sums
+provider-reported tokens only, with unknown-token attempts counted separately.
 
-The live OpenRouter route check at **2026-10-17 15:19 UTC** found the pinned
-`minimax/minimax-m3` / `minimax/fp8` endpoint, a 524,288-token prompt limit,
-512,000-token completion limit, and prices of $0.30/M input and $1.20/M output.
-At those live prices, the frozen 600-request schedule reserves **$14.6832579**.
-This is a dated reserve estimate, not actual settlement or a guarantee against
-single-request overage. Refresh route prices immediately before dispatch. If
-either rate differs from the pinned assumptions, stop and review a new reserve
-before sending requests. The key reports BYOK; OpenRouter credits and usage
-limits do not enforce the MiniMax-side cap. The client checks per-request
-reservations and settled receipts, but cannot prevent a single upstream request
-from exceeding its projected reserve before the receipt arrives.
+Refresh the live OpenRouter route before sending. The user authorized up to
+$2,000. Provider balance after the initial attempt is unverified, so the command
+records that limitation rather than claiming a fresh balance attestation. The
+$2,000 value is a client-side guard; OpenRouter BYOK does not impose a
+MiniMax-side hard cap.
 
 ## Commands
 
@@ -71,25 +64,25 @@ Build the deterministic offline bundle (no API key read and no network call):
 
 ```powershell
 \.venv\Scripts\python.exe benchmarks\run_longbench_v2_minimax_600.py `
-  --bundle .runs\longbench-v2-minimax-600-bundle.json.gz
+  --bundle .runs\longbench-v2-minimax-600-v4-bundle.json.gz
 ```
 
-The user authorized up to $2,000, and confirmed at least $14.69 of available
-MiniMax billing headroom with no unsettled requests. The run uses a tighter
-**$14.69 client cap**, just above the current full-schedule reserve. Refresh live
-route pricing immediately before dispatch; do not run if the reserve rises
-above the cap. Then dispatch the frozen schedule:
+The user authorized up to **$2,000**, and earlier confirmed no unsettled
+requests and at least $14.69 of MiniMax headroom. Continue with a fresh live
+route check and record provider balance as unverified:
 
 ```powershell
 \.venv\Scripts\python.exe benchmarks\run_longbench_v2_minimax_600.py `
-  --dispatch --prefix 600 --spend-cap-usd 14.69 `
-  --confirm-no-unsettled-requests --confirm-minimax-billing-headroom `
-  --bundle .runs\longbench-v2-minimax-600-bundle.json.gz `
-  --output .runs\longbench-v2-minimax-600-run.json
+  --continue-from-report .runs\longbench-v2-minimax-600-run.json `
+  --retry-unknown-once --spend-cap-usd 2000 `
+  --accept-unknown-prior-outcome `
+  --user-authorized-spend-cap-with-unverified-provider-balance `
+  --bundle .runs\longbench-v2-minimax-600-v4-bundle.json.gz `
+  --output .runs\longbench-v2-minimax-600-continuation.json
 ```
 
 Only `status: complete` with `full_schedule_complete: true`, all 600 completed
 jobs, and no in-flight request represents a completed study. A partial report
-must be called partial and reported with its arm counts, cost, failures, and
-scorable responses. Reconcile the saved report against MiniMax billing before
-interpreting cost results.
+must be called partial and reported with unique scheduled completions, total
+attempts, provider-reported prompt and completion tokens, unknown-token attempts,
+and scorable responses. Never infer usage for an attempt without a provider receipt.

@@ -395,17 +395,19 @@ def atomic_write(path: Path, value: dict) -> None:
 
 def live_account_route_preflight(api_key: str, manifest: dict, cap: float,
                                  jobs: list[dict], no_unsettled_attested: bool,
-                                 provider_billing_attested: bool) -> dict:
+                                 provider_billing_attested: bool,
+                                 provider_billing_authorized_unverified: bool = False,
+                                 prior_unknown_outcome_explicitly_accepted: bool = False) -> dict:
     """Refresh MiniMax route metadata and require operator-settlement attestations.
 
     OpenRouter credits are diagnostics only for BYOK inference, which is billed
     by the upstream MiniMax account. This preflight cannot verify that account's
     actual balance or impose a provider-side hard spend cap.
     """
-    if not no_unsettled_attested:
-        raise StageError("Before dispatch, reconcile all prior/in-flight requests and pass --confirm-no-unsettled-requests")
-    if not provider_billing_attested:
-        raise StageError("Before dispatch, confirm MiniMax-side billing headroom covers the full approved cap")
+    if not no_unsettled_attested and not prior_unknown_outcome_explicitly_accepted:
+        raise StageError("Before dispatch, reconcile prior/in-flight requests or explicitly accept the recorded unknown outcome")
+    if not provider_billing_attested and not provider_billing_authorized_unverified:
+        raise StageError("Confirm MiniMax-side billing headroom, or explicitly record user-authorized spend with provider balance unverified")
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
     endpoint_url = "https://openrouter.ai/api/v1/models/minimax/minimax-m3/endpoints"
     try:
@@ -482,9 +484,15 @@ def live_account_route_preflight(api_key: str, manifest: dict, cap: float,
             "is_management_key": key_data["is_management_key"],
             "include_byok_in_limit": key_data["include_byok_in_limit"],
             "byok_usage_metadata_present": "byok_usage" in key_data,
-            "provider_billing_headroom_attested": True,
+            "provider_billing_headroom_attested": provider_billing_attested,
+            "provider_billing_status": ("headroom_attested" if provider_billing_attested
+                                        else "user_authorized_balance_unverified"),
             "approved_run_cap_usd": cap,
-            "prior_in_flight_reconciliation": "explicit operator attestation; API does not prove all upstream settlements",
+            "prior_in_flight_reconciliation": (
+                "explicit operator attestation; API does not prove all upstream settlements"
+                if no_unsettled_attested else
+                "recorded unknown outcome explicitly accepted; not externally reconciled"
+                if prior_unknown_outcome_explicitly_accepted else "unverified"),
             "note": "Client-side spend guard only; a single upstream request may exceed its reservation before receipt settlement."}
 
 

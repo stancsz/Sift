@@ -140,6 +140,54 @@ class Runner600Tests(unittest.TestCase):
         self.assertIsNone(report["in_flight"])
         self.assertEqual(report["stop_reason"], "stream_missing_done_no_retry")
 
+    def test_provider_token_totals_exclude_unknown_attempts_instead_of_zero_filling(self):
+        totals = pilot.reported_token_totals([
+            {"usage": {"prompt_tokens": 12, "completion_tokens": 3}},
+            {"usage": None},
+            {"usage": {"prompt_tokens": 2}},
+        ])
+        self.assertEqual(totals, {
+            "source": "provider_usage_receipts_only",
+            "attempts_with_reported_usage": 1,
+            "attempts_with_unknown_tokens": 2,
+            "prompt_tokens": 12,
+            "completion_tokens": 3,
+            "total_reported_tokens": 15,
+        })
+
+    def test_continuation_requires_exact_unknown_ssl_failure_and_receipted_prefix(self):
+        samples = []
+        for index, job in enumerate(self.jobs[:89]):
+            samples.append({"index": index,
+                            "job_id": f'{job["case_id"]}:{job["arm"]}:{job["repeat"]}',
+                            "case_id": job["case_id"], "arm": job["arm"],
+                            "repeat": job["repeat"], "request_body_sha256": job["body_sha256"],
+                            "http_status": 200, "failure": None,
+                            "sse_done_received": True, "response_id": f"r-{index}",
+                            "usage": {"prompt_tokens": 100, "completion_tokens": 1},
+                            "provider": "minimax", "returned_model": stage.MODEL})
+        failed_job = self.jobs[89]
+        failed_id = f'{failed_job["case_id"]}:{failed_job["arm"]}:{failed_job["repeat"]}'
+        samples.append({"index": 89, "job_id": failed_id,
+                        "case_id": failed_job["case_id"], "arm": failed_job["arm"],
+                        "repeat": failed_job["repeat"], "request_body_sha256": failed_job["body_sha256"],
+                        "failure": "request_exception:SSLError", "http_status": None,
+                        "response_id": None, "usage": None, "cost_usd": None})
+        report = {"status": "stopped_incomplete_run", "schedule_sha256": self.bundle["schedule_sha256"],
+                  "bundle_content_sha256": self.bundle["bundle_content_sha256"],
+                  "full_schedule_jobs": 600, "dispatch_prefix_count": 600,
+                  "completed_jobs": 89, "samples": samples,
+                  "in_flight": {"index": 89, "job_id": failed_id,
+                                "state": "unknown_outcome_requires_external_reconciliation"}}
+        pilot.validate_continuation(report, self.bundle, self.jobs)
+        report["samples"][-1]["failure"] = "request_exception:Timeout"
+        with self.assertRaises(pilot.PilotError):
+            pilot.validate_continuation(report, self.bundle, self.jobs)
+        report["samples"][-1]["failure"] = "request_exception:SSLError"
+        report["samples"][12]["request_body_sha256"] = "0" * 64
+        with self.assertRaises(pilot.PilotError):
+            pilot.validate_continuation(report, self.bundle, self.jobs)
+
     def _run_mock_dispatch(self, cost: float, cap: float, include_done: bool):
         manifest = {"route_assumptions": {}}
         live_route = {"input_usd_per_million": stage.INPUT_PRICE,
