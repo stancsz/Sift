@@ -538,7 +538,8 @@ def _receipt_cost(usage: Any) -> float | None:
 
 def load_previous_report(path: Path, manifest_hash: str, schedule_hash: str,
                          jobs: list[dict[str, Any]], allow_unknown: bool,
-                         allow_invalid_retry: bool = False) -> dict[str, Any]:
+                         allow_invalid_retry: bool = False,
+                         allow_unknown_retry: bool = False) -> dict[str, Any]:
     try:
         report = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
@@ -585,7 +586,11 @@ def load_previous_report(path: Path, manifest_hash: str, schedule_hash: str,
                     or previous_sample.get("index") != index
                     or previous_sample.get("attempt_number") != 1
                     or previous_sample.get("scoreable") is not False
-                    or previous_sample.get("failure") is not None):
+                    or previous_sample.get("failure") is not None
+                    or not (previous_sample.get("provider_usage_cost_usd") is not None
+                            or (allow_unknown_retry
+                                and previous_sample.get("unknown_attempt_without_receipt") is True
+                                and sample.get("job_id") in report.get("unknown_outcome_job_ids", [])))):
                 raise DispatchError("Only one explicit retry of a receipt-backed unscorable response is allowed")
         elif attempt != 1:
             raise DispatchError("A first attempt must be numbered 1")
@@ -620,8 +625,15 @@ def load_previous_report(path: Path, manifest_hash: str, schedule_hash: str,
     if isinstance(flight, dict) and flight.get("state") == "unknown_outcome_requires_external_reconciliation":
         if not allow_unknown:
             raise DispatchError("Previous report has an ambiguous attempt; use explicit --accept-unknown-and-continue only after reconciliation")
-        if flight.get("index") != last_index:
+        allowed_unknown_index = last_index + 1 if allow_unknown_retry else last_index
+        if flight.get("index") != allowed_unknown_index:
             raise DispatchError("Ambiguous in-flight index does not match the latest recorded attempt")
+        if (allow_unknown_retry and flight.get("index") == last_index
+                and previous_sample is not None
+                and previous_sample.get("attempt_number") == 2):
+            raise DispatchError("The one authorized retry already had an unknown outcome; do not send a third attempt")
+        if allow_unknown_retry and flight.get("job_id") not in unknown_ids:
+            raise DispatchError("Unknown-outcome retry is missing its preserved unknown job ID")
     elif status == "dispatching" and isinstance(flight, dict):
         next_eligible = min(
             (index for index, job in by_index.items()
@@ -689,7 +701,8 @@ def dispatch(args: argparse.Namespace, manifest: dict[str, Any],
                                         validated["manifest_sha256"],
                                         validated["schedule_sha256"],
                                         ordered_jobs, args.accept_unknown_and_continue,
-                                        args.retry_invalid_response)
+                                        args.retry_invalid_response,
+                                        args.retry_unknown_outcome)
         if args.output.exists():
             raise DispatchError(f"Refusing to overwrite continuation output: {args.output}")
     elif args.output.exists():
@@ -754,6 +767,43 @@ def dispatch(args: argparse.Namespace, manifest: dict[str, Any],
                 "request_body_sha256": prior_flight["request_body_sha256"],
                 "decision": "skip_without_retry_after_explicit_acceptance",
             }
+        elif (isinstance(prior_flight, dict)
+              and prior_flight.get("state") == "unknown_outcome_requires_external_reconciliation"
+              and args.retry_unknown_outcome):
+            flight_job = next(job for job in ordered_jobs
+                              if job["index"] == prior_flight["index"])
+            flight_id = prior_flight["job_id"]
+            report.setdefault("retried_unknown_outcome_job_ids", [])
+            if flight_id not in report["retried_unknown_outcome_job_ids"]:
+                report["retried_unknown_outcome_job_ids"].append(flight_id)
+            report["samples"].append({
+                "index": flight_job["index"], "job_id": flight_id,
+                "attempt_number": 1, "case_id": flight_job["case_id"],
+                "arm": flight_job["arm"], "repeat": flight_job["repeat"],
+                "seed": flight_job["seed"],
+                "request_body_sha256": flight_job["body_sha256"],
+                "http_status": None, "response_id": None,
+                "requested_model": MODEL, "returned_model": None,
+                "provider": None, "usage": None, "finish_reason": None,
+                "response_text": "", "raw_events": [],
+                "sse_done_received": False,
+                "provider_usage_cost_usd": None,
+                "provider_local_input_ratio": None,
+                "request_started_utc": None, "response_completed_utc": None,
+                "ttft_seconds": None, "request_wall_seconds": None,
+                "sift_preprocessing_ms": flight_job["sift_preprocessing_ms"],
+                "failure": None, "choice": None, "scoreable": False,
+                "correct": None, "outcome_class": "unknown_transport_outcome",
+                "unknown_attempt_without_receipt": True,
+                "job_completed": False,
+            })
+            report["samples"].sort(key=lambda row: (row["index"], row["attempt_number"]))
+            report["attempted_jobs"] = len(report["samples"])
+            report["interrupted_in_flight_reconciled_as_unknown"] = {
+                "index": prior_flight["index"], "job_id": flight_id,
+                "request_body_sha256": prior_flight["request_body_sha256"],
+                "decision": "one_retry_authorized; original_usage_remains_unknown",
+            }
     report["provider_token_totals"] = reported_token_totals(report["samples"])
     saved_job_ids = {sample.get("job_id") for sample in report["samples"]}
     report["provider_token_totals"]["unknown_outcome_attempts_without_saved_response"] = sum(
@@ -768,8 +818,11 @@ def dispatch(args: argparse.Namespace, manifest: dict[str, Any],
             and previous.get("stop_reason") == "response_not_strictly_scoreable"):
         start_index = previous["samples"][-1]["index"]
     if report.get("interrupted_in_flight_reconciled_as_unknown"):
-        start_index = max(start_index,
-                          report["interrupted_in_flight_reconciled_as_unknown"]["index"] + 1)
+        interrupted = report["interrupted_in_flight_reconciled_as_unknown"]
+        if interrupted.get("decision", "").startswith("one_retry_authorized"):
+            start_index = min(start_index, interrupted["index"])
+        else:
+            start_index = max(start_index, interrupted["index"] + 1)
     selected_indices = {job["index"] for job in selected}
     jobs_to_dispatch = list(selected)
     if previous is not None and args.retry_invalid_response:
@@ -790,7 +843,9 @@ def dispatch(args: argparse.Namespace, manifest: dict[str, Any],
             continue
         attempt_number = 1 + sum(sample.get("index") == index
                                  for sample in report["samples"])
-        if attempt_number > 2 or (attempt_number == 2 and not args.retry_invalid_response):
+        if attempt_number > 2 or (attempt_number == 2
+                                  and not (args.retry_invalid_response
+                                           or args.retry_unknown_outcome)):
             raise DispatchError(f"Retry policy does not permit attempt {attempt_number} for {job['job_id']}")
         reserve = (job["local_prompt_tokens"] * INPUT_RESERVE_FACTOR
                    * INPUT_PRICE_USD_PER_MILLION
@@ -1007,6 +1062,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="After external reconciliation, skip the ambiguous job and continue; its result stays unknown.")
     parser.add_argument("--retry-invalid-response", action="store_true",
                         help="Retry once after a receipt-backed response fails strict choice scoring; all attempts remain reported.")
+    parser.add_argument("--retry-unknown-outcome", action="store_true",
+                        help="After explicit acceptance, retry one unknown-usage request; its original usage remains unknown.")
     args = parser.parse_args(argv)
     dispatch_mode = bool(args.dispatch)
     if dispatch_mode:
@@ -1016,8 +1073,12 @@ def main(argv: list[str] | None = None) -> int:
             raise DispatchError("--accept-unknown-and-continue requires --resume-from-report")
         if args.retry_invalid_response and not args.resume_from_report:
             raise DispatchError("--retry-invalid-response requires --resume-from-report")
+        if args.retry_unknown_outcome and not (args.resume_from_report
+                                               and args.accept_unknown_and_continue):
+            raise DispatchError("--retry-unknown-outcome requires a report and --accept-unknown-and-continue")
     elif (any(value is not None for value in (args.spend_cap_usd, args.prefix, args.resume_from_report))
-          or args.accept_unknown_and_continue or args.retry_invalid_response):
+          or args.accept_unknown_and_continue or args.retry_invalid_response
+          or args.retry_unknown_outcome):
         raise DispatchError("Dispatch options require explicit --dispatch")
 
     manifest = load_manifest(args.manifest)
@@ -1043,7 +1104,8 @@ def main(argv: list[str] | None = None) -> int:
         load_previous_report(args.resume_from_report, validated["manifest_sha256"],
                              validated["schedule_sha256"], ordered_jobs,
                              args.accept_unknown_and_continue,
-                             args.retry_invalid_response)
+                             args.retry_invalid_response,
+                             args.retry_unknown_outcome)
     result = dispatch(args, manifest, ordered_jobs, validated, scoring_keys, report)
     print(json.dumps({key: result.get(key) for key in (
         "status", "dispatch_prefix_count", "eligible_jobs", "attempted_jobs",
