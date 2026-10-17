@@ -410,14 +410,22 @@ completion tokens. Full context used 24,245,610 prompt tokens; Sift used
 and 36.67%; task majorities were 40/100 and 34/100. There were 18 Full-only,
 12 Sift-only, 22 both-correct, and 48 neither-correct tasks.
 
+Across the same 600 receipts, OpenRouter reported cache-inclusive upstream
+inference costs of $3.23171004 for Full and $1.28419728 for Sift (60.26% lower
+for Sift). These BYOK `cost_details` are upstream estimates, not invoice-
+verified charges; OpenRouter's top-level `usage.cost` was zero. Cached prompt
+shares differed (69.47% Full and 60.44% Sift), and five ambiguous original
+attempts have unknown costs that are excluded. Treat this as an observed
+receipt-cost difference for this cache state, not a general dollar-savings rate.
+
 Five original requests had ambiguous network failures and no provider usage
 receipt. Each was retried once and succeeded; unknown usage from the original
 attempts is not counted as zero. Five successful responses ended at the output
 limit and were unscorable. All 100 task IDs were previously exposed during
 development, so this is not a blind holdout. Three repeats per task are
 clustered observations. This is a completed 100-question sample, not all 503
-LongBench v2 questions and not 600 unique questions. The outcome does not
-establish quality parity, dollar savings, or accepted Claude Code/Codex task
+LongBench v2 questions and not 600 unique questions. It does not establish
+quality parity, general cost savings, or accepted Claude Code/Codex task
 quality. See the [complete protocol and audit](evals/longbench-v2-minimax-600-runner-2026-10-19.md)
 and [aggregate result artifact](results/longbench-v2-minimax-600-2026-10-19.json).
 

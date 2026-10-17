@@ -24,6 +24,26 @@
     "sift_prompt_tokens": 8281452,
     "sift_prompt_token_reduction_percent": 65.8435
   },
+  "provider_reported_upstream_cost_receipts": {
+    "source_field": "usage.cost_details.upstream_inference_cost",
+    "billing_mode": "OpenRouter BYOK; top-level usage.cost is zero",
+    "cache_inclusive": true,
+    "invoice_verified": false,
+    "unknown_original_attempt_costs_excluded": 5,
+    "full_context": {
+      "successful_usage_receipts": 300,
+      "upstream_cost_usd": 3.23171004,
+      "cached_prompt_tokens": 16843549,
+      "cached_prompt_share_percent": 69.4705
+    },
+    "sift": {
+      "successful_usage_receipts": 300,
+      "upstream_cost_usd": 1.28419728,
+      "cached_prompt_tokens": 5005193,
+      "cached_prompt_share_percent": 60.4386
+    },
+    "sift_cost_reduction_percent": 60.2626
+  },
   "scores": {
     "full_context": {
       "correct": 117,
@@ -53,7 +73,8 @@
     "The three repeats within each question are clustered observations, not independent questions.",
     "Five original ambiguous attempts have unknown provider token usage; each scheduled request later completed after one retry.",
     "Five responses ended with finish_reason=length and were unscorable.",
-    "This evaluation measures prompt tokens and structured-choice answers; it does not establish dollar savings, quality parity, or accepted Claude Code/Codex task completion."
+    "The provider-reported upstream cost reduction covers successful cache-inclusive BYOK receipts only; five ambiguous original attempt costs are unknown, and these values are not invoice-verified.",
+    "This evaluation does not establish quality parity, general cost savings, or accepted Claude Code/Codex task completion."
   ],
   "source_report": ".runs/longbench-v2-minimax-600-continuation-6.json",
   "source_bundle": ".runs/longbench-v2-minimax-600-v4-bundle.json.gz"

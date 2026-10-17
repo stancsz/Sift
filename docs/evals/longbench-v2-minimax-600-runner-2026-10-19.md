@@ -42,7 +42,18 @@ are excluded rather than treated as zero.
 Across the 600 successful provider receipts, MiniMax reported **32,527,062
 prompt + 1,239 completion = 32,528,301 tokens**. Full context used 24,245,610
 prompt tokens; Sift used 8,281,452, a **65.84% reduction** on this run. These
-are provider-reported token counts, not a dollar or end-to-end time measurement.
+are provider-reported token counts.
+
+The same 600 successful receipts include OpenRouter's BYOK
+`usage.cost_details.upstream_inference_cost`: **$3.23171004** for Full context
+and **$1.28419728** for Sift, a **60.26% lower receipt-reported upstream cost**
+for Sift on this run. OpenRouter's top-level `usage.cost` was zero for BYOK;
+these upstream amounts are not invoice-verified MiniMax charges. They include
+this run's prompt-cache behavior: 16,843,549 / 24,245,610 Full prompt tokens
+(69.47%) and 5,005,193 / 8,281,452 Sift prompt tokens (60.44%) were reported as
+cached. The five ambiguous original attempts have unknown cost and are excluded,
+not counted as zero. Treat the comparison as a cache-inclusive receipt result
+for this sample, not a general savings rate or end-to-end time measurement.
 
 | Arm | Correct / scorable | Response accuracy | Equal-task-weighted accuracy | Task majorities correct |
 |---|---:|---:|---:|---:|
@@ -65,9 +76,10 @@ The report records the attempt history, including exactly one retry each for
 jobs 89, 198, 223, 318, and 555.
 
 The user authorized up to $2,000 for the original evaluation and asked that
-progress focus on provider-reported tokens rather than billing reconciliation.
-No spend claim is made here. Any new model comparison after changing Sift needs
-a separately frozen protocol and appropriate authorization.
+progress focus on provider-reported tokens rather than account billing
+reconciliation. The receipt totals above are not an account statement. Any new
+model comparison after changing Sift needs a separately frozen protocol and
+appropriate authorization.
 
 ## Commands
 

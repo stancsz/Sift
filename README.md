@@ -25,18 +25,19 @@ Use Sift as a Python library or a **LiteLLM Proxy callback**. It can inspect his
 
 ### LongBench v2: 65.8% fewer prompt tokens
 
-Across 100 previously exposed LongBench v2 questions, three repeats per arm, Sift used **65.8% fewer provider-reported prompt tokens** than full context. This was a completed, matched MiniMax M3 study: 600 valid response receipts across Full and Sift.
+Across 100 previously exposed LongBench v2 questions, three repeats per arm, Sift used **65.8% fewer provider-reported prompt tokens** and had **60.3% lower provider-reported upstream cost** than full context. This was a completed, matched MiniMax M3 study: 600 valid response receipts across Full and Sift.
 
 | Measure | Full context | With Sift | Difference |
 |---|---:|---:|---:|
 | Provider-reported prompt tokens | 24,245,610 | 8,281,452 | **65.8% fewer with Sift** |
+| Provider-reported upstream cost¹ | $3.2317 | $1.2842 | **60.3% lower with Sift** |
 | Exact-choice accuracy | 117/286 · 40.91% | 106/290 · 36.55% | −4.36 percentage points |
 | Equal-task-weighted accuracy | 39.83% | 36.67% | −3.16 percentage points |
 | Task majorities correct | 40/100 | 34/100 | 18 Full-only · 12 Sift-only |
 
 **The measured quality gap belongs with the token result.** This run does not establish quality parity, accepted-task quality, or performance on Claude Code or Codex agent workflows.
 
-**Scope:** 100 public development questions previously exposed during selector work, with three repeats clustered within each question—not a blind holdout or the full 503-question dataset. Five ambiguous original attempts were retried once; their token use is unknown and excluded, so the 65.8% figure covers only the 600 responses with usage receipts. Five responses ended at the output limit and were unscorable. No dollar-savings or end-to-end speed claim is made.
+**Scope:** 100 public development questions previously exposed during selector work, with three repeats clustered within each question—not a blind holdout or the full 503-question dataset. Five ambiguous original attempts were retried once; their token usage and costs are unknown and excluded, so both savings figures cover only the 600 responses with usage receipts. Five responses ended at the output limit and were unscorable. ¹The cost row sums OpenRouter's cache-inclusive `upstream_inference_cost` receipt field for BYOK requests; it is not a MiniMax invoice. Full context had 69.5% cached prompt tokens versus 60.4% for Sift, so the observed cost ratio depends on this run's cache behavior. No end-to-end speed claim is made.
 
 [Protocol and complete-run status](docs/evals/longbench-v2-minimax-600-runner-2026-10-19.md) · [Aggregate result and hashes](docs/results/longbench-v2-minimax-600-2026-10-19.json) · [Earlier and ongoing evaluation work](docs/evaluation.md)
 
