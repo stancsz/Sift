@@ -69,18 +69,26 @@ pre-request marker for job 550. Source order and the independent audit confirm
 that the provider call occurs after that checkpoint write, so job 550 was not
 sent and is not counted as an attempt or unknown-token request.
 
-The recovered checkpoint is
-`.runs/longbench-v2-minimax-600-continuation-4-recovery.json`. It records 554
-attempts and 550 unique completed jobs. Provider receipts report **30,882,116
-prompt + 1,142 completion = 30,883,258 tokens**. Four earlier attempts remain
-unknown (indices 89, 198, 223, and 318). The next request is job 550 as its
-first attempt, followed by jobs 551–599. The runner validates this exact
-recovery state before dispatch. Its report writer now uses unique temporary
-files and bounded retries for short Windows sharing locks.
+The recovered checkpoint
+`.runs/longbench-v2-minimax-600-continuation-4-recovery.json` resumed job 550
+and completed through job 554. Continuation 5 stopped at job 555 after a
+`ConnectionError` with no HTTP status, response ID, or usage receipt. Its report
+is `.runs/longbench-v2-minimax-600-continuation-5.json`. Combined status is
+**560 attempts, 555 unique scheduled jobs completed**. Provider receipts report
+**31,036,765 prompt + 1,150 completion = 31,037,915 tokens**. Five first
+attempts have unknown usage (indices 89, 198, 223, 318, and 555); this usage is
+not counted as zero. The independent audit verifies all 555 receipts, request
+hashes, and the token ledger.
 
-Among completed responses so far, Full scored 104/262 scorable responses
-(39.7% response accuracy; 38.8% equal-task-weighted across 92 tasks). Sift
-scored 94/266 (35.3%; 35.5% equal-task-weighted across 92 tasks). These are
+The council review confirms the user's “Approve all retires” authorizes one
+retry of job 555, then jobs 556–599, with no repeated retry of the same job.
+The runner accepts this exact 560-attempt profile and preserves the five
+unknown attempts. Stop for renewed direction if job 555's retry itself fails
+ambiguously.
+
+Among completed responses so far, Full scored 105/264 scorable responses
+(39.8% response accuracy; 38.5% equal-task-weighted across 93 tasks). Sift
+scored 96/269 (35.7%; 35.7% equal-task-weighted across 93 tasks). These are
 partial, exposed-sample diagnostics, not final LongBench comparison results.
 
 Continuation validates the exact saved prefix against schedule hashes, row
@@ -104,17 +112,17 @@ Build the deterministic offline bundle (no API key read and no network call):
   --bundle .runs\longbench-v2-minimax-600-v4-bundle.json.gz
 ```
 
-Continue from the verified pre-request checkpoint. Job 550 was not sent, so this
-resumes it as its first attempt:
+Continue from the audited continuation-5 checkpoint by retrying job 555 once,
+then dispatching jobs 556–599:
 
 ```powershell
 \.venv\Scripts\python.exe benchmarks\run_longbench_v2_minimax_600.py `
-  --continue-from-report .runs\longbench-v2-minimax-600-continuation-4-recovery.json `
+  --continue-from-report .runs\longbench-v2-minimax-600-continuation-5.json `
   --retry-unknown-once --spend-cap-usd 2000 `
   --accept-unknown-prior-outcome `
   --user-authorized-spend-cap-with-unverified-provider-balance `
   --bundle .runs\longbench-v2-minimax-600-v4-bundle.json.gz `
-  --output .runs\longbench-v2-minimax-600-continuation-5.json
+  --output .runs\longbench-v2-minimax-600-continuation-6.json
 ```
 
 Only `status: complete` with `full_schedule_complete: true`, all 600 completed
