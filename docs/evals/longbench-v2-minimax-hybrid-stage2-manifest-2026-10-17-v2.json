@@ -1,0 +1,237 @@
+{
+  "schema_version": 1,
+  "stage": 2,
+  "version": "hybrid-100x3-minimax-matrix-six-id-preflight-v2",
+  "frozen_before_api_dispatch": true,
+  "created_utc": "2026-10-17T02:54:46.229912+00:00",
+  "protocol_path": "docs/evals/longbench-v2-minimax-hybrid-stage2-protocol-2026-10-17.md",
+  "baseline_manifest_path": "docs/evals/longbench-v2-minimax-m3-100-manifest-2026-10-16.json",
+  "baseline_manifest_sha256": "865e27c21fdd2a6ce4b629b283123f4bff66b62e3c17f39c3b8be842b00a6f18",
+  "baseline_result_path": "docs/results/longbench-v2-minimax-m3-100-2026-10-16.json",
+  "baseline_result_sha256": "09d80674f03cb432e7cd8c9917f327f9dfd9675446d912cbd3d5f9e1dadb3d62",
+  "route_metadata_path": "docs/evals/longbench-v2-minimax-stage2-route-2026-10-17.json",
+  "route_metadata_sha256": "c46e271219d7e5890339adf79aafd4e0a58ecdae0908e365d691f4522b07db14",
+  "offline_closure_report_path": ".runs/longbench-relation-closure-offline.json",
+  "offline_closure_report_sha256": "7f74a71e45838604a0051812e22f117aed20beb4ca3690bf2dacd24e67fd4b7c",
+  "request_count": 300,
+  "aggregate_budget": {
+    "limit_usd": 20.0,
+    "prior_actual_usd": 14.5208033,
+    "prior_unsettled_usd": 0.36791295,
+    "basis": "Prior task ledger actual includes v3 settlement $0.10630920; carry prior unsettled $0.36791295. Excludes unitemized account/key BYOK counters; not an invoice.",
+    "run_limit_usd": 4.0
+  },
+  "source_hashes": {
+    "runner_sha256": "9047070ddf66ac6fa558bec79c60a7be59abcd1e3c59eda4423a492e1e620b1b",
+    "analyzer_sha256": "d05b2db6ecb48333b60289e4fe8e4b936993184dbde7767560967e8668d80606",
+    "baseline_runner_sha256": "0fc06a5d01605cac3e6a1ada1b66656ad21568227f7159434d82c04263e58c05",
+    "v3_analysis_sha256": "c5ceef7d674218de8a043eb71d0eaa5386a3c086991482cca05116a8ddfd12a1",
+    "v3_gate_sha256": "cd0c71bfed3e30062fc1b79448bbf9843d0c9179b93ca488f7e617fc3c2d0d34",
+    "v3_runner_sha256": "1ebc0f015cf2dcb34c09da83650c6fe4cec54b0fcd939f602088ed5e52b9dba1",
+    "matrix_candidate_sha256": "3b7ad3bb79787828d1ec37e61cf49334294f5b3a09bc9c6f1b5f3b476cf60233",
+    "core_sha256": "031a55fa43f62bc416f94ce2ca50feae47b2f6ca709fdff44f9b78641bfb287f",
+    "sift_package_init_sha256": "45d03044286ad016a7901c254b1f717ec05b6d9d15d28d03827de3553811700a",
+    "dataset_preparation_module_sha256": "b913c0c89ed6bea2a7b74b54b64516bfcaad7f7894067ebbac9c5085e47ae069",
+    "minimax_renderer_module_sha256": "2eb34e08fbdb3d1acb69339505e1e228030b930e2d967b174e67490006adee77",
+    "tokenizer_sha256": "bb1f1626cf01448f1e3b6036d0a061ffc66c91d9046aada14ea23a5441b5ad6e",
+    "chat_template_sha256": "11421244f67553498e5c8112dae02802025bcc4305ec45ad380af95c96f9fe64",
+    "protocol_sha256": "63fdbece42cff6efda7062b91271c0c7066ee20ced6c5ab1b9c459dcd314622c",
+    "route_metadata_sha256": "c46e271219d7e5890339adf79aafd4e0a58ecdae0908e365d691f4522b07db14"
+  },
+  "protocol": {
+    "stage": 2,
+    "task_ids": [
+      "66fa700bbb02136c067c6c06",
+      "66ed3e90821e116aacb1f82f",
+      "66f39ac5821e116aacb2da81",
+      "66f530ce821e116aacb32f09",
+      "66fa50acbb02136c067c6827",
+      "66ebd3ba5a08c7b9b35e0446",
+      "66f3cb88821e116aacb2eeb9",
+      "66ec3644821e116aacb1c312",
+      "66ecf139821e116aacb1e0e1",
+      "66fa7c81bb02136c067c6e09",
+      "66fcf36fbb02136c067c919e",
+      "66ec4e43821e116aacb1cb54",
+      "6725d898bb02136c067d82d6",
+      "6725d977bb02136c067d8373",
+      "6725db46bb02136c067d84b4",
+      "6725db8bbb02136c067d84eb",
+      "6725dc28bb02136c067d8555",
+      "6725dc6abb02136c067d8586",
+      "672864b4bb02136c067d916c",
+      "67286698bb02136c067d9223",
+      "67286795bb02136c067d92ab",
+      "66f3edfb821e116aacb2fc91",
+      "66f6a14dbb02136c067c2453",
+      "66f19f04821e116aacb27bab",
+      "6725dabfbb02136c067d8450",
+      "6725db01bb02136c067d847f",
+      "6725dd39bb02136c067d861b",
+      "67286533bb02136c067d919f",
+      "66f53f2b821e116aacb3335a",
+      "66f67c1bbb02136c067c21b9",
+      "66f6909bbb02136c067c2380",
+      "66f2b5ec821e116aacb2b1ec",
+      "67039cfabb02136c067cd04e",
+      "672494e5bb02136c067d7697",
+      "67249705bb02136c067d76d1",
+      "6724c1d4bb02136c067d77ec",
+      "67285e1dbb02136c067d901b",
+      "67286036bb02136c067d9092",
+      "66f95e11bb02136c067c5370",
+      "6724c4aabb02136c067d78a6",
+      "6703a0ecbb02136c067cd11b",
+      "67062a63bb02136c067cf5ac",
+      "6719167dbb02136c067d4025",
+      "67191791bb02136c067d406c",
+      "67192e81bb02136c067d427f",
+      "6719c1febb02136c067d44db",
+      "6719ef50bb02136c067d4911",
+      "671b530dbb02136c067d5454",
+      "671b56cfbb02136c067d54e9",
+      "671b58e8bb02136c067d5525",
+      "671b170cbb02136c067d4f4a",
+      "671b17d5bb02136c067d4f7d",
+      "671b2c05bb02136c067d50c8",
+      "67189156bb02136c067d3b8d",
+      "6719185cbb02136c067d40ab",
+      "6719dc46bb02136c067d470b",
+      "671b2822bb02136c067d5020",
+      "6719b96abb02136c067d4358",
+      "671b080abb02136c067d4dde",
+      "671b2b57bb02136c067d508b",
+      "671b2c67bb02136c067d50f7",
+      "671b3cabbb02136c067d5252",
+      "66ed364d821e116aacb1f47e",
+      "66efa5ea821e116aacb23268",
+      "66f2a7a9821e116aacb2a721",
+      "66f3cca6821e116aacb2ef7c",
+      "66fa415cbb02136c067c671c",
+      "670646aebb02136c067cf85a",
+      "66ebf9bf5a08c7b9b35e1f85",
+      "66efa466821e116aacb23219",
+      "67078ecabb02136c067d0b89",
+      "66efaf70821e116aacb234bd",
+      "66f379e8821e116aacb2d161",
+      "66f8c783bb02136c067c44b8",
+      "66f947abbb02136c067c4ea6",
+      "66fc05b6bb02136c067c88e4",
+      "66ec0874821e116aacb194a4",
+      "66ee4287821e116aacb21258",
+      "66f2a98a821e116aacb2a8bf",
+      "66f3de02821e116aacb2f73b",
+      "66f59d31821e116aacb340f6",
+      "66fab090bb02136c067c74e7",
+      "66ec3aff821e116aacb1c52e",
+      "66ec6582821e116aacb1cf7a",
+      "670fbae0bb02136c067d2c79",
+      "66f36490821e116aacb2cc22",
+      "66f53892821e116aacb33225",
+      "66fea153bb02136c067ca3e7",
+      "66ef8aa3821e116aacb22db5",
+      "66f3d2fc821e116aacb2f269",
+      "670cf163bb02136c067d26b6",
+      "66ebd9895a08c7b9b35e0c7c",
+      "66ebdadd5a08c7b9b35e0e5b",
+      "66ec052a5a08c7b9b35e29c7",
+      "66ec18a7821e116aacb1a72e",
+      "66ed0cb0821e116aacb1e6c1",
+      "66ed3148821e116aacb1f2ce",
+      "66f52926821e116aacb32b5e",
+      "66f95c18bb02136c067c52e1",
+      "6725e2febb02136c067d8717"
+    ],
+    "repeats": 3,
+    "cli_seed": 20261022,
+    "generation_seeds": [
+      20261024,
+      20261025,
+      20261026
+    ],
+    "arms": [
+      "sift_hybrid_stage2"
+    ],
+    "sift_target_tokens": 32768,
+    "request_count": 300,
+    "model": {
+      "id": "minimax/minimax-m3"
+    },
+    "provider_policy": {
+      "only": [
+        "minimax"
+      ],
+      "allow_fallbacks": false
+    },
+    "generation": {
+      "temperature": 0.1,
+      "top_p": 0.8,
+      "reasoning_enabled": false,
+      "max_tokens": 128,
+      "response_format": {
+        "type": "json_object"
+      },
+      "answer_format": "json_object_single_answer_a_to_d",
+      "retries": 0,
+      "workers": 1
+    },
+    "candidate_policy": {
+      "matrix_candidate_ids": [
+        "672494e5bb02136c067d7697",
+        "67249705bb02136c067d76d1",
+        "6724c1d4bb02136c067d77ec",
+        "67285e1dbb02136c067d901b",
+        "67286036bb02136c067d9092",
+        "6724c4aabb02136c067d78a6"
+      ],
+      "default_sift_for_other_ids": true,
+      "matrix_fallbacks_allowed": false
+    },
+    "route": {
+      "requested_model": "minimax/minimax-m3",
+      "provider": {
+        "only": [
+          "minimax"
+        ],
+        "allow_fallbacks": false
+      },
+      "provider_endpoint": "Minimax | minimax/minimax-m3-20260531",
+      "context_length_tokens": 524288,
+      "max_prompt_tokens": 524288,
+      "max_completion_tokens": 512000,
+      "pricing_usd_per_token": {
+        "prompt": "0.0000003",
+        "completion": "0.0000012",
+        "input_cache_read": "0.00000006",
+        "discount": 0
+      }
+    },
+    "budget": {
+      "run_limit_usd": 4.0,
+      "aggregate_limit_usd": 20.0,
+      "prior_actual_usd": 14.5208033,
+      "prior_unsettled_usd": 0.36791295,
+      "basis": "Prior task ledger actual includes v3 settlement $0.10630920; carry prior unsettled $0.36791295. Excludes unitemized account/key BYOK counters; not an invoice."
+    },
+    "comparison_scope": "One hybrid Sift response per task/repeat. Historical Full/Sift are non-concurrent references only."
+  },
+  "route": {
+    "requested_model": "minimax/minimax-m3",
+    "provider": {
+      "only": [
+        "minimax"
+      ],
+      "allow_fallbacks": false
+    },
+    "provider_endpoint": "Minimax | minimax/minimax-m3-20260531",
+    "context_length_tokens": 524288,
+    "max_prompt_tokens": 524288,
+    "max_completion_tokens": 512000,
+    "pricing_usd_per_token": {
+      "prompt": "0.0000003",
+      "completion": "0.0000012",
+      "input_cache_read": "0.00000006",
+      "discount": 0
+    }
+  }
+}
