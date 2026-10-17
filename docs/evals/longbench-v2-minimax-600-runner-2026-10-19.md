@@ -42,23 +42,26 @@ is not counted as zero. The original report is
 
 The first continuation resumed the same frozen schedule, successfully retried
 job 89, then stopped at job 198 (`672494e5bb02136c067d7697:full:2`) after a
-second `ConnectionError` with no HTTP response or provider usage receipt. The
-continuation report is `.runs/longbench-v2-minimax-600-continuation.json`.
-Combined status is **200 attempts, 198 unique scheduled jobs completed**. The
-two network-failed attempts (job 89's original attempt and job 198) have unknown
-token usage. Across 198 usage receipts, MiniMax reported **11,290,863 prompt +
-297 completion = 11,291,160 tokens**.
+`ConnectionError` with no HTTP response or provider usage receipt. The next
+continuation retried job 198 successfully and proceeded through job 223, which
+then stopped on an SSL exception with no HTTP response, generation ID, or usage
+receipt. Its report is `.runs/longbench-v2-minimax-600-continuation-2.json`.
+Combined status is **226 attempts, 223 unique scheduled jobs completed**. The
+three unknown-token attempts are the original job 89 attempt, the original job
+198 attempt, and job 223. Across 223 provider usage receipts, MiniMax reported
+**13,317,186 prompt + 396 completion = 13,317,582 tokens**. Unknown-token
+attempts remain unknown and are not counted as zero.
 
-The user subsequently directed continuation to completion. The next explicit
-continuation is limited to retrying job 198 once as attempt 2, then proceeding
-through jobs 199–599. It preserves the two unknown-token attempts and validates
-all 200 prior attempts, job IDs, request hashes, token totals, and receipts. Any
-new ambiguous failure stops this continuation.
+The user directed continuation through all 600 requests and instructed that
+progress reporting focus on token use. The next continuation retries job 223
+once as attempt 2, then proceeds through jobs 224–599. It validates and retains
+all 226 prior attempts, frozen job identities, request hashes, provider token
+totals, and receipts. Any further ambiguous network failure stops the run.
 
-Among completed responses, Full scored 37/97 scorable responses (38.1% response
-accuracy; 37.9% equal-task-weighted across 33 tasks). Sift scored 26/97 (26.8%;
-26.3% equal-task-weighted across 33 tasks). This is an incomplete, exposed-sample
-diagnostic, not a LongBench comparison result.
+Among completed responses so far, Full scored 48/109 scorable responses (44.0%
+response accuracy; 43.7% equal-task-weighted across 37 tasks). Sift scored
+31/109 (28.4%; 27.9% equal-task-weighted across 37 tasks). This remains a
+partial, exposed-sample diagnostic, not a LongBench comparison result.
 
 Continuation explicitly retries only the latest saved, eligible unknown
 network attempt. It checks the exact saved prefix against schedule hashes, row
@@ -89,12 +92,12 @@ route check and record provider balance as unverified:
 
 ```powershell
 \.venv\Scripts\python.exe benchmarks\run_longbench_v2_minimax_600.py `
-  --continue-from-report .runs\longbench-v2-minimax-600-continuation.json `
+  --continue-from-report .runs\longbench-v2-minimax-600-continuation-2.json `
   --retry-unknown-once --spend-cap-usd 2000 `
   --accept-unknown-prior-outcome `
   --user-authorized-spend-cap-with-unverified-provider-balance `
   --bundle .runs\longbench-v2-minimax-600-v4-bundle.json.gz `
-  --output .runs\longbench-v2-minimax-600-continuation-2.json
+  --output .runs\longbench-v2-minimax-600-continuation-3.json
 ```
 
 Only `status: complete` with `full_schedule_complete: true`, all 600 completed
