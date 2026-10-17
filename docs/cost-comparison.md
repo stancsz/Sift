@@ -10,17 +10,18 @@ invoice.
 ## A simple price example
 
 For scale, suppose one uncached request would otherwise send 500,000 or
-1,000,000 input tokens, and Sift instead has a **32,768-token estimated
-forwarding target**. Assume both runs generate the same 10,000 output tokens,
+1,000,000 input tokens to GPT-6 Astra, or 500,000 or 950,000 to Claude Opus 5.5,
+and Sift instead has a **32,768-token estimated forwarding target**. Assume both
+runs generate the same 10,000 output tokens,
 and that the provider bills exactly the estimated forwarded count. These
-examples use standard global API rates checked on 2026-10-16.
+examples use standard global API rates checked on 2026-10-19.
 
 | Provider and input | Without Sift | With Sift | Modeled reduction |
 |---|---:|---:|---:|
 | GPT-6 Astra, 500K | $10.7500 | $0.8277 | 92.3% |
 | GPT-6 Astra, 1M | $20.7500 | $0.8277 | 96.0% |
 | Claude Opus 5.5, 500K | $2.2000 | $0.3311 | 85.0% |
-| Claude Opus 5.5, 1M | $4.2000 | $0.3311 | 92.1% |
+| Claude Opus 5.5, 950K | $4.0000 | $0.3311 | 91.7% |
 
 Astra uses its long-context rates for the entire request above 272,000 input
 tokens: $20 per million input and $75 per million output. The 32,768-token
@@ -28,8 +29,10 @@ Sift request is below that threshold: $10 per million input and $50 per
 million output. Claude Opus 5.5 standard global rates are $4 per million
 input and $20 per million output across its 1M context window. For example,
 the 1M Astra baseline is $20 input + $0.75 output; the 32,768-token estimate
-is $0.3277 input + $0.50 output. The 1M Opus 5.5 baseline is $4 input +
-$0.20 output; the shortened estimate is $0.1311 input + $0.20 output.
+is $0.3277 input + $0.50 output. The 950K Opus 5.5 baseline is $3.80 input +
+$0.20 output; the shortened estimate is $0.1311 input + $0.20 output. The 950K
+example leaves room for the 10,000-token output within Opus 5.5's 1M context
+window.
 
 This is arithmetic for one request, not a measured 500K–1M multi-turn task.
 It does not establish preserved task quality, whole-conversation savings, or
@@ -41,8 +44,8 @@ matched 500K–1M Astra/Opus task comparison yet.
 
 Current model cards: [GPT-6 Astra](https://developers.openai.com/api/docs/models/gpt-6-astra)
 and [Claude Opus 5.5](https://platform.claude.com/docs/en/models/opus-5-5/overview).
-Rates checked 2026-10-16. Claude Opus 4.8 rates are not used in the comparison
-above.
+Rates checked 2026-10-19 against [OpenAI pricing](https://developers.openai.com/api/docs/pricing)
+and [Anthropic pricing](https://platform.claude.com/docs/en/about-claude/pricing).
 
 ### Warm-prefix sensitivity
 

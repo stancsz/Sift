@@ -15,53 +15,99 @@ Sift is a deterministic, CPU-only context compressor for coding and research age
 
 Use Sift as a Python library or a **LiteLLM Proxy callback**. On supported backends, stable history between tool-cycle boundaries can also help prefix-cache reuse.
 
-[Try Sift with LiteLLM](#install-and-use-with-litellm) · [How it works](docs/algorithm.md) · [Full evaluation](docs/evaluation.md)
+[Try Sift in a LiteLLM proxy](#quick-start) · [Measured LongBench results](#longbench-v2-658-fewer-prompt-tokens) · [How it works](docs/algorithm.md) · [Evaluation record](docs/evaluation.md)
 
-> **Preview:** try the published `v0.10.0` release at a 24,576-token default, or configure the current `main` candidate's 32,768-token default for your route. Leave room for model output; see the [release roadmap](ROADMAP.md).
+> **Preview release:** install the tested `v0.10.0` tag from GitHub today. It defaults to a 24,576-token target. The newer 32,768-token default is on unreleased `main` (`0.11.0.dev0`). Sift is not yet published to PyPI. See the [release roadmap](ROADMAP.md).
 
-### A lighter working set for long-running agents
+Sift is a deterministic, CPU-only context compressor for coding and research agents. It trims older conversation and tool history to a configurable token budget while preserving the latest request and active tool work exactly when they fit. No second model call, generated summary, or additional model dependency.
 
-- **Keep the task in view.** Preserve the latest request and active tool work exactly when they fit the configured budget.
-- **Bring forward useful history.** Select older evidence against the current task, including bounded links between related identifiers.
-- **Keep the pipeline simple.** Run deterministic CPU work locally or at the LiteLLM Proxy; no second model call or summarization dependency.
+Use Sift as a Python library or a **LiteLLM Proxy callback**. It can inspect histories up to **1,000,000 estimated input tokens** and forward a smaller, query-focused working set. On supported backends, stable history between tool-cycle boundaries can also help prefix-cache reuse.
 
-Sift works with agent histories up to **1,000,000 estimated input tokens** and supports a configurable target. Set that target for your model route and reserve output capacity separately.
+### LongBench v2: 65.8% fewer prompt tokens
 
-**A quick scale check:** one authored synthetic history compacted from **966,253 estimated tokens to 22,579** under a 24,576-token target, kept both required facts, and took **1.86 seconds** of CPU time on one Windows desktop. [See the evaluation scope](docs/evaluation.md#what-is-measured).
+Across 100 previously exposed LongBench v2 questions, three repeats per arm, Sift used **65.8% fewer provider-reported prompt tokens** than full context. This was a completed, matched MiniMax M3 study: 600 valid response receipts across Full and Sift.
 
-## Put long-context requests on a smaller budget
-
-**Model the cost impact: 85–96% lower per-request API cost** when a 500K–1M-token input is compacted to 32,768 tokens.
-
-| Premium model | Raw input | Full context | With Sift | Modeled savings |
-|---|---:|---:|---:|---:|
-| [GPT-6 Astra](https://developers.openai.com/api/docs/models/gpt-6-astra) | 500K | $10.75 | $0.83 | **92.3% · save $9.92** |
-| [GPT-6 Astra](https://developers.openai.com/api/docs/models/gpt-6-astra) | 1M | $20.75 | $0.83 | **96.0% · save $19.92** |
-| [Claude Opus 5.5](https://platform.claude.com/docs/en/models/opus-5-5/overview) | 500K | $2.20 | $0.33 | **85.0% · save $1.87** |
-| [Claude Opus 5.5](https://platform.claude.com/docs/en/models/opus-5-5/overview) | 1M | $4.20 | $0.33 | **92.1% · save $3.87** |
-
-*Illustrative standard-rate arithmetic for one uncached request with 10,000 output tokens in both arms, equal task completion, and provider input matching the 32,768-token target. Excludes cache reads/writes, retries, tool charges, and hosting. Rates checked 2026-10-16; see the [model cards and assumptions](docs/cost-comparison.md). These are modeled amounts, not API bills.*
-
-## LongBench v2: 600-request MiniMax evaluation
-
-**100 public questions · 3 repeats · Full context and Sift · 600 completed responses**
-
-On this fixed sample, Sift used **65.8% fewer provider-reported prompt tokens** than Full context. The answer-accuracy measurements are shown alongside token use so teams can judge the result for their workload.
-
-| Measure | Full context | Sift | Observed difference |
+| Measure | Full context | With Sift | Difference |
 |---|---:|---:|---:|
-| Provider prompt tokens | 24,245,610 | 8,281,452 | **65.8% fewer with Sift** |
-| Exact-choice response accuracy | 117/286 · 40.9% | 106/290 · 36.6% | −4.4 percentage points |
-| Equal-task-weighted accuracy | 39.8% | 36.7% | −3.2 percentage points |
+| Provider-reported prompt tokens | 24,245,610 | 8,281,452 | **65.8% fewer with Sift** |
+| Exact-choice accuracy | 117/286 · 40.91% | 106/290 · 36.55% | −4.36 percentage points |
+| Equal-task-weighted accuracy | 39.83% | 36.67% | −3.16 percentage points |
 | Task majorities correct | 40/100 | 34/100 | 18 Full-only · 12 Sift-only |
 
-This was **600 completed requests over 100 previously exposed development questions**, not 600 unique questions or the full 503-question LongBench v2 dataset. Five ambiguous original attempts were retried once; their token usage is unknown and excluded. Five responses ended at the output limit and were unscorable. Sift’s average provider prompt was 27,605 tokens versus 80,819 for Full. These measurements establish prompt-token reduction on this MiniMax setup, not quality parity, lower dollar cost, or faster end-to-end agent completion.
+**The measured quality gap belongs with the token result.** This run does not establish quality parity, accepted-task quality, or performance on Claude Code or Codex agent workflows.
 
-[Read the protocol and complete-run status](docs/evals/longbench-v2-minimax-600-runner-2026-10-19.md) · [Aggregate result artifact](docs/results/longbench-v2-minimax-600-2026-10-19.json) · [Evaluation history and limitations](docs/evaluation.md)
+**Scope:** 100 public development questions previously exposed during selector work, with three repeats clustered within each question—not a blind holdout or the full 503-question dataset. Five ambiguous original attempts were retried once; their token use is unknown and excluded, so the 65.8% figure covers only the 600 responses with usage receipts. Five responses ended at the output limit and were unscorable. No dollar-savings or end-to-end speed claim is made.
 
-### Earlier LongBench development runs
+[Protocol and complete-run status](docs/evals/longbench-v2-minimax-600-runner-2026-10-19.md) · [Aggregate result and hashes](docs/results/longbench-v2-minimax-600-2026-10-19.json) · [Earlier and ongoing evaluation work](docs/evaluation.md)
 
-Separate 100-task and smaller Qwen/MiniMax screens produced different results, including a six-task matrix-selector study. They are not replications of the 600-request run above and should not be combined into one score. See the [earlier hybrid analysis](docs/evals/longbench-v2-minimax-hybrid-stage2-analysis-2026-10-17.md), [baseline audit](docs/evals/longbench-v2-readiness-2026-10-17.md), and [evaluation history](docs/evaluation.md).
+### 32,768-token budget: premium-model rate examples
+
+This is a separate **rate-card illustration**, not the measured LongBench cost and not an Astra or Claude API run. It models one uncached request with the same 10,000 output tokens in both arms and a 32,768-token Sift forwarding target.
+
+| Model card | Full input | Full cost | With Sift | Modeled reduction |
+|---|---:|---:|---:|---:|
+| [GPT-6 Astra](https://developers.openai.com/api/docs/models/gpt-6-astra) | 500K | $10.75 | $0.83 | **92.3% · $9.92** |
+| [GPT-6 Astra](https://developers.openai.com/api/docs/models/gpt-6-astra) | 1M | $20.75 | $0.83 | **96.0% · $19.92** |
+| [Claude Opus 5.5](https://platform.claude.com/docs/en/models/opus-5-5/overview) | 500K | $2.20 | $0.33 | **85.0% · $1.87** |
+| [Claude Opus 5.5](https://platform.claude.com/docs/en/models/opus-5-5/overview) | 950K¹ | $4.00 | $0.33 | **91.7% · $3.67** |
+
+*Standard API rate arithmetic, equal task success and equal output, excluding cache, tools, retries, and hosting. GPT-6 Astra's long-context price applies to prompts above 272K; 950K leaves output room in Claude Opus 5.5's 1M context window. Rate cards checked 2026-10-19. These are modeled amounts, not measured savings or API bills; see [assumptions and calculations](docs/cost-comparison.md).*
+
+LongBench v2 measures structured-choice QA, not agent-loop completion. Other Qwen and MiniMax screens used different samples and had different outcomes; see the [evaluation record](docs/evaluation.md) rather than combining their scores.
+
+## Quick start
+
+Install the tested GitHub release (Python 3.11+). Sift is not yet on PyPI:
+
+```sh
+python -m pip install "sift-context[litellm] @ git+https://github.com/stancsz/sift.git@v0.10.0"
+```
+
+Create `litellm_callback.py` beside your LiteLLM config. The published release uses a 24,576-token default; set the target for your model route and reserve space for model output.
+
+```python
+from sift.litellm_proxy import SiftLiteLLMHook
+
+sift_callback = SiftLiteLLMHook(
+    {"local-chat": 24_576},
+    raw_limit=1_000_000,
+)
+```
+
+Assumes an OpenAI-compatible model endpoint is already running at `http://127.0.0.1:8080/v1` and does not require authentication. Replace `your-model` and the URL with your backend's values. For a protected endpoint, load the API key from your environment rather than putting it in the config file.
+
+```yaml
+model_list:
+  - model_name: local-chat
+    litellm_params:
+      model: openai/your-model
+      api_base: http://127.0.0.1:8080/v1
+      api_key: none
+
+litellm_settings:
+  callbacks:
+    - litellm_callback.sift_callback
+```
+
+Start the proxy from the directory containing both files:
+
+```sh
+litellm --host 127.0.0.1 --config config.yaml --port 4000
+```
+
+On Windows PowerShell, if LiteLLM's Unicode startup banner does not fit your console encoding, run `$env:PYTHONUTF8 = "1"` before starting the proxy.
+
+Send a first request through Sift:
+
+```sh
+curl http://127.0.0.1:4000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model":"local-chat","messages":[{"role":"user","content":"Reply with READY."}]}'
+```
+
+The response should contain the backend's answer. This short request is below the Sift target and passes through unchanged. To confirm compaction, send a conversation whose estimated input exceeds the configured target and inspect `x-sift-compacted`, `x-sift-estimated-input-tokens`, and `x-sift-estimated-forwarded-tokens`. On Windows PowerShell, use `curl.exe`. Start with the target below your backend's input limit so there is room for output.
+
+The release install above is the fastest supported path. The unreleased `main` branch currently defaults to 32,768 estimated tokens (`0.11.0.dev0`); use it only if you intentionally want the development candidate. See the [full callback details](#litellm-callback-behavior-and-limits) and [direct library example](#use-the-library-directly).
 
 ## The problem
 
@@ -71,35 +117,9 @@ Sift retains exact recent work, ranks older excerpts against the current task, c
 
 **Why it helps:** keep an agent's working set small as its history grows, without another model call or a generated summary. The current `main` candidate's default selection target is **32,768 estimated input tokens** and can be changed per request or model route. The published `v0.10.0` release defaults to **24,576**; set a target explicitly when using that release. Sift can inspect up to **1,000,000 estimated input tokens** in CPU memory. The active task and current tool work must fit; if they do not, Sift fails closed with HTTP 413. Reserve output capacity and account for differences between estimated and provider token counts when choosing a target.
 
-## Install and use with LiteLLM
+## LiteLLM callback behavior and limits
 
-Install the tagged release from GitHub. Sift is not currently published to PyPI.
-
-```sh
-python -m pip install "sift-context[litellm] @ git+https://github.com/stancsz/sift.git@v0.10.0"
-```
-
-Put a callback instance beside your LiteLLM configuration:
-
-```python
-# litellm_callback.py
-from sift.litellm_proxy import SiftLiteLLMHook
-
-sift_callback = SiftLiteLLMHook(
-    {"local-chat": 32_768},
-    raw_limit=1_000_000,
-)
-```
-
-Register it through LiteLLM's callback configuration:
-
-```yaml
-litellm_settings:
-  callbacks:
-    - litellm_callback.sift_callback
-```
-
-`local-chat` is the resolved public model name in your proxy configuration. Set a target for each model you want compacted. If a routing callback changes the model name, place it before Sift. The [complete example](examples/litellm_config.yaml) includes a local OpenAI-compatible route; [the callback file](examples/litellm_callback.py) can be copied alongside it.
+`local-chat` is the resolved public model name in your proxy configuration. Set a target for each model you want compacted. If a routing callback changes the model name, place it before Sift.
 
 The callback supports **Chat Completions, Anthropic Messages, and stateless text Responses** on **LiteLLM Proxy 1.103.0**, pinned by the optional dependency. It uses the proxy's route counter, runs CPU work off the event loop with at most two admitted compactions per hook instance, and adds a server-owned `sift` audit to internal metadata. Excess work receives HTTP 429 with `Retry-After: 1`. Cancelled queued work is skipped; already running Python work retains its slot until it finishes. Configured routes return `x-sift-compacted` and estimated input/forwarded token headers. Requests below target keep their original messages or input and tools.
 
