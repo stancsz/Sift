@@ -34,10 +34,10 @@ from prepare_longbench_v2 import (  # noqa: E402
     DATASET_REVISION,
     DATASET_SHA256,
     file_sha256,
-    iter_json_array,
     make_messages,
     prompt_sha256,
 )
+from audit_longbench_v2_target_sweep import iter_selected_dataset_rows  # noqa: E402
 from prepare_longbench_v2_minimax import (  # noqa: E402
     render_minimax,
 )
@@ -67,6 +67,9 @@ FULL_CASE_COUNT = 100
 FULL_REPEATS = 3
 PRIMARY_TARGET = 32_768
 MAX_FULL_LOCAL_TOKENS = 150_000
+KNOWN_EXPOSED_DEV_MANIFEST = ROOT / "docs/evals/longbench-v2-minimax-m3-100-manifest-2026-10-16.json"
+KNOWN_EXPOSED_DEV_MANIFEST_SHA256 = "865e27c21fdd2a6ce4b629b283123f4bff66b62e3c17f39c3b8be842b00a6f18"
+KNOWN_FROZEN_RUNNER_SHA256 = "0fc06a5d01605cac3e6a1ada1b66656ad21568227f7159434d82c04263e58c05"
 class EvaluationError(RuntimeError):
     pass
 
@@ -76,8 +79,15 @@ def count_prompt(tokenizer: Tokenizer, messages: list[dict[str, str]]) -> int:
     return len(tokenizer.encode(rendered, add_special_tokens=False).ids)
 
 
-def load_cases(manifest_path: Path, dataset_path: Path, tokenizer_path: Path, template_path: Path):
+def load_cases(manifest_path: Path, dataset_path: Path, tokenizer_path: Path,
+               template_path: Path, *, prepare_only: bool = False):
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest_hash = file_sha256(manifest_path)
+    allow_known_runner_revision = (
+        prepare_only
+        and manifest_path.resolve() == KNOWN_EXPOSED_DEV_MANIFEST.resolve()
+        and manifest_hash == KNOWN_EXPOSED_DEV_MANIFEST_SHA256
+    )
     harness = manifest.get("harness", {})
     if not isinstance(harness, dict):
         raise EvaluationError("Frozen manifest harness metadata is missing")
@@ -98,7 +108,15 @@ def load_cases(manifest_path: Path, dataset_path: Path, tokenizer_path: Path, te
             source_path.relative_to(ROOT)
         except ValueError as error:
             raise EvaluationError(f"Frozen source path escapes repository: {relative_path}") from error
-        if not source_path.is_file() or file_sha256(source_path) != expected_digest:
+        if not source_path.is_file():
+            raise EvaluationError(f"Frozen preparation source hash mismatch: {relative_path}")
+        actual_digest = file_sha256(source_path)
+        known_dev_runner_changed = (
+            allow_known_runner_revision
+            and path_key == "runner_path"
+            and expected_digest == KNOWN_FROZEN_RUNNER_SHA256
+        )
+        if actual_digest != expected_digest and not known_dev_runner_changed:
             raise EvaluationError(f"Frozen preparation source hash mismatch: {relative_path}")
     if manifest.get("model", {}).get("id") != REQUESTED_MODEL:
         raise EvaluationError(f"Frozen manifest must target {REQUESTED_MODEL}")
@@ -121,15 +139,20 @@ def load_cases(manifest_path: Path, dataset_path: Path, tokenizer_path: Path, te
     if file_sha256(template_path) != manifest["model"]["chat_template_sha256"]:
         raise EvaluationError("MiniMax chat template hash differs from frozen manifest")
     core_hash = hashlib.sha256((ROOT / "src/sift/core.py").read_bytes()).hexdigest()
-    if core_hash != manifest["sift"]["core_sha256"]:
+    known_dev_core_changed = (
+        allow_known_runner_revision
+        and core_hash != manifest["sift"]["core_sha256"]
+    )
+    if core_hash != manifest["sift"]["core_sha256"] and not known_dev_core_changed:
         raise EvaluationError("Sift core changed after sample freeze")
     expected = {case["id"]: case for case in manifest["cases"]}
     rows = {}
-    for row in iter_json_array(dataset_path):
-        if row["_id"] in expected:
-            rows[row["_id"]] = row
-            if len(rows) == len(expected):
-                break
+    dataset_fields = {"_id", "context", "question", "choice_A", "choice_B", "choice_C", "choice_D", "answer"}
+    for row in iter_selected_dataset_rows(dataset_path, set(expected), dataset_fields):
+        case_id = str(row.get("_id", ""))
+        if case_id in rows:
+            raise EvaluationError(f"Duplicate task ID in pinned LongBench data: {case_id}")
+        rows[case_id] = row
     if set(rows) != set(expected):
         raise EvaluationError("Frozen LongBench rows are missing")
     tokenizer = Tokenizer.from_file(str(tokenizer_path))
@@ -478,7 +501,7 @@ def run(manifest_path: Path, dataset_path: Path, tokenizer_path: Path,
         estimated_spend_ceiling_usd: float = DEFAULT_ESTIMATED_SPEND_CEILING_USD,
         input_price_per_million: float = DEFAULT_INPUT_PRICE_PER_MILLION,
         output_price_per_million: float = DEFAULT_OUTPUT_PRICE_PER_MILLION,
-        smoke: bool = False) -> dict:
+        smoke: bool = False, prepare_only: bool = False) -> dict:
     if output_path.exists():
         raise FileExistsError(f"Refusing to overwrite report: {output_path}")
     if workers < 1 or workers > MAX_WORKERS:
@@ -492,10 +515,19 @@ def run(manifest_path: Path, dataset_path: Path, tokenizer_path: Path,
     if (not math.isfinite(input_price_per_million) or not math.isfinite(output_price_per_million)
             or input_price_per_million < 0 or output_price_per_million < 0):
         raise ValueError("input and output prices must be nonnegative")
-    api_key = os.environ.get("OPENROUTER_API_KEY")
-    if not api_key:
-        raise EvaluationError("OPENROUTER_API_KEY is required")
-    manifest, tokenizer, cases = load_cases(manifest_path, dataset_path, tokenizer_path, template_path)
+    if prepare_only:
+        if (manifest_path.resolve() != KNOWN_EXPOSED_DEV_MANIFEST.resolve()
+                or file_sha256(manifest_path) != KNOWN_EXPOSED_DEV_MANIFEST_SHA256):
+            raise EvaluationError("Prepare-only mode is restricted to the pinned exposed development manifest")
+        if case_ids or smoke or repeats != FULL_REPEATS or target_tokens != PRIMARY_TARGET:
+            raise EvaluationError("Prepare-only mode requires the complete exposed 100-case, three-repeat, 32K-configured plan")
+    else:
+        api_key = os.environ.get("OPENROUTER_API_KEY")
+        if not api_key:
+            raise EvaluationError("OPENROUTER_API_KEY is required")
+    manifest, tokenizer, cases = load_cases(
+        manifest_path, dataset_path, tokenizer_path, template_path, prepare_only=prepare_only
+    )
     if len(cases) != FULL_CASE_COUNT:
         raise EvaluationError(
             f"Full-run manifest must contain exactly {FULL_CASE_COUNT} frozen cases; observed {len(cases)}"
@@ -601,11 +633,41 @@ def run(manifest_path: Path, dataset_path: Path, tokenizer_path: Path,
             },
         },
         "samples": [],
-        "mode": "single_case_smoke" if smoke else "full_100_case_run",
+        "mode": "offline_prepare_only" if prepare_only else ("single_case_smoke" if smoke else "full_100_case_run"),
     }
     if case_ids:
         report["selected_case_ids"] = list(case_ids)
     report["budget"]["in_flight_reserved_cost_usd"] = 0.0
+    if prepare_only:
+        report["status"] = "prepared_only_no_dispatch"
+        report["actual_dispatch_started"] = False
+        report["preparation"]["dispatch_started"] = False
+        report["preparation"]["cost_estimate_note"] = (
+            "Historical local-rate estimate for offline preparation only; not a live route quote, invoice, budget authorization, or dispatch preflight."
+        )
+        report["preparation"]["configured_sift_target_tokens"] = target_tokens
+        report["preparation"]["effective_sift_target_tokens"] = target_tokens - SAFETY_MARGIN
+        report["preparation"]["frozen_manifest_core_sha256"] = manifest["sift"]["core_sha256"]
+        report["preparation"]["current_core_differs_from_frozen_manifest"] = (
+            report["sift_core_sha256"] != manifest["sift"]["core_sha256"]
+        )
+        report["prepared_jobs"] = [
+            {
+                "job_id": f"{job['case_id']}:{job['arm']}:{job['repeat']}",
+                "case_id": job["case_id"],
+                "arm": job["arm"],
+                "repeat": job["repeat"],
+                "local_rendered_prompt_tokens": job["estimated_tokens"],
+                "request_messages_sha256": job["request_messages_sha256"],
+                "sift_preprocessing_ms": job["sift_preprocessing_ms"],
+            }
+            for job in jobs
+        ]
+        report["completed_utc"] = datetime.now(timezone.utc).isoformat()
+        write_report_atomic(output_path, report)
+        return report
+    if not api_key:
+        raise EvaluationError("OPENROUTER_API_KEY is required")
     if not budget["preflight_passed"]:
         report["status"] = "not_started_estimated_budget_exceeded"
         report["completed_utc"] = datetime.now(timezone.utc).isoformat()
@@ -815,6 +877,8 @@ if __name__ == "__main__":
                         help="Optional frozen case subset; repeat the flag for multiple IDs.")
     parser.add_argument("--smoke", action="store_true",
                         help="Explicitly allow one frozen case with exactly one repeat.")
+    parser.add_argument("--prepare-only", action="store_true",
+                        help="Prepare jobs without network access, restricted to the pinned exposed 100-task development manifest.")
     parser.add_argument("--estimated-spend-ceiling-usd", type=float,
                         default=DEFAULT_ESTIMATED_SPEND_CEILING_USD)
     parser.add_argument("--input-price-per-million", type=float,
@@ -825,6 +889,6 @@ if __name__ == "__main__":
     result = run(args.manifest, args.dataset_path, args.tokenizer, args.template, args.output,
                  args.repeats, args.seed, args.workers, args.target, args.case_ids,
                  args.estimated_spend_ceiling_usd, args.input_price_per_million,
-                 args.output_price_per_million, args.smoke)
+                 args.output_price_per_million, args.smoke, args.prepare_only)
     print(json.dumps({"status": result["status"], "samples": len(result["samples"]),
                       "output": str(args.output)}, indent=2))
