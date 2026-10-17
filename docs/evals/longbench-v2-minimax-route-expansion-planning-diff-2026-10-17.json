@@ -1,0 +1,971 @@
+{
+  "schema_version": 1,
+  "status": "answer_blind_route_expansion_planning_diff_only",
+  "created_utc": "2026-10-17",
+  "purpose": "Compare the frozen historical 344-row cohort with an exploratory cohort derived from public route metadata and historical receipt calibration. Not a dispatch manifest or current eligibility assertion.",
+  "source_report": {
+    "path": "docs/evals/longbench-v2-minimax-fullsuite-offline-cost-audit-2026-10-18.json",
+    "sha256": "35dcfa2a119668e1316d6b7153a82a1bc9dbba845b27ddde5bcff2e64cdb9b00",
+    "dataset_sha256": "15d61c22d92c96900b3c4948b6aeea218d3214b676a65df48e7b8555604c7fe2",
+    "dataset_revision": "2b48e494f2c7a2f0af81aae178e05c7e1dde0fe9"
+  },
+  "preserved_baseline": {
+    "path": "docs/evals/longbench-v2-minimax-modeled-pair-manifest-2026-10-18.json",
+    "sha256": "5221e1d079b6fb6b208a9a6bd55c1eedb9f49acef6023c90392b175e8782a155",
+    "task_count": 344,
+    "task_ids_sha256": "819167a1ede8f7dcb4abebb1890781677e9b19da8dff24b61b4da58958f047da",
+    "historical_projection_factor": 3.25,
+    "historical_local_full_cap": 150000
+  },
+  "candidate_route_metadata": {
+    "source_url": "https://openrouter.ai/api/v1/models/minimax/minimax-m3/endpoints",
+    "checked_utc_date": "2026-10-17",
+    "provider": "Minimax",
+    "provider_endpoint": "Minimax | minimax/minimax-m3-20260531",
+    "model_id": "minimax/minimax-m3",
+    "status": 0,
+    "context_length_tokens": 524288,
+    "max_prompt_tokens": 524288,
+    "input_usd_per_million": 0.3,
+    "output_usd_per_million": 1.2,
+    "metadata_only_not_route_probe": true
+  },
+  "candidate_assumptions": {
+    "local_to_provider_projection_factor": 1.05,
+    "factor_status": "planning hypothesis only; 589 normal=true historical full receipts match local/provider counts, but all five receipts above 150,000 local tokens came from fallback-enabled files and none were pinned no-fallback route receipts",
+    "full_local_prompt_cap": 524288,
+    "sift_effective_target_tokens": 32640,
+    "configured_sift_target_tokens": 32768,
+    "output_cap_tokens_per_request": 16,
+    "input_cost_safety_factor": 1.5,
+    "provider_fallbacks_disabled_required_for_any_future_dispatch": true
+  },
+  "cohort_summary": {
+    "candidate_task_count": 454,
+    "added_task_count": 110,
+    "outside_candidate_count": 49,
+    "full_screen_fail_count": 49,
+    "sift_screen_fail_count": 31,
+    "both_fail_count": 31,
+    "full_only_fail_count": 18,
+    "sift_only_fail_count": 0,
+    "candidate_combined_task_ids_sha256": "208d35ad6ac27a17d2e5da93e21d3929605c0c35992e818df68e5458c2b22e0d",
+    "all_ids_prompt_label_census_exposed": true,
+    "untouched_task_count": 0
+  },
+  "token_totals_candidate": {
+    "full_local_prompt_tokens": 50178744,
+    "default_sift_local_prompt_tokens": 12099872,
+    "descriptive_difference_percent": 75.88645901539505
+  },
+  "planning_reserve_usd": {
+    "one_repeat_full_arm": 22.589151599999997,
+    "one_repeat_default_sift_arm": 5.4536592,
+    "one_repeat_pair": 28.042810799999998,
+    "three_repeat_pair": 84.1284324
+  },
+  "added_tasks": [
+    {
+      "id": "66ead7bd5a08c7b9b35dca7a",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 460103,
+      "full_projected_provider_prompt_tokens": 483109,
+      "default_sift_local_prompt_tokens": 25321,
+      "default_sift_projected_provider_prompt_tokens": 26588
+    },
+    {
+      "id": "66ebc04a5a08c7b9b35de740",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 344069,
+      "full_projected_provider_prompt_tokens": 361273,
+      "default_sift_local_prompt_tokens": 27808,
+      "default_sift_projected_provider_prompt_tokens": 29199
+    },
+    {
+      "id": "66ebd2475a08c7b9b35e0155",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 467129,
+      "full_projected_provider_prompt_tokens": 490486,
+      "default_sift_local_prompt_tokens": 32492,
+      "default_sift_projected_provider_prompt_tokens": 34117
+    },
+    {
+      "id": "66ebd55f5a08c7b9b35e0698",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 312660,
+      "full_projected_provider_prompt_tokens": 328293,
+      "default_sift_local_prompt_tokens": 25506,
+      "default_sift_projected_provider_prompt_tokens": 26782
+    },
+    {
+      "id": "66ec088c821e116aacb194d9",
+      "domain": "Long Structured Data Understanding",
+      "full_local_prompt_tokens": 298539,
+      "full_projected_provider_prompt_tokens": 313466,
+      "default_sift_local_prompt_tokens": 32552,
+      "default_sift_projected_provider_prompt_tokens": 34180
+    },
+    {
+      "id": "66ec1054821e116aacb19f1a",
+      "domain": "Long In-context Learning",
+      "full_local_prompt_tokens": 151809,
+      "full_projected_provider_prompt_tokens": 159400,
+      "default_sift_local_prompt_tokens": 32606,
+      "default_sift_projected_provider_prompt_tokens": 34237
+    },
+    {
+      "id": "66ec2755821e116aacb1b6f2",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 171667,
+      "full_projected_provider_prompt_tokens": 180251,
+      "default_sift_local_prompt_tokens": 32557,
+      "default_sift_projected_provider_prompt_tokens": 34185
+    },
+    {
+      "id": "66ec3fa7821e116aacb1c75d",
+      "domain": "Long In-context Learning",
+      "full_local_prompt_tokens": 170100,
+      "full_projected_provider_prompt_tokens": 178605,
+      "default_sift_local_prompt_tokens": 21761,
+      "default_sift_projected_provider_prompt_tokens": 22850
+    },
+    {
+      "id": "66ece545821e116aacb1dd77",
+      "domain": "Code Repository Understanding",
+      "full_local_prompt_tokens": 207779,
+      "full_projected_provider_prompt_tokens": 218168,
+      "default_sift_local_prompt_tokens": 32535,
+      "default_sift_projected_provider_prompt_tokens": 34162
+    },
+    {
+      "id": "66ecfdbd821e116aacb1e3f7",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 164757,
+      "full_projected_provider_prompt_tokens": 172995,
+      "default_sift_local_prompt_tokens": 24135,
+      "default_sift_projected_provider_prompt_tokens": 25342
+    },
+    {
+      "id": "66ed24c5821e116aacb1eee6",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 498290,
+      "full_projected_provider_prompt_tokens": 523205,
+      "default_sift_local_prompt_tokens": 32463,
+      "default_sift_projected_provider_prompt_tokens": 34087
+    },
+    {
+      "id": "66ed5be2821e116aacb1fb57",
+      "domain": "Code Repository Understanding",
+      "full_local_prompt_tokens": 403631,
+      "full_projected_provider_prompt_tokens": 423813,
+      "default_sift_local_prompt_tokens": 32593,
+      "default_sift_projected_provider_prompt_tokens": 34223
+    },
+    {
+      "id": "66ee3c7b821e116aacb20f80",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 168486,
+      "full_projected_provider_prompt_tokens": 176911,
+      "default_sift_local_prompt_tokens": 32620,
+      "default_sift_projected_provider_prompt_tokens": 34251
+    },
+    {
+      "id": "66ee4c55821e116aacb21596",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 298924,
+      "full_projected_provider_prompt_tokens": 313871,
+      "default_sift_local_prompt_tokens": 27756,
+      "default_sift_projected_provider_prompt_tokens": 29144
+    },
+    {
+      "id": "66ee981d821e116aacb22005",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 192491,
+      "full_projected_provider_prompt_tokens": 202116,
+      "default_sift_local_prompt_tokens": 27533,
+      "default_sift_projected_provider_prompt_tokens": 28910
+    },
+    {
+      "id": "66efc5e3821e116aacb23df1",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 213740,
+      "full_projected_provider_prompt_tokens": 224427,
+      "default_sift_local_prompt_tokens": 29206,
+      "default_sift_projected_provider_prompt_tokens": 30667
+    },
+    {
+      "id": "66f00f1a821e116aacb252cf",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 370000,
+      "full_projected_provider_prompt_tokens": 388500,
+      "default_sift_local_prompt_tokens": 26912,
+      "default_sift_projected_provider_prompt_tokens": 28258
+    },
+    {
+      "id": "66f11349821e116aacb269e0",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 359337,
+      "full_projected_provider_prompt_tokens": 377304,
+      "default_sift_local_prompt_tokens": 27906,
+      "default_sift_projected_provider_prompt_tokens": 29302
+    },
+    {
+      "id": "66f167c3821e116aacb274f4",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 194532,
+      "full_projected_provider_prompt_tokens": 204259,
+      "default_sift_local_prompt_tokens": 28692,
+      "default_sift_projected_provider_prompt_tokens": 30127
+    },
+    {
+      "id": "66f168d8821e116aacb27519",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 157169,
+      "full_projected_provider_prompt_tokens": 165028,
+      "default_sift_local_prompt_tokens": 26535,
+      "default_sift_projected_provider_prompt_tokens": 27862
+    },
+    {
+      "id": "66f1ae08821e116aacb27c9c",
+      "domain": "Long In-context Learning",
+      "full_local_prompt_tokens": 358025,
+      "full_projected_provider_prompt_tokens": 375927,
+      "default_sift_local_prompt_tokens": 28308,
+      "default_sift_projected_provider_prompt_tokens": 29724
+    },
+    {
+      "id": "66f1dac1821e116aacb27df1",
+      "domain": "Code Repository Understanding",
+      "full_local_prompt_tokens": 383348,
+      "full_projected_provider_prompt_tokens": 402516,
+      "default_sift_local_prompt_tokens": 27554,
+      "default_sift_projected_provider_prompt_tokens": 28932
+    },
+    {
+      "id": "66f24538821e116aacb2865e",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 327320,
+      "full_projected_provider_prompt_tokens": 343686,
+      "default_sift_local_prompt_tokens": 28454,
+      "default_sift_projected_provider_prompt_tokens": 29877
+    },
+    {
+      "id": "66f25a2f821e116aacb28b2f",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 197127,
+      "full_projected_provider_prompt_tokens": 206984,
+      "default_sift_local_prompt_tokens": 25976,
+      "default_sift_projected_provider_prompt_tokens": 27275
+    },
+    {
+      "id": "66f2a414821e116aacb2a3af",
+      "domain": "Long Structured Data Understanding",
+      "full_local_prompt_tokens": 314491,
+      "full_projected_provider_prompt_tokens": 330216,
+      "default_sift_local_prompt_tokens": 32497,
+      "default_sift_projected_provider_prompt_tokens": 34122
+    },
+    {
+      "id": "66f2a46d821e116aacb2a41a",
+      "domain": "Long Structured Data Understanding",
+      "full_local_prompt_tokens": 407264,
+      "full_projected_provider_prompt_tokens": 427628,
+      "default_sift_local_prompt_tokens": 32345,
+      "default_sift_projected_provider_prompt_tokens": 33963
+    },
+    {
+      "id": "66f2a80d821e116aacb2a760",
+      "domain": "Long In-context Learning",
+      "full_local_prompt_tokens": 377641,
+      "full_projected_provider_prompt_tokens": 396524,
+      "default_sift_local_prompt_tokens": 32637,
+      "default_sift_projected_provider_prompt_tokens": 34269
+    },
+    {
+      "id": "66f2abc5821e116aacb2aab7",
+      "domain": "Long Structured Data Understanding",
+      "full_local_prompt_tokens": 347028,
+      "full_projected_provider_prompt_tokens": 364380,
+      "default_sift_local_prompt_tokens": 32316,
+      "default_sift_projected_provider_prompt_tokens": 33932
+    },
+    {
+      "id": "66f2adaf821e116aacb2aca9",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 199691,
+      "full_projected_provider_prompt_tokens": 209676,
+      "default_sift_local_prompt_tokens": 29938,
+      "default_sift_projected_provider_prompt_tokens": 31435
+    },
+    {
+      "id": "66f2b546821e116aacb2b152",
+      "domain": "Long In-context Learning",
+      "full_local_prompt_tokens": 246712,
+      "full_projected_provider_prompt_tokens": 259048,
+      "default_sift_local_prompt_tokens": 27587,
+      "default_sift_projected_provider_prompt_tokens": 28967
+    },
+    {
+      "id": "66f2cacb821e116aacb2ba50",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 187943,
+      "full_projected_provider_prompt_tokens": 197341,
+      "default_sift_local_prompt_tokens": 32617,
+      "default_sift_projected_provider_prompt_tokens": 34248
+    },
+    {
+      "id": "66f2d224821e116aacb2bb8a",
+      "domain": "Long In-context Learning",
+      "full_local_prompt_tokens": 159803,
+      "full_projected_provider_prompt_tokens": 167794,
+      "default_sift_local_prompt_tokens": 32625,
+      "default_sift_projected_provider_prompt_tokens": 34257
+    },
+    {
+      "id": "66f2d553821e116aacb2bc8f",
+      "domain": "Long In-context Learning",
+      "full_local_prompt_tokens": 151409,
+      "full_projected_provider_prompt_tokens": 158980,
+      "default_sift_local_prompt_tokens": 24574,
+      "default_sift_projected_provider_prompt_tokens": 25803
+    },
+    {
+      "id": "66f2e874821e116aacb2c0af",
+      "domain": "Code Repository Understanding",
+      "full_local_prompt_tokens": 181181,
+      "full_projected_provider_prompt_tokens": 190241,
+      "default_sift_local_prompt_tokens": 24417,
+      "default_sift_projected_provider_prompt_tokens": 25638
+    },
+    {
+      "id": "66f2ef20821e116aacb2c278",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 172215,
+      "full_projected_provider_prompt_tokens": 180826,
+      "default_sift_local_prompt_tokens": 28015,
+      "default_sift_projected_provider_prompt_tokens": 29416
+    },
+    {
+      "id": "66f38969821e116aacb2d6ec",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 171680,
+      "full_projected_provider_prompt_tokens": 180264,
+      "default_sift_local_prompt_tokens": 32532,
+      "default_sift_projected_provider_prompt_tokens": 34159
+    },
+    {
+      "id": "66f3a311821e116aacb2de19",
+      "domain": "Long Structured Data Understanding",
+      "full_local_prompt_tokens": 187640,
+      "full_projected_provider_prompt_tokens": 197022,
+      "default_sift_local_prompt_tokens": 32632,
+      "default_sift_projected_provider_prompt_tokens": 34264
+    },
+    {
+      "id": "66f3c081821e116aacb2e9fa",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 215862,
+      "full_projected_provider_prompt_tokens": 226656,
+      "default_sift_local_prompt_tokens": 27508,
+      "default_sift_projected_provider_prompt_tokens": 28884
+    },
+    {
+      "id": "66f3dd59821e116aacb2f6ba",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 189421,
+      "full_projected_provider_prompt_tokens": 198893,
+      "default_sift_local_prompt_tokens": 20745,
+      "default_sift_projected_provider_prompt_tokens": 21783
+    },
+    {
+      "id": "66f3e58c821e116aacb2fabc",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 158694,
+      "full_projected_provider_prompt_tokens": 166629,
+      "default_sift_local_prompt_tokens": 30570,
+      "default_sift_projected_provider_prompt_tokens": 32099
+    },
+    {
+      "id": "66f3f095821e116aacb2fd28",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 186883,
+      "full_projected_provider_prompt_tokens": 196228,
+      "default_sift_local_prompt_tokens": 32622,
+      "default_sift_projected_provider_prompt_tokens": 34254
+    },
+    {
+      "id": "66f3f1a5821e116aacb2fdc7",
+      "domain": "Long In-context Learning",
+      "full_local_prompt_tokens": 377580,
+      "full_projected_provider_prompt_tokens": 396459,
+      "default_sift_local_prompt_tokens": 32555,
+      "default_sift_projected_provider_prompt_tokens": 34183
+    },
+    {
+      "id": "66f3f46f821e116aacb2ff5d",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 235550,
+      "full_projected_provider_prompt_tokens": 247328,
+      "default_sift_local_prompt_tokens": 21614,
+      "default_sift_projected_provider_prompt_tokens": 22695
+    },
+    {
+      "id": "66f3f947821e116aacb3029b",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 214768,
+      "full_projected_provider_prompt_tokens": 225507,
+      "default_sift_local_prompt_tokens": 32587,
+      "default_sift_projected_provider_prompt_tokens": 34217
+    },
+    {
+      "id": "66f40501821e116aacb307e8",
+      "domain": "Long In-context Learning",
+      "full_local_prompt_tokens": 297855,
+      "full_projected_provider_prompt_tokens": 312748,
+      "default_sift_local_prompt_tokens": 24128,
+      "default_sift_projected_provider_prompt_tokens": 25335
+    },
+    {
+      "id": "66f40b9c821e116aacb30a99",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 418515,
+      "full_projected_provider_prompt_tokens": 439441,
+      "default_sift_local_prompt_tokens": 32626,
+      "default_sift_projected_provider_prompt_tokens": 34258
+    },
+    {
+      "id": "66f41108821e116aacb30c41",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 163549,
+      "full_projected_provider_prompt_tokens": 171727,
+      "default_sift_local_prompt_tokens": 32607,
+      "default_sift_projected_provider_prompt_tokens": 34238
+    },
+    {
+      "id": "66f43414821e116aacb310a1",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 390350,
+      "full_projected_provider_prompt_tokens": 409868,
+      "default_sift_local_prompt_tokens": 32629,
+      "default_sift_projected_provider_prompt_tokens": 34261
+    },
+    {
+      "id": "66f4eff3821e116aacb31bc8",
+      "domain": "Long In-context Learning",
+      "full_local_prompt_tokens": 176373,
+      "full_projected_provider_prompt_tokens": 185192,
+      "default_sift_local_prompt_tokens": 23909,
+      "default_sift_projected_provider_prompt_tokens": 25105
+    },
+    {
+      "id": "66f50109821e116aacb31f16",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 206453,
+      "full_projected_provider_prompt_tokens": 216776,
+      "default_sift_local_prompt_tokens": 28736,
+      "default_sift_projected_provider_prompt_tokens": 30173
+    },
+    {
+      "id": "66f519a6821e116aacb32579",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 171583,
+      "full_projected_provider_prompt_tokens": 180163,
+      "default_sift_local_prompt_tokens": 32600,
+      "default_sift_projected_provider_prompt_tokens": 34230
+    },
+    {
+      "id": "66f51ab2821e116aacb325fb",
+      "domain": "Code Repository Understanding",
+      "full_local_prompt_tokens": 359130,
+      "full_projected_provider_prompt_tokens": 377087,
+      "default_sift_local_prompt_tokens": 21740,
+      "default_sift_projected_provider_prompt_tokens": 22827
+    },
+    {
+      "id": "66f52d48821e116aacb32cf4",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 158312,
+      "full_projected_provider_prompt_tokens": 166228,
+      "default_sift_local_prompt_tokens": 28639,
+      "default_sift_projected_provider_prompt_tokens": 30071
+    },
+    {
+      "id": "66f52f0f821e116aacb32ddb",
+      "domain": "Long In-context Learning",
+      "full_local_prompt_tokens": 302949,
+      "full_projected_provider_prompt_tokens": 318097,
+      "default_sift_local_prompt_tokens": 23954,
+      "default_sift_projected_provider_prompt_tokens": 25152
+    },
+    {
+      "id": "66f55828821e116aacb3363e",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 272272,
+      "full_projected_provider_prompt_tokens": 285886,
+      "default_sift_local_prompt_tokens": 21973,
+      "default_sift_projected_provider_prompt_tokens": 23072
+    },
+    {
+      "id": "66f5605a821e116aacb3381f",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 218920,
+      "full_projected_provider_prompt_tokens": 229866,
+      "default_sift_local_prompt_tokens": 21983,
+      "default_sift_projected_provider_prompt_tokens": 23083
+    },
+    {
+      "id": "66f61d7dbb02136c067c1802",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 251615,
+      "full_projected_provider_prompt_tokens": 264196,
+      "default_sift_local_prompt_tokens": 32628,
+      "default_sift_projected_provider_prompt_tokens": 34260
+    },
+    {
+      "id": "66f659a8bb02136c067c1d68",
+      "domain": "Long Structured Data Understanding",
+      "full_local_prompt_tokens": 176284,
+      "full_projected_provider_prompt_tokens": 185099,
+      "default_sift_local_prompt_tokens": 32565,
+      "default_sift_projected_provider_prompt_tokens": 34194
+    },
+    {
+      "id": "66f7c780bb02136c067c35e8",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 211267,
+      "full_projected_provider_prompt_tokens": 221831,
+      "default_sift_local_prompt_tokens": 30675,
+      "default_sift_projected_provider_prompt_tokens": 32209
+    },
+    {
+      "id": "66f7f963bb02136c067c3be1",
+      "domain": "Long Structured Data Understanding",
+      "full_local_prompt_tokens": 177143,
+      "full_projected_provider_prompt_tokens": 186001,
+      "default_sift_local_prompt_tokens": 32580,
+      "default_sift_projected_provider_prompt_tokens": 34209
+    },
+    {
+      "id": "66f8c9febb02136c067c4511",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 220294,
+      "full_projected_provider_prompt_tokens": 231309,
+      "default_sift_local_prompt_tokens": 31322,
+      "default_sift_projected_provider_prompt_tokens": 32889
+    },
+    {
+      "id": "66f908e3bb02136c067c4992",
+      "domain": "Code Repository Understanding",
+      "full_local_prompt_tokens": 420022,
+      "full_projected_provider_prompt_tokens": 441024,
+      "default_sift_local_prompt_tokens": 26365,
+      "default_sift_projected_provider_prompt_tokens": 27684
+    },
+    {
+      "id": "66f94f9ebb02136c067c4fde",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 453568,
+      "full_projected_provider_prompt_tokens": 476247,
+      "default_sift_local_prompt_tokens": 22003,
+      "default_sift_projected_provider_prompt_tokens": 23104
+    },
+    {
+      "id": "66f97dc3bb02136c067c56c8",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 220398,
+      "full_projected_provider_prompt_tokens": 231418,
+      "default_sift_local_prompt_tokens": 30676,
+      "default_sift_projected_provider_prompt_tokens": 32210
+    },
+    {
+      "id": "66fa0d88bb02136c067c5a8a",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 202913,
+      "full_projected_provider_prompt_tokens": 213059,
+      "default_sift_local_prompt_tokens": 26927,
+      "default_sift_projected_provider_prompt_tokens": 28274
+    },
+    {
+      "id": "66fa190bbb02136c067c5d32",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 225521,
+      "full_projected_provider_prompt_tokens": 236798,
+      "default_sift_local_prompt_tokens": 27771,
+      "default_sift_projected_provider_prompt_tokens": 29160
+    },
+    {
+      "id": "66fa2734bb02136c067c627a",
+      "domain": "Code Repository Understanding",
+      "full_local_prompt_tokens": 446603,
+      "full_projected_provider_prompt_tokens": 468934,
+      "default_sift_local_prompt_tokens": 25564,
+      "default_sift_projected_provider_prompt_tokens": 26843
+    },
+    {
+      "id": "66fa542bbb02136c067c686d",
+      "domain": "Code Repository Understanding",
+      "full_local_prompt_tokens": 287620,
+      "full_projected_provider_prompt_tokens": 302001,
+      "default_sift_local_prompt_tokens": 24974,
+      "default_sift_projected_provider_prompt_tokens": 26223
+    },
+    {
+      "id": "66fa7269bb02136c067c6c73",
+      "domain": "Code Repository Understanding",
+      "full_local_prompt_tokens": 160901,
+      "full_projected_provider_prompt_tokens": 168947,
+      "default_sift_local_prompt_tokens": 27351,
+      "default_sift_projected_provider_prompt_tokens": 28719
+    },
+    {
+      "id": "66fa788abb02136c067c6d75",
+      "domain": "Code Repository Understanding",
+      "full_local_prompt_tokens": 254430,
+      "full_projected_provider_prompt_tokens": 267152,
+      "default_sift_local_prompt_tokens": 23482,
+      "default_sift_projected_provider_prompt_tokens": 24657
+    },
+    {
+      "id": "66fa8ccdbb02136c067c6fa7",
+      "domain": "Long Structured Data Understanding",
+      "full_local_prompt_tokens": 429065,
+      "full_projected_provider_prompt_tokens": 450519,
+      "default_sift_local_prompt_tokens": 32597,
+      "default_sift_projected_provider_prompt_tokens": 34227
+    },
+    {
+      "id": "66fb6527bb02136c067c7b4f",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 183697,
+      "full_projected_provider_prompt_tokens": 192882,
+      "default_sift_local_prompt_tokens": 26687,
+      "default_sift_projected_provider_prompt_tokens": 28022
+    },
+    {
+      "id": "66fb8633bb02136c067c800b",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 211408,
+      "full_projected_provider_prompt_tokens": 221979,
+      "default_sift_local_prompt_tokens": 30038,
+      "default_sift_projected_provider_prompt_tokens": 31540
+    },
+    {
+      "id": "66fcf53fbb02136c067c91e7",
+      "domain": "Long In-context Learning",
+      "full_local_prompt_tokens": 268134,
+      "full_projected_provider_prompt_tokens": 281541,
+      "default_sift_local_prompt_tokens": 32597,
+      "default_sift_projected_provider_prompt_tokens": 34227
+    },
+    {
+      "id": "66fcf725bb02136c067c924a",
+      "domain": "Long In-context Learning",
+      "full_local_prompt_tokens": 268149,
+      "full_projected_provider_prompt_tokens": 281557,
+      "default_sift_local_prompt_tokens": 32567,
+      "default_sift_projected_provider_prompt_tokens": 34196
+    },
+    {
+      "id": "66fcf8dfbb02136c067c92cc",
+      "domain": "Long In-context Learning",
+      "full_local_prompt_tokens": 268130,
+      "full_projected_provider_prompt_tokens": 281537,
+      "default_sift_local_prompt_tokens": 32616,
+      "default_sift_projected_provider_prompt_tokens": 34247
+    },
+    {
+      "id": "66fcfa1cbb02136c067c932e",
+      "domain": "Long In-context Learning",
+      "full_local_prompt_tokens": 268173,
+      "full_projected_provider_prompt_tokens": 281582,
+      "default_sift_local_prompt_tokens": 32514,
+      "default_sift_projected_provider_prompt_tokens": 34140
+    },
+    {
+      "id": "66fcfb1cbb02136c067c938b",
+      "domain": "Long In-context Learning",
+      "full_local_prompt_tokens": 268160,
+      "full_projected_provider_prompt_tokens": 281568,
+      "default_sift_local_prompt_tokens": 32425,
+      "default_sift_projected_provider_prompt_tokens": 34047
+    },
+    {
+      "id": "66fcfbbcbb02136c067c93d3",
+      "domain": "Long In-context Learning",
+      "full_local_prompt_tokens": 268172,
+      "full_projected_provider_prompt_tokens": 281581,
+      "default_sift_local_prompt_tokens": 32504,
+      "default_sift_projected_provider_prompt_tokens": 34130
+    },
+    {
+      "id": "66fcfc9fbb02136c067c9411",
+      "domain": "Long In-context Learning",
+      "full_local_prompt_tokens": 268134,
+      "full_projected_provider_prompt_tokens": 281541,
+      "default_sift_local_prompt_tokens": 32451,
+      "default_sift_projected_provider_prompt_tokens": 34074
+    },
+    {
+      "id": "66fcfd6fbb02136c067c9454",
+      "domain": "Long In-context Learning",
+      "full_local_prompt_tokens": 268140,
+      "full_projected_provider_prompt_tokens": 281547,
+      "default_sift_local_prompt_tokens": 32615,
+      "default_sift_projected_provider_prompt_tokens": 34246
+    },
+    {
+      "id": "66fcffd9bb02136c067c94c5",
+      "domain": "Long In-context Learning",
+      "full_local_prompt_tokens": 268160,
+      "full_projected_provider_prompt_tokens": 281568,
+      "default_sift_local_prompt_tokens": 32543,
+      "default_sift_projected_provider_prompt_tokens": 34171
+    },
+    {
+      "id": "67009bd8bb02136c067caba9",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 167672,
+      "full_projected_provider_prompt_tokens": 176056,
+      "default_sift_local_prompt_tokens": 31555,
+      "default_sift_projected_provider_prompt_tokens": 33133
+    },
+    {
+      "id": "6703f57bbb02136c067cd714",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 339665,
+      "full_projected_provider_prompt_tokens": 356649,
+      "default_sift_local_prompt_tokens": 32619,
+      "default_sift_projected_provider_prompt_tokens": 34250
+    },
+    {
+      "id": "6703f73cbb02136c067cd74a",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 270516,
+      "full_projected_provider_prompt_tokens": 284042,
+      "default_sift_local_prompt_tokens": 23170,
+      "default_sift_projected_provider_prompt_tokens": 24329
+    },
+    {
+      "id": "67040983bb02136c067cd996",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 413623,
+      "full_projected_provider_prompt_tokens": 434305,
+      "default_sift_local_prompt_tokens": 18402,
+      "default_sift_projected_provider_prompt_tokens": 19323
+    },
+    {
+      "id": "67041f08bb02136c067cdb52",
+      "domain": "Long In-context Learning",
+      "full_local_prompt_tokens": 226922,
+      "full_projected_provider_prompt_tokens": 238269,
+      "default_sift_local_prompt_tokens": 17047,
+      "default_sift_projected_provider_prompt_tokens": 17900
+    },
+    {
+      "id": "6704fe26bb02136c067ce670",
+      "domain": "Multi-Document QA",
+      "full_local_prompt_tokens": 328439,
+      "full_projected_provider_prompt_tokens": 344861,
+      "default_sift_local_prompt_tokens": 32273,
+      "default_sift_projected_provider_prompt_tokens": 33887
+    },
+    {
+      "id": "6707b84cbb02136c067d10a5",
+      "domain": "Long In-context Learning",
+      "full_local_prompt_tokens": 235586,
+      "full_projected_provider_prompt_tokens": 247366,
+      "default_sift_local_prompt_tokens": 18069,
+      "default_sift_projected_provider_prompt_tokens": 18973
+    },
+    {
+      "id": "67095b87bb02136c067d1bad",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 206624,
+      "full_projected_provider_prompt_tokens": 216956,
+      "default_sift_local_prompt_tokens": 26295,
+      "default_sift_projected_provider_prompt_tokens": 27610
+    },
+    {
+      "id": "670bf1c4bb02136c067d2341",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 165815,
+      "full_projected_provider_prompt_tokens": 174106,
+      "default_sift_local_prompt_tokens": 32423,
+      "default_sift_projected_provider_prompt_tokens": 34045
+    },
+    {
+      "id": "670bf6ddbb02136c067d2379",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 177405,
+      "full_projected_provider_prompt_tokens": 186276,
+      "default_sift_local_prompt_tokens": 23765,
+      "default_sift_projected_provider_prompt_tokens": 24954
+    },
+    {
+      "id": "670bffa2bb02136c067d23b5",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 191446,
+      "full_projected_provider_prompt_tokens": 201019,
+      "default_sift_local_prompt_tokens": 32585,
+      "default_sift_projected_provider_prompt_tokens": 34215
+    },
+    {
+      "id": "670cf52abb02136c067d2728",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 191716,
+      "full_projected_provider_prompt_tokens": 201302,
+      "default_sift_local_prompt_tokens": 32475,
+      "default_sift_projected_provider_prompt_tokens": 34099
+    },
+    {
+      "id": "67237d8ebb02136c067d6c06",
+      "domain": "Long Structured Data Understanding",
+      "full_local_prompt_tokens": 472306,
+      "full_projected_provider_prompt_tokens": 495922,
+      "default_sift_local_prompt_tokens": 32462,
+      "default_sift_projected_provider_prompt_tokens": 34086
+    },
+    {
+      "id": "67239f49bb02136c067d6fc0",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 199183,
+      "full_projected_provider_prompt_tokens": 209143,
+      "default_sift_local_prompt_tokens": 32639,
+      "default_sift_projected_provider_prompt_tokens": 34271
+    },
+    {
+      "id": "6723a63bbb02136c067d71a1",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 167889,
+      "full_projected_provider_prompt_tokens": 176284,
+      "default_sift_local_prompt_tokens": 32388,
+      "default_sift_projected_provider_prompt_tokens": 34008
+    },
+    {
+      "id": "6724631ebb02136c067d7300",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 340996,
+      "full_projected_provider_prompt_tokens": 358046,
+      "default_sift_local_prompt_tokens": 32462,
+      "default_sift_projected_provider_prompt_tokens": 34086
+    },
+    {
+      "id": "67246413bb02136c067d7374",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 183116,
+      "full_projected_provider_prompt_tokens": 192272,
+      "default_sift_local_prompt_tokens": 32471,
+      "default_sift_projected_provider_prompt_tokens": 34095
+    },
+    {
+      "id": "6724645dbb02136c067d73ad",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 197070,
+      "full_projected_provider_prompt_tokens": 206924,
+      "default_sift_local_prompt_tokens": 32472,
+      "default_sift_projected_provider_prompt_tokens": 34096
+    },
+    {
+      "id": "67246500bb02136c067d7423",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 167528,
+      "full_projected_provider_prompt_tokens": 175905,
+      "default_sift_local_prompt_tokens": 32352,
+      "default_sift_projected_provider_prompt_tokens": 33970
+    },
+    {
+      "id": "67246903bb02136c067d74f2",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 157141,
+      "full_projected_provider_prompt_tokens": 164999,
+      "default_sift_local_prompt_tokens": 32471,
+      "default_sift_projected_provider_prompt_tokens": 34095
+    },
+    {
+      "id": "67246d0ebb02136c067d75f0",
+      "domain": "Single-Document QA",
+      "full_local_prompt_tokens": 303098,
+      "full_projected_provider_prompt_tokens": 318253,
+      "default_sift_local_prompt_tokens": 32410,
+      "default_sift_projected_provider_prompt_tokens": 34031
+    },
+    {
+      "id": "6724938fbb02136c067d7657",
+      "domain": "Long Structured Data Understanding",
+      "full_local_prompt_tokens": 162219,
+      "full_projected_provider_prompt_tokens": 170330,
+      "default_sift_local_prompt_tokens": 32519,
+      "default_sift_projected_provider_prompt_tokens": 34145
+    },
+    {
+      "id": "6724c5febb02136c067d78e7",
+      "domain": "Long Structured Data Understanding",
+      "full_local_prompt_tokens": 306651,
+      "full_projected_provider_prompt_tokens": 321984,
+      "default_sift_local_prompt_tokens": 32303,
+      "default_sift_projected_provider_prompt_tokens": 33919
+    },
+    {
+      "id": "6724c788bb02136c067d792d",
+      "domain": "Long Structured Data Understanding",
+      "full_local_prompt_tokens": 173140,
+      "full_projected_provider_prompt_tokens": 181797,
+      "default_sift_local_prompt_tokens": 32640,
+      "default_sift_projected_provider_prompt_tokens": 34272
+    },
+    {
+      "id": "6724c83fbb02136c067d7962",
+      "domain": "Long Structured Data Understanding",
+      "full_local_prompt_tokens": 173134,
+      "full_projected_provider_prompt_tokens": 181791,
+      "default_sift_local_prompt_tokens": 32322,
+      "default_sift_projected_provider_prompt_tokens": 33939
+    },
+    {
+      "id": "6728586bbb02136c067d8f4f",
+      "domain": "Long Structured Data Understanding",
+      "full_local_prompt_tokens": 202550,
+      "full_projected_provider_prompt_tokens": 212678,
+      "default_sift_local_prompt_tokens": 32472,
+      "default_sift_projected_provider_prompt_tokens": 34096
+    },
+    {
+      "id": "67285f8ebb02136c067d905d",
+      "domain": "Long Structured Data Understanding",
+      "full_local_prompt_tokens": 150188,
+      "full_projected_provider_prompt_tokens": 157698,
+      "default_sift_local_prompt_tokens": 32407,
+      "default_sift_projected_provider_prompt_tokens": 34028
+    },
+    {
+      "id": "672861afbb02136c067d90d8",
+      "domain": "Long Structured Data Understanding",
+      "full_local_prompt_tokens": 250811,
+      "full_projected_provider_prompt_tokens": 263352,
+      "default_sift_local_prompt_tokens": 32411,
+      "default_sift_projected_provider_prompt_tokens": 34032
+    }
+  ],
+  "limitations": [
+    "The 454-task candidate assumes a 1.05x provider-token projection, supported only by historical successful receipts whose runs allowed fallbacks; current pinned Minimax route acceptance above 150k local tokens is unverified.",
+    "No model responses or answers were used. This artifact does not measure accuracy, provider-billed cost, cache behavior, or completion time.",
+    "Before dispatch, verify current route/provider identity, exact prompt-token accounting, limits, prices, usage, and total reserve. Any failed route check requires rescoping and recomputing the budget.",
+    "The 31 Sift raw_limit failures remain excluded; 18 additional rows fail the modeled Full route screen.",
+    "The 1.05x factor has no pinned no-fallback route receipts above 150,000 local tokens behind it; the 454-task candidate additions are therefore unverified for the active route and must not replace the 344-task cohort without an explicitly authorized pinned-route smoke and recalculated budget."
+  ],
+  "historical_receipt_calibration": {
+    "audit_path": "docs/evals/longbench-v2-token-accounting-receipt-audit-2026-10-17.json",
+    "audit_sha256": "b386141e012ca0be561ef862142b516fd230809e01e0186d49309c10c7af4aca",
+    "http200_full_receipt_rows": 608,
+    "exact_prompt_count_matches": 608,
+    "distinct_case_ids": 109,
+    "distinct_non_null_job_ids": 312,
+    "pinned_no_fallback_rows": 593,
+    "fallback_enabled_rows": 14,
+    "routing_policy_unverified_rows": 1,
+    "rows_above_150000_local_tokens": 5,
+    "above_150000_from_fallback_enabled_files": 5,
+    "pinned_no_fallback_rows_above_150000": 0,
+    "note": "Rows overlap across partial and final result files; these are not 608 independent requests or 608 valid scored answers."
+  }
+}

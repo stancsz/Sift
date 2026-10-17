@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "status": "historical_prompt_token_receipt_audit_metadata_only",
+  "created_utc": "2026-10-17",
+  "scope": {
+    "files_glob": "docs/results/longbench-v2-minimax*.json",
+    "files_with_matching_full_receipts": 7,
+    "receipt_predicate": "arm=full, provider=Minimax, http_status=200, failure is null, both local_rendered_prompt_tokens and usage.prompt_tokens are integers"
+  },
+  "counts": {
+    "http200_full_receipt_rows": 608,
+    "exact_local_provider_prompt_count_matches": 608,
+    "distinct_case_ids": 109,
+    "distinct_non_null_job_ids": 312,
+    "normal_true": 589,
+    "normal_false": 7,
+    "normal_unspecified": 12,
+    "routing_policy_rows": {
+      "pinned_no_fallback": 593,
+      "fallback_enabled": 14,
+      "unverified": 1
+    }
+  },
+  "rows_above_150000_local_tokens": [
+    {
+      "case_id": "66f3e58c821e116aacb2fabc",
+      "local_rendered_prompt_tokens": 158694,
+      "provider_prompt_tokens": 158694,
+      "source_file": "longbench-v2-minimax-m3-sift-screen-2026-10-16.json",
+      "normal": true,
+      "finish_reason": "stop",
+      "routing_policy": "fallback_enabled"
+    },
+    {
+      "case_id": "66f41108821e116aacb30c41",
+      "local_rendered_prompt_tokens": 163549,
+      "provider_prompt_tokens": 163549,
+      "source_file": "longbench-v2-minimax-m3-sift-screen-2026-10-16.json",
+      "normal": true,
+      "finish_reason": "stop",
+      "routing_policy": "fallback_enabled"
+    },
+    {
+      "case_id": "66f24538821e116aacb2865e",
+      "local_rendered_prompt_tokens": 327320,
+      "provider_prompt_tokens": 327320,
+      "source_file": "longbench-v2-minimax-m3-sift-screen-2026-10-16.json",
+      "normal": true,
+      "finish_reason": "stop",
+      "routing_policy": "fallback_enabled"
+    },
+    {
+      "case_id": "66f2abc5821e116aacb2aab7",
+      "local_rendered_prompt_tokens": 347028,
+      "provider_prompt_tokens": 347028,
+      "source_file": "longbench-v2-minimax-m3-table-fresh-2026-10-16.json",
+      "normal": true,
+      "finish_reason": "stop",
+      "routing_policy": "fallback_enabled"
+    },
+    {
+      "case_id": "66f2a59d821e116aacb2a553",
+      "local_rendered_prompt_tokens": 591329,
+      "provider_prompt_tokens": 591329,
+      "source_file": "longbench-v2-minimax-m3-table-fresh-2026-10-16.json",
+      "normal": true,
+      "finish_reason": "stop",
+      "routing_policy": "fallback_enabled"
+    }
+  ],
+  "high_size_interpretation": {
+    "count_above_150000": 5,
+    "count_at_or_below_524288": 4,
+    "count_above_524288": 1,
+    "pinned_no_fallback_receipt_above_150000": 0,
+    "interpretation": "All five high-size matches are from fallback-enabled result files. They do not establish acceptance by the pinned MiniMax endpoint."
+  },
+  "source_files": [
+    {
+      "path": "docs/results/longbench-v2-minimax-field-pruning-pilot-2026-10-17.json",
+      "sha256": "0361fa6a60c67c2bae445162ba8aaf78ba83ee523d56269e0875e708b9b68f25",
+      "http200_full_receipt_rows": 12,
+      "routing_policy_classification": "pinned_no_fallback"
+    },
+    {
+      "path": "docs/results/longbench-v2-minimax-m3-100-2026-10-16.json",
+      "sha256": "09d80674f03cb432e7cd8c9917f327f9dfd9675446d912cbd3d5f9e1dadb3d62",
+      "http200_full_receipt_rows": 300,
+      "routing_policy_classification": "pinned_no_fallback"
+    },
+    {
+      "path": "docs/results/longbench-v2-minimax-m3-100-attempt1-partial-2026-10-16.json",
+      "sha256": "cc7c016ca6142c9c36aa26b668e72ec6f198b3d4898fe5d2aafbe73782517988",
+      "http200_full_receipt_rows": 280,
+      "routing_policy_classification": "pinned_no_fallback"
+    },
+    {
+      "path": "docs/results/longbench-v2-minimax-m3-sift-screen-2026-10-16.json",
+      "sha256": "1cdd55e38e6ed904ec96e66f887dbbd333b83a267fb227dfdb6037670de50512",
+      "http200_full_receipt_rows": 9,
+      "routing_policy_classification": "fallback_enabled"
+    },
+    {
+      "path": "docs/results/longbench-v2-minimax-m3-smoke-guard-2026-10-16.json",
+      "sha256": "d6d09c82cd5ae4992f85294854a2122ef8b50b424cff7a4401859b6e07b5d4e8",
+      "http200_full_receipt_rows": 1,
+      "routing_policy_classification": "pinned_no_fallback"
+    },
+    {
+      "path": "docs/results/longbench-v2-minimax-m3-smoke-longest-2026-10-16.json",
+      "sha256": "eec3da18cbecf24dd62c949f53c6ef3cb6e7ff04ad473917630a12e26ebde8a1",
+      "http200_full_receipt_rows": 1,
+      "routing_policy_classification": "unverified"
+    },
+    {
+      "path": "docs/results/longbench-v2-minimax-m3-table-fresh-2026-10-16.json",
+      "sha256": "083ac5c10d20b4ae8468db01be666355e6465831cc845610b84d6f267dde985d",
+      "http200_full_receipt_rows": 5,
+      "routing_policy_classification": "fallback_enabled"
+    }
+  ],
+  "limitations": [
+    "Receipt rows overlap: 608 rows correspond to 312 non-null job IDs and 109 task IDs, so they are not 608 independent requests.",
+    "Only provider usage and local token-count metadata were used; no response, answer, or correctness values were used to establish token-count equality.",
+    "All five high-size receipts are fallback-enabled; current pinned-route acceptance above 150,000 local tokens remains unverified. One exact match at 591,329 exceeds the pinned endpoint metadata limit and is not evidence that the pinned endpoint accepts it.",
+    "The 1.05x expansion is a planning scenario only. No paid route smoke or full evaluation was run."
+  ],
+  "source_files_note": "Routing labels are classified conservatively from saved request policy or run-level policy and per-response provider metadata. One smoke artifact does not establish a per-request no-fallback policy."
+}
