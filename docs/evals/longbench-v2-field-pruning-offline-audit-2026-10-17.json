@@ -1,0 +1,220 @@
+{
+  "status": "passed",
+  "audit_kind": "offline_field_pruning_prototype_gate",
+  "experimental_shape_based_pruning": true,
+  "default_behavior_changed": false,
+  "network_calls": 0,
+  "dataset_revision": "2b48e494f2c7a2f0af81aae178e05c7e1dde0fe9",
+  "dataset_path": "D:\\github\\Sift\\.runs\\longbench-v2-data-pinned.json",
+  "dataset_sha256": "15d61c22d92c96900b3c4948b6aeea218d3214b676a65df48e7b8555604c7fe2",
+  "tokenizer_path": "D:\\github\\Sift\\tmp\\minimax-m3-tokenizer.json",
+  "tokenizer_sha256": "bb1f1626cf01448f1e3b6036d0a061ffc66c91d9046aada14ea23a5441b5ad6e",
+  "target_tokens": 32640,
+  "growth_gate": "candidate <= 110% of default forwarded tokens for each case",
+  "core_sha256": "c8c1af9564f5b34f04a714e3b1fc4e35d87ada866071f2dc9b5391008d1cd764",
+  "audit_script_sha256": "0cab56e0359853c144b130e90e21a7bd2b26b98466fd7db865969f526bbf144b",
+  "template_source_sha256": "2eb34e08fbdb3d1acb69339505e1e228030b930e2d967b174e67490006adee77",
+  "cases": [
+    {
+      "id": "66f2b5ec821e116aacb2b1ec",
+      "domain": "Long Structured Data Understanding",
+      "sub_domain": "Table QA",
+      "question": "Which album has the lowest rating among all the albums released by its artist, and the artist has at least one other album with a rating higher than 80?",
+      "official_gold": "C",
+      "derived_gold": {
+        "answer_letter": "C",
+        "derived_metric": "lowest option rating among artists with another rating above 80",
+        "option_ratings": {
+          "Money Changes Everything": 0.0,
+          "Back in the Jazz Coffin": 73.0,
+          "Road Trips Vol. 4 No. 5: Boston Music Hall June 9 1976": 70.0,
+          "He Chuang": 98.0
+        },
+        "qualifying_option_indexes": [
+          2
+        ]
+      },
+      "target_tokens": 32640,
+      "baseline_default_tokens": 10939,
+      "candidate_tokens": 529,
+      "growth_percent": -95.1641,
+      "within_target": true,
+      "within_10_percent_growth": true,
+      "candidate_method": "field_pruning_candidate",
+      "candidate_audit": {
+        "compacted": true,
+        "input_tokens": 100132,
+        "forwarded_tokens": 529,
+        "omitted_estimated_tokens": 99603,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 4,
+        "method": "field_pruning_candidate",
+        "requested_complete_groups": 4,
+        "selected_complete_groups": 4,
+        "complete_groups": true,
+        "group_selection_scope": "explicit_csv_group",
+        "selected_group_positions": "csv:artist:4"
+      },
+      "retention_checks": {
+        "required_choice_rows": 4,
+        "required_choice_rows_retained": 4,
+        "artist_groups": 4,
+        "required_sibling_rows": 12,
+        "required_sibling_rows_retained": 12,
+        "source_rows": 8946,
+        "output_rows": 12
+      },
+      "source_messages_unchanged": true
+    },
+    {
+      "id": "6719b96abb02136c067d4358",
+      "domain": "Long-dialogue History Understanding",
+      "sub_domain": "Agent history QA",
+      "question": "Which player wins the most golds in the game?",
+      "official_gold": "B",
+      "derived_gold": {
+        "answer_letter": "B",
+        "derived_metric": "max sum of per-round utility",
+        "option_metrics": {
+          "player_0": 57,
+          "player_3": 112,
+          "player_5": 33,
+          "player_9": 102
+        },
+        "shared_round_count": 20
+      },
+      "target_tokens": 32640,
+      "baseline_default_tokens": 18149,
+      "candidate_tokens": 1978,
+      "growth_percent": -89.1013,
+      "within_target": true,
+      "within_10_percent_growth": true,
+      "candidate_method": "field_pruning_candidate",
+      "candidate_audit": {
+        "compacted": true,
+        "input_tokens": 34476,
+        "forwarded_tokens": 1978,
+        "omitted_estimated_tokens": 32498,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 4,
+        "method": "field_pruning_candidate",
+        "requested_complete_groups": 4,
+        "selected_complete_groups": 4,
+        "complete_groups": true,
+        "group_selection_scope": "linked_entity_fields",
+        "selected_group_positions": "player_data:4;summary:round_records"
+      },
+      "retention_checks": {
+        "required_choice_rows": 4,
+        "required_choice_rows_retained": 4,
+        "player_records_exact": true,
+        "player_utilities_exact": true,
+        "shared_round_count": 20,
+        "shared_round_summary_exact": true
+      },
+      "source_messages_unchanged": true
+    },
+    {
+      "id": "671b080abb02136c067d4dde",
+      "domain": "Long-dialogue History Understanding",
+      "sub_domain": "Agent history QA",
+      "question": "Which player won the most times in the game?",
+      "official_gold": "B",
+      "derived_gold": {
+        "answer_letter": "B",
+        "derived_metric": "count of per-player records matching each round winner",
+        "option_metrics": {
+          "player_0": 3,
+          "player_4": 7,
+          "player_5": 4,
+          "player_6": 6
+        },
+        "shared_round_count": 20
+      },
+      "target_tokens": 32640,
+      "baseline_default_tokens": 12441,
+      "candidate_tokens": 2426,
+      "growth_percent": -80.5,
+      "within_target": true,
+      "within_10_percent_growth": true,
+      "candidate_method": "field_pruning_candidate",
+      "candidate_audit": {
+        "compacted": true,
+        "input_tokens": 38227,
+        "forwarded_tokens": 2426,
+        "omitted_estimated_tokens": 35801,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 4,
+        "method": "field_pruning_candidate",
+        "requested_complete_groups": 4,
+        "selected_complete_groups": 4,
+        "complete_groups": true,
+        "group_selection_scope": "linked_entity_fields",
+        "selected_group_positions": "player_data:4;summary:round_records"
+      },
+      "retention_checks": {
+        "required_choice_rows": 4,
+        "required_choice_rows_retained": 4,
+        "player_records_exact": true,
+        "player_utilities_exact": true,
+        "shared_round_count": 20,
+        "shared_round_summary_exact": true
+      },
+      "source_messages_unchanged": true
+    },
+    {
+      "id": "671b3cabbb02136c067d5252",
+      "domain": "Long-dialogue History Understanding",
+      "sub_domain": "Agent history QA",
+      "question": "Which player got the least utility in the game?",
+      "official_gold": "B",
+      "derived_gold": {
+        "answer_letter": "B",
+        "derived_metric": "min sum of per-round utility",
+        "option_metrics": {
+          "player_1": 130,
+          "player_3": 105,
+          "player_5": 150,
+          "player_7": 150
+        },
+        "shared_round_count": 20
+      },
+      "target_tokens": 32640,
+      "baseline_default_tokens": 9616,
+      "candidate_tokens": 2475,
+      "growth_percent": -74.2616,
+      "within_target": true,
+      "within_10_percent_growth": true,
+      "candidate_method": "field_pruning_candidate",
+      "candidate_audit": {
+        "compacted": true,
+        "input_tokens": 42633,
+        "forwarded_tokens": 2475,
+        "omitted_estimated_tokens": 40158,
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": 4,
+        "method": "field_pruning_candidate",
+        "requested_complete_groups": 4,
+        "selected_complete_groups": 4,
+        "complete_groups": true,
+        "group_selection_scope": "linked_entity_fields",
+        "selected_group_positions": "player_data:4;summary:round_records"
+      },
+      "retention_checks": {
+        "required_choice_rows": 4,
+        "required_choice_rows_retained": 4,
+        "player_records_exact": true,
+        "player_utilities_exact": true,
+        "shared_round_count": 20,
+        "shared_round_summary_exact": true
+      },
+      "source_messages_unchanged": true
+    }
+  ],
+  "completed_utc": "2026-10-17T04:32:33.052466+00:00",
+  "audit_body_sha256": "41f2990392139c748bb6ff266f6a0f7f0e55b8cb5974d38307151a2e72cc5d8a"
+}

@@ -39,6 +39,12 @@ _COVERAGE_SIGNALS = re.compile(
     r"\b(retain(?:ed|s|ing)?|retention|shred(?:s|ded|ding)?)\b",
     re.IGNORECASE,
 )
+_AGGREGATE_QUERY = re.compile(
+    r"\b(?:aggregate|average|averages|averaged|avg|count|counts|counted|"
+    r"how many|mean|median|sum|sums|summed|total|totals|totaled|totalled|"
+    r"highest|lowest|largest|smallest|most|least|across all|over all)\b",
+    re.IGNORECASE,
+)
 _TEST_FAILURE = re.compile(
     r"^\s*(?:tool_result\s+\S+\s+)?(?P<failure>(?:ERROR|FAIL|FAILED)\s*:?\s+"
     r"(?:test_[A-Za-z0-9_]+|\S+::test_[A-Za-z0-9_]+))",
@@ -694,6 +700,460 @@ def _research_json_array(text: str) -> tuple[str, str, list[tuple[str, dict[str,
     return text[:start], text[end:], records
 
 
+_CHOICE_LINE = re.compile(r"(?m)^\s*\(([A-D])\)\s*(.*?)\s*$")
+_GROUP_FIELD_QUERY = re.compile(
+    r"\bby\s+(?:its|the|each)\s+([\w.-]+)\b", re.IGNORECASE)
+
+
+def _prompt_choices(query: str) -> list[str]:
+    return [match.group(2).strip() for match in _CHOICE_LINE.finditer(query)
+            if match.group(2).strip()]
+
+
+def _root_object_array_groups(text: str, choices: list[str]) -> tuple[str, list[str], list[str]] | None:
+    """Return exact root-object array slices selected by explicit option values.
+
+    Only arrays of JSON objects are eligible. Every option must identify a row
+    by an exact scalar value, and all matching rows are returned verbatim.
+    """
+    root_start = text.find("{")
+    if root_start < 0 or not choices:
+        return None
+    decoder = json.JSONDecoder()
+    try:
+        root, root_end = decoder.raw_decode(text, root_start)
+    except (json.JSONDecodeError, RecursionError):
+        return None
+    if not isinstance(root, dict):
+        return None
+    array_fields: list[tuple[str, int, int, list[tuple[str, Any]]]] = []
+    cursor = root_start + 1
+    try:
+        for key, value in root.items():
+            while cursor < root_end and (text[cursor].isspace() or text[cursor] == ","):
+                cursor += 1
+            parsed_key, cursor = decoder.raw_decode(text, cursor)
+            if parsed_key != key:
+                return None
+            while cursor < root_end and text[cursor].isspace():
+                cursor += 1
+            if cursor >= root_end or text[cursor] != ":":
+                return None
+            cursor += 1
+            while cursor < root_end and text[cursor].isspace():
+                cursor += 1
+            value_start = cursor
+            parsed_value, value_end = decoder.raw_decode(text, cursor)
+            if parsed_value != value:
+                return None
+            cursor = value_end
+            if isinstance(value, list) and value and all(isinstance(row, dict) for row in value):
+                row_slices: list[tuple[str, Any]] = []
+                row_cursor = value_start + 1
+                for expected in value:
+                    while row_cursor < value_end and (text[row_cursor].isspace() or text[row_cursor] == ","):
+                        row_cursor += 1
+                    row_start = row_cursor
+                    row, row_cursor = decoder.raw_decode(text, row_cursor)
+                    if not isinstance(row, dict) or row != expected:
+                        return None
+                    row_slices.append((text[row_start:row_cursor], row))
+                array_fields.append((key, value_start, value_end, row_slices))
+    except (json.JSONDecodeError, RecursionError, TypeError):
+        return None
+    if not array_fields:
+        return None
+
+    normalized_choices = {choice.casefold() for choice in choices}
+    matched_fields: list[tuple[str, int, int, list[str], set[str]]] = []
+    found_choices: set[str] = set()
+    for key, start, end, rows in array_fields:
+        selected: list[str] = []
+        local_found: set[str] = set()
+        for raw_row, value in rows:
+            scalars: set[str] = set()
+
+            def collect(item: Any) -> None:
+                if isinstance(item, dict):
+                    for child in item.values():
+                        collect(child)
+                elif isinstance(item, list):
+                    for child in item:
+                        collect(child)
+                elif isinstance(item, (str, int, float)) and not isinstance(item, bool):
+                    scalars.add(str(item).strip().casefold())
+
+            collect(value)
+            matches = scalars.intersection(normalized_choices)
+            if matches:
+                selected.append(raw_row)
+                local_found.update(matches)
+        if selected:
+            matched_fields.append((key, start, end, selected, local_found))
+            found_choices.update(local_found)
+    if not found_choices:
+        return None
+    if found_choices != normalized_choices:
+        # Another historical JSON object may contain a coincidental subset of
+        # the current answer choices. Let the caller inspect later sources.
+        return None
+    if len(matched_fields) != 1:
+        raise CompactionError(
+            "explicit answer choices do not resolve to one complete root-object record group",
+            code="complete_group_unresolved",
+        )
+    selected_array = "[\n" + ",\n".join(matched_fields[0][3]) + "\n]"
+    return matched_fields[0][0], [selected_array], [
+        f"array:{matched_fields[0][0]}:{len(matched_fields[0][3])}"]
+
+
+def _csv_complete_groups(text: str, query: str, choices: list[str]) -> tuple[str, list[str]] | None:
+    """Select complete CSV rows for every exact option's explicit group value."""
+    pieces = _csv_pieces(text)
+    field_match = _GROUP_FIELD_QUERY.search(query)
+    if pieces is None or field_match is None or not choices:
+        return None
+    prefix = pieces[0].prefix
+    try:
+        header_line = prefix.splitlines(keepends=True)[-1]
+        header = next(csv.reader([header_line], strict=True))
+        normalized = [name.strip().casefold() for name in header]
+        group_name = field_match.group(1).strip().casefold()
+        if normalized.count(group_name) != 1:
+            return None
+        group_index = normalized.index(group_name)
+        parsed_rows: list[list[str]] = []
+        for piece in pieces:
+            row = next(csv.reader(piece.text.splitlines(keepends=True), strict=True))
+            if len(row) != len(header):
+                return None
+            parsed_rows.append(row)
+    except (csv.Error, StopIteration):
+        return None
+    wanted = {choice.strip().casefold() for choice in choices}
+    found_columns: dict[str, set[int]] = {choice: set() for choice in wanted}
+    for row in parsed_rows:
+        for index, cell in enumerate(row):
+            normalized_cell = cell.strip().casefold()
+            if normalized_cell in wanted:
+                found_columns[normalized_cell].add(index)
+    found = {choice for choice, indexes in found_columns.items() if indexes}
+    if not found:
+        return None
+    if found != wanted:
+        # Skip unrelated historical tables that happen to mention one option.
+        return None
+    answer_columns = set().union(*found_columns.values())
+    if len(answer_columns) != 1 or group_index in answer_columns:
+        raise CompactionError(
+            "explicit choices do not resolve to one unambiguous CSV answer column",
+            code="complete_group_unresolved",
+        )
+    group_values = {
+        row[group_index].strip().casefold() for row in parsed_rows
+        if any(cell.strip().casefold() in wanted for cell in row)
+    }
+    selected = [piece.text for piece, row in zip(pieces, parsed_rows)
+                if row[group_index].strip().casefold() in group_values]
+    suffix = text[pieces[-1].end:]
+    return prefix + "".join(selected) + suffix, [f"csv:{group_name}:{len(group_values)}"]
+
+
+def _complete_explicit_source_compact(
+    messages: list[dict[str, Any]], count_tokens: TokenCounter, *,
+    target: int, instruction_end: int, latest_user: int, raw: int,
+) -> CompactionResult | None:
+    """Opt-in exact-source handling for choice-backed root arrays or CSV groups."""
+    query = _render(messages[latest_user])
+    choices = _prompt_choices(query)
+    if not choices:
+        return None
+    candidate: tuple[int, str, list[str]] | None = None
+    for message_index in range(instruction_end, latest_user):
+        message = messages[message_index]
+        content = message.get("content")
+        if message.get("role") not in {"tool", "function", "user"} or not isinstance(content, str):
+            continue
+        replacement: str | None = None
+        groups: list[str] = []
+        root_result = _root_object_array_groups(content, choices)
+        if root_result is not None:
+            chosen_key, replacements, groups = root_result
+            # The selected array is substituted by the helper while all other
+            # top-level source text remains verbatim. Empty unrelated arrays.
+            root_start = content.find("{")
+            root_end = json.JSONDecoder().raw_decode(content, root_start)[1]
+            root_text = content[root_start:root_end]
+            root = json.loads(root_text)
+            # Rebuild only top-level array values by their source spans.
+            decoder = json.JSONDecoder()
+            cursor = root_start + 1
+            edits: list[tuple[int, int, str]] = []
+            for key, value in root.items():
+                while content[cursor].isspace() or content[cursor] == ",":
+                    cursor += 1
+                _, cursor = decoder.raw_decode(content, cursor)
+                while content[cursor].isspace():
+                    cursor += 1
+                cursor += 1
+                while content[cursor].isspace():
+                    cursor += 1
+                value_start = cursor
+                _, value_end = decoder.raw_decode(content, cursor)
+                cursor = value_end
+                if isinstance(value, list) and value and all(isinstance(row, dict) for row in value):
+                    if key == chosen_key:
+                        edits.append((value_start, value_end, replacements[0]))
+                    else:
+                        edits.append((value_start, value_end, "[]"))
+            replacement = content
+            for start, end, value in reversed(edits):
+                replacement = replacement[:start] + value + replacement[end:]
+        else:
+            csv_result = _csv_complete_groups(content, query, choices)
+            if csv_result is not None:
+                replacement, groups = csv_result
+        if replacement is None:
+            continue
+        if candidate is not None:
+            raise CompactionError(
+                "multiple historical sources resolve the complete explicit choice groups",
+                code="complete_group_ambiguous",
+            )
+        candidate = (message_index, replacement, groups)
+    if candidate is None:
+        return None
+    message_index, replacement, groups = candidate
+    output = deepcopy(messages)
+    output[message_index]["content"] = replacement
+    forwarded = _count(count_tokens, output)
+    if forwarded > target:
+        raise CompactionError(
+            "complete explicit source groups exceed the exact token target",
+            code="complete_group_too_large",
+        )
+    selected_group_count = int(groups[0].rsplit(":", 1)[1])
+    return CompactionResult(output, {
+            "compacted": True,
+            "input_tokens": raw,
+            "forwarded_tokens": forwarded,
+            "omitted_estimated_tokens": max(0, raw - forwarded),
+            "preserved_recent_turns": 0,
+            "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": selected_group_count,
+        "selected_records": selected_group_count,
+            "method": "complete_record_groups",
+        "requested_complete_groups": selected_group_count,
+        "selected_complete_groups": selected_group_count,
+            "complete_groups": True,
+            "group_selection_scope": "explicit_csv_group" if groups[0].startswith("csv:") else "explicit_root_array_choices",
+            "selected_group_positions": ";".join(groups),
+        })
+
+
+_SUMMARY_FIELD = re.compile(
+    r"^(?:winner|winning|outcome|result|score|utility|record|total|count|mean|value)"
+    r"(?:[_-][\w.-]+)?s?$",
+    re.IGNORECASE,
+)
+
+
+def _field_pruned_root_source(text: str, choices: list[str]) -> tuple[str, str] | None:
+    """Keep choice-linked rows while pruning only recognizable chat-history arrays.
+
+    All other root values, especially shared per-round arrays, remain verbatim.
+    Each selected row must retain a scalar result vector and its exact choice ID.
+    """
+    root_start = text.find("{")
+    if root_start < 0 or not choices:
+        return None
+    decoder = json.JSONDecoder()
+    try:
+        root, root_end = decoder.raw_decode(text, root_start)
+    except (json.JSONDecodeError, RecursionError):
+        return None
+    if not isinstance(root, dict):
+        return None
+    fields: list[tuple[str, int, int, list[tuple[str, Any]] | None]] = []
+    cursor = root_start + 1
+    try:
+        for key, value in root.items():
+            while cursor < root_end and (text[cursor].isspace() or text[cursor] == ","):
+                cursor += 1
+            parsed_key, cursor = decoder.raw_decode(text, cursor)
+            if parsed_key != key:
+                return None
+            while cursor < root_end and text[cursor].isspace():
+                cursor += 1
+            if cursor >= root_end or text[cursor] != ":":
+                return None
+            cursor += 1
+            while cursor < root_end and text[cursor].isspace():
+                cursor += 1
+            value_start = cursor
+            parsed_value, value_end = decoder.raw_decode(text, cursor)
+            if parsed_value != value:
+                return None
+            cursor = value_end
+            rows = None
+            if isinstance(value, list) and value and all(isinstance(row, dict) for row in value):
+                rows = []
+                row_cursor = value_start + 1
+                for expected in value:
+                    while row_cursor < value_end and (text[row_cursor].isspace() or text[row_cursor] == ","):
+                        row_cursor += 1
+                    row_start = row_cursor
+                    row, row_cursor = decoder.raw_decode(text, row_cursor)
+                    if not isinstance(row, dict) or row != expected:
+                        return None
+                    rows.append((text[row_start:row_cursor], row))
+            fields.append((key, value_start, value_end, rows))
+    except (json.JSONDecodeError, RecursionError, TypeError):
+        return None
+
+    choice_keys = {choice.strip().casefold() for choice in choices}
+    matched: list[tuple[int, str, list[tuple[str, Any]]]] = []
+    for field_index, (key, _, _, rows) in enumerate(fields):
+        if rows is None:
+            continue
+        columns: dict[str, dict[str, list[int]]] = {}
+        for row_index, (_, row) in enumerate(rows):
+            for field_name, value in row.items():
+                if isinstance(value, (str, int, float)) and not isinstance(value, bool):
+                    normalized = str(value).strip().casefold()
+                    if normalized in choice_keys:
+                        columns.setdefault(str(field_name), {}).setdefault(normalized, []).append(row_index)
+        # A choice-linked entity collection has one row per option. Repeated
+        # matches in a round/outcome log are shared evidence, not entities.
+        for _, row_map in columns.items():
+            if set(row_map) == choice_keys and all(len(row_map[key]) == 1 for key in choice_keys):
+                selected_indexes = sorted({indexes[0] for indexes in row_map.values()})
+                matched.append((field_index, key, [rows[index] for index in selected_indexes]))
+                break
+    if not matched:
+        return None
+    if len(matched) != 1 or matched[0][2] == []:
+        raise CompactionError(
+            "choice-linked source arrays are ambiguous for field pruning",
+            code="field_pruning_ambiguous",
+        )
+    selected_field, selected_key, selected_rows = matched[0]
+    for _, row in selected_rows:
+        scalar_vectors = [
+            value for value in row.values()
+            if isinstance(value, list) and value
+            and all(not isinstance(item, (dict, list)) for item in value)
+        ]
+        if not scalar_vectors:
+            raise CompactionError(
+                "choice-linked rows lack a retained scalar result vector",
+                code="field_pruning_evidence_missing",
+            )
+        for value in row.values():
+            if not (isinstance(value, list) and value and all(isinstance(item, dict) for item in value)):
+                continue
+            # Only prune conversation-shaped arrays. Other object arrays may
+            # carry distinct structured evidence and must remain untouched.
+            conversation = all(
+                any(key.casefold() in {"role", "speaker"} for key in item)
+                and any(key.casefold() in {"content", "parts", "text"} for key in item)
+                for item in value
+            )
+            if not conversation:
+                raise CompactionError(
+                    "field pruning cannot classify a nested object array safely",
+                    code="field_pruning_ambiguous",
+                )
+
+    # A separate shared object-array summary must expose scalar outcome fields.
+    summary_fields: list[str] = []
+    for index, (key, _, _, rows) in enumerate(fields):
+        if index == selected_field or rows is None:
+            continue
+        if any(_SUMMARY_FIELD.fullmatch(str(field_name))
+               for _, row in rows for field_name, value in row.items()
+               if not isinstance(value, (dict, list))):
+            summary_fields.append(key)
+    if not summary_fields:
+        raise CompactionError(
+            "field pruning requires a separate shared array with scalar outcome evidence",
+            code="field_pruning_summary_missing",
+        )
+
+    selected_text: list[str] = []
+    for _, row in selected_rows:
+        projected: dict[str, Any] = {}
+        for key, value in row.items():
+            if isinstance(value, list) and value and all(isinstance(item, dict) for item in value):
+                continue
+            projected[key] = value
+        selected_text.append(json.dumps(projected, ensure_ascii=False, separators=(",", ":")))
+    replacement_array = "[" + ",".join(selected_text) + "]"
+    _, start, end, _ = fields[selected_field]
+    replacement = text[:start] + replacement_array + text[end:]
+    return replacement, f"{selected_key}:{len(selected_rows)};summary:{','.join(summary_fields)}"
+
+
+def _field_pruning_compact(
+    messages: list[dict[str, Any]], count_tokens: TokenCounter, *,
+    target: int, instruction_end: int, latest_user: int, raw: int,
+) -> CompactionResult | None:
+    """Opt-in field pruning with exact-token and evidence-preservation gates."""
+    query = _render(messages[latest_user])
+    choices = _prompt_choices(query)
+    if not choices:
+        return None
+    candidate: tuple[int, str, str, str] | None = None
+    for message_index in range(instruction_end, latest_user):
+        message = messages[message_index]
+        content = message.get("content")
+        if message.get("role") not in {"tool", "function", "user"} or not isinstance(content, str):
+            continue
+        root_result = _field_pruned_root_source(content, choices)
+        replacement: str | None = None
+        groups = ""
+        if root_result is not None:
+            replacement, groups = root_result
+        else:
+            csv_result = _csv_complete_groups(content, query, choices)
+            if csv_result is not None:
+                replacement, group_details = csv_result
+                groups = ";".join(group_details)
+        if replacement is None:
+            continue
+        if candidate is not None:
+            raise CompactionError(
+                "multiple historical sources satisfy field-pruning evidence gates",
+                code="field_pruning_ambiguous",
+            )
+        candidate = (message_index, replacement, groups,
+                     "explicit_csv_group" if groups.startswith("csv:") else "linked_entity_fields")
+    if candidate is None:
+        return None
+    message_index, replacement, groups, scope = candidate
+    output = deepcopy(messages)
+    output[message_index]["content"] = replacement
+    forwarded = _count(count_tokens, output)
+    if forwarded > target:
+        raise CompactionError("field-pruned source exceeds exact token target",
+                              code="field_pruning_target_exceeded")
+    return CompactionResult(output, {
+        "compacted": True,
+        "input_tokens": raw,
+        "forwarded_tokens": forwarded,
+        "omitted_estimated_tokens": max(0, raw - forwarded),
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": len(choices),
+        "method": "field_pruning_candidate",
+        "requested_complete_groups": len(choices),
+        "selected_complete_groups": len(choices),
+        "complete_groups": True,
+        "group_selection_scope": scope,
+        "selected_group_positions": groups,
+    })
+
+
 def _research_concept_map(
     text: str,
 ) -> tuple[str, str, list[tuple[str, dict[str, Any], str]]] | None:
@@ -892,6 +1352,7 @@ def _research_entity_name(value: dict[str, Any]) -> str:
 def _research_relation_compact(
     messages: list[dict[str, Any]], count_tokens: TokenCounter, *,
     target: int, instruction_end: int, latest_user: int, raw: int,
+    require_complete_groups: bool = False,
 ) -> CompactionResult:
     """Experimental closure over complete JSON rows or named KG concepts.
 
@@ -939,7 +1400,8 @@ def _research_relation_compact(
                 continue
             prefix, suffix, source_records = parsed
             source_records = [
-                (record_text, value, "", "")
+                (record_text, value, "",
+                 _research_entity_name(value) if require_complete_groups else "")
                 for record_text, value in source_records
             ]
             opening, closing = "[", "]"
@@ -1052,16 +1514,23 @@ def _research_relation_compact(
             named_candidates.append((match.start(), record.index))
     named_candidates.sort()
     named_groups: list[list[int]] = []
-    named_seen: set[int] = set()
-    for _, record_index in named_candidates:
-        if record_index not in named_seen:
-            named_seen.add(record_index)
-            named_groups.append([record_index])
+    if require_complete_groups:
+        named_by_name: dict[str, list[int]] = {}
+        for _, record_index in named_candidates:
+            name = all_records[record_index].entity_name.casefold()
+            named_by_name.setdefault(name, []).append(record_index)
+        named_groups = list(named_by_name.values())
+    else:
+        named_seen: set[int] = set()
+        for _, record_index in named_candidates:
+            if record_index not in named_seen:
+                named_seen.add(record_index)
+                named_groups.append([record_index])
 
     query_ids_in_order = list(dict.fromkeys(
         identifier.casefold() for identifier in _LINK_IDS.findall(query)))
     requested_group_sets: list[frozenset[int] | None] = []
-    if len(query_ids_in_order) >= 2:
+    if len(query_ids_in_order) >= (1 if require_complete_groups else 2):
         # In multi-choice prompts, every explicit ID is a required candidate.
         # Keep missing IDs in the audit instead of silently shrinking the set.
         for identifier in query_ids_in_order:
@@ -1078,9 +1547,42 @@ def _research_relation_compact(
                 named_group_seen.add(group)
                 requested_group_sets.append(group)
         comparison = len(requested_group_sets) >= 2
+    aggregate_query = (require_complete_groups
+                       and _AGGREGATE_QUERY.search(query) is not None)
+    aggregate_arrays = aggregate_query and not (
+        query_ids_in_order or len(named_groups) >= 2
+    )
+    if aggregate_arrays:
+        array_groups = [
+            frozenset(
+                linked
+                for record in array.records
+                for linked in closure([record.index])
+            )
+            for array in arrays if array.opening == "["
+        ]
+        if not array_groups:
+            raise CompactionError(
+                "aggregate query has no complete historical JSON record array",
+                code="research_relation_unsupported",
+            )
+        requested_group_sets = array_groups
+        comparison = True
+    elif require_complete_groups and requested_group_sets:
+        # This opt-in treats every named or ID-bound group as required.
+        comparison = True
+    required_groups = comparison
+
     requested_groups = 0
     selected_groups = 0
     unfit_groups = 0
+    selected_group_positions: list[str] = []
+
+    def group_position(group: frozenset[int]) -> str:
+        return ",".join(
+            f"{all_records[index].message_index}:{all_records[index].record_index}"
+            for index in sorted(group)
+        )
 
     def try_group(group: frozenset[int]) -> bool:
         nonlocal selected
@@ -1100,6 +1602,8 @@ def _research_relation_compact(
             seen_groups.add(group)
             if try_group(group):
                 selected_groups += 1
+                if require_complete_groups:
+                    selected_group_positions.append(group_position(group))
             else:
                 unfit_groups += 1
 
@@ -1113,7 +1617,21 @@ def _research_relation_compact(
             if group in seen_groups or group.issubset(selected):
                 continue
             seen_groups.add(group)
-            try_group(group)
+            if require_complete_groups:
+                requested_groups += 1
+                if try_group(group):
+                    selected_groups += 1
+                    selected_group_positions.append(group_position(group))
+                else:
+                    unfit_groups += 1
+            else:
+                try_group(group)
+
+    if require_complete_groups and required_groups and unfit_groups:
+        raise CompactionError(
+            "one or more complete record groups exceed the exact token target",
+            code="complete_group_too_large",
+        )
 
     output = materialize(selected)
     forwarded = _count(count_tokens, output)
@@ -1135,7 +1653,8 @@ def _research_relation_compact(
         "selected_excerpts": selected_count,
         "selected_records": selected_count,
         "total_records": len(all_records),
-        "method": "research_relation_closure",
+        "method": "complete_record_groups" if require_complete_groups
+                  else "research_relation_closure",
     }
     if comparison:
         audit.update({
@@ -1143,6 +1662,14 @@ def _research_relation_compact(
             "selected_comparison_groups": selected_groups,
             "unfit_comparison_groups": unfit_groups,
             "comparison_groups_complete": unfit_groups == 0,
+        })
+    if require_complete_groups:
+        audit.update({
+            "requested_complete_groups": requested_groups,
+            "selected_complete_groups": selected_groups,
+            "complete_groups": unfit_groups == 0,
+            "group_selection_scope": "aggregate_arrays" if aggregate_arrays else "linked_or_named_records",
+            "selected_group_positions": ";".join(selected_group_positions),
         })
     return CompactionResult(deepcopy(output), audit)
 
@@ -1338,17 +1865,28 @@ def compact_messages(
     max_input_nodes: int = DEFAULT_MAX_INPUT_NODES,
     protocol: Protocol = "openai",
     research_relation_closure: bool = False,
+    complete_record_groups: bool = False,
+    field_pruning: bool = False,
 ) -> CompactionResult:
     """Compact older text to `target` using the caller's exact token counter.
 
     The current instructions and active turn are immutable. Up to four recent
     complete prior turns survive verbatim. Remaining history is selected as
     quoted, query-aware excerpts; selection is deterministic and CPU-only.
+    `complete_record_groups=True` opts into all-or-nothing retention of
+    required linked/named records or complete structured arrays for aggregate
+    queries; it is experimental and remains disabled by default.
+    `field_pruning=True` opts into exact-choice row projection guarded by
+    shared-summary evidence, the exact token target, and a 10% growth ceiling
+    over default compaction. It is experimental and disabled by default.
     """
     if (type(target) is not int or type(raw_limit) is not int or target <= 0
             or raw_limit < target or type(max_input_characters) is not int
             or max_input_characters <= 0 or type(max_input_nodes) is not int
-            or max_input_nodes <= 0 or type(research_relation_closure) is not bool):
+            or max_input_nodes <= 0 or type(research_relation_closure) is not bool
+            or type(complete_record_groups) is not bool
+            or type(field_pruning) is not bool
+            or (field_pruning and (research_relation_closure or complete_record_groups))):
         raise CompactionError("invalid compaction or pre-count limits")
     if not isinstance(messages, list) or not all(isinstance(msg, dict) for msg in messages):
         raise CompactionError("messages must be a list of objects")
@@ -1375,15 +1913,47 @@ def compact_messages(
                         if _real_user(messages[i], protocol)), -1)
     if latest_user < instruction_end:
         raise CompactionError("no active user turn", code="active_too_large")
-    if research_relation_closure:
+    if field_pruning:
+        if protocol != "openai":
+            raise CompactionError("field pruning currently supports OpenAI-style tool messages",
+                                  code="field_pruning_unsupported")
+        proposed = _field_pruning_compact(
+            messages, count_tokens, target=target,
+            instruction_end=instruction_end, latest_user=latest_user, raw=raw,
+        )
+        if proposed is None:
+            raise CompactionError(
+                "no historical source satisfies field-pruning evidence gates",
+                code="field_pruning_evidence_missing",
+            )
+        baseline = compact_messages(
+            messages, count_tokens, target=target, raw_limit=raw_limit,
+            max_input_characters=max_input_characters,
+            max_input_nodes=max_input_nodes, protocol=protocol,
+        )
+        if proposed.audit["forwarded_tokens"] * 10 > baseline.audit["forwarded_tokens"] * 11:
+            raise CompactionError(
+                "field-pruned output exceeds the 10% default-token growth ceiling",
+                code="field_pruning_growth_limit",
+            )
+        return proposed
+    if research_relation_closure or complete_record_groups:
         if protocol != "openai":
             raise CompactionError(
-                "research relation closure currently supports OpenAI-style tool messages",
+                "structured record selection currently supports OpenAI-style tool messages",
                 code="research_relation_unsupported",
             )
+        if complete_record_groups:
+            explicit_source = _complete_explicit_source_compact(
+                messages, count_tokens, target=target,
+                instruction_end=instruction_end, latest_user=latest_user, raw=raw,
+            )
+            if explicit_source is not None:
+                return explicit_source
         return _research_relation_compact(
             messages, count_tokens, target=target,
             instruction_end=instruction_end, latest_user=latest_user, raw=raw,
+            require_complete_groups=complete_record_groups,
         )
     if any(msg.get("role") in {"system", "developer"} for msg in messages[instruction_end:latest_user]):
         return _compact_with_late_instruction_anchors(
