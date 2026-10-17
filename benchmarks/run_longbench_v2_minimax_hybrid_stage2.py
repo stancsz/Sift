@@ -159,12 +159,17 @@ def verify_preflight_artifact(preflight_path: Path, *, jobs: list[dict[str, Any]
 
     identity_fields = (
         "stage_manifest_sha256", "baseline_manifest_sha256", "baseline_result_sha256",
-        "source_hashes", "route_metadata", "budget", "protocol",
+        "source_hashes", "budget", "protocol",
         "runtime_reproducibility",
     )
     for field in identity_fields:
         if artifact.get(field) != expected_report.get(field):
             raise Stage2Error(f"Preflight artifact {field} differs from current dispatch inputs")
+    preflight_route = artifact.get("route_metadata")
+    current_route = expected_report.get("route_metadata")
+    if (not isinstance(preflight_route, dict) or not isinstance(current_route, dict)
+            or stable_route_identity(preflight_route) != stable_route_identity(current_route)):
+        raise Stage2Error("Preflight artifact stable route identity differs from current dispatch inputs")
     expected_preparation = expected_report.get("preparation", {})
     artifact_preparation = artifact.get("preparation", {})
     stable_preparation_fields = (
@@ -210,6 +215,12 @@ def index_frozen_request_records(records: list[dict[str, Any]]) -> dict[str, dic
             raise Stage2Error("Frozen preflight request IDs must be unique strings")
         indexed[job_id] = record
     return indexed
+
+
+def stable_route_identity(route: dict[str, Any]) -> dict[str, Any]:
+    """Drop only values recalculated during route freshness validation."""
+    volatile = {"validated_utc", "metadata_age_seconds"}
+    return {key: value for key, value in route.items() if key not in volatile}
 
 
 def atomic_write(path: Path, value: dict[str, Any]) -> None:

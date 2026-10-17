@@ -1,5 +1,6 @@
 import hashlib
 import json
+from copy import deepcopy
 from pathlib import Path
 import sys
 
@@ -106,8 +107,22 @@ def _preflight_fixture(monkeypatch, tmp_path):
         "stage_manifest_sha256": "stage-hash",
         "baseline_manifest_sha256": "baseline-hash",
         "baseline_result_sha256": "result-hash",
-        "source_hashes": {"runner_sha256": "source-hash"},
-        "route_metadata": {"endpoint": "Minimax"},
+        "source_hashes": {"runner_sha256": "source-hash", "route_metadata_sha256": "route-sha"},
+        "route_metadata": {
+            "metadata_path": "route.json",
+            "metadata_sha256": "route-sha",
+            "source_response_sha256": "upstream-sha",
+            "endpoint_name": "Minimax | minimax/minimax-m3",
+            "provider_name": "Minimax",
+            "model_id": "minimax/minimax-m3",
+            "context_length": 524288,
+            "max_prompt_tokens": 524288,
+            "input_usd_per_million": 0.30,
+            "output_usd_per_million": 1.20,
+            "metadata_max_age_seconds": 1800,
+            "validated_utc": "2026-10-17T00:00:00Z",
+            "metadata_age_seconds": 1.0,
+        },
         "budget": {"planned_requests": 1, "aggregate_exposure": {"passed": True}},
         "protocol": {"dispatch_job_ids": [job["job_id"]]},
         "runtime_reproducibility": {"python_version": "3.14"},
@@ -123,13 +138,13 @@ def _preflight_fixture(monkeypatch, tmp_path):
         }],
         "prepared_requests": [record],
     }
-    artifact = {
+    artifact = deepcopy({
         **expected_report,
         "status": "prepared_only_no_dispatch",
         "dry_run": True,
         "actual_dispatch_started": False,
         "samples": [],
-    }
+    })
     path = tmp_path / "preflight.json"
     path.write_text(json.dumps(artifact), encoding="utf-8")
     return path, job, expected_report, artifact
@@ -137,6 +152,9 @@ def _preflight_fixture(monkeypatch, tmp_path):
 
 def test_preflight_verification_returns_request_objects_from_artifact(monkeypatch, tmp_path):
     path, job, expected_report, artifact = _preflight_fixture(monkeypatch, tmp_path)
+    artifact["route_metadata"]["validated_utc"] = "2026-10-17T00:01:00Z"
+    artifact["route_metadata"]["metadata_age_seconds"] = 61.0
+    path.write_text(json.dumps(artifact), encoding="utf-8")
 
     records = stage2.verify_preflight_artifact(path, jobs=[job], expected_report=expected_report)
     indexed = stage2.index_frozen_request_records(records)
@@ -147,15 +165,21 @@ def test_preflight_verification_returns_request_objects_from_artifact(monkeypatc
     assert job["request_payload"] is records[0]["request"]
 
 
-@pytest.mark.parametrize("tamper", ["identity", "payload", "job_id"])
+@pytest.mark.parametrize("tamper", ["identity", "payload", "job_id", "provider", "pricing", "route_hash"])
 def test_preflight_verification_rejects_identity_or_request_mismatch(monkeypatch, tmp_path, tamper):
     path, job, expected_report, artifact = _preflight_fixture(monkeypatch, tmp_path)
     if tamper == "identity":
         artifact["source_hashes"] = {"runner_sha256": "different-source"}
     elif tamper == "payload":
         artifact["prepared_requests"][0]["request"]["messages"][0]["content"] = "changed"
-    else:
+    elif tamper == "job_id":
         artifact["prepared_requests"][0]["job_id"] = "another-job"
+    elif tamper == "provider":
+        artifact["route_metadata"]["provider_name"] = "Other Provider"
+    elif tamper == "pricing":
+        artifact["route_metadata"]["input_usd_per_million"] = 0.31
+    else:
+        artifact["source_hashes"]["route_metadata_sha256"] = "changed-route-hash"
     path.write_text(json.dumps(artifact), encoding="utf-8")
 
     with pytest.raises(stage2.Stage2Error):
