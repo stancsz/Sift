@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "checked_utc": "2026-10-17T01:27:36.499596Z",
+  "checked_utc": "2026-10-17T01:31:51.385368Z",
   "source": "https://openrouter.ai/api/v1/models/minimax/minimax-m3/endpoints",
-  "response_sha256": "a945aef838b02fb6f88a36fc582866753dab34d2463e181e759f9a3f6439aaf2",
+  "response_sha256": "5d8121cd70a46c79c78b14a137eb3ee8a1ca9b5aa06a7c94c1a44170a640d8fb",
   "requested_model": "minimax/minimax-m3",
   "provider": "Minimax",
   "provider_endpoint": "Minimax | minimax/minimax-m3-20260531",
@@ -29,5 +29,5 @@
     "tool_choice",
     "tools"
   ],
-  "note": "Fresh OpenRouter endpoint metadata for new Stage 1 v2. Request-specific endpoint attribution is not asserted."
+  "note": "Final live endpoint metadata recheck immediately before Stage 1 dispatch; request-specific endpoint attribution is not asserted."
 }

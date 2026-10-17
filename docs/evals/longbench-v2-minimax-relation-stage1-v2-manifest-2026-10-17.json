@@ -2,26 +2,26 @@
   "schema_version": 1,
   "stage": 1,
   "frozen_before_api_dispatch": true,
-  "created_utc": "2026-10-17T01:24:32.719926Z",
+  "created_utc": "2026-10-17T01:34:25.222419Z",
   "protocol_path": "docs/evals/longbench-v2-minimax-relation-stage1-v2-protocol-2026-10-17.md",
   "baseline_manifest_path": "docs/evals/longbench-v2-minimax-m3-100-manifest-2026-10-16.json",
   "baseline_manifest_sha256": "865e27c21fdd2a6ce4b629b283123f4bff66b62e3c17f39c3b8be842b00a6f18",
   "baseline_result_path": "docs/results/longbench-v2-minimax-m3-100-2026-10-16.json",
   "baseline_result_sha256": "09d80674f03cb432e7cd8c9917f327f9dfd9675446d912cbd3d5f9e1dadb3d62",
   "route_metadata_path": "docs/evals/longbench-v2-minimax-stage1-v2-route-2026-10-17.json",
-  "route_metadata_sha256": "06ff0ccfdc393d0eb08790658dc0252d6e25cae1bb5c5795e2e0a6e46945dde8",
+  "route_metadata_sha256": "b50b28bc45ac825f817b0d0bfbc669473ba2bd51677b6e9a39236a35918274ab",
   "request_count": 36,
   "aggregate_budget": {
     "limit_usd": 20.0,
-    "prior_actual_usd": 6.9027288,
-    "prior_unsettled_usd": 0.01705665,
-    "basis": "Reconciled prior full runs and smokes ($6.80569134), failed v1 Stage 1 ($0.09651672), two synthetic format canaries ($0.00007776), and the actual compacted-prompt format canary ($0.00044298); prior unresolved reservation=$0.01705665."
+    "prior_actual_usd": 8.04465726,
+    "prior_unsettled_usd": 0.30682335,
+    "basis": "Prior manifest actual $6.90272880 plus 47 successful sift-screen receipts ($0.51419670) and 33 successful table-fresh receipts ($0.62773176) = $8.04465726. Prior unsettled $0.01705665 plus conservative maximum-charge reserves for the sift-screen ConnectionError (407264 prompt tokens + 16 output = $0.12219840) and table-fresh HTTP 400 context rejection (558497 prompt tokens + 16 output = $0.16756830) = $0.30682335. The rejected/failed calls have no usage receipts; reserve is intentionally conservative."
   },
   "source_hashes": {
     "runner_sha256": "84131907d56531c56930e4233635521065d511522cf85323a1c6e59766fad4ee",
-    "analyzer_sha256": "59ce544dc0b9a5676c4d84d9491ab99a492fa8731d9441e2fe68c10368cc4f20",
+    "analyzer_sha256": "f592e886ca89de6369690963ef49283b175305abde68aabcda0b6887340031ee",
     "core_sha256": "031a55fa43f62bc416f94ce2ca50feae47b2f6ca709fdff44f9b78641bfb287f",
-    "protocol_sha256": "30faad6c5a9a0a592bfd324f8e6e51aedd0242796dbdf188d1c9f35886bee0da"
+    "protocol_sha256": "fdbe161f2cf8a3a047f509323970023139b6668869b0c929951135294c0c20d6"
   },
   "protocol": {
     "stage": 1,

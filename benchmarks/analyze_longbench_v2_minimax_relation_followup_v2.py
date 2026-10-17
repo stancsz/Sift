@@ -532,6 +532,19 @@ def analyze(followup: dict[str, Any], historical: dict[str, Any],
         response_format = request.get("response_format")
         _require(isinstance(response_format, dict) and response_format.get("type") == "json_object",
                  f"{key}: stored request does not require JSON-object output")
+        _require(type(request.get("temperature")) in (int, float)
+                 and request.get("temperature") == 0.1,
+                 f"{key}: stored request temperature differs from protocol")
+        _require(type(request.get("top_p")) in (int, float)
+                 and request.get("top_p") == 0.8,
+                 f"{key}: stored request top_p differs from protocol")
+        _require(type(request.get("max_tokens")) is int and request.get("max_tokens") == 128,
+                 f"{key}: stored request output cap differs from protocol")
+        _require(request.get("reasoning") == {"enabled": False},
+                 f"{key}: stored request reasoning differs from protocol")
+        _require(request.get("stream") is True
+                 and request.get("stream_options") == {"include_usage": True},
+                 f"{key}: stored request streaming/usage settings differ from protocol")
         _require(isinstance(request.get("messages"), list) and request["messages"],
                  f"{key}: stored request messages are missing")
         parsed_choice = _parse_json_object_answer(row.get("answer"))
