@@ -1,0 +1,64 @@
+{
+  "additional_model_requests_made": false,
+  "analysis_script": "benchmarks/analyze_longbench_v2_candidate_subset.py",
+  "analysis_script_sha256": "3ba88c42dd6a2ff45933a32ea170d578296c9798dcd400ace96cdb0faefb79d0",
+  "arms": {
+    "full": {
+      "cached_prompt_share": 0.942113463891551,
+      "cached_prompt_tokens": 3125989,
+      "exact_accuracy": 0.5,
+      "exact_correct": 21,
+      "provider_prompt_tokens": 3318060,
+      "responses": 42,
+      "task_majorities_correct": 7,
+      "tasks": 14,
+      "upstream_reported_cost_usd": 0.24524904
+    },
+    "sift": {
+      "cached_prompt_share": 0.8764066138256343,
+      "cached_prompt_tokens": 715508,
+      "exact_accuracy": 0.2857142857142857,
+      "exact_correct": 12,
+      "provider_prompt_tokens": 816411,
+      "responses": 42,
+      "task_majorities_correct": 4,
+      "tasks": 14,
+      "upstream_reported_cost_usd": 0.07330098
+    }
+  },
+  "created_utc": "2026-10-17T10:02:32.446654+00:00",
+  "descriptive_differences": {
+    "provider_prompt_token_reduction_fraction": 0.7539492956727727,
+    "upstream_reported_cost_reduction_fraction": 0.7011161389255591
+  },
+  "limitations": [
+    "All task IDs were exposed by prior prompt/label census work; this selected subset is not untouched validation.",
+    "The tasks were selected by prior answer-blind candidate mechanisms and this retrospective subset is not representative of LongBench v2.",
+    "Historical Full/default responses are a baseline-only comparison; no field-pruning, record-ranking, or query-directed candidate arm was evaluated here.",
+    "The cluster-bootstrap interval is exploratory with only 14 selected tasks.",
+    "Provider-reported cost and cache shares are specific to these historical requests and do not establish general savings."
+  ],
+  "paired_task_majority": {
+    "bootstrap_samples": 20000,
+    "bootstrap_seed": 20261029,
+    "both_correct": 3,
+    "full_only": 4,
+    "neither": 6,
+    "sift_minus_full_task_majority_difference": -0.21428571428571427,
+    "sift_only": 1,
+    "task_cluster_bootstrap_95_percent_interval": [
+      -0.5,
+      0.07142857142857142
+    ]
+  },
+  "repeats_per_task_arm": 3,
+  "schema_version": 1,
+  "scope": "14-task post-census retrospective subset of the existing 100-task Full/default run; not a candidate-arm evaluation, holdout, or full-suite result",
+  "selected_task_count": 14,
+  "selected_task_ids_sha256": "c44b23f048b5c5e6b8a397c3fc57929998ac06ecf3e5d4f7de0985325bda36be",
+  "source_run": "docs/results/longbench-v2-minimax-m3-100-2026-10-16.json",
+  "source_run_sha256": "09d80674f03cb432e7cd8c9917f327f9dfd9675446d912cbd3d5f9e1dadb3d62",
+  "source_trace_audit": "docs/evals/longbench-v2-candidate-trace-metadata-audit-2026-10-18.json",
+  "source_trace_sha256": "48d9cf7129bd56a31caffb09aa19e3eb3b5a5c30a8de5e34d0aa518bf4b2f04e",
+  "status": "complete_retrospective_subset_analysis"
+}
