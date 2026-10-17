@@ -1,0 +1,14 @@
+# Codex Advisor council result — LongBench continuation gate
+
+Date: 2026-10-17
+Decision: stay aligned on the 344-task primary comparison; continue offline work only until authorized spend/account gates clear.
+
+Gemini 4 Argon (independent first review): aligned; hold dispatch and prepare offline failure-mode triage and a publication-table scaffold. It noted as a risk, not a demonstrated problem, that reasoning tokens may truncate under the 64-token cap.
+Usage: 2,973 prompt, 165 completion, 3,138 total tokens.
+
+GPT-6.1 Sol (own verdict and assessment of Gemini): aligned; keep full 344-task comparison primary. Highest-value offline action is a manifest-linked analysis/publication template with comparisons, failure categories, and claim thresholds. Do not substitute the 100-task evidence or change Sift before baseline. Freeze the template and rehearse aggregate-only reporting with synthetic fixtures. Require explicit authorization covering the $41.86563525 reserve, MiniMax BYOK headroom, and unsettled/in-flight confirmation; refresh route metadata before launch. It agreed with Gemini's reasoning-token concern but called it plausible, not established.
+Usage: 646 prompt, 256 completion, 902 total tokens.
+
+Decision changed: true. I created `docs/evals/longbench-v2-minimax-publication-template.md` and rehearsed its analyzer data contract with the existing synthetic suite. No model inference was sent.
+
+Launcher incident: `py` could not create the process through the WindowsApps Python alias. The documented call succeeded with the repository `.venv/Scripts/python.exe`; no model call occurred on the failed launcher attempt.
