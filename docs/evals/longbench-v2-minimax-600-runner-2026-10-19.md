@@ -31,14 +31,29 @@ Incomplete runs must not be described as a completed comparison.
 
 ## Current execution status
 
-The frozen offline bundle contains all 600 scheduled requests. The paid run has
-**not started**; no request from this 600-request schedule has been sent. The
-default prepare command is offline. Dispatch requires an explicit `--dispatch`,
-an explicit cap, successful live OpenRouter route/account preflight, and the
-operator's billing and unsettled-request attestations. Failures stop the run;
-there is no automatic retry or resume because replay could double-charge.
+The frozen offline bundle contains all 600 scheduled requests. The first paid
+attempt stopped incomplete on 2026-10-17 after **90 requests were attempted and
+89 completed**. It settled **$0.77588364** across 89 receipts. The 90th request,
+Sift job `6725db46bb02136c067d84b4:sift:2`, failed with an SSL exception before
+returning an HTTP status, response ID, or cost receipt. Its outcome is unknown,
+so the runner stopped and did not retry. The local report is
+`.runs/longbench-v2-minimax-600-run.json`.
 
-The live OpenRouter route check at **2026-10-17 14:55 UTC** found the pinned
+Among the completed responses, Full scored 18/44 scorable responses (40.9%
+response accuracy; 41.1% equal-task-weighted across 15 tasks). Sift scored
+12/42 (28.6%; 26.7% equal-task-weighted across 15 tasks). These are incomplete,
+exposed-sample diagnostics, not a LongBench comparison result. External billing
+reconciliation is required before continuing because the failed request has no
+generation ID or positive cost receipt. OpenRouter's aggregate BYOK counters do
+not identify this individual call; generation metadata lookup requires a
+generation ID ([OpenRouter API reference](https://openrouter.ai/docs/api/api-reference/generations/get-generation)).
+
+Dispatch requires an explicit `--dispatch`, an explicit cap, successful live
+OpenRouter route/account preflight, and the operator's billing and
+unsettled-request attestations. Failures stop the run; there is no automatic
+retry or resume because replay could double-charge.
+
+The live OpenRouter route check at **2026-10-17 15:19 UTC** found the pinned
 `minimax/minimax-m3` / `minimax/fp8` endpoint, a 524,288-token prompt limit,
 512,000-token completion limit, and prices of $0.30/M input and $1.20/M output.
 At those live prices, the frozen 600-request schedule reserves **$14.6832579**.
