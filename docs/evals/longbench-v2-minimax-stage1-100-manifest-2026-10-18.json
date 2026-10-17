@@ -4,7 +4,7 @@
   "dispatch_authorized": false,
   "evidence_class": "exposed_development_sample_not_blind_holdout",
   "parent_manifest": "docs/evals/longbench-v2-minimax-344-manifest-2026-10-17.json",
-  "parent_manifest_sha256": "c471d4fb2426b5863f7f17940b6838b1053a4c067ffa5838e10804010d7abaef",
+  "parent_manifest_sha256": "6364b4a21e5775fb4cd574e501286db64320cd4cde2b083250b07ec13ea6abc0",
   "historical_sample_manifest": "docs/evals/longbench-v2-minimax-m3-100-manifest-2026-10-16.json",
   "historical_sample_manifest_sha256": "865e27c21fdd2a6ce4b629b283123f4bff66b62e3c17f39c3b8be842b00a6f18",
   "dataset": {
@@ -71,7 +71,7 @@
   },
   "source_hashes": {
     "builder": "595e7438b19f060db9f417e2b82a0eb866a5367c4ee5289eb0284aa748884ac2",
-    "spec": "ea4b78972f7dbb407fb421af03dc5157a8ee78de544d2950368151a48f7f0eba",
+    "spec": "956c1f99bb51ebca8045ce2b28501097392a2b0d04ebd87e3c4f543fe814433f",
     "dataset": "15d61c22d92c96900b3c4948b6aeea218d3214b676a65df48e7b8555604c7fe2",
     "tokenizer": "bb1f1626cf01448f1e3b6036d0a061ffc66c91d9046aada14ea23a5441b5ad6e",
     "chat_template": "11421244f67553498e5c8112dae02802025bcc4305ec45ad380af95c96f9fe64",
