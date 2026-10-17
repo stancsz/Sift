@@ -1,0 +1,5170 @@
+{
+  "schema_version": 1,
+  "title": "LongBench v2 Sift target sensitivity on the current core",
+  "status": "offline_operational_preflight_not_quality_evidence",
+  "network_calls": 0,
+  "api_calls": 0,
+  "answer_key_and_response_values_decoded": false,
+  "answer_keys_or_responses_used": false,
+  "model_outputs_read": false,
+  "dataset": {
+    "id": "zai-org/LongBench-v2",
+    "revision": "2b48e494f2c7a2f0af81aae178e05c7e1dde0fe9",
+    "sha256": "15d61c22d92c96900b3c4948b6aeea218d3214b676a65df48e7b8555604c7fe2",
+    "sample_size": 100,
+    "exposure": "frozen public training-split development sample; all task IDs were used in the prior 100-task evaluation"
+  },
+  "model_tokenization": {
+    "model_id": "minimax/minimax-m3",
+    "tokenizer_sha256": "bb1f1626cf01448f1e3b6036d0a061ffc66c91d9046aada14ea23a5441b5ad6e",
+    "template_sha256": "11421244f67553498e5c8112dae02802025bcc4305ec45ad380af95c96f9fe64"
+  },
+  "inputs": {
+    "dataset": ".runs/longbench-v2-data-pinned.json",
+    "manifest": "docs/evals/longbench-v2-minimax-m3-100-manifest-2026-10-16.json",
+    "manifest_sha256": "865e27c21fdd2a6ce4b629b283123f4bff66b62e3c17f39c3b8be842b00a6f18",
+    "target_sweep_script": "benchmarks/audit_longbench_v2_target_sweep.py",
+    "target_sweep_script_sha256": "311e6fa2a5d9031e6e5c02287c608235a21c1f2db2ec54fbd66a64032116c4dc",
+    "renderer_script": "benchmarks/prepare_longbench_v2_minimax.py",
+    "renderer_script_sha256": "2eb34e08fbdb3d1acb69339505e1e228030b930e2d967b174e67490006adee77",
+    "prompt_builder_script": "benchmarks/prepare_longbench_v2.py",
+    "prompt_builder_script_sha256": "b913c0c89ed6bea2a7b74b54b64516bfcaad7f7894067ebbac9c5085e47ae069",
+    "source_allowlists": {
+      "manifest_root": [
+        "dataset",
+        "model",
+        "sift",
+        "cases"
+      ],
+      "manifest": [
+        "id",
+        "domain",
+        "prompt_sha256",
+        "m3_rendered_prompt_tokens"
+      ],
+      "dataset_row": [
+        "_id",
+        "context",
+        "question",
+        "choice_A",
+        "choice_B",
+        "choice_C",
+        "choice_D"
+      ]
+    }
+  },
+  "current_core_sha256": "5a1d64474eea5d5ca6d599ab893411d40922dd7d12cc47e0ae33b9a097c86f1a",
+  "target_parameters": {
+    "targets_tokens": [
+      16384,
+      24576,
+      32768,
+      49152,
+      65536
+    ],
+    "safety_margin_tokens": 128,
+    "route_context_or_pricing_verified": false
+  },
+  "targets": [
+    {
+      "target_tokens": 16384,
+      "effective_target_after_safety_margin": 16256,
+      "task_count": 100,
+      "compaction_completed_count": 100,
+      "target_fit_count": 100,
+      "fail_closed_count": 0,
+      "fail_closed_codes": {},
+      "failures": [],
+      "prompt_tokens_total": 1567837,
+      "prompt_tokens_mean": 15678.37,
+      "prompt_tokens_median": 16217,
+      "preprocessing_ms_median": 898.3407998457551,
+      "preprocessing_ms_p95": 1401.2641999870539,
+      "passthrough_tasks": 0,
+      "target_violations": 0,
+      "candidate_forwarded_token_total_successes_only": true,
+      "rows": [
+        {
+          "id": "66ebd3ba5a08c7b9b35e0446",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 114832,
+          "forwarded_tokens": 16240,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1190.968,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ebd9895a08c7b9b35e0c7c",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 34936,
+          "forwarded_tokens": 16202,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 607.083,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ebdadd5a08c7b9b35e0e5b",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 33996,
+          "forwarded_tokens": 16227,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 601.599,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ebf9bf5a08c7b9b35e1f85",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 49558,
+          "forwarded_tokens": 16202,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 716.858,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec052a5a08c7b9b35e29c7",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 33960,
+          "forwarded_tokens": 16098,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 658.911,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec0874821e116aacb194a4",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 39988,
+          "forwarded_tokens": 16237,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 672.318,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec18a7821e116aacb1a72e",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 40117,
+          "forwarded_tokens": 16250,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 567.099,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec3644821e116aacb1c312",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 94970,
+          "forwarded_tokens": 16221,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1014.376,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec3aff821e116aacb1c52e",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 79726,
+          "forwarded_tokens": 16208,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 912.77,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec4e43821e116aacb1cb54",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 118947,
+          "forwarded_tokens": 16243,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1336.6,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec6582821e116aacb1cf7a",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 94760,
+          "forwarded_tokens": 16240,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1035.315,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ecf139821e116aacb1e0e1",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 52023,
+          "forwarded_tokens": 16203,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 626.867,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ed0cb0821e116aacb1e6c1",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 43292,
+          "forwarded_tokens": 16240,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 658.928,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ed3148821e116aacb1f2ce",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 42861,
+          "forwarded_tokens": 16245,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 624.745,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ed364d821e116aacb1f47e",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 77161,
+          "forwarded_tokens": 16219,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 950.119,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ed3e90821e116aacb1f82f",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 62745,
+          "forwarded_tokens": 16234,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 721.154,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ee4287821e116aacb21258",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 36544,
+          "forwarded_tokens": 16247,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 578.6,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ef8aa3821e116aacb22db5",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 108164,
+          "forwarded_tokens": 16235,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1292.456,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66efa466821e116aacb23219",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 47891,
+          "forwarded_tokens": 16246,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 624.33,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66efa5ea821e116aacb23268",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 75229,
+          "forwarded_tokens": 16248,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 999.717,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66efaf70821e116aacb234bd",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 72517,
+          "forwarded_tokens": 16205,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 926.234,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f19f04821e116aacb27bab",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 78770,
+          "forwarded_tokens": 16240,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 992.27,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f2a7a9821e116aacb2a721",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 88818,
+          "forwarded_tokens": 16255,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1058.092,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f2a98a821e116aacb2a8bf",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 48696,
+          "forwarded_tokens": 16241,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 693.835,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f2b5ec821e116aacb2b1ec",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 100096,
+          "forwarded_tokens": 11128,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 921.091,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f36490821e116aacb2cc22",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 34787,
+          "forwarded_tokens": 16248,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 558.005,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f379e8821e116aacb2d161",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 69525,
+          "forwarded_tokens": 16210,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 878.459,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f39ac5821e116aacb2da81",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 94137,
+          "forwarded_tokens": 16242,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 906.086,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f3cb88821e116aacb2eeb9",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 97522,
+          "forwarded_tokens": 16242,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1109.155,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f3cca6821e116aacb2ef7c",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 96977,
+          "forwarded_tokens": 16247,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1081.619,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f3d2fc821e116aacb2f269",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 122273,
+          "forwarded_tokens": 16190,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1361.775,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f3de02821e116aacb2f73b",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 55997,
+          "forwarded_tokens": 16231,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 748.59,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f3edfb821e116aacb2fc91",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 43089,
+          "forwarded_tokens": 16221,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 670.877,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f52926821e116aacb32b5e",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 32903,
+          "forwarded_tokens": 16217,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 623.226,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f530ce821e116aacb32f09",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 47640,
+          "forwarded_tokens": 16239,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 660.977,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f53892821e116aacb33225",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 56973,
+          "forwarded_tokens": 16250,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 668.433,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f53f2b821e116aacb3335a",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 39992,
+          "forwarded_tokens": 15977,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 601.415,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f59d31821e116aacb340f6",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 54546,
+          "forwarded_tokens": 16233,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 709.571,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f67c1bbb02136c067c21b9",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 37861,
+          "forwarded_tokens": 16253,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 598.125,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f6909bbb02136c067c2380",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 40123,
+          "forwarded_tokens": 16232,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 664.905,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f6a14dbb02136c067c2453",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 33702,
+          "forwarded_tokens": 16233,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 610.875,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f8c783bb02136c067c44b8",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 71350,
+          "forwarded_tokens": 16189,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 862.488,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f947abbb02136c067c4ea6",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 141545,
+          "forwarded_tokens": 16239,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1523.538,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f95c18bb02136c067c52e1",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 32830,
+          "forwarded_tokens": 16225,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 587.91,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f95e11bb02136c067c5370",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 120799,
+          "forwarded_tokens": 16241,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1011.391,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fa415cbb02136c067c671c",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 126943,
+          "forwarded_tokens": 16252,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1341.956,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fa50acbb02136c067c6827",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 77675,
+          "forwarded_tokens": 16240,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 892.798,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fa700bbb02136c067c6c06",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 100626,
+          "forwarded_tokens": 16215,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1104.321,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fa7c81bb02136c067c6e09",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 76831,
+          "forwarded_tokens": 16226,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 846.502,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fab090bb02136c067c74e7",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 49690,
+          "forwarded_tokens": 16224,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 642.894,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fc05b6bb02136c067c88e4",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 68325,
+          "forwarded_tokens": 16214,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 898.341,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fcf36fbb02136c067c919e",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 69235,
+          "forwarded_tokens": 16254,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 824.122,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fea153bb02136c067ca3e7",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 43283,
+          "forwarded_tokens": 16248,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 647.683,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67039cfabb02136c067cd04e",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 122913,
+          "forwarded_tokens": 16186,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1081.212,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6703a0ecbb02136c067cd11b",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 77248,
+          "forwarded_tokens": 16012,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 837.482,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67062a63bb02136c067cf5ac",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 45402,
+          "forwarded_tokens": 16154,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 694.552,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "670646aebb02136c067cf85a",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 104590,
+          "forwarded_tokens": 16220,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1249.658,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67078ecabb02136c067d0b89",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 44925,
+          "forwarded_tokens": 16230,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 708.743,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "670cf163bb02136c067d26b6",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 92283,
+          "forwarded_tokens": 16231,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1093.217,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "670fbae0bb02136c067d2c79",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 96467,
+          "forwarded_tokens": 16213,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1088.847,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67189156bb02136c067d3b8d",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 115563,
+          "forwarded_tokens": 16040,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1358.436,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719167dbb02136c067d4025",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 116280,
+          "forwarded_tokens": 16056,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1369.435,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67191791bb02136c067d406c",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 115097,
+          "forwarded_tokens": 16239,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1401.264,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719185cbb02136c067d40ab",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 117156,
+          "forwarded_tokens": 16185,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1276.436,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67192e81bb02136c067d427f",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 117142,
+          "forwarded_tokens": 16186,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1371.632,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719b96abb02136c067d4358",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 34440,
+          "forwarded_tokens": 16242,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 387.244,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719c1febb02136c067d44db",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 113225,
+          "forwarded_tokens": 16225,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1377.812,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719dc46bb02136c067d470b",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 116879,
+          "forwarded_tokens": 16018,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1317.483,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719ef50bb02136c067d4911",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 115327,
+          "forwarded_tokens": 16123,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1471.945,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b080abb02136c067d4dde",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 38191,
+          "forwarded_tokens": 12405,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 343.337,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b170cbb02136c067d4f4a",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 60309,
+          "forwarded_tokens": 16139,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 501.991,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b17d5bb02136c067d4f7d",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 39280,
+          "forwarded_tokens": 6112,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 215.013,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b2822bb02136c067d5020",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 115118,
+          "forwarded_tokens": 16110,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1351.82,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b2b57bb02136c067d508b",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 39192,
+          "forwarded_tokens": 6924,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 249.207,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b2c05bb02136c067d50c8",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 39280,
+          "forwarded_tokens": 7464,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 239.725,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b2c67bb02136c067d50f7",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 39270,
+          "forwarded_tokens": 8360,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 240.672,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b3cabbb02136c067d5252",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 42597,
+          "forwarded_tokens": 9580,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 349.424,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b530dbb02136c067d5454",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 113481,
+          "forwarded_tokens": 16211,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1320.769,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b56cfbb02136c067d54e9",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 113866,
+          "forwarded_tokens": 16247,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1381.932,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b58e8bb02136c067d5525",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 116408,
+          "forwarded_tokens": 16125,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1440.994,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "672494e5bb02136c067d7697",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 129397,
+          "forwarded_tokens": 16197,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1194.065,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67249705bb02136c067d76d1",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 131417,
+          "forwarded_tokens": 15961,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1272.187,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6724c1d4bb02136c067d77ec",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 143366,
+          "forwarded_tokens": 15953,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1270.979,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6724c4aabb02136c067d78a6",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 130246,
+          "forwarded_tokens": 15877,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1230.663,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725d898bb02136c067d82d6",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 145556,
+          "forwarded_tokens": 16184,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1512.346,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725d977bb02136c067d8373",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 125647,
+          "forwarded_tokens": 16239,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1143.076,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725dabfbb02136c067d8450",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 90798,
+          "forwarded_tokens": 16193,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 898.004,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725db01bb02136c067d847f",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 90783,
+          "forwarded_tokens": 16215,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 838.643,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725db46bb02136c067d84b4",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 90788,
+          "forwarded_tokens": 16241,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 858.941,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725db8bbb02136c067d84eb",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 90789,
+          "forwarded_tokens": 16193,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 885.635,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725dc28bb02136c067d8555",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 92797,
+          "forwarded_tokens": 16166,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1002.381,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725dc6abb02136c067d8586",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 93077,
+          "forwarded_tokens": 16056,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1143.672,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725dd39bb02136c067d861b",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 93080,
+          "forwarded_tokens": 16149,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1153.647,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725e2febb02136c067d8717",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 32806,
+          "forwarded_tokens": 16217,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 866.064,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67285e1dbb02136c067d901b",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 130728,
+          "forwarded_tokens": 16226,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1235.725,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67286036bb02136c067d9092",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 138457,
+          "forwarded_tokens": 16168,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1304.385,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "672864b4bb02136c067d916c",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 92966,
+          "forwarded_tokens": 16071,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 967.715,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67286533bb02136c067d919f",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 92981,
+          "forwarded_tokens": 16076,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1122.312,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67286698bb02136c067d9223",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 145686,
+          "forwarded_tokens": 16232,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1531.186,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67286795bb02136c067d92ab",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 90800,
+          "forwarded_tokens": 16200,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 811.133,
+          "selector_method": "query_aware_extract"
+        }
+      ]
+    },
+    {
+      "target_tokens": 24576,
+      "effective_target_after_safety_margin": 24448,
+      "task_count": 100,
+      "compaction_completed_count": 100,
+      "target_fit_count": 100,
+      "fail_closed_count": 0,
+      "fail_closed_codes": {},
+      "failures": [],
+      "prompt_tokens_total": 2286676,
+      "prompt_tokens_mean": 22866.76,
+      "prompt_tokens_median": 24369,
+      "preprocessing_ms_median": 1039.9811000097543,
+      "preprocessing_ms_p95": 1565.2346001006663,
+      "passthrough_tasks": 0,
+      "target_violations": 0,
+      "candidate_forwarded_token_total_successes_only": true,
+      "rows": [
+        {
+          "id": "66ebd3ba5a08c7b9b35e0446",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 114832,
+          "forwarded_tokens": 24437,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1397.428,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ebd9895a08c7b9b35e0c7c",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 34936,
+          "forwarded_tokens": 24386,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 689.372,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ebdadd5a08c7b9b35e0e5b",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 33996,
+          "forwarded_tokens": 24426,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 692.814,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ebf9bf5a08c7b9b35e1f85",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 49558,
+          "forwarded_tokens": 24416,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 885.849,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec052a5a08c7b9b35e29c7",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 33960,
+          "forwarded_tokens": 24357,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 746.987,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec0874821e116aacb194a4",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 39988,
+          "forwarded_tokens": 24431,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 799.222,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec18a7821e116aacb1a72e",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 40117,
+          "forwarded_tokens": 24421,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 660.13,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec3644821e116aacb1c312",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 94970,
+          "forwarded_tokens": 24436,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1147.571,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec3aff821e116aacb1c52e",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 79726,
+          "forwarded_tokens": 24442,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1070.463,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec4e43821e116aacb1cb54",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 118947,
+          "forwarded_tokens": 17112,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1365.56,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec6582821e116aacb1cf7a",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 94760,
+          "forwarded_tokens": 24433,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1319.062,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ecf139821e116aacb1e0e1",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 52023,
+          "forwarded_tokens": 22997,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 784.941,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ed0cb0821e116aacb1e6c1",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 43292,
+          "forwarded_tokens": 24434,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 781.267,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ed3148821e116aacb1f2ce",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 42861,
+          "forwarded_tokens": 24428,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 795.864,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ed364d821e116aacb1f47e",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 77161,
+          "forwarded_tokens": 24395,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1039.981,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ed3e90821e116aacb1f82f",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 62745,
+          "forwarded_tokens": 24441,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 920.457,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ee4287821e116aacb21258",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 36544,
+          "forwarded_tokens": 24389,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 733.232,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ef8aa3821e116aacb22db5",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 108164,
+          "forwarded_tokens": 24437,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1284.149,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66efa466821e116aacb23219",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 47891,
+          "forwarded_tokens": 24405,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 814.346,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66efa5ea821e116aacb23268",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 75229,
+          "forwarded_tokens": 24429,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1025.646,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66efaf70821e116aacb234bd",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 72517,
+          "forwarded_tokens": 24406,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1079.424,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f19f04821e116aacb27bab",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 78770,
+          "forwarded_tokens": 22982,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1042.544,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f2a7a9821e116aacb2a721",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 88818,
+          "forwarded_tokens": 24406,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1208.859,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f2a98a821e116aacb2a8bf",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 48696,
+          "forwarded_tokens": 24421,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 785.168,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f2b5ec821e116aacb2b1ec",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 100096,
+          "forwarded_tokens": 11128,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 898.706,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f36490821e116aacb2cc22",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 34787,
+          "forwarded_tokens": 24423,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 700.664,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f379e8821e116aacb2d161",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 69525,
+          "forwarded_tokens": 24411,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1083.676,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f39ac5821e116aacb2da81",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 94137,
+          "forwarded_tokens": 24208,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1057.068,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f3cb88821e116aacb2eeb9",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 97522,
+          "forwarded_tokens": 24440,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1309.767,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f3cca6821e116aacb2ef7c",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 96977,
+          "forwarded_tokens": 23895,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1251.194,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f3d2fc821e116aacb2f269",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 122273,
+          "forwarded_tokens": 22782,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1472.5,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f3de02821e116aacb2f73b",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 55997,
+          "forwarded_tokens": 24180,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 889.513,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f3edfb821e116aacb2fc91",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 43089,
+          "forwarded_tokens": 24401,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 793.099,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f52926821e116aacb32b5e",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 32903,
+          "forwarded_tokens": 24445,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 721.693,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f530ce821e116aacb32f09",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 47640,
+          "forwarded_tokens": 24448,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 848.013,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f53892821e116aacb33225",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 56973,
+          "forwarded_tokens": 24379,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 783.973,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f53f2b821e116aacb3335a",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 39992,
+          "forwarded_tokens": 24223,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 728.311,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f59d31821e116aacb340f6",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 54546,
+          "forwarded_tokens": 24396,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 834.825,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f67c1bbb02136c067c21b9",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 37861,
+          "forwarded_tokens": 20662,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 804.832,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f6909bbb02136c067c2380",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 40123,
+          "forwarded_tokens": 21014,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 780.958,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f6a14dbb02136c067c2453",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 33702,
+          "forwarded_tokens": 24219,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 742.541,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f8c783bb02136c067c44b8",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 71350,
+          "forwarded_tokens": 24414,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1052.317,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f947abbb02136c067c4ea6",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 141545,
+          "forwarded_tokens": 23367,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1578.528,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f95c18bb02136c067c52e1",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 32830,
+          "forwarded_tokens": 24420,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 745.588,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f95e11bb02136c067c5370",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 120799,
+          "forwarded_tokens": 24436,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1079.714,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fa415cbb02136c067c671c",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 126943,
+          "forwarded_tokens": 23254,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1467.523,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fa50acbb02136c067c6827",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 77675,
+          "forwarded_tokens": 20444,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 988.195,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fa700bbb02136c067c6c06",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 100626,
+          "forwarded_tokens": 23771,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1319.359,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fa7c81bb02136c067c6e09",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 76831,
+          "forwarded_tokens": 24435,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 963.541,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fab090bb02136c067c74e7",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 49690,
+          "forwarded_tokens": 24432,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 829.449,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fc05b6bb02136c067c88e4",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 68325,
+          "forwarded_tokens": 24399,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 997.164,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fcf36fbb02136c067c919e",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 69235,
+          "forwarded_tokens": 24429,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1066.693,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fea153bb02136c067ca3e7",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 43283,
+          "forwarded_tokens": 23225,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 791.206,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67039cfabb02136c067cd04e",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 122913,
+          "forwarded_tokens": 21731,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1047.395,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6703a0ecbb02136c067cd11b",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 77248,
+          "forwarded_tokens": 24342,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 997.54,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67062a63bb02136c067cf5ac",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 45402,
+          "forwarded_tokens": 24310,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 907.196,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "670646aebb02136c067cf85a",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 104590,
+          "forwarded_tokens": 22018,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1438.598,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67078ecabb02136c067d0b89",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 44925,
+          "forwarded_tokens": 21047,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 875.442,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "670cf163bb02136c067d26b6",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 92283,
+          "forwarded_tokens": 24408,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1308.182,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "670fbae0bb02136c067d2c79",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 96467,
+          "forwarded_tokens": 24427,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1253.719,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67189156bb02136c067d3b8d",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 115563,
+          "forwarded_tokens": 24280,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1503.071,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719167dbb02136c067d4025",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 116280,
+          "forwarded_tokens": 24369,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1402.377,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67191791bb02136c067d406c",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 115097,
+          "forwarded_tokens": 24257,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1488.322,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719185cbb02136c067d40ab",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 117156,
+          "forwarded_tokens": 24342,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1480.268,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67192e81bb02136c067d427f",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 117142,
+          "forwarded_tokens": 24421,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1593.425,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719b96abb02136c067d4358",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 34440,
+          "forwarded_tokens": 18113,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 450.229,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719c1febb02136c067d44db",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 113225,
+          "forwarded_tokens": 24322,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1565.235,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719dc46bb02136c067d470b",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 116879,
+          "forwarded_tokens": 24426,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1569.869,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719ef50bb02136c067d4911",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 115327,
+          "forwarded_tokens": 24333,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1494.921,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b080abb02136c067d4dde",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 38191,
+          "forwarded_tokens": 12405,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 335.655,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b170cbb02136c067d4f4a",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 60309,
+          "forwarded_tokens": 24392,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 650.073,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b17d5bb02136c067d4f7d",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 39280,
+          "forwarded_tokens": 6112,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 221.812,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b2822bb02136c067d5020",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 115118,
+          "forwarded_tokens": 24332,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1517.789,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b2b57bb02136c067d508b",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 39192,
+          "forwarded_tokens": 6924,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 248.066,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b2c05bb02136c067d50c8",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 39280,
+          "forwarded_tokens": 7464,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 266.703,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b2c67bb02136c067d50f7",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 39270,
+          "forwarded_tokens": 8360,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 246.119,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b3cabbb02136c067d5252",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 42597,
+          "forwarded_tokens": 9580,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 307.281,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b530dbb02136c067d5454",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 113481,
+          "forwarded_tokens": 24215,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1454.726,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b56cfbb02136c067d54e9",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 113866,
+          "forwarded_tokens": 24261,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1456.118,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b58e8bb02136c067d5525",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 116408,
+          "forwarded_tokens": 24416,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1586.868,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "672494e5bb02136c067d7697",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 129397,
+          "forwarded_tokens": 24168,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1363.236,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67249705bb02136c067d76d1",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 131417,
+          "forwarded_tokens": 24352,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1348.253,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6724c1d4bb02136c067d77ec",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 143366,
+          "forwarded_tokens": 24123,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1481.474,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6724c4aabb02136c067d78a6",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 130246,
+          "forwarded_tokens": 24399,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1444.962,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725d898bb02136c067d82d6",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 145556,
+          "forwarded_tokens": 24404,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1531.132,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725d977bb02136c067d8373",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 125647,
+          "forwarded_tokens": 24409,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1274.563,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725dabfbb02136c067d8450",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 90798,
+          "forwarded_tokens": 24369,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1024.806,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725db01bb02136c067d847f",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 90783,
+          "forwarded_tokens": 24381,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 908.423,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725db46bb02136c067d84b4",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 90788,
+          "forwarded_tokens": 24372,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 935.106,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725db8bbb02136c067d84eb",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 90789,
+          "forwarded_tokens": 24387,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 939.745,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725dc28bb02136c067d8555",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 92797,
+          "forwarded_tokens": 24330,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1140.858,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725dc6abb02136c067d8586",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 93077,
+          "forwarded_tokens": 24331,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1208.489,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725dd39bb02136c067d861b",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 93080,
+          "forwarded_tokens": 24295,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1226.53,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725e2febb02136c067d8717",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 32806,
+          "forwarded_tokens": 24133,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 702.93,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67285e1dbb02136c067d901b",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 130728,
+          "forwarded_tokens": 24278,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1360.642,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67286036bb02136c067d9092",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 138457,
+          "forwarded_tokens": 24201,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1440.312,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "672864b4bb02136c067d916c",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 92966,
+          "forwarded_tokens": 24412,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1146.926,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67286533bb02136c067d919f",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 92981,
+          "forwarded_tokens": 24360,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1134.59,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67286698bb02136c067d9223",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 145686,
+          "forwarded_tokens": 24445,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1573.888,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67286795bb02136c067d92ab",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 90800,
+          "forwarded_tokens": 24373,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 937.706,
+          "selector_method": "query_aware_extract"
+        }
+      ]
+    },
+    {
+      "target_tokens": 32768,
+      "effective_target_after_safety_margin": 32640,
+      "task_count": 100,
+      "compaction_completed_count": 100,
+      "target_fit_count": 100,
+      "fail_closed_count": 0,
+      "fail_closed_codes": {},
+      "failures": [],
+      "prompt_tokens_total": 2760484,
+      "prompt_tokens_mean": 27604.84,
+      "prompt_tokens_median": 29925,
+      "preprocessing_ms_median": 1124.8680998105556,
+      "preprocessing_ms_p95": 1725.9798001032323,
+      "passthrough_tasks": 0,
+      "target_violations": 0,
+      "candidate_forwarded_token_total_successes_only": true,
+      "rows": [
+        {
+          "id": "66ebd3ba5a08c7b9b35e0446",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 114832,
+          "forwarded_tokens": 32620,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1538.145,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ebd9895a08c7b9b35e0c7c",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 34936,
+          "forwarded_tokens": 28647,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 861.264,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ebdadd5a08c7b9b35e0e5b",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 33996,
+          "forwarded_tokens": 28535,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 836.205,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ebf9bf5a08c7b9b35e1f85",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 49558,
+          "forwarded_tokens": 30896,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1063.782,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec052a5a08c7b9b35e29c7",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 33960,
+          "forwarded_tokens": 32610,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 894.897,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec0874821e116aacb194a4",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 39988,
+          "forwarded_tokens": 28717,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 944.175,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec18a7821e116aacb1a72e",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 40117,
+          "forwarded_tokens": 25945,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 692.55,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec3644821e116aacb1c312",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 94970,
+          "forwarded_tokens": 32629,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1313.721,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec3aff821e116aacb1c52e",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 79726,
+          "forwarded_tokens": 26982,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1164.919,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec4e43821e116aacb1cb54",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 118947,
+          "forwarded_tokens": 17112,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1370.788,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec6582821e116aacb1cf7a",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 94760,
+          "forwarded_tokens": 27546,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1351.721,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ecf139821e116aacb1e0e1",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 52023,
+          "forwarded_tokens": 22997,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 797.124,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ed0cb0821e116aacb1e6c1",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 43292,
+          "forwarded_tokens": 28511,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 896.41,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ed3148821e116aacb1f2ce",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 42861,
+          "forwarded_tokens": 32616,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1025.426,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ed364d821e116aacb1f47e",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 77161,
+          "forwarded_tokens": 24756,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1119.246,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ed3e90821e116aacb1f82f",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 62745,
+          "forwarded_tokens": 29130,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1122.982,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ee4287821e116aacb21258",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 36544,
+          "forwarded_tokens": 25909,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 823.111,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ef8aa3821e116aacb22db5",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 108164,
+          "forwarded_tokens": 25134,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1463.831,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66efa466821e116aacb23219",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 47891,
+          "forwarded_tokens": 32637,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1008.316,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66efa5ea821e116aacb23268",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 75229,
+          "forwarded_tokens": 31084,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1254.846,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66efaf70821e116aacb234bd",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 72517,
+          "forwarded_tokens": 29296,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1217.986,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f19f04821e116aacb27bab",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 78770,
+          "forwarded_tokens": 22982,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1054.606,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f2a7a9821e116aacb2a721",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 88818,
+          "forwarded_tokens": 26082,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1265.358,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f2a98a821e116aacb2a8bf",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 48696,
+          "forwarded_tokens": 26930,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 890.74,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f2b5ec821e116aacb2b1ec",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 100096,
+          "forwarded_tokens": 11128,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 860.909,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f36490821e116aacb2cc22",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 34787,
+          "forwarded_tokens": 26023,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 759.998,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f379e8821e116aacb2d161",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 69525,
+          "forwarded_tokens": 29925,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1221.562,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f39ac5821e116aacb2da81",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 94137,
+          "forwarded_tokens": 24208,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1036.46,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f3cb88821e116aacb2eeb9",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 97522,
+          "forwarded_tokens": 28406,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1356.368,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f3cca6821e116aacb2ef7c",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 96977,
+          "forwarded_tokens": 23895,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1290.052,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f3d2fc821e116aacb2f269",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 122273,
+          "forwarded_tokens": 22782,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1446.476,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f3de02821e116aacb2f73b",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 55997,
+          "forwarded_tokens": 24180,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 928.677,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f3edfb821e116aacb2fc91",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 43089,
+          "forwarded_tokens": 25708,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 834.276,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f52926821e116aacb32b5e",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 32903,
+          "forwarded_tokens": 26018,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 831.73,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f530ce821e116aacb32f09",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 47640,
+          "forwarded_tokens": 29994,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 992.394,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f53892821e116aacb33225",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 56973,
+          "forwarded_tokens": 27563,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 919.805,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f53f2b821e116aacb3335a",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 39992,
+          "forwarded_tokens": 32435,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 837.021,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f59d31821e116aacb340f6",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 54546,
+          "forwarded_tokens": 27839,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 916.813,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f67c1bbb02136c067c21b9",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 37861,
+          "forwarded_tokens": 20662,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 738.036,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f6909bbb02136c067c2380",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 40123,
+          "forwarded_tokens": 21014,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 709.663,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f6a14dbb02136c067c2453",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 33702,
+          "forwarded_tokens": 24219,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 803.136,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f8c783bb02136c067c44b8",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 71350,
+          "forwarded_tokens": 32415,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1247.187,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f947abbb02136c067c4ea6",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 141545,
+          "forwarded_tokens": 23367,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1641.355,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f95c18bb02136c067c52e1",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 32830,
+          "forwarded_tokens": 27548,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 831.785,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f95e11bb02136c067c5370",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 120799,
+          "forwarded_tokens": 32614,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1315.027,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fa415cbb02136c067c671c",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 126943,
+          "forwarded_tokens": 23254,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1555.668,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fa50acbb02136c067c6827",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 77675,
+          "forwarded_tokens": 20444,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 991.739,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fa700bbb02136c067c6c06",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 100626,
+          "forwarded_tokens": 23771,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1514.856,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fa7c81bb02136c067c6e09",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 76831,
+          "forwarded_tokens": 27213,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1017.792,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fab090bb02136c067c74e7",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 49690,
+          "forwarded_tokens": 32447,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1059.096,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fc05b6bb02136c067c88e4",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 68325,
+          "forwarded_tokens": 30612,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1217.024,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fcf36fbb02136c067c919e",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 69235,
+          "forwarded_tokens": 32314,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1209.797,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fea153bb02136c067ca3e7",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 43283,
+          "forwarded_tokens": 23225,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 841.59,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67039cfabb02136c067cd04e",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 122913,
+          "forwarded_tokens": 21731,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1018.656,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6703a0ecbb02136c067cd11b",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 77248,
+          "forwarded_tokens": 32586,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1071.277,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67062a63bb02136c067cf5ac",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 45402,
+          "forwarded_tokens": 32562,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1021.486,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "670646aebb02136c067cf85a",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 104590,
+          "forwarded_tokens": 22018,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1360.924,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67078ecabb02136c067d0b89",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 44925,
+          "forwarded_tokens": 21047,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 794.283,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "670cf163bb02136c067d26b6",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 92283,
+          "forwarded_tokens": 32500,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1345.809,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "670fbae0bb02136c067d2c79",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 96467,
+          "forwarded_tokens": 32609,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1459.9,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67189156bb02136c067d3b8d",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 115563,
+          "forwarded_tokens": 32432,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1620.217,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719167dbb02136c067d4025",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 116280,
+          "forwarded_tokens": 32599,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1695.827,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67191791bb02136c067d406c",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 115097,
+          "forwarded_tokens": 32562,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1678.167,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719185cbb02136c067d40ab",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 117156,
+          "forwarded_tokens": 32630,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1602.212,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67192e81bb02136c067d427f",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 117142,
+          "forwarded_tokens": 32589,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1585.467,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719b96abb02136c067d4358",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 34440,
+          "forwarded_tokens": 18113,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 425.556,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719c1febb02136c067d44db",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 113225,
+          "forwarded_tokens": 32614,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1725.98,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719dc46bb02136c067d470b",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 116879,
+          "forwarded_tokens": 32497,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1709.055,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719ef50bb02136c067d4911",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 115327,
+          "forwarded_tokens": 32605,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1882.482,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b080abb02136c067d4dde",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 38191,
+          "forwarded_tokens": 12405,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 352.417,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b170cbb02136c067d4f4a",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 60309,
+          "forwarded_tokens": 29898,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 733.667,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b17d5bb02136c067d4f7d",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 39280,
+          "forwarded_tokens": 6112,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 240.762,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b2822bb02136c067d5020",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 115118,
+          "forwarded_tokens": 32518,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1757.877,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b2b57bb02136c067d508b",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 39192,
+          "forwarded_tokens": 6924,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 234.891,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b2c05bb02136c067d50c8",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 39280,
+          "forwarded_tokens": 7464,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 227.529,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b2c67bb02136c067d50f7",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 39270,
+          "forwarded_tokens": 8360,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 244.562,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b3cabbb02136c067d5252",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 42597,
+          "forwarded_tokens": 9580,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 303.974,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b530dbb02136c067d5454",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 113481,
+          "forwarded_tokens": 32445,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1700.655,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b56cfbb02136c067d54e9",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 113866,
+          "forwarded_tokens": 32604,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1655.023,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b58e8bb02136c067d5525",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 116408,
+          "forwarded_tokens": 32464,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1727.598,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "672494e5bb02136c067d7697",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 129397,
+          "forwarded_tokens": 32489,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1420.668,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67249705bb02136c067d76d1",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 131417,
+          "forwarded_tokens": 32302,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1459.058,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6724c1d4bb02136c067d77ec",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 143366,
+          "forwarded_tokens": 32333,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1528.546,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6724c4aabb02136c067d78a6",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 130246,
+          "forwarded_tokens": 32337,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1427.321,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725d898bb02136c067d82d6",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 145556,
+          "forwarded_tokens": 32637,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1829.156,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725d977bb02136c067d8373",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 125647,
+          "forwarded_tokens": 32621,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1467.466,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725dabfbb02136c067d8450",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 90798,
+          "forwarded_tokens": 32640,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1142.581,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725db01bb02136c067d847f",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 90783,
+          "forwarded_tokens": 32617,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1060.607,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725db46bb02136c067d84b4",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 90788,
+          "forwarded_tokens": 32572,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1123.889,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725db8bbb02136c067d84eb",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 90789,
+          "forwarded_tokens": 32545,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1100.53,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725dc28bb02136c067d8555",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 92797,
+          "forwarded_tokens": 32450,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1252.162,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725dc6abb02136c067d8586",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 93077,
+          "forwarded_tokens": 32629,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1444.335,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725dd39bb02136c067d861b",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 93080,
+          "forwarded_tokens": 32433,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1367.19,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725e2febb02136c067d8717",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 32806,
+          "forwarded_tokens": 32573,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 889.526,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67285e1dbb02136c067d901b",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 130728,
+          "forwarded_tokens": 32599,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1423.1,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67286036bb02136c067d9092",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 138457,
+          "forwarded_tokens": 32430,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1482.136,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "672864b4bb02136c067d916c",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 92966,
+          "forwarded_tokens": 32593,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1266.805,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67286533bb02136c067d919f",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 92981,
+          "forwarded_tokens": 32593,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1308.237,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67286698bb02136c067d9223",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 145686,
+          "forwarded_tokens": 32459,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1869.204,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67286795bb02136c067d92ab",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 90800,
+          "forwarded_tokens": 32638,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1124.868,
+          "selector_method": "query_aware_extract"
+        }
+      ]
+    },
+    {
+      "target_tokens": 49152,
+      "effective_target_after_safety_margin": 49024,
+      "task_count": 100,
+      "compaction_completed_count": 100,
+      "target_fit_count": 100,
+      "fail_closed_count": 0,
+      "fail_closed_codes": {},
+      "failures": [],
+      "prompt_tokens_total": 3819406,
+      "prompt_tokens_mean": 38194.06,
+      "prompt_tokens_median": 39280,
+      "preprocessing_ms_median": 1223.6496000550687,
+      "preprocessing_ms_p95": 2172.47959994711,
+      "passthrough_tasks": 30,
+      "target_violations": 0,
+      "candidate_forwarded_token_total_successes_only": true,
+      "rows": [
+        {
+          "id": "66ebd3ba5a08c7b9b35e0446",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 114832,
+          "forwarded_tokens": 35962,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1707.211,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ebd9895a08c7b9b35e0c7c",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 34936,
+          "forwarded_tokens": 34936,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 87.401,
+          "selector_method": ""
+        },
+        {
+          "id": "66ebdadd5a08c7b9b35e0e5b",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 33996,
+          "forwarded_tokens": 33996,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 82.018,
+          "selector_method": ""
+        },
+        {
+          "id": "66ebf9bf5a08c7b9b35e1f85",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 49558,
+          "forwarded_tokens": 30896,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1013.03,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec052a5a08c7b9b35e29c7",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 33960,
+          "forwarded_tokens": 33960,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 80.707,
+          "selector_method": ""
+        },
+        {
+          "id": "66ec0874821e116aacb194a4",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 39988,
+          "forwarded_tokens": 39988,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 107.061,
+          "selector_method": ""
+        },
+        {
+          "id": "66ec18a7821e116aacb1a72e",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 40117,
+          "forwarded_tokens": 40117,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 97.193,
+          "selector_method": ""
+        },
+        {
+          "id": "66ec3644821e116aacb1c312",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 94970,
+          "forwarded_tokens": 33315,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1360.041,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec3aff821e116aacb1c52e",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 79726,
+          "forwarded_tokens": 26982,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1129.225,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec4e43821e116aacb1cb54",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 118947,
+          "forwarded_tokens": 17112,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1340.436,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec6582821e116aacb1cf7a",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 94760,
+          "forwarded_tokens": 27546,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1304.324,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ecf139821e116aacb1e0e1",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 52023,
+          "forwarded_tokens": 22997,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 780.954,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ed0cb0821e116aacb1e6c1",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 43292,
+          "forwarded_tokens": 43292,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 93.868,
+          "selector_method": ""
+        },
+        {
+          "id": "66ed3148821e116aacb1f2ce",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 42861,
+          "forwarded_tokens": 42861,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 134.856,
+          "selector_method": ""
+        },
+        {
+          "id": "66ed364d821e116aacb1f47e",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 77161,
+          "forwarded_tokens": 24756,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1076.604,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ed3e90821e116aacb1f82f",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 62745,
+          "forwarded_tokens": 29130,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1103.014,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ee4287821e116aacb21258",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 36544,
+          "forwarded_tokens": 36544,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 83.049,
+          "selector_method": ""
+        },
+        {
+          "id": "66ef8aa3821e116aacb22db5",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 108164,
+          "forwarded_tokens": 25134,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1335.416,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66efa466821e116aacb23219",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 47891,
+          "forwarded_tokens": 47891,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 112.892,
+          "selector_method": ""
+        },
+        {
+          "id": "66efa5ea821e116aacb23268",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 75229,
+          "forwarded_tokens": 31084,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1223.65,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66efaf70821e116aacb234bd",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 72517,
+          "forwarded_tokens": 29296,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1216.06,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f19f04821e116aacb27bab",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 78770,
+          "forwarded_tokens": 22982,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1023.708,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f2a7a9821e116aacb2a721",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 88818,
+          "forwarded_tokens": 26082,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1293.112,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f2a98a821e116aacb2a8bf",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 48696,
+          "forwarded_tokens": 48696,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 102.951,
+          "selector_method": ""
+        },
+        {
+          "id": "66f2b5ec821e116aacb2b1ec",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 100096,
+          "forwarded_tokens": 11128,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 967.898,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f36490821e116aacb2cc22",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 34787,
+          "forwarded_tokens": 34787,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 72.353,
+          "selector_method": ""
+        },
+        {
+          "id": "66f379e8821e116aacb2d161",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 69525,
+          "forwarded_tokens": 29925,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1161.203,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f39ac5821e116aacb2da81",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 94137,
+          "forwarded_tokens": 24208,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1109.24,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f3cb88821e116aacb2eeb9",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 97522,
+          "forwarded_tokens": 28406,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1277.792,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f3cca6821e116aacb2ef7c",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 96977,
+          "forwarded_tokens": 23895,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1312.195,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f3d2fc821e116aacb2f269",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 122273,
+          "forwarded_tokens": 22782,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1493.988,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f3de02821e116aacb2f73b",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 55997,
+          "forwarded_tokens": 24180,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 967.17,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f3edfb821e116aacb2fc91",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 43089,
+          "forwarded_tokens": 43089,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 102.52,
+          "selector_method": ""
+        },
+        {
+          "id": "66f52926821e116aacb32b5e",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 32903,
+          "forwarded_tokens": 32903,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 91.362,
+          "selector_method": ""
+        },
+        {
+          "id": "66f530ce821e116aacb32f09",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 47640,
+          "forwarded_tokens": 47640,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 120.653,
+          "selector_method": ""
+        },
+        {
+          "id": "66f53892821e116aacb33225",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 56973,
+          "forwarded_tokens": 27563,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 940.74,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f53f2b821e116aacb3335a",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 39992,
+          "forwarded_tokens": 39992,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 100.571,
+          "selector_method": ""
+        },
+        {
+          "id": "66f59d31821e116aacb340f6",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 54546,
+          "forwarded_tokens": 27839,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 952.995,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f67c1bbb02136c067c21b9",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 37861,
+          "forwarded_tokens": 37861,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 85.392,
+          "selector_method": ""
+        },
+        {
+          "id": "66f6909bbb02136c067c2380",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 40123,
+          "forwarded_tokens": 40123,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 106.726,
+          "selector_method": ""
+        },
+        {
+          "id": "66f6a14dbb02136c067c2453",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 33702,
+          "forwarded_tokens": 33702,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 99.94,
+          "selector_method": ""
+        },
+        {
+          "id": "66f8c783bb02136c067c44b8",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 71350,
+          "forwarded_tokens": 32415,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1382.704,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f947abbb02136c067c4ea6",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 141545,
+          "forwarded_tokens": 23367,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1625.985,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f95c18bb02136c067c52e1",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 32830,
+          "forwarded_tokens": 32830,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 80.907,
+          "selector_method": ""
+        },
+        {
+          "id": "66f95e11bb02136c067c5370",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 120799,
+          "forwarded_tokens": 48954,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1488.319,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fa415cbb02136c067c671c",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 126943,
+          "forwarded_tokens": 23254,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1505.344,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fa50acbb02136c067c6827",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 77675,
+          "forwarded_tokens": 20444,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 999.657,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fa700bbb02136c067c6c06",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 100626,
+          "forwarded_tokens": 23771,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1307.89,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fa7c81bb02136c067c6e09",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 76831,
+          "forwarded_tokens": 27213,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1025.979,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fab090bb02136c067c74e7",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 49690,
+          "forwarded_tokens": 32447,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1052.634,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fc05b6bb02136c067c88e4",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 68325,
+          "forwarded_tokens": 30612,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1173.801,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fcf36fbb02136c067c919e",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 69235,
+          "forwarded_tokens": 32314,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1227.328,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fea153bb02136c067ca3e7",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 43283,
+          "forwarded_tokens": 43283,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 94.186,
+          "selector_method": ""
+        },
+        {
+          "id": "67039cfabb02136c067cd04e",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 122913,
+          "forwarded_tokens": 21731,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1000.094,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6703a0ecbb02136c067cd11b",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 77248,
+          "forwarded_tokens": 48936,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1339.826,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67062a63bb02136c067cf5ac",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 45402,
+          "forwarded_tokens": 45402,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 112.348,
+          "selector_method": ""
+        },
+        {
+          "id": "670646aebb02136c067cf85a",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 104590,
+          "forwarded_tokens": 22018,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1389.045,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67078ecabb02136c067d0b89",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 44925,
+          "forwarded_tokens": 44925,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 106.499,
+          "selector_method": ""
+        },
+        {
+          "id": "670cf163bb02136c067d26b6",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 92283,
+          "forwarded_tokens": 48860,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1657.818,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "670fbae0bb02136c067d2c79",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 96467,
+          "forwarded_tokens": 48969,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1642.983,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67189156bb02136c067d3b8d",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 115563,
+          "forwarded_tokens": 48937,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2090.488,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719167dbb02136c067d4025",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 116280,
+          "forwarded_tokens": 48977,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2193.161,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67191791bb02136c067d406c",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 115097,
+          "forwarded_tokens": 48780,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1889.936,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719185cbb02136c067d40ab",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 117156,
+          "forwarded_tokens": 48962,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1991.533,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67192e81bb02136c067d427f",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 117142,
+          "forwarded_tokens": 48930,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2174.444,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719b96abb02136c067d4358",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 34440,
+          "forwarded_tokens": 34440,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 69.401,
+          "selector_method": ""
+        },
+        {
+          "id": "6719c1febb02136c067d44db",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 113225,
+          "forwarded_tokens": 48915,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2217.719,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719dc46bb02136c067d470b",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 116879,
+          "forwarded_tokens": 49007,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2173.273,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719ef50bb02136c067d4911",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 115327,
+          "forwarded_tokens": 48998,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1977.489,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b080abb02136c067d4dde",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 38191,
+          "forwarded_tokens": 38191,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 77.919,
+          "selector_method": ""
+        },
+        {
+          "id": "671b170cbb02136c067d4f4a",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 60309,
+          "forwarded_tokens": 29898,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 675.113,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b17d5bb02136c067d4f7d",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 39280,
+          "forwarded_tokens": 39280,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 64.322,
+          "selector_method": ""
+        },
+        {
+          "id": "671b2822bb02136c067d5020",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 115118,
+          "forwarded_tokens": 49001,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2119.497,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b2b57bb02136c067d508b",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 39192,
+          "forwarded_tokens": 39192,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 70.701,
+          "selector_method": ""
+        },
+        {
+          "id": "671b2c05bb02136c067d50c8",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 39280,
+          "forwarded_tokens": 39280,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 64.094,
+          "selector_method": ""
+        },
+        {
+          "id": "671b2c67bb02136c067d50f7",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 39270,
+          "forwarded_tokens": 39270,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 75.957,
+          "selector_method": ""
+        },
+        {
+          "id": "671b3cabbb02136c067d5252",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 42597,
+          "forwarded_tokens": 42597,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 81.947,
+          "selector_method": ""
+        },
+        {
+          "id": "671b530dbb02136c067d5454",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 113481,
+          "forwarded_tokens": 48944,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2033.869,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b56cfbb02136c067d54e9",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 113866,
+          "forwarded_tokens": 49004,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2172.48,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b58e8bb02136c067d5525",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 116408,
+          "forwarded_tokens": 48918,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2236.026,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "672494e5bb02136c067d7697",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 129397,
+          "forwarded_tokens": 48794,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1741.438,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67249705bb02136c067d76d1",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 131417,
+          "forwarded_tokens": 49010,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1779.552,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6724c1d4bb02136c067d77ec",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 143366,
+          "forwarded_tokens": 48925,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1797.465,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6724c4aabb02136c067d78a6",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 130246,
+          "forwarded_tokens": 48966,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1782.441,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725d898bb02136c067d82d6",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 145556,
+          "forwarded_tokens": 48968,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1980.625,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725d977bb02136c067d8373",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 125647,
+          "forwarded_tokens": 48914,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1699.018,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725dabfbb02136c067d8450",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 90798,
+          "forwarded_tokens": 49015,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1377.855,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725db01bb02136c067d847f",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 90783,
+          "forwarded_tokens": 48944,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1414.629,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725db46bb02136c067d84b4",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 90788,
+          "forwarded_tokens": 49018,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1380.935,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725db8bbb02136c067d84eb",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 90789,
+          "forwarded_tokens": 48956,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1473.184,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725dc28bb02136c067d8555",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 92797,
+          "forwarded_tokens": 48965,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1937.628,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725dc6abb02136c067d8586",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 93077,
+          "forwarded_tokens": 48862,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1538.407,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725dd39bb02136c067d861b",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 93080,
+          "forwarded_tokens": 48966,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1552.785,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725e2febb02136c067d8717",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 32806,
+          "forwarded_tokens": 32806,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 67.983,
+          "selector_method": ""
+        },
+        {
+          "id": "67285e1dbb02136c067d901b",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 130728,
+          "forwarded_tokens": 48908,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1760.053,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67286036bb02136c067d9092",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 138457,
+          "forwarded_tokens": 48838,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1828.816,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "672864b4bb02136c067d916c",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 92966,
+          "forwarded_tokens": 48923,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1729.561,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67286533bb02136c067d919f",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 92981,
+          "forwarded_tokens": 48973,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1517.534,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67286698bb02136c067d9223",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 145686,
+          "forwarded_tokens": 48787,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1963.31,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67286795bb02136c067d92ab",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 90800,
+          "forwarded_tokens": 49024,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1267.505,
+          "selector_method": "query_aware_extract"
+        }
+      ]
+    },
+    {
+      "target_tokens": 65536,
+      "effective_target_after_safety_margin": 65408,
+      "task_count": 100,
+      "compaction_completed_count": 100,
+      "target_fit_count": 100,
+      "fail_closed_count": 0,
+      "fail_closed_codes": {},
+      "failures": [],
+      "prompt_tokens_total": 4503141,
+      "prompt_tokens_mean": 45031.41,
+      "prompt_tokens_median": 43089,
+      "preprocessing_ms_median": 1237.9141999408603,
+      "preprocessing_ms_p95": 2439.07229998149,
+      "passthrough_tasks": 38,
+      "target_violations": 0,
+      "candidate_forwarded_token_total_successes_only": true,
+      "rows": [
+        {
+          "id": "66ebd3ba5a08c7b9b35e0446",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 114832,
+          "forwarded_tokens": 35962,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1699.315,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ebd9895a08c7b9b35e0c7c",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 34936,
+          "forwarded_tokens": 34936,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 80.336,
+          "selector_method": ""
+        },
+        {
+          "id": "66ebdadd5a08c7b9b35e0e5b",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 33996,
+          "forwarded_tokens": 33996,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 80.782,
+          "selector_method": ""
+        },
+        {
+          "id": "66ebf9bf5a08c7b9b35e1f85",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 49558,
+          "forwarded_tokens": 49558,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 130.712,
+          "selector_method": ""
+        },
+        {
+          "id": "66ec052a5a08c7b9b35e29c7",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 33960,
+          "forwarded_tokens": 33960,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 81.488,
+          "selector_method": ""
+        },
+        {
+          "id": "66ec0874821e116aacb194a4",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 39988,
+          "forwarded_tokens": 39988,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 120.238,
+          "selector_method": ""
+        },
+        {
+          "id": "66ec18a7821e116aacb1a72e",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 40117,
+          "forwarded_tokens": 40117,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 84.162,
+          "selector_method": ""
+        },
+        {
+          "id": "66ec3644821e116aacb1c312",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 94970,
+          "forwarded_tokens": 33315,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1355.815,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec3aff821e116aacb1c52e",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 79726,
+          "forwarded_tokens": 26982,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1136.498,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec4e43821e116aacb1cb54",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 118947,
+          "forwarded_tokens": 17112,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1333.949,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ec6582821e116aacb1cf7a",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 94760,
+          "forwarded_tokens": 27546,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1260.393,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ecf139821e116aacb1e0e1",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 52023,
+          "forwarded_tokens": 52023,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 123.403,
+          "selector_method": ""
+        },
+        {
+          "id": "66ed0cb0821e116aacb1e6c1",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 43292,
+          "forwarded_tokens": 43292,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 90.961,
+          "selector_method": ""
+        },
+        {
+          "id": "66ed3148821e116aacb1f2ce",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 42861,
+          "forwarded_tokens": 42861,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 100.49,
+          "selector_method": ""
+        },
+        {
+          "id": "66ed364d821e116aacb1f47e",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 77161,
+          "forwarded_tokens": 24756,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1092.786,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66ed3e90821e116aacb1f82f",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 62745,
+          "forwarded_tokens": 62745,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 162.798,
+          "selector_method": ""
+        },
+        {
+          "id": "66ee4287821e116aacb21258",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 36544,
+          "forwarded_tokens": 36544,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 86.135,
+          "selector_method": ""
+        },
+        {
+          "id": "66ef8aa3821e116aacb22db5",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 108164,
+          "forwarded_tokens": 25134,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1442.234,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66efa466821e116aacb23219",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 47891,
+          "forwarded_tokens": 47891,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 111.666,
+          "selector_method": ""
+        },
+        {
+          "id": "66efa5ea821e116aacb23268",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 75229,
+          "forwarded_tokens": 31084,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1257.173,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66efaf70821e116aacb234bd",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 72517,
+          "forwarded_tokens": 29296,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1218.739,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f19f04821e116aacb27bab",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 78770,
+          "forwarded_tokens": 22982,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1079.359,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f2a7a9821e116aacb2a721",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 88818,
+          "forwarded_tokens": 26082,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1246.856,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f2a98a821e116aacb2a8bf",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 48696,
+          "forwarded_tokens": 48696,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 108.861,
+          "selector_method": ""
+        },
+        {
+          "id": "66f2b5ec821e116aacb2b1ec",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 100096,
+          "forwarded_tokens": 11128,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 881.195,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f36490821e116aacb2cc22",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 34787,
+          "forwarded_tokens": 34787,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 72.607,
+          "selector_method": ""
+        },
+        {
+          "id": "66f379e8821e116aacb2d161",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 69525,
+          "forwarded_tokens": 29925,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1113.681,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f39ac5821e116aacb2da81",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 94137,
+          "forwarded_tokens": 24208,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1093.299,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f3cb88821e116aacb2eeb9",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 97522,
+          "forwarded_tokens": 28406,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1345.647,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f3cca6821e116aacb2ef7c",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 96977,
+          "forwarded_tokens": 23895,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1319.142,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f3d2fc821e116aacb2f269",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 122273,
+          "forwarded_tokens": 22782,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1620.913,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f3de02821e116aacb2f73b",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 55997,
+          "forwarded_tokens": 55997,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 140.714,
+          "selector_method": ""
+        },
+        {
+          "id": "66f3edfb821e116aacb2fc91",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 43089,
+          "forwarded_tokens": 43089,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 98.448,
+          "selector_method": ""
+        },
+        {
+          "id": "66f52926821e116aacb32b5e",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 32903,
+          "forwarded_tokens": 32903,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 88.519,
+          "selector_method": ""
+        },
+        {
+          "id": "66f530ce821e116aacb32f09",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 47640,
+          "forwarded_tokens": 47640,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 112.945,
+          "selector_method": ""
+        },
+        {
+          "id": "66f53892821e116aacb33225",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 56973,
+          "forwarded_tokens": 56973,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 102.831,
+          "selector_method": ""
+        },
+        {
+          "id": "66f53f2b821e116aacb3335a",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 39992,
+          "forwarded_tokens": 39992,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 103.855,
+          "selector_method": ""
+        },
+        {
+          "id": "66f59d31821e116aacb340f6",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 54546,
+          "forwarded_tokens": 54546,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 109.479,
+          "selector_method": ""
+        },
+        {
+          "id": "66f67c1bbb02136c067c21b9",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 37861,
+          "forwarded_tokens": 37861,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 83.935,
+          "selector_method": ""
+        },
+        {
+          "id": "66f6909bbb02136c067c2380",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 40123,
+          "forwarded_tokens": 40123,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 90.912,
+          "selector_method": ""
+        },
+        {
+          "id": "66f6a14dbb02136c067c2453",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 33702,
+          "forwarded_tokens": 33702,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 103.175,
+          "selector_method": ""
+        },
+        {
+          "id": "66f8c783bb02136c067c44b8",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 71350,
+          "forwarded_tokens": 32415,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1275.369,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f947abbb02136c067c4ea6",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 141545,
+          "forwarded_tokens": 23367,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1547.158,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66f95c18bb02136c067c52e1",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 32830,
+          "forwarded_tokens": 32830,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 100.088,
+          "selector_method": ""
+        },
+        {
+          "id": "66f95e11bb02136c067c5370",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 120799,
+          "forwarded_tokens": 59047,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1681.5,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fa415cbb02136c067c671c",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 126943,
+          "forwarded_tokens": 23254,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1509.88,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fa50acbb02136c067c6827",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 77675,
+          "forwarded_tokens": 20444,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 970.922,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fa700bbb02136c067c6c06",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 100626,
+          "forwarded_tokens": 23771,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1341.222,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fa7c81bb02136c067c6e09",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 76831,
+          "forwarded_tokens": 27213,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1022.477,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fab090bb02136c067c74e7",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 49690,
+          "forwarded_tokens": 49690,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 108.632,
+          "selector_method": ""
+        },
+        {
+          "id": "66fc05b6bb02136c067c88e4",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 68325,
+          "forwarded_tokens": 30612,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1136.947,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fcf36fbb02136c067c919e",
+          "domain": "Code Repository Understanding",
+          "full_prompt_tokens": 69235,
+          "forwarded_tokens": 32314,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1237.914,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "66fea153bb02136c067ca3e7",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 43283,
+          "forwarded_tokens": 43283,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 96.998,
+          "selector_method": ""
+        },
+        {
+          "id": "67039cfabb02136c067cd04e",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 122913,
+          "forwarded_tokens": 21731,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 997.873,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6703a0ecbb02136c067cd11b",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 77248,
+          "forwarded_tokens": 65393,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1624.923,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67062a63bb02136c067cf5ac",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 45402,
+          "forwarded_tokens": 45402,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 110.935,
+          "selector_method": ""
+        },
+        {
+          "id": "670646aebb02136c067cf85a",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 104590,
+          "forwarded_tokens": 22018,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1386.922,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67078ecabb02136c067d0b89",
+          "domain": "Multi-Document QA",
+          "full_prompt_tokens": 44925,
+          "forwarded_tokens": 44925,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 105.294,
+          "selector_method": ""
+        },
+        {
+          "id": "670cf163bb02136c067d26b6",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 92283,
+          "forwarded_tokens": 65213,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2012.085,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "670fbae0bb02136c067d2c79",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 96467,
+          "forwarded_tokens": 52950,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1898.463,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67189156bb02136c067d3b8d",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 115563,
+          "forwarded_tokens": 65391,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2444.78,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719167dbb02136c067d4025",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 116280,
+          "forwarded_tokens": 65337,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2488.168,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67191791bb02136c067d406c",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 115097,
+          "forwarded_tokens": 65255,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2424.941,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719185cbb02136c067d40ab",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 117156,
+          "forwarded_tokens": 65326,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2226.376,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67192e81bb02136c067d427f",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 117142,
+          "forwarded_tokens": 65356,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2343.27,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719b96abb02136c067d4358",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 34440,
+          "forwarded_tokens": 34440,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 68.077,
+          "selector_method": ""
+        },
+        {
+          "id": "6719c1febb02136c067d44db",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 113225,
+          "forwarded_tokens": 65322,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2442.501,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719dc46bb02136c067d470b",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 116879,
+          "forwarded_tokens": 65390,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2375.625,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6719ef50bb02136c067d4911",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 115327,
+          "forwarded_tokens": 65365,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2425.519,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b080abb02136c067d4dde",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 38191,
+          "forwarded_tokens": 38191,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 77.351,
+          "selector_method": ""
+        },
+        {
+          "id": "671b170cbb02136c067d4f4a",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 60309,
+          "forwarded_tokens": 60309,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 110.533,
+          "selector_method": ""
+        },
+        {
+          "id": "671b17d5bb02136c067d4f7d",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 39280,
+          "forwarded_tokens": 39280,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 62.501,
+          "selector_method": ""
+        },
+        {
+          "id": "671b2822bb02136c067d5020",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 115118,
+          "forwarded_tokens": 65335,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2397.916,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b2b57bb02136c067d508b",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 39192,
+          "forwarded_tokens": 39192,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 65.308,
+          "selector_method": ""
+        },
+        {
+          "id": "671b2c05bb02136c067d50c8",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 39280,
+          "forwarded_tokens": 39280,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 62.639,
+          "selector_method": ""
+        },
+        {
+          "id": "671b2c67bb02136c067d50f7",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 39270,
+          "forwarded_tokens": 39270,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 63.123,
+          "selector_method": ""
+        },
+        {
+          "id": "671b3cabbb02136c067d5252",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 42597,
+          "forwarded_tokens": 42597,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 83.356,
+          "selector_method": ""
+        },
+        {
+          "id": "671b530dbb02136c067d5454",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 113481,
+          "forwarded_tokens": 65302,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2442.225,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b56cfbb02136c067d54e9",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 113866,
+          "forwarded_tokens": 65264,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2439.072,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "671b58e8bb02136c067d5525",
+          "domain": "Long-dialogue History Understanding",
+          "full_prompt_tokens": 116408,
+          "forwarded_tokens": 65381,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2378.351,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "672494e5bb02136c067d7697",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 129397,
+          "forwarded_tokens": 65027,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1961.172,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67249705bb02136c067d76d1",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 131417,
+          "forwarded_tokens": 65146,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2101.579,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6724c1d4bb02136c067d77ec",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 143366,
+          "forwarded_tokens": 65372,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2041.506,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6724c4aabb02136c067d78a6",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 130246,
+          "forwarded_tokens": 65102,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1886.036,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725d898bb02136c067d82d6",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 145556,
+          "forwarded_tokens": 65219,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2353.978,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725d977bb02136c067d8373",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 125647,
+          "forwarded_tokens": 56899,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1972.106,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725dabfbb02136c067d8450",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 90798,
+          "forwarded_tokens": 49724,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1447.791,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725db01bb02136c067d847f",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 90783,
+          "forwarded_tokens": 49044,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1390.724,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725db46bb02136c067d84b4",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 90788,
+          "forwarded_tokens": 49696,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1406.806,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725db8bbb02136c067d84eb",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 90789,
+          "forwarded_tokens": 49656,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1432.411,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725dc28bb02136c067d8555",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 92797,
+          "forwarded_tokens": 65356,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1900.319,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725dc6abb02136c067d8586",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 93077,
+          "forwarded_tokens": 65348,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2029.855,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725dd39bb02136c067d861b",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 93080,
+          "forwarded_tokens": 65382,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2106.147,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "6725e2febb02136c067d8717",
+          "domain": "Single-Document QA",
+          "full_prompt_tokens": 32806,
+          "forwarded_tokens": 32806,
+          "within_target": true,
+          "passthrough": true,
+          "preprocessing_ms": 74.355,
+          "selector_method": ""
+        },
+        {
+          "id": "67285e1dbb02136c067d901b",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 130728,
+          "forwarded_tokens": 65139,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1959.985,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67286036bb02136c067d9092",
+          "domain": "Long Structured Data Understanding",
+          "full_prompt_tokens": 138457,
+          "forwarded_tokens": 65254,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1921.268,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "672864b4bb02136c067d916c",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 92966,
+          "forwarded_tokens": 65407,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1983.251,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67286533bb02136c067d919f",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 92981,
+          "forwarded_tokens": 65235,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2064.767,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67286698bb02136c067d9223",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 145686,
+          "forwarded_tokens": 65319,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 2563.594,
+          "selector_method": "query_aware_extract"
+        },
+        {
+          "id": "67286795bb02136c067d92ab",
+          "domain": "Long In-context Learning",
+          "full_prompt_tokens": 90800,
+          "forwarded_tokens": 49740,
+          "within_target": true,
+          "passthrough": false,
+          "preprocessing_ms": 1448.789,
+          "selector_method": "query_aware_extract"
+        }
+      ]
+    }
+  ]
+}
