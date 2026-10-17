@@ -87,7 +87,6 @@ def make_bundle(manifest: dict[str, Any], manifest_path: Path,
             "prompt_sha256": job["prompt_sha256"], "body_sha256": body_hash,
             "local_prompt_tokens": job["local_prompt_tokens"],
             "projected_provider_prompt_tokens": job["projected_provider_prompt_tokens"],
-            "sift_preprocessing_ms": job.get("sift_preprocessing_ms"),
         })
         requests.append({"index": index, "job_id": job_id,
                          "body_sha256": body_hash, "body": body})

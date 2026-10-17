@@ -81,6 +81,16 @@ class Runner600Tests(unittest.TestCase):
         self.assertEqual([row["index"] for row in decoded["schedule"][:10]], list(range(10)))
         self.assertEqual(decoded["schedule_sha256"], stage.canonical_hash(decoded["schedule"]))
 
+    def test_runtime_preprocessing_durations_do_not_change_bundle_identity(self):
+        slower_jobs = [dict(job, sift_preprocessing_ms=(job.get("sift_preprocessing_ms") or 0) + 123.456)
+                       for job in self.jobs]
+        slower_bundle = pilot.make_bundle(
+            self.manifest, pilot.ROOT / "fixture-manifest.json", slower_jobs,
+            self.cases, "a" * 64)
+        self.assertEqual(pilot.deterministic_gzip_json(self.bundle),
+                         pilot.deterministic_gzip_json(slower_bundle))
+        self.assertTrue(all("sift_preprocessing_ms" not in row for row in self.bundle["schedule"]))
+
     def test_scoring_keys_are_separate_from_frozen_request_messages(self):
         encoded = json.dumps(self.bundle["requests"], ensure_ascii=False)
         self.assertNotIn('"expected"', encoded)

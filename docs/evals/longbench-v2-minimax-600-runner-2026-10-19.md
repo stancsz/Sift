@@ -14,6 +14,8 @@ manifest. It verifies the 100 IDs and case metadata against the live-route
 parent and historical sample. Request order, messages, canonical bodies, and
 the gzip bundle are hash-bound. The fixed seed is a matched request parameter;
 it does not guarantee deterministic model outputs.
+Sift preprocessing durations are runtime measurements, so they are recorded on
+dispatch samples and excluded from the deterministic schedule hash.
 
 Scoring keys remain outside provider request bodies. A response is scorable
 only if its trimmed text is exactly one uppercase choice letter, the expected
