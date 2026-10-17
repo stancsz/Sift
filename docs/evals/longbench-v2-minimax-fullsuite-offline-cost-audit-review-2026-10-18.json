@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "status": "interpretation_addendum_no_recomputation",
+  "created_utc": "2026-10-18",
+  "base_report": {
+    "path": "docs/evals/longbench-v2-minimax-fullsuite-offline-cost-audit-2026-10-18.json",
+    "sha256": "35dcfa2a119668e1316d6b7153a82a1bc9dbba845b27ddde5bcff2e64cdb9b00"
+  },
+  "generator": {
+    "path": "benchmarks/audit_longbench_v2_minimax_fullsuite_offline.py",
+    "sha256_at_run": "2376ffdf8e331ef4c1c8732583a2d4cb1ab5218d9b9c5a4189d48a674323ae64",
+    "recomputation_performed": false
+  },
+  "scope": {
+    "rows": 503,
+    "dataset_revision": "2b48e494f2c7a2f0af81aae178e05c7e1dde0fe9",
+    "dataset_sha256": "15d61c22d92c96900b3c4948b6aeea218d3214b676a65df48e7b8555604c7fe2",
+    "actual_dispatch_started": false,
+    "network_calls": 0,
+    "answers_decoded": false,
+    "model_responses_read": false,
+    "answer_field_handling": "The parser allowlist contains only _id, domain, context, question, and choice_A through choice_D. The answer field is cursor-skipped and no answer values are included in the report."
+  },
+  "measured_local_results": {
+    "full_context_local_token_total_all_503": 121195421,
+    "default_sift_successful_count": 472,
+    "default_sift_local_token_total_successful_rows_only": 12641520,
+    "default_sift_fail_closed_count": 31,
+    "observed_compaction_fail_code": "raw_limit",
+    "configured_target_tokens": 32768,
+    "safety_margin_tokens": 128,
+    "effective_target_tokens": 32640,
+    "current_core_sha256": "5a1d64474eea5d5ca6d599ab893411d40922dd7d12cc47e0ae33b9a097c86f1a",
+    "tokenizer_sha256": "bb1f1626cf01448f1e3b6036d0a061ffc66c91d9046aada14ea23a5441b5ad6e",
+    "renderer_source_sha256": "2eb34e08fbdb3d1acb69339505e1e228030b930e2d967b174e67490006adee77",
+    "template_file_sha256_is_identity_only": true
+  },
+  "route_and_dispatch_interpretation": {
+    "route_fields_are_historical_or_dated_assumptions": true,
+    "local_route_snapshot_checked_utc": "2026-10-17T02:52:05.814649+00:00",
+    "local_route_snapshot_sha256": "c46e271219d7e5890339adf79aafd4e0a58ecdae0908e365d691f4522b07db14",
+    "snapshot_model": "minimax/minimax-m3",
+    "snapshot_provider": "Minimax",
+    "snapshot_status": 0,
+    "snapshot_prompt_limit_tokens": 524288,
+    "snapshot_input_usd_per_million": 0.3,
+    "snapshot_output_usd_per_million": 1.2,
+    "parent_supplied_read_only_metadata_recheck": {
+      "checked_utc_date": "2026-10-17",
+      "same_values_reported": true,
+      "recheck_is_part_of_this_zero_network_computation": false
+    },
+    "projection_factor": 3.25,
+    "projection_factor_status": "Historical model from the frozen runner, not a provider guarantee or measured per-row MiniMax usage.",
+    "full_dispatch_screen": "The 150000-token local cap plus 3.25 projection/524288 limit are historical local screening rules. The report field matched_pair_historical_dispatch_eligible_count=344 must be read only as a modeled preflight cohort, not current route eligibility or permission to dispatch.",
+    "template_file_note": "The run recorded the local template file SHA as an identity receipt; render_minimax uses the checked-in renderer implementation. It does not load the template file contents for rendering."
+  },
+  "non_overlapping_exclusion_partition": {
+    "modeled_full_and_default_sift_pair_pass": 344,
+    "full_modeled_screen_failure_only": 128,
+    "both_full_screen_and_sift_compaction_fail": 31,
+    "sift_compaction_failure_only": 0,
+    "total_unique_rows_not_in_modeled_pair_cohort": 159,
+    "full_route_projection_failure_count": 150,
+    "full_route_projection_fit_but_150000_local_cap_failure_count": 9,
+    "interpretation": "The base report's exclusion fields overlap: all 31 Sift raw_limit failures also fail the Full local/projection screen. Summing the original category counts would double-count those 31 rows."
+  },
+  "planning_costs_under_dated_assumptions_usd": {
+    "formula": "per request: 1.5 * local input tokens * $0.30/M + 16 output tokens * $1.20/M; repeats multiply request reserves",
+    "matched_modeled_pair_cohort_344_tasks_full_arm_one_repeat": 9.91535505,
+    "matched_modeled_pair_cohort_344_tasks_default_sift_arm_one_repeat": 4.0002279,
+    "matched_modeled_pair_cohort_344_tasks_one_repeat_two_arms": 13.91558295,
+    "matched_modeled_pair_cohort_344_tasks_full_arm_three_repeats": 29.74606515,
+    "matched_modeled_pair_cohort_344_tasks_default_sift_arm_three_repeats": 12.0006837,
+    "matched_modeled_pair_cohort_344_tasks_three_repeats_two_arms": 41.74674885,
+    "all_503_full_arm_one_repeat_including_nonroutable_rows": 54.54759705,
+    "all_503_full_arm_three_repeats_including_nonroutable_rows": 163.64279115,
+    "successful_sift_rows_472_one_repeat": 5.6977464,
+    "successful_sift_rows_472_three_repeats": 17.0932392,
+    "arithmetic_correction": "These corrected totals sum each row's stored one-repeat reserve, so the 16-token output-cap reserve is included once per request. The immutable base summary totals used one output cap per arm aggregate; its reserve summary values are understated by omitting repeated per-request output reserves.",
+    "spend_authorization": false,
+    "invoice_or_provider_receipt": false,
+    "current_route_reserve": false,
+    "note": "The 344-task paired value is a planning estimate for a modeled subset, not a full 503-task paired run reserve. The all-row Full total includes rows that fail the old route/local cap screen and is not dispatchable spend."
+  },
+  "limitations_and_review_notes": [
+    "The base generator catches broad Exception around compaction. In this run all 31 captured failures were raw_limit, but the catch is wider than the intended CompactionError taxonomy and could classify an unforeseen exception as a fail-closed row.",
+    "The base report's 'matched_pair_historical_dispatch_eligible_count' label overstates what is verified. Treat the 344 as a modeled screening cohort only.",
+    "The base report does not establish answer quality, true current provider route acceptance, live spending, cache behavior, task completion time, or multi-turn savings.",
+    "This artifact is an independent interpretation addendum to an immutable run receipt, not a corrected recomputation. A later rerun should narrow exception handling, validate route provider/status/endpoint fields, and use unambiguous modeled-fit labels if that becomes necessary."
+  ],
+  "active_100_task_pilot": {
+    "superseded_or_bypassed": false,
+    "manifest_or_sample_selected": false,
+    "freshness_or_spend_gates_changed": false,
+    "full_suite_model_run_authorized": false,
+    "historical_screen_upper_bound_for_matched_model_study": 344,
+    "population_note": "Only 344/503 rows pass this historical modeled Full/default-Sift screen. This is an upper bound before exposure/freshness, current route, and complete spend-reserve gates; it is not an available fresh sample or dispatch authorization. A study sized from this screen is at most 344 matched tasks unless a refreshed route/preflight changes exclusions."
+  }
+}

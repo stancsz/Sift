@@ -1,0 +1,13 @@
+Decision: choose the next authorized LongBench v2 MiniMax step after a completed zero-network full-suite fit/cost audit. Should the active plan first address the 159 rows outside the historical matched Full/Sift screen, or freeze an explicitly scoped model comparison on the 344 modeled-fit rows? Recommend the smallest offline step and stop condition before asking the user to authorize any paid run.
+
+Observed facts:
+- All 503 pinned rows were tokenized locally; answer values were skipped, no network/API calls occurred, and no accuracy was measured.
+- Historical runner assumptions yield 344/503 modeled paired-fit rows; 159 are outside: 128 fail only the Full screen, 31 fail both that screen and Sift compaction (`raw_limit`). These are not verified current route acceptances.
+- On those 344 modeled rows, local prompt tokens sum to 22,019,445 Full versus 8,874,718 default Sift, 59.7% fewer; this is not an accuracy or realized-cost claim.
+- At dated $0.30/M input and $1.20/M output assumptions, corrected per-request conservative reserve is about $13.92 for one paired repeat and $41.75 for three paired repeats; live route/price/usage and current authorization have not been refreshed. Previous task cap was $20 and is stale; no paid requests are authorized.
+- Independent review found the report's route labels overstate modeled fit; the source generator has a broad exception catch and hashes, but does not render from, the template file. An interpretation addendum records these limits.
+- All 503 task IDs are prompt/label-census-exposed; there is no untouched holdout.
+
+Constraints: no paid calls until a current route, provider, prices, usage, and full reserve are verified and the user explicitly authorizes sufficient spend. Do not make accuracy, multi-turn, or agent-time claims from token counts.
+
+Question: What should the next step be, and what exact scope/stop condition should govern it?
