@@ -1,0 +1,14 @@
+Decision: choose the next offline Sift LongBench experiment that best moves toward a defensible quality improvement, given that paid reruns are not currently funded.
+
+Observed evidence:
+- The 503 public LongBench v2 training rows were all prompt/label-census-exposed; there are zero untouched IDs.
+- The frozen 100-task MiniMax development comparison recorded task majorities Full 38/100 vs default Sift 31/100 (difference -7 points; task-cluster 95% CI -15 to +1).
+- A concurrent 100-task hybrid run scored 43/100 task majorities vs historical Full 38/100; the comparison is cross-run and cross-version. Against historical Sift, the hybrid had more majorities but 115.2% higher observed pass-through cost due to lower cache share.
+- The hybrid applies a relation matrix to six selected tasks and default Sift to 94; it is not a representative selector validation.
+- A concurrent six-task matrix screen scored 6/6 candidate vs 4/6 default task majorities (two candidate-only, zero default-only); those same six cases developed the method.
+- A separate answer-blind whole-record development screen fit 7/10 tasks. Three failed closed; no held-out tasks were evaluated.
+- The last conservative task ledger showed $18.70 exposure against the prior $20 authorization; no fresh sufficient budget is authorized.
+
+Constraints: no paid/API calls, no answer-key or model-output tuning, keep experimental code default-off, do not inspect an alleged holdout among exposed tasks, and preserve unrelated working-tree changes.
+
+Question: What is the single best next offline experiment or product change to advance Sift toward better LongBench answer quality while preserving evidence and remaining testable? Give a concrete protocol and stop condition; state if the correct next step is to pause candidate invention and fix measurement/design first.
