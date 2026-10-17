@@ -186,7 +186,7 @@ A source audit of the nine hybrid-majority losses against historical Full found 
 
 A second periodic council favored prototyping opt-in complete-record/group retention offline before cache tuning. It recommended 100% required-record recall on the four structured cases and independent sibling/array fixtures, zero regression in retained baseline evidence, and no more than 10% token growth. A small paired MiniMax rerun is considered only if that offline gate passes and refreshed reservations fit both caps. It warned against treating all four task losses as causally established. Receipt usage: Gemini 3,220 tokens; Sol 889 tokens; packet: `.runs/longbench-active-goal-advisor-followup-20261017.txt`.
 
-Current next action: build a bounded research-only, default-off complete-group retention candidate in Sift and test it locally on the observed failure patterns plus held-out synthetic fixtures. Do not spend API budget or change README performance claims until this offline gate and independent code review pass. The remaining spend number is a dated ledger, not current dispatch authorization; refresh all route and budget evidence before any new calls.
+Current next action: obtain independent code-review acceptance for the bounded, research-only, default-off complete-group retention candidate. If accepted, prepare the matched pilot and refresh route and budget evidence immediately before any possible dispatch. Do not spend API budget or change README performance claims before those gates pass.
 
 ## Next OpenRouter MiniMax LongBench plan
 
@@ -213,3 +213,16 @@ Use OpenRouter's MiniMax M3 route for the next controlled LongBench v2 experimen
 Score the published A–D answer exactly and report per-repeat and per-task outcomes, task-majority results, paired candidate/default/full-context comparisons, invalid answers, and the retained-record evidence audit. Report provider prompt-token reduction, cache-inclusive upstream-reported pass-through cost, reconstructed uncached cost, preprocessing time, model latency, and end-to-end runtime separately. Show the cache accounting beside cost; do not label provider-reported pass-through as an invoice or claim a universal saving from a small targeted sample.
 
 An independent analysis review is required before using the pilot to change Sift or publish a claim. A candidate that improves the targeted tasks without regression may justify a broader, separately budgeted validation. It does not establish a LongBench-wide gain. Any later 100-task or full-suite comparison must freeze its sample and scoring in advance, use an adequately matched baseline, retain all attempts, and pass a fresh route/budget review. Update the README only with reviewed results and their sample, route, cache, and timing limits, then commit and push the scoped changes.
+
+### 2026-10-17 complete-record candidate offline check
+
+The opt-in candidate now has exact-source handlers for explicit choice rows in root JSON objects and complete CSV sibling groups when the prompt names the grouping field. It remains disabled by default. On the four pinned structured LongBench prompts, using the MiniMax M3 tokenizer/template and an exact 32,640-token target, every option-required row fit:
+
+- CSV artist comparison `66f2b5ec821e116aacb2b1ec`: default Sift 10,939 tokens; candidate 529 tokens; all 12 sibling rows across the four selected artist groups retained.
+- Player utility `6719b96abb02136c067d4358`: 18,149 → 13,529 tokens; all four selected player rows retained.
+- Game counts `671b080abb02136c067d4dde`: 12,441 → 14,838 tokens; all four selected player rows retained.
+- Bar-game utility `671b3cabbb02136c067d5252`: 9,616 → 16,630 tokens; all four selected player rows retained.
+
+Two cases use more tokens than default because the candidate preserves complete rows. The nested many-shot case `6725dc28bb02136c067d8555` remains unsupported and fails closed. Focused local checks passed: 9 complete-record tests, 11 relation-binding tests, and 29 core tests; compilation and scoped whitespace checks passed. These are offline retention and target-fit results, not evidence of answer-quality improvement. The candidate is uncommitted pending independent code review. No API calls were made.
+
+The periodic Gemini-first / GPT-6.1 Sol council advised proceeding to independent code review and a fresh route/budget preflight, not dispatch. It agreed the four-case evidence justifies considering the 36-request pilot, while accuracy gains remain unproven, token growth should be measured, and the dated `$3.79541577` residual must not be treated as live available budget. Stop if review fails or the refreshed conservative reserve does not fit under the `$20` cap. Receipt usage: Gemini 3,377 tokens; Sol 897 tokens; packet: `.runs/longbench-complete-groups-council-20261017.txt`.
