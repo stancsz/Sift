@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "checked_utc": "2026-10-17T01:31:51.385368Z",
+  "checked_utc": "2026-10-17T01:38:07.572259Z",
   "source": "https://openrouter.ai/api/v1/models/minimax/minimax-m3/endpoints",
   "response_sha256": "5d8121cd70a46c79c78b14a137eb3ee8a1ca9b5aa06a7c94c1a44170a640d8fb",
   "requested_model": "minimax/minimax-m3",
@@ -29,5 +29,5 @@
     "tool_choice",
     "tools"
   ],
-  "note": "Final live endpoint metadata recheck immediately before Stage 1 dispatch; request-specific endpoint attribution is not asserted."
+  "note": "Final live endpoint recheck before Stage 1 dispatch; request-specific endpoint attribution is not asserted."
 }

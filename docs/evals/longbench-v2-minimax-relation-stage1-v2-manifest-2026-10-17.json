@@ -2,26 +2,26 @@
   "schema_version": 1,
   "stage": 1,
   "frozen_before_api_dispatch": true,
-  "created_utc": "2026-10-17T01:34:25.222419Z",
+  "created_utc": "2026-10-17T01:38:07.572259Z",
   "protocol_path": "docs/evals/longbench-v2-minimax-relation-stage1-v2-protocol-2026-10-17.md",
   "baseline_manifest_path": "docs/evals/longbench-v2-minimax-m3-100-manifest-2026-10-16.json",
   "baseline_manifest_sha256": "865e27c21fdd2a6ce4b629b283123f4bff66b62e3c17f39c3b8be842b00a6f18",
   "baseline_result_path": "docs/results/longbench-v2-minimax-m3-100-2026-10-16.json",
   "baseline_result_sha256": "09d80674f03cb432e7cd8c9917f327f9dfd9675446d912cbd3d5f9e1dadb3d62",
   "route_metadata_path": "docs/evals/longbench-v2-minimax-stage1-v2-route-2026-10-17.json",
-  "route_metadata_sha256": "b50b28bc45ac825f817b0d0bfbc669473ba2bd51677b6e9a39236a35918274ab",
+  "route_metadata_sha256": "c24cdaa419a01fc9494c8648cfe26f7ac78ee3512eb0aa58c48d379f699e0345",
   "request_count": 36,
   "aggregate_budget": {
     "limit_usd": 20.0,
-    "prior_actual_usd": 8.04465726,
-    "prior_unsettled_usd": 0.30682335,
-    "basis": "Prior manifest actual $6.90272880 plus 47 successful sift-screen receipts ($0.51419670) and 33 successful table-fresh receipts ($0.62773176) = $8.04465726. Prior unsettled $0.01705665 plus conservative maximum-charge reserves for the sift-screen ConnectionError (407264 prompt tokens + 16 output = $0.12219840) and table-fresh HTTP 400 context rejection (558497 prompt tokens + 16 output = $0.16756830) = $0.30682335. The rejected/failed calls have no usage receipts; reserve is intentionally conservative."
+    "prior_actual_usd": 14.32900946,
+    "prior_unsettled_usd": 0.36791295,
+    "basis": "Prior manifest actual $6.90272880 plus successful sift-screen receipts $0.51419670, table-fresh receipts $0.62773176, CSV candidate-answer check $0.02933508, and four fixture-authoring receipts $0.00723312 = $8.08122546 in direct provider-reported costs; also include MiniMax-routed native network-audit client-reported costs $3.812502 and least-privilege rollup client-reported costs $2.435282 (not invoice-verified), for conservative project prior actual $14.32900946. Prior unsettled $0.01705665 plus no-usage call reserves: sift-screen ConnectionError at the runner's 1.5x request guard (407264 local prompt tokens x 1.5 plus 16 output = $0.183288) and table-fresh HTTP 400 context rejection (558497 reported input plus 16 output = $0.16756830), totaling $0.36791295. These error-call amounts are conservative reserves, not confirmed charges. OpenRouter current-key BYOK usage is account-level and unitemized, so it is not added to this task-scoped receipt ledger to avoid attributing unrelated activity or double counting; it is not an account-wide spend guarantee."
   },
   "source_hashes": {
     "runner_sha256": "84131907d56531c56930e4233635521065d511522cf85323a1c6e59766fad4ee",
     "analyzer_sha256": "f592e886ca89de6369690963ef49283b175305abde68aabcda0b6887340031ee",
     "core_sha256": "031a55fa43f62bc416f94ce2ca50feae47b2f6ca709fdff44f9b78641bfb287f",
-    "protocol_sha256": "fdbe161f2cf8a3a047f509323970023139b6668869b0c929951135294c0c20d6"
+    "protocol_sha256": "549eb326384ffda8fcf7bb117d37cebffccd040dd9bd7cda0969d78702d15437"
   },
   "protocol": {
     "stage": 1,
