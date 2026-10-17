@@ -798,8 +798,17 @@ def dispatch(args: argparse.Namespace, manifest: dict[str, Any],
             report.setdefault("retried_unknown_outcome_job_ids", [])
             if flight_id not in report["retried_unknown_outcome_job_ids"]:
                 report["retried_unknown_outcome_job_ids"].append(flight_id)
-            flight_attempt = prior_flight.get("attempt_number") or (
-                1 + sum(row.get("job_id") == flight_id for row in report["samples"]))
+            saved_unknown_row = max((
+                row for row in report["samples"]
+                if row.get("job_id") == flight_id
+                and row.get("scoreable") is False
+                and row.get("provider_usage_cost_usd") is None
+            ), key=lambda row: row.get("attempt_number", 0), default=None)
+            flight_attempt = (prior_flight.get("attempt_number")
+                              or (saved_unknown_row.get("attempt_number")
+                                  if saved_unknown_row is not None else None)
+                              or (1 + sum(row.get("job_id") == flight_id
+                                          for row in report["samples"])))
             saved_unknown_row = next((
                 row for row in report["samples"]
                 if row.get("job_id") == flight_id
@@ -1066,6 +1075,7 @@ def dispatch(args: argparse.Namespace, manifest: dict[str, Any],
         if score["scoreable"] or attempt_number >= 2 or context_rejected:
             sample["job_completed"] = True
             report["completed_jobs"] += 1
+            completed_indices.add(index)
         atomic_write(args.output, report)
     else:
         report["status"] = "complete" if report["completed_jobs"] == len(selected) else "prefix_incomplete"
