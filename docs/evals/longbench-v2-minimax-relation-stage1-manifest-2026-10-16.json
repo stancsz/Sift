@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "stage": 1,
+  "frozen_before_api_dispatch": true,
+  "created_utc": "2026-10-17T01:16:09.261168Z",
+  "protocol_path": "docs/evals/longbench-v2-minimax-relation-stage1-protocol-2026-10-16.md",
+  "baseline_manifest_path": "docs/evals/longbench-v2-minimax-m3-100-manifest-2026-10-16.json",
+  "baseline_manifest_sha256": "865e27c21fdd2a6ce4b629b283123f4bff66b62e3c17f39c3b8be842b00a6f18",
+  "baseline_result_path": "docs/results/longbench-v2-minimax-m3-100-2026-10-16.json",
+  "baseline_result_sha256": "09d80674f03cb432e7cd8c9917f327f9dfd9675446d912cbd3d5f9e1dadb3d62",
+  "route_metadata_path": "docs/evals/longbench-v2-minimax-stage1-route-2026-10-16.json",
+  "route_metadata_sha256": "bf7ecb7507ead62f15286b6bf3adebada81b57ceef3d7ca2f44285e2127f4012",
+  "request_count": 36,
+  "aggregate_budget": {
+    "limit_usd": 20.0,
+    "prior_actual_usd": 6.80569134,
+    "prior_unsettled_usd": 0.01705665,
+    "basis": "Recomputed from complete clean run, partial first attempt, and both paired smokes; unknown receipts=0."
+  },
+  "source_hashes": {
+    "runner_sha256": "03d7376858dbf683042afd0b29198c993236b0e12860ebc279c211136efed3f3",
+    "analyzer_sha256": "2b3f545663dd308645c2e4cfbc8194cd3bd77dc68b8cf10885153ab181f763f3",
+    "core_sha256": "031a55fa43f62bc416f94ce2ca50feae47b2f6ca709fdff44f9b78641bfb287f",
+    "protocol_sha256": "9bc6b459dd703e948749382ba93a6ccb0f2187931b7925cd462b163b1bcb936c"
+  },
+  "protocol": {
+    "stage": 1,
+    "task_ids": [
+      "672494e5bb02136c067d7697",
+      "67249705bb02136c067d76d1",
+      "6724c1d4bb02136c067d77ec",
+      "67285e1dbb02136c067d901b",
+      "67286036bb02136c067d9092",
+      "6724c4aabb02136c067d78a6"
+    ],
+    "repeats": 3,
+    "cli_seed": 20261022,
+    "generation_seeds": [
+      20261024,
+      20261025,
+      20261026
+    ],
+    "arms": [
+      "sift_default",
+      "sift_relation_followup"
+    ],
+    "sift_target_tokens": 32768,
+    "request_count": 36,
+    "model": {
+      "id": "minimax/minimax-m3"
+    },
+    "provider_policy": {
+      "only": [
+        "minimax"
+      ],
+      "allow_fallbacks": false
+    },
+    "generation": {
+      "temperature": 0.1,
+      "top_p": 0.8,
+      "reasoning_enabled": false,
+      "max_tokens": 16,
+      "retries": 0,
+      "workers": 1
+    },
+    "expansion_gate": {
+      "valid_unique_paired_receipts": 36,
+      "candidate_fallbacks": 0,
+      "candidate_only_correct_task_majorities_min": 2,
+      "default_only_correct_task_majorities_max": 0,
+      "route_usage_cost_target_anomalies": 0
+    },
+    "seed_support_note": "Matched request parameters; endpoint catalog does not advertise seed support, so deterministic RNG is not claimed."
+  }
+}
