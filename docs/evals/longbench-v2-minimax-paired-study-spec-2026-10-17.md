@@ -57,4 +57,3 @@ Make no quality or statistical-significance claim solely from direction of the p
 - [`modeled 344-task ID cohort`](longbench-v2-minimax-modeled-pair-manifest-2026-10-18.json): historical ID-only planning cohort; rederive it under the frozen current sources before execution.
 - [`offline full-suite fit/cost report`](longbench-v2-minimax-fullsuite-offline-cost-audit-2026-10-18.json): answer-blind modeled fit/cost data; not route or quality evidence.
 - [`14-task retrospective`](longbench-v2-candidate-subset-retrospective-2026-10-17.json): candidate-selected post-census historical analysis; exploratory only.
-

@@ -1,6 +1,6 @@
 # LongBench v2 MiniMax Stage 1: 100-task development run
 
-**Prepared:** 2026-10-18  
+**Prepared:** 2026-10-18
 **Status:** offline plan only; no provider requests sent; dispatch is not authorized.
 
 ## Purpose
@@ -29,4 +29,3 @@ The manifest is derived from the already-generated 344-task artifact and histori
 ## Interpretation
 
 This 100-task stage provides paired directional evidence and can identify failure modes quickly. It covers 100 distinct tasks, a subset of the public 503-row suite. It cannot support a blind generalization claim or replace the planned 344-task study. Report outcomes and confidence intervals alongside exact task coverage, correctness, input reduction, cost, and time-to-finish; do not characterize Sift as a universal accuracy-preserving or cost-saving result without those measurements.
-
