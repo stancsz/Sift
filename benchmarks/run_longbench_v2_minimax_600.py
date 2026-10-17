@@ -426,6 +426,8 @@ def _dispatch_prefix(manifest: dict[str, Any], jobs: list[dict[str, Any]],
                       prior_report_status=previous_report.get("status"),
                       prior_unknown_outcome_preserved=True,
                       live_route_preflight=live, in_flight=None)
+        report["prior_stop_reason"] = previous_report.get("stop_reason")
+        report.pop("stop_reason", None)
         report["samples"] = [dict(sample) for sample in previous_report["samples"]]
         for sample in report["samples"]:
             sample.setdefault("attempt_number", 1)
