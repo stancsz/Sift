@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "status": "prepared_only_no_dispatch",
+  "created_utc": "2026-10-17T02:14:04.984371+00:00",
+  "raw_dry_run_path": ".runs/longbench-v2-minimax-relation-stage1-v3-dry-run-final-20261017T0214Z.json",
+  "raw_dry_run_sha256": "8095a23e70d325f80d0fef4f5a1ddfe3385fedded91c47a3353b50290052bd4f",
+  "stage_manifest_path": "docs/evals/longbench-v2-minimax-relation-stage1-v3-manifest-2026-10-17.json",
+  "stage_manifest_sha256": "f09b1a15b2dea10eb9e01342c18bc1cfe63e0b3d8fc694176bc74bfc9bdb4d62",
+  "protocol_path": "docs/evals/longbench-v2-minimax-relation-stage1-v3-protocol-2026-10-17.md",
+  "protocol_sha256": "48cc87c70796e2ca81dbe7a427a2f77575b10670e3ba13f92b5cc2d56f451e7d",
+  "route_snapshot_path": "docs/evals/longbench-v2-minimax-stage1-v3-route-2026-10-17-0208.json",
+  "route_snapshot_sha256": "6d18e7de0915e0f1d40ef957084c0dfa2abd1e1b71ad5ffbc1b166e5414526b2",
+  "route_response_sha256": "2c075b8e6e8a698be8d232c479d3b90ea51baa7d2a0dc4d40f501dad12703cd1",
+  "route_checked_utc": "2026-10-17T02:08:13.049454+00:00",
+  "route": {
+    "provider": "Minimax",
+    "provider_endpoint": "Minimax | minimax/minimax-m3-20260531",
+    "model": "minimax/minimax-m3",
+    "max_prompt_tokens": 524288,
+    "input_usd_per_million": 0.3,
+    "output_usd_per_million": 1.2,
+    "cache_read_usd_per_million": 0.06
+  },
+  "prepared_request_count": 36,
+  "arm_counts": {
+    "sift_default": 18,
+    "sift_relation_matrix_v3": 18
+  },
+  "unique_job_ids": 36,
+  "unique_payload_hashes": 36,
+  "candidate_fallbacks": 0,
+  "max_local_prompt_tokens": 32583,
+  "max_projected_provider_prompt_tokens": 105895,
+  "budget": {
+    "limit_usd": 20.0,
+    "prior_actual_usd": 14.4144941,
+    "prior_unsettled_usd": 0.36791295,
+    "planned_run_guard_reserve_usd": 0.2977614,
+    "first_in_flight_reservation_usd": 0.0013519499999999998,
+    "first_in_flight_is_included_in_planned_run_reserve": true,
+    "projected_total_exposure_usd": 15.08016845,
+    "preflight_passed": true,
+    "accounting_note": "Prior actual plus unsettled reservations plus the full 1.5x planned run guard, which includes each sequential in-flight request reservation."
+  },
+  "source_hashes": {
+    "runner_sha256": "1ebc0f015cf2dcb34c09da83650c6fe4cec54b0fcd939f602088ed5e52b9dba1",
+    "analyzer_sha256": "c23422656b2dd2ff5e95da7be8963ff1b301c3064142c7298f3867f1e68bffd9",
+    "core_sha256": "031a55fa43f62bc416f94ce2ca50feae47b2f6ca709fdff44f9b78641bfb287f",
+    "matrix_candidate_sha256": "3b7ad3bb79787828d1ec37e61cf49334294f5b3a09bc9c6f1b5f3b476cf60233",
+    "gate_module_sha256": "cd0c71bfed3e30062fc1b79448bbf9843d0c9179b93ca488f7e617fc3c2d0d34",
+    "protocol_sha256": "48cc87c70796e2ca81dbe7a427a2f77575b10670e3ba13f92b5cc2d56f451e7d"
+  },
+  "validation": {
+    "focused_tests": "12 passed",
+    "py_compile": "passed",
+    "independent_read_only_review": "passed",
+    "dispatch_started": false,
+    "samples": 0
+  },
+  "limitations": [
+    "No model responses or answer-quality evidence exist for v3.",
+    "Six candidate-enriched training tasks are an exploratory diagnostic, not a LongBench aggregate or holdout.",
+    "Task-scoped exposure is not an account-wide invoice; OpenRouter BYOK usage is aggregate and unitemized.",
+    "Refresh endpoint metadata, task-scoped exposure, and final request/source hashes immediately before dispatch."
+  ]
+}

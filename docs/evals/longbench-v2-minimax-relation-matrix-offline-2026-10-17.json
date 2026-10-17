@@ -1,0 +1,258 @@
+{
+  "schema_version": 1,
+  "title": "LongBench v2 option-aligned complete-entity matrix offline size audit",
+  "status": "complete_offline_prompt_size_only",
+  "created_utc": "2026-10-17T02:04:05.121040+00:00",
+  "scope": "Six frozen candidate prompts from the stopped v2 diagnostic; not an answer-quality result or LongBench aggregate.",
+  "method": "Replace only the relation-candidate context with a deterministic option-first JSONL matrix. Each selected entity record is serialized exactly once; records are complete, supporting selected records are retained, and all non-context messages remain byte-for-byte equivalent as parsed JSON objects.",
+  "source_hashes": {
+    "v2_diagnostic_sha256": "a221dc0fd7e4c74f3af1c243aa7f2423caef24f747e2e7561703f793dda2f593",
+    "dataset_sha256": "15d61c22d92c96900b3c4948b6aeea218d3214b676a65df48e7b8555604c7fe2",
+    "tokenizer_sha256": "bb1f1626cf01448f1e3b6036d0a061ffc66c91d9046aada14ea23a5441b5ad6e",
+    "matrix_module_sha256": "3b7ad3bb79787828d1ec37e61cf49334294f5b3a09bc9c6f1b5f3b476cf60233",
+    "renderer_sha256": "2eb34e08fbdb3d1acb69339505e1e228030b930e2d967b174e67490006adee77"
+  },
+  "per_case": [
+    {
+      "case_id": "672494e5bb02136c067d7697",
+      "source_v2_repeat": 1,
+      "original_m3_prompt_tokens": 3237,
+      "matrix_m3_prompt_tokens": 2663,
+      "token_delta": -574,
+      "matrix_audit": {
+        "method": "option_aligned_complete_entity_matrix_v3",
+        "selected_entity_count": 4,
+        "option_entity_rows": 4,
+        "distinct_option_entity_count": 4,
+        "supporting_entity_count": 0,
+        "option_entities": {
+          "A": [
+            "Q503119"
+          ],
+          "B": [
+            "Q42402"
+          ],
+          "C": [
+            "Q5342976"
+          ],
+          "D": [
+            "Q1544904"
+          ]
+        },
+        "all_selected_entities_preserved": true,
+        "all_entity_fields_preserved": true,
+        "source_context_sha256": "5c64ff4d9572f04dd04756019f98863b4678d10e1a3922aea3e0510cc7c1ba22",
+        "reconstructed_context_sha256": "5c64ff4d9572f04dd04756019f98863b4678d10e1a3922aea3e0510cc7c1ba22",
+        "matrix_sha256": "0686d755eec37b865d7467594ccde93ee18de9ed4023ec509971d9e3ae073b63",
+        "predicate_fields_filtered": false,
+        "context_message_index": 1,
+        "other_messages_unchanged": true,
+        "original_message_sha256": "edc41ce652c2bb4640b14f28d254ebeaef3d0e34629c8eaf5dc64328567fbd1f",
+        "matrix_message_sha256": "1bc5f8d2c160156fbaf5f5358a3c6bdefe09559e522fa904d6c0a1ef8856ab30"
+      }
+    },
+    {
+      "case_id": "67249705bb02136c067d76d1",
+      "source_v2_repeat": 1,
+      "original_m3_prompt_tokens": 4256,
+      "matrix_m3_prompt_tokens": 3417,
+      "token_delta": -839,
+      "matrix_audit": {
+        "method": "option_aligned_complete_entity_matrix_v3",
+        "selected_entity_count": 4,
+        "option_entity_rows": 4,
+        "distinct_option_entity_count": 4,
+        "supporting_entity_count": 0,
+        "option_entities": {
+          "A": [
+            "Q470665"
+          ],
+          "B": [
+            "Q1229857"
+          ],
+          "C": [
+            "Q490464"
+          ],
+          "D": [
+            "Q318428"
+          ]
+        },
+        "all_selected_entities_preserved": true,
+        "all_entity_fields_preserved": true,
+        "source_context_sha256": "34de37db07a48d634f8af0b7ad1fcf9e33ba3b03fd0e6ad5852cfa2846c04403",
+        "reconstructed_context_sha256": "34de37db07a48d634f8af0b7ad1fcf9e33ba3b03fd0e6ad5852cfa2846c04403",
+        "matrix_sha256": "1e11772b58ff0a4bcd3f81b16ab5075231f607f271f6bfef0ed6d56a75380f9b",
+        "predicate_fields_filtered": false,
+        "context_message_index": 1,
+        "other_messages_unchanged": true,
+        "original_message_sha256": "84265fd4eab1d9cc32802fc666789ddb5a21cc561c591b42fd1e32437ba89fff",
+        "matrix_message_sha256": "df49584c3816197b3bd675057ea73066e53748cd7c7dfa7c9bb910e14da88b6c"
+      }
+    },
+    {
+      "case_id": "6724c1d4bb02136c067d77ec",
+      "source_v2_repeat": 1,
+      "original_m3_prompt_tokens": 5446,
+      "matrix_m3_prompt_tokens": 4306,
+      "token_delta": -1140,
+      "matrix_audit": {
+        "method": "option_aligned_complete_entity_matrix_v3",
+        "selected_entity_count": 4,
+        "option_entity_rows": 4,
+        "distinct_option_entity_count": 4,
+        "supporting_entity_count": 0,
+        "option_entities": {
+          "A": [
+            "Q25395"
+          ],
+          "B": [
+            "Q138578"
+          ],
+          "C": [
+            "Q138367"
+          ],
+          "D": [
+            "Q985592"
+          ]
+        },
+        "all_selected_entities_preserved": true,
+        "all_entity_fields_preserved": true,
+        "source_context_sha256": "3f5174825f59c32cc73289445576481ef124093282a5538100ed16588bdcf403",
+        "reconstructed_context_sha256": "3f5174825f59c32cc73289445576481ef124093282a5538100ed16588bdcf403",
+        "matrix_sha256": "b294f789127f7d0ce5cecdc6c56109176fbe6672c2cb7069f794509025aa7b80",
+        "predicate_fields_filtered": false,
+        "context_message_index": 1,
+        "other_messages_unchanged": true,
+        "original_message_sha256": "9f515e780f41d02d872e918d032bb227416551050508193927b53e1733e2edd1",
+        "matrix_message_sha256": "7a2d2f2dc5d17589df2b027d611192970ede53d4fdbd194ec3112863835e71d3"
+      }
+    },
+    {
+      "case_id": "67285e1dbb02136c067d901b",
+      "source_v2_repeat": 1,
+      "original_m3_prompt_tokens": 3150,
+      "matrix_m3_prompt_tokens": 2572,
+      "token_delta": -578,
+      "matrix_audit": {
+        "method": "option_aligned_complete_entity_matrix_v3",
+        "selected_entity_count": 4,
+        "option_entity_rows": 4,
+        "distinct_option_entity_count": 4,
+        "supporting_entity_count": 0,
+        "option_entities": {
+          "A": [
+            "Q1130799"
+          ],
+          "B": [
+            "Q49106"
+          ],
+          "C": [
+            "Q78994"
+          ],
+          "D": [
+            "Q825946"
+          ]
+        },
+        "all_selected_entities_preserved": true,
+        "all_entity_fields_preserved": true,
+        "source_context_sha256": "91316f7060395e3c10c722469a05bf216104d7b8e807a475df6a01ccf7174224",
+        "reconstructed_context_sha256": "91316f7060395e3c10c722469a05bf216104d7b8e807a475df6a01ccf7174224",
+        "matrix_sha256": "d7ed9153ba7467f70047b843247f2b1eab49f26b94fddd6229dbacd57fafe3d4",
+        "predicate_fields_filtered": false,
+        "context_message_index": 1,
+        "other_messages_unchanged": true,
+        "original_message_sha256": "b162974d049397962f1213c8b90f844df9b8568c6f9fb2d358b7b1be2d561caa",
+        "matrix_message_sha256": "54e24812e60b8192fbe8ac2f5cf461353e0219905bb7170a9e1de90db1be17df"
+      }
+    },
+    {
+      "case_id": "67286036bb02136c067d9092",
+      "source_v2_repeat": 1,
+      "original_m3_prompt_tokens": 4180,
+      "matrix_m3_prompt_tokens": 3361,
+      "token_delta": -819,
+      "matrix_audit": {
+        "method": "option_aligned_complete_entity_matrix_v3",
+        "selected_entity_count": 5,
+        "option_entity_rows": 4,
+        "distinct_option_entity_count": 4,
+        "supporting_entity_count": 1,
+        "option_entities": {
+          "A": [
+            "Q12753"
+          ],
+          "B": [
+            "Q12751"
+          ],
+          "C": [
+            "Q12661"
+          ],
+          "D": [
+            "Q12770"
+          ]
+        },
+        "all_selected_entities_preserved": true,
+        "all_entity_fields_preserved": true,
+        "source_context_sha256": "7e04a6d4606cb2e7fedc3d337d3124122661a4981ce02d521bfc2eb0b645737a",
+        "reconstructed_context_sha256": "7e04a6d4606cb2e7fedc3d337d3124122661a4981ce02d521bfc2eb0b645737a",
+        "matrix_sha256": "9a001ca35230d2af82bd721197e969ac0ec5e09706ac5310039b3cdf3b4174da",
+        "predicate_fields_filtered": false,
+        "context_message_index": 1,
+        "other_messages_unchanged": true,
+        "original_message_sha256": "aa58d999b55aeebd87d86c3cff8f82e31f8f22c0c747a6b9c129c2a6032cf4fb",
+        "matrix_message_sha256": "a18b051459e3f42a1858de8d60fa14eb2ad6183711839f60a5c3962cbe213f4b"
+      }
+    },
+    {
+      "case_id": "6724c4aabb02136c067d78a6",
+      "source_v2_repeat": 1,
+      "original_m3_prompt_tokens": 7031,
+      "matrix_m3_prompt_tokens": 5565,
+      "token_delta": -1466,
+      "matrix_audit": {
+        "method": "option_aligned_complete_entity_matrix_v3",
+        "selected_entity_count": 5,
+        "option_entity_rows": 3,
+        "distinct_option_entity_count": 3,
+        "supporting_entity_count": 2,
+        "option_entities": {
+          "A": [
+            "Q319810"
+          ],
+          "B": [
+            "Q8870414"
+          ],
+          "C": [
+            "Q319810",
+            "Q8870414"
+          ],
+          "D": [
+            "Q443019"
+          ]
+        },
+        "all_selected_entities_preserved": true,
+        "all_entity_fields_preserved": true,
+        "source_context_sha256": "3d99d1743ab996d6b1bf43938345d3c6281512572993c5059fd4c23a6ef06ec4",
+        "reconstructed_context_sha256": "3d99d1743ab996d6b1bf43938345d3c6281512572993c5059fd4c23a6ef06ec4",
+        "matrix_sha256": "b10ce1756734c3629580999324f2903aa182066eb4aaec1c71b4f02cd7f32af9",
+        "predicate_fields_filtered": false,
+        "context_message_index": 1,
+        "other_messages_unchanged": true,
+        "original_message_sha256": "996029aab138f40c96f6ef32925474f82118770f21408c4c65e71991e5f65c68",
+        "matrix_message_sha256": "f2a682ee018055d91840824cca3bb1a1f3c9adba43dbc07df4edf802dc801005"
+      }
+    }
+  ],
+  "totals": {
+    "case_count": 6,
+    "original_m3_prompt_tokens": 27300,
+    "matrix_m3_prompt_tokens": 21884,
+    "token_delta": -5416,
+    "reduction_percent": 19.8388
+  },
+  "limitations": [
+    "This compares prompt representation only; it does not measure answer accuracy, inference cost, or time.",
+    "The six tasks were selected as relation-closure successes and have already informed matrix development; this is exploratory development evidence, not a holdout.",
+    "Complete entity fields are preserved, so this audit does not validate removing any fields or relations."
+  ]
+}

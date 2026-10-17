@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "stage": 1,
+  "version": "v3-option-aligned-matrix",
+  "frozen_before_api_dispatch": true,
+  "created_utc": "2026-10-17T02:13:05.707139+00:00",
+  "protocol_path": "docs/evals/longbench-v2-minimax-relation-stage1-v3-protocol-2026-10-17.md",
+  "baseline_manifest_path": "docs/evals/longbench-v2-minimax-m3-100-manifest-2026-10-16.json",
+  "baseline_manifest_sha256": "865e27c21fdd2a6ce4b629b283123f4bff66b62e3c17f39c3b8be842b00a6f18",
+  "baseline_result_path": "docs/results/longbench-v2-minimax-m3-100-2026-10-16.json",
+  "baseline_result_sha256": "09d80674f03cb432e7cd8c9917f327f9dfd9675446d912cbd3d5f9e1dadb3d62",
+  "route_metadata_path": "docs/evals/longbench-v2-minimax-stage1-v3-route-2026-10-17-0208.json",
+  "route_metadata_sha256": "6d18e7de0915e0f1d40ef957084c0dfa2abd1e1b71ad5ffbc1b166e5414526b2",
+  "request_count": 36,
+  "aggregate_budget": {
+    "limit_usd": 20.0,
+    "prior_actual_usd": 14.4144941,
+    "prior_unsettled_usd": 0.36791295,
+    "basis": "Prior reconciled task-scoped actual $14.32900946 plus the stopped v2 run reported actual $0.08548464 = $14.41449410. Carry prior unsettled/reserved $0.36791295. Combined pre-v3 task-scoped exposure is $14.78240705. Account/key BYOK usage is aggregate and unitemized and is not a task invoice; see the protocol for limits."
+  },
+  "source_hashes": {
+    "runner_sha256": "1ebc0f015cf2dcb34c09da83650c6fe4cec54b0fcd939f602088ed5e52b9dba1",
+    "analyzer_sha256": "c23422656b2dd2ff5e95da7be8963ff1b301c3064142c7298f3867f1e68bffd9",
+    "core_sha256": "031a55fa43f62bc416f94ce2ca50feae47b2f6ca709fdff44f9b78641bfb287f",
+    "matrix_candidate_sha256": "3b7ad3bb79787828d1ec37e61cf49334294f5b3a09bc9c6f1b5f3b476cf60233",
+    "gate_module_sha256": "cd0c71bfed3e30062fc1b79448bbf9843d0c9179b93ca488f7e617fc3c2d0d34",
+    "protocol_sha256": "48cc87c70796e2ca81dbe7a427a2f77575b10670e3ba13f92b5cc2d56f451e7d"
+  },
+  "protocol": {
+    "stage": 1,
+    "task_ids": [
+      "672494e5bb02136c067d7697",
+      "67249705bb02136c067d76d1",
+      "6724c1d4bb02136c067d77ec",
+      "67285e1dbb02136c067d901b",
+      "67286036bb02136c067d9092",
+      "6724c4aabb02136c067d78a6"
+    ],
+    "repeats": 3,
+    "cli_seed": 20261022,
+    "generation_seeds": [
+      20261024,
+      20261025,
+      20261026
+    ],
+    "arms": [
+      "sift_default",
+      "sift_relation_matrix_v3"
+    ],
+    "sift_target_tokens": 32768,
+    "request_count": 36,
+    "model": {
+      "id": "minimax/minimax-m3"
+    },
+    "provider_policy": {
+      "only": [
+        "minimax"
+      ],
+      "allow_fallbacks": false
+    },
+    "generation": {
+      "temperature": 0.1,
+      "top_p": 0.8,
+      "reasoning_enabled": false,
+      "max_tokens": 128,
+      "response_format": {
+        "type": "json_object"
+      },
+      "answer_format": "json_object_single_answer_a_to_d",
+      "retries": 0,
+      "workers": 1
+    },
+    "candidate": {
+      "selector": "research_relation_closure",
+      "matrix": "option_aligned_complete_entity_matrix_v3",
+      "fallback_policy": "default Sift on any matrix/coverage/target error; any fallback fails expansion gate"
+    },
+    "expansion_gate": {
+      "valid_unique_paired_receipts": 36,
+      "candidate_fallbacks": 0,
+      "route_usage_cost_target_answer_anomalies": 0,
+      "candidate_only_correct_task_majorities_min": 1,
+      "candidate_exact_choice_correct_strictly_greater_than_default": true
+    },
+    "answer_format": "Parse only a completed strict JSON object with exactly one string field answer in A/B/C/D; no prose or extra keys.",
+    "seed_support_note": "Matched request parameters only; current route metadata does not list seed support, so deterministic repeats are not claimed.",
+    "route": {
+      "requested_model": "minimax/minimax-m3",
+      "provider": {
+        "only": [
+          "minimax"
+        ],
+        "allow_fallbacks": false
+      },
+      "provider_endpoint": "Minimax | minimax/minimax-m3-20260531",
+      "context_length_tokens": 524288,
+      "max_prompt_tokens": 524288,
+      "pricing_usd_per_token": {
+        "prompt": "0.0000003",
+        "completion": "0.0000012",
+        "input_cache_read": "0.00000006",
+        "discount": 0
+      }
+    },
+    "separation_note": "New v3 run only. Do not resume, pool, or combine v1/v2 partial runs."
+  }
+}
