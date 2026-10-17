@@ -95,6 +95,19 @@ class _Piece:
     structured: bool = False
 
 
+@dataclass(frozen=True)
+class _IndexedPiece:
+    piece: _Piece
+    terms: frozenset[str]
+
+
+@dataclass(frozen=True)
+class _IndexedMessage:
+    role: str
+    source: str
+    pieces: tuple[_IndexedPiece, ...]
+
+
 def _count(counter: TokenCounter, messages: list[dict[str, Any]]) -> int:
     value = counter(messages)
     if type(value) is not int or value < 0:
@@ -397,15 +410,39 @@ def _quoted_query_terms(query: str) -> set[str]:
     return {term.lower() for phrase in quoted for term in _TERMS.findall(phrase)}
 
 
-def _term_frequencies(old: list[dict[str, Any]], terms: set[str]) -> tuple[Counter[str], int]:
+def _index_candidate_messages(
+    old: list[dict[str, Any]], terms: set[str],
+) -> tuple[_IndexedMessage, ...]:
+    """Parse candidate source once for the frequency and ranking passes."""
+    indexed: list[_IndexedMessage] = []
+    for message in old:
+        source = _render(message)
+        pieces = tuple(
+            _IndexedPiece(
+                piece,
+                frozenset(terms.intersection(
+                    term.lower() for term in _TERMS.findall(piece.text)))
+                if terms else frozenset(),
+            )
+            for piece in _pieces(source)
+        )
+        indexed.append(_IndexedMessage(
+            str(message.get("role", "unknown")), source, pieces))
+    return tuple(indexed)
+
+
+def _term_frequencies(
+    old: list[dict[str, Any]], terms: set[str],
+    indexed: tuple[_IndexedMessage, ...] | None = None,
+) -> tuple[Counter[str], int]:
     frequencies: Counter[str] = Counter()
     total = 0
     if terms:
-        for message in old:
-            for piece in _pieces(_render(message)):
+        messages = indexed if indexed is not None else _index_candidate_messages(old, terms)
+        for message in messages:
+            for indexed_piece in message.pieces:
                 total += 1
-                frequencies.update(terms.intersection(
-                    term.lower() for term in _TERMS.findall(piece.text)))
+                frequencies.update(indexed_piece.terms)
     return frequencies, total
 
 
@@ -413,7 +450,8 @@ def _candidates(old: list[dict[str, Any]], terms: set[str],
                 frequencies: Counter[str], total: int,
                 bridge_ids: tuple[str, ...] = (), *,
                 quoted_terms: set[str] | None = None,
-                with_coverage: bool = False
+                with_coverage: bool = False,
+                indexed: tuple[_IndexedMessage, ...] | None = None,
                 ) -> list[_Candidate] | tuple[list[_Candidate], _Candidate | None]:
     bridge_match = (re.compile(r"\b(?:" + "|".join(map(re.escape, bridge_ids)) + r")\b", re.IGNORECASE)
                     if bridge_ids else None)
@@ -422,27 +460,32 @@ def _candidates(old: list[dict[str, Any]], terms: set[str],
     recent_hashes: deque[bytes] = deque()
     coverage_best: tuple[float, int, _Candidate] | None = None
     serial = 0
-    for message_index, message in enumerate(old):
-        role = str(message.get("role", "unknown"))
-        source = _render(message)
-        parts = iter(_pieces(source))
+    indexed_messages = indexed if indexed is not None else _index_candidate_messages(old, terms)
+    for message_index, indexed_message in enumerate(indexed_messages):
+        role = indexed_message.role
+        source = indexed_message.source
+        parts = iter(indexed_message.pieces)
         previous = None
-        piece = next(parts, None)
-        following = next(parts, None)
+        indexed_piece = next(parts, None)
+        piece = indexed_piece.piece if indexed_piece is not None else None
+        indexed_following = next(parts, None)
+        following = indexed_following.piece if indexed_following is not None else None
         part_index = 0
         while piece is not None:
             normalized = " ".join(piece.text.lower().split())
             digest = hashlib.blake2b(normalized.encode("utf-8"), digest_size=8).digest()
             if digest in seen:
                 previous, piece = piece, following
-                following = next(parts, None)
+                indexed_piece = indexed_following
+                indexed_following = next(parts, None)
+                following = indexed_following.piece if indexed_following is not None else None
                 part_index += 1
                 continue
             if len(recent_hashes) == _DEDUP_WINDOW:
                 seen.remove(recent_hashes.popleft())
             recent_hashes.append(digest)
             seen.add(digest)
-            matching = terms.intersection(term.lower() for term in _TERMS.findall(piece.text))
+            matching = indexed_piece.terms
             # Repeated field names and routine log vocabulary should not
             # outscore rarer evidence merely by matching more common words.
             weights = [100 * math.log1p(total / (1 + frequencies[term]))
@@ -494,7 +537,9 @@ def _candidates(old: list[dict[str, Any]], terms: set[str],
                 heapq.heapreplace(heap, item)
             serial += 1
             previous, piece = piece, following
-            following = next(parts, None)
+            indexed_piece = indexed_following
+            indexed_following = next(parts, None)
+            following = indexed_following.piece if indexed_following is not None else None
             part_index += 1
     selected = [item[2] for item in heap]
     selected.sort(key=lambda item: (-item.score, item.message_index, item.part_index))
@@ -509,10 +554,12 @@ def _linked_candidates(
     """Reserve a few excerpts joined by IDs in high-ranked source evidence."""
     terms = _query_terms(query)
     quoted_terms = _quoted_query_terms(query)
-    frequencies, total = _term_frequencies(old, terms)
+    indexed = _index_candidate_messages(old, terms)
+    frequencies, total = _term_frequencies(old, terms, indexed)
     primary_result = _candidates(old, terms, frequencies, total,
                                  quoted_terms=quoted_terms,
-                                 with_coverage=with_coverage)
+                                 with_coverage=with_coverage,
+                                 indexed=indexed)
     if with_coverage:
         primary, coverage = primary_result
     else:
@@ -535,7 +582,7 @@ def _linked_candidates(
     if not bridge_ids:
         return (primary, coverage) if with_coverage else primary
     second_pass = _candidates(old, terms, frequencies, total, tuple(bridge_ids),
-                              quoted_terms=quoted_terms)
+                              quoted_terms=quoted_terms, indexed=indexed)
     matched = re.compile(r"\b(?:" + "|".join(map(re.escape, bridge_ids)) + r")\b", re.IGNORECASE)
     output: list[_Candidate] = []
     seen: set[tuple[int, int]] = set()
