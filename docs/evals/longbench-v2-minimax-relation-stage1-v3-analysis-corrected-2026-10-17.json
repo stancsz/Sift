@@ -1,0 +1,599 @@
+{
+  "schema_version": 1,
+  "evaluation": "six-task exploratory LongBench v2 paired Sift-arm gate; not a benchmark aggregate",
+  "status": "validated",
+  "integrity_status": "validated",
+  "expansion_gate": {
+    "decision": "PASS",
+    "eligible_for_larger_followup_review": true,
+    "criteria": {
+      "all_36_rows_receipt_usage_route_target_valid": true,
+      "no_relation_matrix_candidate_fallback_occurred": true,
+      "no_route_usage_cost_target_anomalies": true,
+      "no_invalid_answers": true,
+      "at_least_one_candidate_only_majority_vs_concurrent_default": true,
+      "strictly_more_exact_choice_correct_than_default": true
+    },
+    "observed": {
+      "valid_paired_rows": 36,
+      "required_rows": 36,
+      "candidate_only_correct_majorities": 2,
+      "default_only_correct_majorities": 0,
+      "candidate_exact_choice_correct": 16,
+      "default_exact_choice_correct": 13,
+      "fallback_selected_requests": 0
+    },
+    "meaning": "PASS authorizes considering a larger follow-up only; it does not establish benchmark-wide quality, parity, or causality."
+  },
+  "scope": {
+    "qualified_case_ids": [
+      "672494e5bb02136c067d7697",
+      "67249705bb02136c067d76d1",
+      "6724c1d4bb02136c067d77ec",
+      "67285e1dbb02136c067d901b",
+      "67286036bb02136c067d9092",
+      "6724c4aabb02136c067d78a6"
+    ],
+    "task_count": 6,
+    "repeats_per_task": 3,
+    "candidate_response_count": 18,
+    "default_sift_response_count": 18,
+    "total_followup_response_count": 36,
+    "selection_basis": "six closure-supported IDs from .runs/longbench-relation-closure-offline.json",
+    "offline_sweep_closure_count": 6,
+    "offline_sweep_fallback_count": 94,
+    "not_a_longbench_aggregate": true
+  },
+  "comparison_design": {
+    "historical_result_created_utc": "2026-10-16T23:52:59.566956+00:00",
+    "historical_result_completed_utc": "2026-10-17T00:01:31.571488+00:00",
+    "followup_created_utc": "2026-10-17T02:17:09.685266+00:00",
+    "followup_completed_utc": "2026-10-17T02:18:18.209090+00:00",
+    "within_run_arms_concurrent": false,
+    "within_run_pairing": "Each case/repeat has default Sift and the option-aligned complete-entity matrix treatment dispatched adjacently with the same generation seed in one worker; randomized order is recorded.",
+    "recorded_dispatch_job_ids": [
+      "672494e5bb02136c067d7697:1:sift_relation_matrix_v3",
+      "672494e5bb02136c067d7697:1:sift_default",
+      "67285e1dbb02136c067d901b:1:sift_default",
+      "67285e1dbb02136c067d901b:1:sift_relation_matrix_v3",
+      "67286036bb02136c067d9092:1:sift_relation_matrix_v3",
+      "67286036bb02136c067d9092:1:sift_default",
+      "67249705bb02136c067d76d1:1:sift_default",
+      "67249705bb02136c067d76d1:1:sift_relation_matrix_v3",
+      "6724c4aabb02136c067d78a6:1:sift_relation_matrix_v3",
+      "6724c4aabb02136c067d78a6:1:sift_default",
+      "6724c1d4bb02136c067d77ec:1:sift_default",
+      "6724c1d4bb02136c067d77ec:1:sift_relation_matrix_v3",
+      "6724c1d4bb02136c067d77ec:2:sift_relation_matrix_v3",
+      "6724c1d4bb02136c067d77ec:2:sift_default",
+      "67285e1dbb02136c067d901b:2:sift_relation_matrix_v3",
+      "67285e1dbb02136c067d901b:2:sift_default",
+      "6724c4aabb02136c067d78a6:2:sift_relation_matrix_v3",
+      "6724c4aabb02136c067d78a6:2:sift_default",
+      "672494e5bb02136c067d7697:2:sift_default",
+      "672494e5bb02136c067d7697:2:sift_relation_matrix_v3",
+      "67249705bb02136c067d76d1:2:sift_default",
+      "67249705bb02136c067d76d1:2:sift_relation_matrix_v3",
+      "67286036bb02136c067d9092:2:sift_default",
+      "67286036bb02136c067d9092:2:sift_relation_matrix_v3",
+      "6724c1d4bb02136c067d77ec:3:sift_relation_matrix_v3",
+      "6724c1d4bb02136c067d77ec:3:sift_default",
+      "67286036bb02136c067d9092:3:sift_default",
+      "67286036bb02136c067d9092:3:sift_relation_matrix_v3",
+      "672494e5bb02136c067d7697:3:sift_default",
+      "672494e5bb02136c067d7697:3:sift_relation_matrix_v3",
+      "67249705bb02136c067d76d1:3:sift_relation_matrix_v3",
+      "67249705bb02136c067d76d1:3:sift_default",
+      "6724c4aabb02136c067d78a6:3:sift_relation_matrix_v3",
+      "6724c4aabb02136c067d78a6:3:sift_default",
+      "67285e1dbb02136c067d901b:3:sift_relation_matrix_v3",
+      "67285e1dbb02136c067d901b:3:sift_default"
+    ],
+    "historical_non_concurrent": true,
+    "seconds_after_historical_completion": 8138.113778,
+    "historical_provider_drift_limited": true,
+    "historical_limitation": "Historical Full/Sift generations occurred in an earlier non-concurrent run; MiniMax model/provider behavior can drift. Matching case/repeat/seeds do not control provider changes.",
+    "paired_keys": "Within-run arms pair by case_id + repeat + generation_seed; historical Full/Sift remain same-key, non-concurrent references.",
+    "artifact_hashes": {
+      "stage_manifest_sha256": "9a0d407fa09737160a99b73812bd9b8bbc3b9824c0efd237d2554111304159c5",
+      "route_metadata_sha256": "261859fee2c14e242cb8aa02f9a2f100cc73380eae7994bffc535a4c0ae21ab0",
+      "baseline_manifest_sha256": "865e27c21fdd2a6ce4b629b283123f4bff66b62e3c17f39c3b8be842b00a6f18",
+      "historical_result_sha256": "09d80674f03cb432e7cd8c9917f327f9dfd9675446d912cbd3d5f9e1dadb3d62",
+      "corrected_analyzer_sha256": "c5ceef7d674218de8a043eb71d0eaa5386a3c086991482cca05116a8ddfd12a1"
+    }
+  },
+  "quality": {
+    "exact_choice_correct": {
+      "sift_relation_matrix_v3": 16,
+      "sift_default": 13
+    },
+    "exact_choice_total_per_arm": 18,
+    "invalid_response_count": {
+      "sift_relation_matrix_v3": 0,
+      "sift_default": 0
+    },
+    "task_majority_correct_count": {
+      "relation_followup": 6,
+      "sift_default": 4,
+      "historical_full": 3,
+      "historical_sift": 2
+    },
+    "task_majority_total": 6,
+    "task_majority_comparison": {
+      "relation_vs_default": {
+        "wins": 2,
+        "losses": 0,
+        "ties": 4
+      },
+      "relation_vs_historical_full": {
+        "wins": 3,
+        "losses": 0,
+        "ties": 3
+      },
+      "relation_vs_historical_sift": {
+        "wins": 4,
+        "losses": 0,
+        "ties": 2
+      },
+      "default_vs_historical_full": {
+        "wins": 2,
+        "losses": 1,
+        "ties": 3
+      },
+      "default_vs_historical_sift": {
+        "wins": 3,
+        "losses": 1,
+        "ties": 2
+      }
+    },
+    "task_outcomes": [
+      {
+        "case_id": "672494e5bb02136c067d7697",
+        "expected": "C",
+        "relation_followup": {
+          "correct_repeats": 2,
+          "valid_repeats": 3,
+          "invalid_repeats": 0,
+          "majority_correct": true,
+          "choices": [
+            "C",
+            "A",
+            "C"
+          ]
+        },
+        "sift_default": {
+          "correct_repeats": 3,
+          "valid_repeats": 3,
+          "invalid_repeats": 0,
+          "majority_correct": true,
+          "choices": [
+            "C",
+            "C",
+            "C"
+          ]
+        },
+        "historical_full": {
+          "correct_repeats": 3,
+          "valid_repeats": 3,
+          "invalid_repeats": 0,
+          "majority_correct": true,
+          "choices": [
+            "C",
+            "C",
+            "C"
+          ]
+        },
+        "historical_sift": {
+          "correct_repeats": 2,
+          "valid_repeats": 3,
+          "invalid_repeats": 0,
+          "majority_correct": true,
+          "choices": [
+            "C",
+            "A",
+            "C"
+          ]
+        }
+      },
+      {
+        "case_id": "67249705bb02136c067d76d1",
+        "expected": "D",
+        "relation_followup": {
+          "correct_repeats": 3,
+          "valid_repeats": 3,
+          "invalid_repeats": 0,
+          "majority_correct": true,
+          "choices": [
+            "D",
+            "D",
+            "D"
+          ]
+        },
+        "sift_default": {
+          "correct_repeats": 1,
+          "valid_repeats": 3,
+          "invalid_repeats": 0,
+          "majority_correct": false,
+          "choices": [
+            "B",
+            "A",
+            "D"
+          ]
+        },
+        "historical_full": {
+          "correct_repeats": 0,
+          "valid_repeats": 3,
+          "invalid_repeats": 0,
+          "majority_correct": false,
+          "choices": [
+            "B",
+            "A",
+            "A"
+          ]
+        },
+        "historical_sift": {
+          "correct_repeats": 0,
+          "valid_repeats": 3,
+          "invalid_repeats": 0,
+          "majority_correct": false,
+          "choices": [
+            "C",
+            "A",
+            "C"
+          ]
+        }
+      },
+      {
+        "case_id": "6724c1d4bb02136c067d77ec",
+        "expected": "A",
+        "relation_followup": {
+          "correct_repeats": 2,
+          "valid_repeats": 3,
+          "invalid_repeats": 0,
+          "majority_correct": true,
+          "choices": [
+            "A",
+            "C",
+            "A"
+          ]
+        },
+        "sift_default": {
+          "correct_repeats": 3,
+          "valid_repeats": 3,
+          "invalid_repeats": 0,
+          "majority_correct": true,
+          "choices": [
+            "A",
+            "A",
+            "A"
+          ]
+        },
+        "historical_full": {
+          "correct_repeats": 2,
+          "valid_repeats": 3,
+          "invalid_repeats": 0,
+          "majority_correct": true,
+          "choices": [
+            "A",
+            "A",
+            "D"
+          ]
+        },
+        "historical_sift": {
+          "correct_repeats": 0,
+          "valid_repeats": 3,
+          "invalid_repeats": 0,
+          "majority_correct": false,
+          "choices": [
+            "C",
+            "B",
+            "C"
+          ]
+        }
+      },
+      {
+        "case_id": "67285e1dbb02136c067d901b",
+        "expected": "A",
+        "relation_followup": {
+          "correct_repeats": 3,
+          "valid_repeats": 3,
+          "invalid_repeats": 0,
+          "majority_correct": true,
+          "choices": [
+            "A",
+            "A",
+            "A"
+          ]
+        },
+        "sift_default": {
+          "correct_repeats": 1,
+          "valid_repeats": 3,
+          "invalid_repeats": 0,
+          "majority_correct": false,
+          "choices": [
+            "D",
+            "C",
+            "A"
+          ]
+        },
+        "historical_full": {
+          "correct_repeats": 3,
+          "valid_repeats": 3,
+          "invalid_repeats": 0,
+          "majority_correct": true,
+          "choices": [
+            "A",
+            "A",
+            "A"
+          ]
+        },
+        "historical_sift": {
+          "correct_repeats": 3,
+          "valid_repeats": 3,
+          "invalid_repeats": 0,
+          "majority_correct": true,
+          "choices": [
+            "A",
+            "A",
+            "A"
+          ]
+        }
+      },
+      {
+        "case_id": "67286036bb02136c067d9092",
+        "expected": "D",
+        "relation_followup": {
+          "correct_repeats": 3,
+          "valid_repeats": 3,
+          "invalid_repeats": 0,
+          "majority_correct": true,
+          "choices": [
+            "D",
+            "D",
+            "D"
+          ]
+        },
+        "sift_default": {
+          "correct_repeats": 3,
+          "valid_repeats": 3,
+          "invalid_repeats": 0,
+          "majority_correct": true,
+          "choices": [
+            "D",
+            "D",
+            "D"
+          ]
+        },
+        "historical_full": {
+          "correct_repeats": 0,
+          "valid_repeats": 3,
+          "invalid_repeats": 0,
+          "majority_correct": false,
+          "choices": [
+            "A",
+            "A",
+            "A"
+          ]
+        },
+        "historical_sift": {
+          "correct_repeats": 1,
+          "valid_repeats": 3,
+          "invalid_repeats": 0,
+          "majority_correct": false,
+          "choices": [
+            "A",
+            "A",
+            "D"
+          ]
+        }
+      },
+      {
+        "case_id": "6724c4aabb02136c067d78a6",
+        "expected": "B",
+        "relation_followup": {
+          "correct_repeats": 3,
+          "valid_repeats": 3,
+          "invalid_repeats": 0,
+          "majority_correct": true,
+          "choices": [
+            "B",
+            "B",
+            "B"
+          ]
+        },
+        "sift_default": {
+          "correct_repeats": 2,
+          "valid_repeats": 3,
+          "invalid_repeats": 0,
+          "majority_correct": true,
+          "choices": [
+            "B",
+            "C",
+            "B"
+          ]
+        },
+        "historical_full": {
+          "correct_repeats": 0,
+          "valid_repeats": 3,
+          "invalid_repeats": 0,
+          "majority_correct": false,
+          "choices": [
+            "C",
+            "C",
+            "C"
+          ]
+        },
+        "historical_sift": {
+          "correct_repeats": 0,
+          "valid_repeats": 3,
+          "invalid_repeats": 0,
+          "majority_correct": false,
+          "choices": [
+            "C",
+            "C",
+            "C"
+          ]
+        }
+      }
+    ]
+  },
+  "selection_and_budget": {
+    "targeted_case_repeat_pairs": 18,
+    "targeted_requests": 36,
+    "target_tokens": 32768,
+    "effective_target_tokens": 32640,
+    "candidate_attempted_requests": 18,
+    "candidate_selected_requests": 18,
+    "fallback_selected_requests": 0,
+    "fallback_reasons": {},
+    "target_compliant_requests": 36
+  },
+  "receipts": {
+    "local_prompt_tokens": {
+      "sift_relation_matrix_v3_total": 65652,
+      "concurrent_sift_default_total": 583752,
+      "historical_full_same_cases_total": 2410833,
+      "historical_sift_same_cases_total": 583470,
+      "relation_vs_concurrent_default_reduction_percent": 88.75344324302101,
+      "relation_vs_historical_sift_reduction_percent": 88.74800760964574,
+      "relation_vs_historical_full_reduction_percent": 97.27679188064872,
+      "per_arm_min": {
+        "sift_default": 32304,
+        "sift_relation_matrix_v3": 2572
+      },
+      "per_arm_max": {
+        "sift_default": 32583,
+        "sift_relation_matrix_v3": 5565
+      }
+    },
+    "provider_prompt_tokens_total": {
+      "sift_default": 583752,
+      "sift_relation_matrix_v3": 65652
+    },
+    "completion_tokens_total": {
+      "sift_default": 119,
+      "sift_relation_matrix_v3": 99
+    },
+    "upstream_reported_cost_usd": {
+      "sift_default": 0.09714456,
+      "sift_relation_matrix_v3": 0.00916464
+    },
+    "openrouter_reported_cost_usd": {
+      "sift_default": 0.0,
+      "sift_relation_matrix_v3": 0.0
+    },
+    "historical_full_upstream_cost_same_cases_usd": 0.19505766,
+    "historical_sift_upstream_cost_same_cases_usd": 0.05050764,
+    "provider_local_input_token_ratio_max": {
+      "sift_default": 1.0,
+      "sift_relation_matrix_v3": 1.0
+    },
+    "arm_usage_cost_accounting": {
+      "sift_relation_matrix_v3": {
+        "requests": 18,
+        "provider_prompt_tokens_total": 65652,
+        "cached_prompt_tokens_total": 44374,
+        "cached_prompt_fraction_of_provider_prompt_tokens": 0.6758971546944496,
+        "cache_write_tokens_total": 0,
+        "completion_tokens_total": 99,
+        "cache_inclusive_upstream_reported_cost_usd": 0.00916464,
+        "openrouter_reported_cost_usd": 0.0,
+        "reconstructed_uncached_cost_counterfactual_usd": 0.0198144,
+        "uncached_counterfactual_basis": "provider-reported prompt_tokens × uncached input rate + completion_tokens × output rate; counterfactual estimate, not observed billing",
+        "cache_accounting_consistency": {
+          "cached_tokens_within_prompt_tokens": true,
+          "upstream_components_reconciled": true,
+          "cache_inclusive_prompt_cost_rows_checked": 18,
+          "rows_not_reconstructable_due_to_missing_cache_write_rate": 0,
+          "reconstructed_cache_inclusive_cost_usd_for_checked_rows": 0.00916464,
+          "interpretation": "Prompt-cost reconstructions are checked against upstream prompt cost where cache-read/write rates permit; upstream total is independently checked as prompt plus completion component."
+        }
+      },
+      "sift_default": {
+        "requests": 18,
+        "provider_prompt_tokens_total": 583752,
+        "cached_prompt_tokens_total": 325516,
+        "cached_prompt_fraction_of_provider_prompt_tokens": 0.5576272115555921,
+        "cache_write_tokens_total": 0,
+        "completion_tokens_total": 119,
+        "cache_inclusive_upstream_reported_cost_usd": 0.09714456,
+        "openrouter_reported_cost_usd": 0.0,
+        "reconstructed_uncached_cost_counterfactual_usd": 0.1752684,
+        "uncached_counterfactual_basis": "provider-reported prompt_tokens × uncached input rate + completion_tokens × output rate; counterfactual estimate, not observed billing",
+        "cache_accounting_consistency": {
+          "cached_tokens_within_prompt_tokens": true,
+          "upstream_components_reconciled": true,
+          "cache_inclusive_prompt_cost_rows_checked": 18,
+          "rows_not_reconstructable_due_to_missing_cache_write_rate": 0,
+          "reconstructed_cache_inclusive_cost_usd_for_checked_rows": 0.09714455999999999,
+          "interpretation": "Prompt-cost reconstructions are checked against upstream prompt cost where cache-read/write rates permit; upstream total is independently checked as prompt plus completion component."
+        }
+      }
+    },
+    "historical_usage_cost_accounting": {
+      "historical_full": {
+        "requests": 18,
+        "provider_prompt_tokens_total": 2410833,
+        "cached_prompt_tokens_total": 2200891,
+        "cached_prompt_fraction_of_provider_prompt_tokens": 0.9129172364904579,
+        "cache_write_tokens_total": 0,
+        "completion_tokens_total": 18,
+        "cache_inclusive_upstream_reported_cost_usd": 0.19505766,
+        "openrouter_reported_cost_usd": 0.0,
+        "reconstructed_uncached_cost_counterfactual_usd": 0.7232715,
+        "uncached_counterfactual_basis": "provider-reported prompt_tokens × uncached input rate + completion_tokens × output rate; counterfactual estimate, not observed billing",
+        "cache_accounting_consistency": {
+          "cached_tokens_within_prompt_tokens": true,
+          "upstream_components_reconciled": true,
+          "cache_inclusive_prompt_cost_rows_checked": 18,
+          "rows_not_reconstructable_due_to_missing_cache_write_rate": 0,
+          "reconstructed_cache_inclusive_cost_usd_for_checked_rows": 0.19505766000000005,
+          "interpretation": "Prompt-cost reconstructions are checked against upstream prompt cost where cache-read/write rates permit; upstream total is independently checked as prompt plus completion component."
+        }
+      },
+      "historical_sift": {
+        "requests": 18,
+        "provider_prompt_tokens_total": 583470,
+        "cached_prompt_tokens_total": 519064,
+        "cached_prompt_fraction_of_provider_prompt_tokens": 0.8896155757793889,
+        "cache_write_tokens_total": 0,
+        "completion_tokens_total": 35,
+        "cache_inclusive_upstream_reported_cost_usd": 0.05050764,
+        "openrouter_reported_cost_usd": 0.0,
+        "reconstructed_uncached_cost_counterfactual_usd": 0.175083,
+        "uncached_counterfactual_basis": "provider-reported prompt_tokens × uncached input rate + completion_tokens × output rate; counterfactual estimate, not observed billing",
+        "cache_accounting_consistency": {
+          "cached_tokens_within_prompt_tokens": true,
+          "upstream_components_reconciled": true,
+          "cache_inclusive_prompt_cost_rows_checked": 18,
+          "rows_not_reconstructable_due_to_missing_cache_write_rate": 0,
+          "reconstructed_cache_inclusive_cost_usd_for_checked_rows": 0.05050764,
+          "interpretation": "Prompt-cost reconstructions are checked against upstream prompt cost where cache-read/write rates permit; upstream total is independently checked as prompt plus completion component."
+        }
+      }
+    },
+    "counterfactual_price_basis": {
+      "input_price_usd_per_million": 0.3,
+      "output_price_usd_per_million": 1.2,
+      "cache_read_price_usd_per_million": 0.06,
+      "cache_write_price_usd_per_million": null
+    },
+    "end_to_end_ms_median": {
+      "sift_relation_matrix_v3": 1180.4096000269055,
+      "sift_default": 2071.1504999781027
+    },
+    "end_to_end_ms_p95": {
+      "sift_relation_matrix_v3": 2879.7742300666864,
+      "sift_default": 3327.7085999608908
+    },
+    "sift_preprocessing_ms_median": {
+      "sift_relation_matrix_v3": 321.8371500261128,
+      "sift_default": 1285.2501499000937
+    },
+    "sift_preprocessing_ms_p95": {
+      "sift_relation_matrix_v3": 507.7068000100553,
+      "sift_default": 1324.45970014669
+    }
+  },
+  "interpretation": "Exploratory six-task paired gate only, not LongBench aggregate, general quality estimate, parity result, or causal effect. Historical Full/Sift comparisons are non-concurrent provider-drift-limited references."
+}
