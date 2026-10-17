@@ -25,6 +25,16 @@ Use OpenRouter MiniMax M3 as the controlled model in staged LongBench v2 evaluat
 
 **Spend gate:** the last conservative ledger recorded about `$18.70` of the prior `$20` authorization, about `$1.30` headroom, a `$4` per-run guard, and an estimated `$9.39` reserve for 900 requests. These are historical figures, not current approval. Send no paid MiniMax requests until usage is freshly reconciled and the user explicitly authorizes enough budget for the complete conservative reserve under both limits.
 
+### 2026-10-18 current-hash census union — coverage only
+
+Following the Gemini-first / GPT-6.1 Sol council, both existing answer-blind selector censuses were rerun with the same pinned 503-row data, MiniMax tokenizer/template, 32,640-token target, and current core SHA `5a1d64474eea5d5ca6d599ab893411d40922dd7d12cc47e0ae33b9a097c86f1a`. The council recommended measuring current-hash union and overlap before implementing a dispatcher; Gemini and Sol both warned that coverage does not establish accuracy. Receipt: Gemini 3,284 total tokens; Sol 926 total tokens; packet `.runs/longbench-next-action-council-20261018.txt`.
+
+- Field pruning: 9 mechanically eligible tasks (1 Long Structured Data Understanding, 8 Long-dialogue History Understanding); all 9 are in the original 100-task sample, and 4 were in the field-pruning model pilot.
+- Query-directed labels: 9 eligible tasks, all Long Structured Data Understanding; 7 belong to the frozen development subset and 2 to its held-out subset. All 9 belong to the frozen 20-row mechanism screen; 5 are in the original 100-task sample. The two mechanically screened held-out rows are not untouched quality-confirmation cases.
+- The two selector sets have zero overlap, so their 18-row union is only a mechanical upper bound: the implementation exposes these modes as mutually exclusive, and no combined dispatcher has been validated. Fourteen union rows are already in the original 100-task sample. This does not provide a 100-task active-candidate population or answer-quality evidence.
+- Independent metadata-only review verified the counts, domains, exposures, splits, and pinned hashes. Artifacts: `benchmarks/compare_longbench_v2_candidate_censuses.py`, `docs/evals/longbench-v2-field-pruning-census-current-2026-10-18.json`, `docs/evals/longbench-v2-query-directed-labels-census-current-2026-10-18.json`, and `docs/evals/longbench-v2-candidate-census-union-2026-10-18.json`.
+- Decision: stop the exact-structure dispatcher path as the route to a 100-task active-candidate study. Keep the current selectors default-off. The next candidate must use a broader evidence-selection method and be developed/evaluated on newly authored or project-unexposed data, with answer-blind retention diagnostics first. No paid call is authorized; do not use token savings or selector coverage as a quality claim.
+
 ## 2026-10-18 query-directed census checkpoint
 
 - A frozen, answer-blind offline run covered all 503 pinned LongBench v2 task IDs using the exact MiniMax M3 tokenizer/template, target 32,640, and Sift core SHA `5a1d64474eea5d5ca6d599ab893411d40922dd7d12cc47e0ae33b9a097c86f1a`. It made zero network/API calls and did not select, use, hash, or serialize answer/key values or model outputs. The JSON reader materialized rows, then the census copied only prompt and metadata allowlists.

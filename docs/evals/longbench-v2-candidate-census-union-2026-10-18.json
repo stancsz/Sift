@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "evaluation": "LongBench v2 answer-blind candidate census comparison",
+  "status": "coverage_only_no_dispatcher_no_accuracy_evidence",
+  "generated_utc": "2026-10-17T07:48:02.736284+00:00",
+  "inputs": {
+    "field_census": "docs/evals/longbench-v2-field-pruning-census-current-2026-10-18.json",
+    "field_census_sha256": "ebd9d1a8e09317e4b74ddff4930db778d3ba8a63db37e13cbabede5b72c089f8",
+    "query_census": "docs/evals/longbench-v2-query-directed-labels-census-2026-10-18.json",
+    "query_census_sha256": "1d0bd9a37046a91fd73ffeaf9e59348e111df53a2987dcbaf778cd36702694e9",
+    "baseline_manifest": "docs/evals/longbench-v2-minimax-m3-100-manifest-2026-10-16.json",
+    "baseline_manifest_sha256": "865e27c21fdd2a6ce4b629b283123f4bff66b62e3c17f39c3b8be842b00a6f18",
+    "comparison_script": "benchmarks/compare_longbench_v2_candidate_censuses.py",
+    "comparison_script_sha256": "aac79406cd98cb70da43c64a8795a17d6e7085dfa032bf45ef5dc562b251d3f9",
+    "dataset_revision": "2b48e494f2c7a2f0af81aae178e05c7e1dde0fe9",
+    "dataset_sha256": "15d61c22d92c96900b3c4948b6aeea218d3214b676a65df48e7b8555604c7fe2",
+    "tokenizer_sha256": "bb1f1626cf01448f1e3b6036d0a061ffc66c91d9046aada14ea23a5441b5ad6e",
+    "template_sha256": "11421244f67553498e5c8112dae02802025bcc4305ec45ad380af95c96f9fe64",
+    "core_sha256": "5a1d64474eea5d5ca6d599ab893411d40922dd7d12cc47e0ae33b9a097c86f1a",
+    "target_tokens": 32640,
+    "row_count": 503
+  },
+  "summary": {
+    "field_pruning_eligible": 9,
+    "query_directed_eligible": 9,
+    "overlap": 0,
+    "mechanical_union_upper_bound": 18,
+    "field_pruning_domains": {
+      "Long Structured Data Understanding": 1,
+      "Long-dialogue History Understanding": 8
+    },
+    "query_directed_domains": {
+      "Long Structured Data Understanding": 9
+    },
+    "union_domains": {
+      "Long Structured Data Understanding": 10,
+      "Long-dialogue History Understanding": 8
+    },
+    "field_eligible_in_original_100_task_sample": 9,
+    "query_eligible_in_original_100_task_sample": 5,
+    "union_in_original_100_task_sample": 14,
+    "field_eligible_in_field_pruning_pilot": 4,
+    "query_eligible_by_frozen_query_sample_split": {
+      "development": 7,
+      "held_out": 2
+    }
+  },
+  "ids": {
+    "field_pruning": [
+      "66f2b5ec821e116aacb2b1ec",
+      "6719b96abb02136c067d4358",
+      "671b080abb02136c067d4dde",
+      "671b170cbb02136c067d4f4a",
+      "671b17d5bb02136c067d4f7d",
+      "671b2b57bb02136c067d508b",
+      "671b2c05bb02136c067d50c8",
+      "671b2c67bb02136c067d50f7",
+      "671b3cabbb02136c067d5252"
+    ],
+    "query_directed": [
+      "6724938fbb02136c067d7657",
+      "672494e5bb02136c067d7697",
+      "67249705bb02136c067d76d1",
+      "6724c1d4bb02136c067d77ec",
+      "6724c5febb02136c067d78e7",
+      "6724cae7bb02136c067d79be",
+      "6728586bbb02136c067d8f4f",
+      "67285e1dbb02136c067d901b",
+      "67286036bb02136c067d9092"
+    ],
+    "overlap": [],
+    "mechanical_union_upper_bound": [
+      "66f2b5ec821e116aacb2b1ec",
+      "6719b96abb02136c067d4358",
+      "671b080abb02136c067d4dde",
+      "671b170cbb02136c067d4f4a",
+      "671b17d5bb02136c067d4f7d",
+      "671b2b57bb02136c067d508b",
+      "671b2c05bb02136c067d50c8",
+      "671b2c67bb02136c067d50f7",
+      "671b3cabbb02136c067d5252",
+      "6724938fbb02136c067d7657",
+      "672494e5bb02136c067d7697",
+      "67249705bb02136c067d76d1",
+      "6724c1d4bb02136c067d77ec",
+      "6724c5febb02136c067d78e7",
+      "6724cae7bb02136c067d79be",
+      "6728586bbb02136c067d8f4f",
+      "67285e1dbb02136c067d901b",
+      "67286036bb02136c067d9092"
+    ],
+    "union_already_in_original_100_task_sample": [
+      "66f2b5ec821e116aacb2b1ec",
+      "6719b96abb02136c067d4358",
+      "671b080abb02136c067d4dde",
+      "671b170cbb02136c067d4f4a",
+      "671b17d5bb02136c067d4f7d",
+      "671b2b57bb02136c067d508b",
+      "671b2c05bb02136c067d50c8",
+      "671b2c67bb02136c067d50f7",
+      "671b3cabbb02136c067d5252",
+      "672494e5bb02136c067d7697",
+      "67249705bb02136c067d76d1",
+      "6724c1d4bb02136c067d77ec",
+      "67285e1dbb02136c067d901b",
+      "67286036bb02136c067d9092"
+    ],
+    "field_pruning_pilot_exposure": [
+      "66f2b5ec821e116aacb2b1ec",
+      "6719b96abb02136c067d4358",
+      "671b080abb02136c067d4dde",
+      "671b3cabbb02136c067d5252"
+    ]
+  },
+  "interpretation": [
+    "The two opt-in selectors remain mutually exclusive in Sift; this union is not a validated combined dispatcher.",
+    "Mechanical target fit and structure coverage do not establish answer quality, noninferiority, or savings.",
+    "The query census processed frozen development and held-out prompt text answer-blind; those rows are not untouched confirmatory evidence.",
+    "The current eligible population is too small and too exposed to support a 100-task active-candidate MiniMax study. Do not dispatch paid candidate evaluation from this report."
+  ]
+}
