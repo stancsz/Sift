@@ -727,6 +727,10 @@ def run(manifest_path: Path, stage_manifest_path: Path, route_metadata_path: Pat
             "fallback": "on candidate CompactionError or comparison_groups_complete != true or unfit_comparison_groups != 0, rerun exact baseline compact_messages path with same messages, target, raw_limit, protocol and tokenizer",
             "expansion_gate": "Any candidate fallback, invalid route/usage/cost receipt, invalid structured choice, or strict_sample_valid != true prevents expansion.",
             "generation_seed_formula": "cli_seed + repeat + 1; same frozen case/repeat as historical paired baseline",
+            "generation_seed_support_note": (
+                "Seeds are matched request parameters across arms; current route metadata does not list seed support, "
+                "so provider-side deterministic RNG is not claimed."
+            ),
             "temperature": 0.1,
             "top_p": 0.8,
             "reasoning": "disabled",
@@ -756,6 +760,7 @@ def run(manifest_path: Path, stage_manifest_path: Path, route_metadata_path: Pat
         "budget": budget,
         "samples": [],
         "not_started_jobs": [],
+        "in_flight_request": None,
         "expansion_allowed": None,
         "expansion_gate_reasons": [],
         "actual_dispatch_started": False,
@@ -840,12 +845,19 @@ def run(manifest_path: Path, stage_manifest_path: Path, route_metadata_path: Pat
             if not report["actual_dispatch_started"]:
                 report["actual_dispatch_started"] = True
                 report["dispatch_started_utc"] = datetime.now(timezone.utc).isoformat()
-                write_atomic(output_path, report)
             report["budget"]["in_flight_reserved_cost_usd"] = reservation
             report["aggregate_exposure_audit"]["in_flight_reserved_cost_usd"] = reservation
             report["aggregate_exposure_audit"]["projected_total_exposure_including_in_flight_usd"] = (
                 prior_actual + prior_unsettled + actual_guard_spend + reservation
             )
+            dispatch_timestamp = datetime.now(timezone.utc).isoformat()
+            report["in_flight_request"] = {
+                "job_id": job["job_id"],
+                "request": request_payload,
+                "request_sha256": _request_hash(request_payload),
+                "dispatch_started_utc": dispatch_timestamp,
+            }
+            report["aggregate_exposure_audit"]["in_flight_request_job_id"] = job["job_id"]
             write_atomic(output_path, report)
             future = pool.submit(baseline.call_openrouter, api_job, api_key=api_key,
                                  seed=job["generation_seed"])
@@ -894,6 +906,8 @@ def run(manifest_path: Path, stage_manifest_path: Path, route_metadata_path: Pat
                 valid = False
             report["budget"]["in_flight_reserved_cost_usd"] = 0.0
             report["aggregate_exposure_audit"]["in_flight_reserved_cost_usd"] = 0.0
+            report["in_flight_request"] = None
+            report["aggregate_exposure_audit"]["in_flight_request_job_id"] = None
             report["aggregate_exposure_audit"]["settled_run_guard_spend_usd"] = actual_guard_spend
             report["aggregate_exposure_audit"]["projected_total_exposure_including_in_flight_usd"] = (
                 prior_actual + prior_unsettled + actual_guard_spend
