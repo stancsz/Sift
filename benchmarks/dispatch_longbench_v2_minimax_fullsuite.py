@@ -772,6 +772,17 @@ def dispatch(args: argparse.Namespace, manifest: dict[str, Any],
                           report["interrupted_in_flight_reconciled_as_unknown"]["index"] + 1)
     selected_indices = {job["index"] for job in selected}
     jobs_to_dispatch = list(selected)
+    if previous is not None and args.retry_invalid_response:
+        pending_retry_indices = {
+            row.get("index") for row in previous.get("samples", [])
+            if row.get("scoreable") is False
+            and row.get("failure") is None
+            and row.get("job_completed") is not True
+            and row.get("provider_usage_cost_usd") is not None
+            and row.get("index", -1) < start_index
+        }
+        jobs_to_dispatch.extend(
+            job for job in selected if job["index"] in pending_retry_indices)
     elapsed_start = time.perf_counter()
     for job in jobs_to_dispatch:
         index = job["index"]
@@ -897,6 +908,7 @@ def dispatch(args: argparse.Namespace, manifest: dict[str, Any],
             **score,
         }
         report["samples"].append(sample)
+        report["samples"].sort(key=lambda row: (row["index"], row["attempt_number"]))
         report["attempted_jobs"] = len(report["samples"])
         report["provider_token_totals"] = reported_token_totals(report["samples"])
         report["in_flight"] = None
