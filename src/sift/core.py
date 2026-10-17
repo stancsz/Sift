@@ -108,6 +108,28 @@ class _IndexedMessage:
     pieces: tuple[_IndexedPiece, ...]
 
 
+@dataclass(frozen=True)
+class _ResearchRecord:
+    index: int
+    message_index: int
+    record_index: int
+    text: str
+    bindings: frozenset[str]
+    matching_terms: frozenset[str]
+    score: float
+    entity_name: str = ""
+
+
+@dataclass(frozen=True)
+class _ResearchArray:
+    message_index: int
+    prefix: str
+    suffix: str
+    records: tuple[_ResearchRecord, ...]
+    opening: str = "["
+    closing: str = "]"
+
+
 def _count(counter: TokenCounter, messages: list[dict[str, Any]]) -> int:
     value = counter(messages)
     if type(value) is not int or value < 0:
@@ -607,6 +629,524 @@ def _linked_candidates(
     return (output, coverage) if with_coverage else output
 
 
+_RELATION_BINDING_FIELD = re.compile(
+    r"^(?:id|ref|code|uuid|identifier|"
+    r"source_id|target_id|from_id|to_id|[a-z0-9]+_(?:id|key|ref|code|uuid|identifier))$",
+    re.IGNORECASE,
+)
+def _explicit_relation_bindings(value: Any) -> frozenset[str]:
+    """Collect values only from explicit identifier or relation fields."""
+    bindings: set[str] = set()
+
+    def visit(item: Any) -> None:
+        if isinstance(item, dict):
+            for raw_key, child in item.items():
+                key = str(raw_key).strip()
+                if _RELATION_BINDING_FIELD.fullmatch(key):
+                    if isinstance(child, (str, int)) and not isinstance(child, bool):
+                        normalized = str(child).strip().casefold()
+                        if normalized and len(normalized) <= 256:
+                            bindings.add(normalized)
+                    elif isinstance(child, list):
+                        for entry in child:
+                            if isinstance(entry, (str, int)) and not isinstance(entry, bool):
+                                normalized = str(entry).strip().casefold()
+                                if normalized and len(normalized) <= 256:
+                                    bindings.add(normalized)
+                visit(child)
+        elif isinstance(item, list):
+            for child in item:
+                visit(child)
+
+    visit(value)
+    return frozenset(bindings)
+
+
+def _research_json_array(text: str) -> tuple[str, str, list[tuple[str, dict[str, Any]]]] | None:
+    """Locate one JSON array of objects and retain their exact source slices."""
+    start = text.find("[")
+    if start < 0:
+        return None
+    decoder = json.JSONDecoder()
+    try:
+        decoded, end = decoder.raw_decode(text, start)
+    except (json.JSONDecodeError, RecursionError):
+        return None
+    if not isinstance(decoded, list) or not all(isinstance(item, dict) for item in decoded):
+        return None
+    records: list[tuple[str, dict[str, Any]]] = []
+    cursor = start + 1
+    for expected in decoded:
+        while cursor < end and (text[cursor].isspace() or text[cursor] == ","):
+            cursor += 1
+        record_start = cursor
+        try:
+            parsed, cursor = decoder.raw_decode(text, cursor)
+        except (json.JSONDecodeError, RecursionError):
+            return None
+        if not isinstance(parsed, dict) or parsed != expected:
+            return None
+        records.append((text[record_start:cursor], parsed))
+    while cursor < end and (text[cursor].isspace() or text[cursor] == ","):
+        cursor += 1
+    if cursor != end - 1 or text[cursor] != "]":
+        return None
+    return text[:start], text[end:], records
+
+
+def _research_concept_map(
+    text: str,
+) -> tuple[str, str, list[tuple[str, dict[str, Any], str]]] | None:
+    """Read a JSON `concepts` map while retaining exact entity object slices."""
+    root_start = text.find("{")
+    if root_start < 0:
+        return None
+    decoder = json.JSONDecoder()
+    try:
+        root, _ = decoder.raw_decode(text, root_start)
+    except (json.JSONDecodeError, RecursionError):
+        return None
+    if not isinstance(root, dict) or not isinstance(root.get("concepts"), dict):
+        return None
+
+    # Locate the top-level concepts value without reserializing the source.
+    cursor = root_start + 1
+    concepts_start = -1
+    concepts_end = -1
+    for key, value in root.items():
+        while cursor < len(text) and (text[cursor].isspace() or text[cursor] == ","):
+            cursor += 1
+        try:
+            parsed_key, after_key = decoder.raw_decode(text, cursor)
+        except (json.JSONDecodeError, RecursionError):
+            return None
+        if parsed_key != key:
+            return None
+        cursor = after_key
+        while cursor < len(text) and text[cursor].isspace():
+            cursor += 1
+        if cursor >= len(text) or text[cursor] != ":":
+            return None
+        cursor += 1
+        while cursor < len(text) and text[cursor].isspace():
+            cursor += 1
+        if key == "concepts":
+            if cursor >= len(text) or text[cursor] != "{":
+                return None
+            concepts_start = cursor
+            try:
+                parsed_concepts, concepts_end = decoder.raw_decode(text, cursor)
+            except (json.JSONDecodeError, RecursionError):
+                return None
+            if parsed_concepts != value:
+                return None
+            cursor = concepts_end
+        else:
+            try:
+                _, cursor = decoder.raw_decode(text, cursor)
+            except (json.JSONDecodeError, RecursionError):
+                return None
+    if concepts_start < 0 or concepts_end < concepts_start:
+        return None
+
+    concepts = root["concepts"]
+    cursor = concepts_start + 1
+    entries: list[tuple[str, dict[str, Any], str]] = []
+    for entity_id, expected in concepts.items():
+        while cursor < concepts_end and (text[cursor].isspace() or text[cursor] == ","):
+            cursor += 1
+        entry_start = cursor
+        try:
+            parsed_id, cursor = decoder.raw_decode(text, cursor)
+        except (json.JSONDecodeError, RecursionError):
+            return None
+        if parsed_id != entity_id:
+            return None
+        while cursor < concepts_end and text[cursor].isspace():
+            cursor += 1
+        if cursor >= concepts_end or text[cursor] != ":":
+            return None
+        cursor += 1
+        while cursor < concepts_end and text[cursor].isspace():
+            cursor += 1
+        try:
+            parsed_value, cursor = decoder.raw_decode(text, cursor)
+        except (json.JSONDecodeError, RecursionError):
+            return None
+        if not isinstance(parsed_value, dict) or parsed_value != expected:
+            return None
+        entries.append((text[entry_start:cursor], parsed_value, str(entity_id)))
+    while cursor < concepts_end and (text[cursor].isspace() or text[cursor] == ","):
+        cursor += 1
+    if cursor != concepts_end - 1 or text[cursor] != "}":
+        return None
+    return text[:concepts_start], text[concepts_end:], entries
+
+
+def _research_entity_map(
+    text: str,
+) -> tuple[str, str, list[tuple[str, dict[str, Any], str]]] | None:
+    """Extract a root `entities` map and retain each complete entity slice.
+
+    Rebuilt output keeps only the entities map, omitting unrelated root fields
+    such as a much larger concepts glossary. Text surrounding the JSON root is
+    preserved verbatim.
+    """
+    root_start = text.find("{")
+    if root_start < 0:
+        return None
+    decoder = json.JSONDecoder()
+    try:
+        root, root_end = decoder.raw_decode(text, root_start)
+    except (json.JSONDecodeError, RecursionError):
+        return None
+    if (not isinstance(root, dict) or not isinstance(root.get("entities"), dict)
+            or not all(isinstance(value, dict) for value in root["entities"].values())):
+        return None
+
+    cursor = root_start + 1
+    entities_start = -1
+    entities_end = -1
+    for key, expected in root.items():
+        while cursor < root_end and (text[cursor].isspace() or text[cursor] == ","):
+            cursor += 1
+        try:
+            parsed_key, cursor = decoder.raw_decode(text, cursor)
+        except (json.JSONDecodeError, RecursionError):
+            return None
+        if parsed_key != key:
+            return None
+        while cursor < root_end and text[cursor].isspace():
+            cursor += 1
+        if cursor >= root_end or text[cursor] != ":":
+            return None
+        cursor += 1
+        while cursor < root_end and text[cursor].isspace():
+            cursor += 1
+        if key == "entities":
+            entities_start = cursor
+            try:
+                parsed_entities, entities_end = decoder.raw_decode(text, cursor)
+            except (json.JSONDecodeError, RecursionError):
+                return None
+            if parsed_entities != expected:
+                return None
+            cursor = entities_end
+        else:
+            try:
+                _, cursor = decoder.raw_decode(text, cursor)
+            except (json.JSONDecodeError, RecursionError):
+                return None
+    if entities_start < 0 or entities_end < entities_start:
+        return None
+
+    cursor = entities_start + 1
+    entries: list[tuple[str, dict[str, Any], str]] = []
+    for entity_id, expected in root["entities"].items():
+        while cursor < entities_end and (text[cursor].isspace() or text[cursor] == ","):
+            cursor += 1
+        entry_start = cursor
+        try:
+            parsed_id, cursor = decoder.raw_decode(text, cursor)
+        except (json.JSONDecodeError, RecursionError):
+            return None
+        if parsed_id != entity_id:
+            return None
+        while cursor < entities_end and text[cursor].isspace():
+            cursor += 1
+        if cursor >= entities_end or text[cursor] != ":":
+            return None
+        cursor += 1
+        while cursor < entities_end and text[cursor].isspace():
+            cursor += 1
+        try:
+            parsed_value, cursor = decoder.raw_decode(text, cursor)
+        except (json.JSONDecodeError, RecursionError):
+            return None
+        if not isinstance(parsed_value, dict) or parsed_value != expected:
+            return None
+        entries.append((text[entry_start:cursor], parsed_value, str(entity_id)))
+    while cursor < entities_end and (text[cursor].isspace() or text[cursor] == ","):
+        cursor += 1
+    if cursor != entities_end - 1 or text[cursor] != "}":
+        return None
+
+    prefix = text[:root_start] + '{"entities": '
+    suffix = "}" + text[root_end:]
+    return prefix, suffix, entries
+
+
+def _research_entity_name(value: dict[str, Any]) -> str:
+    """Return a simple display name for exact query-mention matching."""
+    for key in ("name", "label", "title"):
+        candidate = value.get(key)
+        if isinstance(candidate, str) and candidate.strip():
+            return candidate.strip()
+        if isinstance(candidate, dict):
+            english = candidate.get("en") or candidate.get("value")
+            if isinstance(english, str) and english.strip():
+                return english.strip()
+    return ""
+
+
+def _research_relation_compact(
+    messages: list[dict[str, Any]], count_tokens: TokenCounter, *,
+    target: int, instruction_end: int, latest_user: int, raw: int,
+) -> CompactionResult:
+    """Experimental closure over complete JSON rows or named KG concepts.
+
+    This handles JSON arrays of object records, top-level ``entities`` maps,
+    and ``concepts`` maps in historical user or tool messages. Relationships
+    come only from explicit ID/ref/code fields; it never infers a join from
+    row position. The latest user message is excluded from source parsing.
+    """
+    arrays: list[_ResearchArray] = []
+    all_records: list[_ResearchRecord] = []
+    terms = _query_terms(_render(messages[latest_user]))
+    query = _render(messages[latest_user])
+    query_ids = {identifier.casefold() for identifier in _LINK_IDS.findall(query)}
+    frequencies: Counter[str] = Counter()
+    total = 0
+
+    # Parse only eligible historical data messages. The latest user message is
+    # excluded by the range bound above and remains protected verbatim.
+    for message_index in range(instruction_end, latest_user):
+        message = messages[message_index]
+        if message.get("role") not in {"tool", "function", "user"}:
+            continue
+        content = message.get("content")
+        if not isinstance(content, str):
+            continue
+        entities = _research_entity_map(content)
+        concepts = None if entities is not None else _research_concept_map(content)
+        if entities is not None:
+            prefix, suffix, concept_records = entities
+            source_records = [
+                (entry, value, entity_id, _research_entity_name(value))
+                for entry, value, entity_id in concept_records
+            ]
+            opening, closing = "{", "}"
+        elif concepts is not None:
+            prefix, suffix, concept_records = concepts
+            source_records = [
+                (entry, value, entity_id, _research_entity_name(value))
+                for entry, value, entity_id in concept_records
+            ]
+            opening, closing = "{", "}"
+        else:
+            parsed = _research_json_array(content)
+            if parsed is None:
+                continue
+            prefix, suffix, source_records = parsed
+            source_records = [
+                (record_text, value, "", "")
+                for record_text, value in source_records
+            ]
+            opening, closing = "[", "]"
+        array_records: list[_ResearchRecord] = []
+        for record_index, (record_text, value, entity_id, entity_name) in enumerate(source_records):
+            tokens = terms.intersection(
+                token.casefold() for token in _TERMS.findall(record_text))
+            frequencies.update(tokens)
+            total += 1
+            bindings = set(_explicit_relation_bindings(value))
+            if entity_id:
+                bindings.add(entity_id.casefold())
+            bindings = frozenset(bindings)
+            matching = terms.intersection(
+                token.casefold() for token in _TERMS.findall(record_text))
+            record = _ResearchRecord(
+                len(all_records), message_index, record_index, record_text,
+                bindings, frozenset(matching), 0, entity_name,
+            )
+            all_records.append(record)
+            array_records.append(record)
+        arrays.append(_ResearchArray(
+            message_index, prefix, suffix, tuple(array_records), opening, closing))
+
+    # Finish the collection-wide inverse-frequency scores once every record
+    # has contributed, so record order cannot affect ranking.
+    rescored: list[_ResearchRecord] = []
+    message_record_counts = {array.message_index: len(array.records) for array in arrays}
+    for record in all_records:
+        score = sum(
+            100 * math.log1p(total / (1 + frequencies[term]))
+            for term in record.matching_terms
+        )
+        if _SIGNALS.search(record.text):
+            score += 8
+        if query_ids.intersection(record.bindings):
+            score += 120
+        score += 2 * (record.record_index + 1) / max(
+            1, message_record_counts[record.message_index])
+        if record.record_index == 0:
+            score += 3
+        rescored.append(_ResearchRecord(
+            record.index, record.message_index, record.record_index, record.text,
+            record.bindings, record.matching_terms, score, record.entity_name,
+        ))
+    all_records = rescored
+    arrays = [
+        _ResearchArray(array.message_index, array.prefix, array.suffix,
+                       tuple(all_records[record.index] for record in array.records),
+                       array.opening, array.closing)
+        for array in arrays
+    ]
+
+    if not arrays or not all_records:
+        raise CompactionError(
+            "research relation closure requires eligible historical JSON arrays or entity maps",
+            code="research_relation_unsupported",
+        )
+
+    by_binding: dict[str, list[int]] = {}
+    for record in all_records:
+        for binding in record.bindings:
+            by_binding.setdefault(binding, []).append(record.index)
+
+    def closure(seeds: list[int]) -> frozenset[int]:
+        found = set(seeds)
+        pending = list(seeds)
+        while pending:
+            record = all_records[pending.pop()]
+            for binding in record.bindings:
+                for linked_index in by_binding.get(binding, ()):
+                    if linked_index not in found:
+                        found.add(linked_index)
+                        pending.append(linked_index)
+        return frozenset(found)
+
+    protected = deepcopy(messages)
+    for array in arrays:
+        protected[array.message_index]["content"] = (
+            array.prefix + array.opening + array.closing + array.suffix)
+    protected_count = _count(count_tokens, protected)
+    if protected_count > target:
+        raise CompactionError(
+            "protected messages exceed the research relation target",
+            code="active_too_large",
+        )
+
+    selected: set[int] = set()
+
+    def materialize(record_indexes: set[int]) -> list[dict[str, Any]]:
+        result = deepcopy(protected)
+        for array in arrays:
+            rows = [record.text for record in array.records
+                    if record.index in record_indexes]
+            body = (array.opening
+                    + ("\n" + ",\n".join(rows) + "\n" if rows else "")
+                    + array.closing)
+            result[array.message_index]["content"] = array.prefix + body + array.suffix
+        return result
+
+    named_candidates: list[tuple[int, int]] = []
+    for record in all_records:
+        if not record.entity_name:
+            continue
+        match = re.search(
+            r"(?<![\w])" + re.escape(record.entity_name) + r"(?![\w])",
+            query, re.IGNORECASE,
+        )
+        if match is not None:
+            named_candidates.append((match.start(), record.index))
+    named_candidates.sort()
+    named_groups: list[list[int]] = []
+    named_seen: set[int] = set()
+    for _, record_index in named_candidates:
+        if record_index not in named_seen:
+            named_seen.add(record_index)
+            named_groups.append([record_index])
+
+    query_ids_in_order = list(dict.fromkeys(
+        identifier.casefold() for identifier in _LINK_IDS.findall(query)))
+    requested_group_sets: list[frozenset[int] | None] = []
+    if len(query_ids_in_order) >= 2:
+        # In multi-choice prompts, every explicit ID is a required candidate.
+        # Keep missing IDs in the audit instead of silently shrinking the set.
+        for identifier in query_ids_in_order:
+            seeds = [record.index for record in all_records
+                     if identifier in record.bindings]
+            requested_group_sets.append(closure(seeds) if seeds else None)
+        comparison = True
+    else:
+        # With fewer than two explicit IDs, use exact named options only.
+        named_group_seen: set[frozenset[int]] = set()
+        for seeds in named_groups:
+            group = closure(seeds)
+            if group not in named_group_seen:
+                named_group_seen.add(group)
+                requested_group_sets.append(group)
+        comparison = len(requested_group_sets) >= 2
+    requested_groups = 0
+    selected_groups = 0
+    unfit_groups = 0
+
+    def try_group(group: frozenset[int]) -> bool:
+        nonlocal selected
+        trial = selected.union(group)
+        if _count(count_tokens, materialize(trial)) <= target:
+            selected = trial
+            return True
+        return False
+
+    seen_groups: set[frozenset[int]] = set()
+    if comparison:
+        for group in requested_group_sets:
+            requested_groups += 1
+            if group is None:
+                unfit_groups += 1
+                continue
+            seen_groups.add(group)
+            if try_group(group):
+                selected_groups += 1
+            else:
+                unfit_groups += 1
+
+    if not comparison:
+        ranked_roots = sorted(
+            (record for record in all_records if record.score > 0),
+            key=lambda record: (-record.score, record.message_index, record.record_index),
+        )
+        for record in ranked_roots:
+            group = closure([record.index])
+            if group in seen_groups or group.issubset(selected):
+                continue
+            seen_groups.add(group)
+            try_group(group)
+
+    output = materialize(selected)
+    forwarded = _count(count_tokens, output)
+    if forwarded > target:
+        raise CompactionError("research relation candidate exceeded target", code="active_too_large")
+    selected_count = len(selected)
+    if selected_count == 0:
+        raise CompactionError(
+            "no complete research relation group fits target",
+            code="active_too_large",
+        )
+    audit: dict[str, int | bool | str] = {
+        "compacted": True,
+        "input_tokens": raw,
+        "forwarded_tokens": forwarded,
+        "omitted_estimated_tokens": max(0, raw - forwarded),
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": selected_count,
+        "selected_records": selected_count,
+        "total_records": len(all_records),
+        "method": "research_relation_closure",
+    }
+    if comparison:
+        audit.update({
+            "requested_comparison_groups": requested_groups,
+            "selected_comparison_groups": selected_groups,
+            "unfit_comparison_groups": unfit_groups,
+            "comparison_groups_complete": unfit_groups == 0,
+        })
+    return CompactionResult(deepcopy(output), audit)
+
+
 def _diagnostic_candidates(old: list[dict[str, Any]], offset: int,
                            *, limit: int | None = None) -> list[_Candidate]:
     """Keep a small verbatim index of named failed tests from each old tool group."""
@@ -797,6 +1337,7 @@ def compact_messages(
     max_input_characters: int = DEFAULT_MAX_INPUT_CHARACTERS,
     max_input_nodes: int = DEFAULT_MAX_INPUT_NODES,
     protocol: Protocol = "openai",
+    research_relation_closure: bool = False,
 ) -> CompactionResult:
     """Compact older text to `target` using the caller's exact token counter.
 
@@ -807,7 +1348,7 @@ def compact_messages(
     if (type(target) is not int or type(raw_limit) is not int or target <= 0
             or raw_limit < target or type(max_input_characters) is not int
             or max_input_characters <= 0 or type(max_input_nodes) is not int
-            or max_input_nodes <= 0):
+            or max_input_nodes <= 0 or type(research_relation_closure) is not bool):
         raise CompactionError("invalid compaction or pre-count limits")
     if not isinstance(messages, list) or not all(isinstance(msg, dict) for msg in messages):
         raise CompactionError("messages must be a list of objects")
@@ -834,6 +1375,16 @@ def compact_messages(
                         if _real_user(messages[i], protocol)), -1)
     if latest_user < instruction_end:
         raise CompactionError("no active user turn", code="active_too_large")
+    if research_relation_closure:
+        if protocol != "openai":
+            raise CompactionError(
+                "research relation closure currently supports OpenAI-style tool messages",
+                code="research_relation_unsupported",
+            )
+        return _research_relation_compact(
+            messages, count_tokens, target=target,
+            instruction_end=instruction_end, latest_user=latest_user, raw=raw,
+        )
     if any(msg.get("role") in {"system", "developer"} for msg in messages[instruction_end:latest_user]):
         return _compact_with_late_instruction_anchors(
             messages, count_tokens, target=target, protocol=protocol,
