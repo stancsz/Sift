@@ -58,7 +58,7 @@ PROJECTION = 3.25
 PROVIDER_LIMIT = 524_288
 MANIFEST_SHA256_STAGE1 = "52a7515d9bec715ccc17c85295b2e111d97cb2bffc00bd71fc9ed933cb22fce2"
 MANIFEST_SHA256_344 = "6364b4a21e5775fb4cd574e501286db64320cd4cde2b083250b07ec13ea6abc0"
-MANIFEST_SHA256_344_LIVE_ROUTE = "cb06ebf56023b75227eac849bdfda3b4396e5b3463e795bad90a7b2a411af5c1"
+MANIFEST_SHA256_344_LIVE_ROUTE = "a13822840ceeb3648be58496d9814703a02dca0f70227226a9883a34f0ed4665"
 ROUTE_SNAPSHOT_HISTORICAL = ROOT / "docs/evals/longbench-v2-minimax-stage2-route-2026-10-17.json"
 ROUTE_SNAPSHOT_LIVE = ROOT / "docs/evals/longbench-v2-openrouter-minimax-m3-endpoints-2026-10-17T1126Z.json"
 
@@ -283,12 +283,14 @@ def build_jobs(manifest: dict, mode: str, dataset: Path, tokenizer_path: Path) -
             if candidate is messages:
                 return full_count
             return count_prompt(tokenizer, candidate)
+        sift_started = time.perf_counter()
         try:
             compacted = compact_messages(messages, count_candidate,
                                          target=TARGET - SAFETY_MARGIN, raw_limit=1_000_000,
                                          protocol="openai")
         except CompactionError as error:
             raise StageError(f"Current Sift failed closed for selected case {case_id}: {error.code}") from error
+        sift_preprocessing_ms = (time.perf_counter() - sift_started) * 1000
         sift_messages = compacted.messages
         sift_count = compacted.audit.get("forwarded_tokens")
         if type(sift_count) is not int or sift_count < 0:
@@ -304,7 +306,8 @@ def build_jobs(manifest: dict, mode: str, dataset: Path, tokenizer_path: Path) -
                       "sub_domain": frozen.get("sub_domain", row.get("sub_domain")),
                       "messages": {"full": messages, "sift": sift_messages},
                       "prompt_hashes": {"full": insertion_order_prompt_hash, "sift": sift_prompt_ordered_hash},
-                      "counts": {"full": full_count, "sift": sift_count}, "frozen": frozen})
+                      "counts": {"full": full_count, "sift": sift_count},
+                      "sift_preprocessing_ms": sift_preprocessing_ms, "frozen": frozen})
         if case_index % 25 == 0 or case_index == len(ids):
             print(f"Reconstructed prompts: {case_index}/{len(ids)} tasks", flush=True)
     rng = random.Random(STUDY_SEED)
@@ -331,6 +334,7 @@ def build_jobs(manifest: dict, mode: str, dataset: Path, tokenizer_path: Path) -
                                   + OUTPUT_CAP * OUTPUT_PRICE
                               ) / 1_000_000,
                               "projected_provider_prompt_tokens": math.ceil(case["counts"][arm] * PROJECTION),
+                              "sift_preprocessing_ms": case["sift_preprocessing_ms"] if arm == "sift" else None,
                               "expected": case["answer"]})
         rng.shuffle(block)
         jobs.extend(block)
@@ -525,7 +529,9 @@ def prepare_report(manifest_path: Path, manifest: dict, mode: str, jobs: list[di
 
 
 def dispatch(jobs: list[dict], cases: dict, report: dict, output: Path,
-             cap: float, api_key: str, live_route: dict) -> dict:
+             cap: float, api_key: str, live_route: dict,
+             process_started_perf: float | None = None,
+             process_started_utc: str | None = None) -> dict:
     input_price = live_route["input_usd_per_million"]
     output_price = live_route["output_usd_per_million"]
     if input_price != INPUT_PRICE or output_price != OUTPUT_PRICE:
@@ -561,6 +567,7 @@ def dispatch(jobs: list[dict], cases: dict, report: dict, output: Path,
         returned_model = provider = response_id = finish_reason = None
         status = None
         failure = None
+        sse_done_received = False
         try:
             with requests.post(API_URL, json=job["body"],
                                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
@@ -576,6 +583,7 @@ def dispatch(jobs: list[dict], cases: dict, report: dict, output: Path,
                         event = line[5:].strip()
                         raw_events.append(event)
                         if event == "[DONE]":
+                            sse_done_received = True
                             break
                         chunk = json.loads(event)
                         usage = chunk.get("usage") if chunk.get("usage") is not None else usage
@@ -592,6 +600,8 @@ def dispatch(jobs: list[dict], cases: dict, report: dict, output: Path,
                                 fragments.append(delta["content"])
         except Exception as error:
             failure = f"{type(error).__name__}: {error}"
+        if status == 200 and not sse_done_received and failure is None:
+            failure = "missing_sse_done"
         text = "".join(fragments)
         request_finished = time.perf_counter()
         actual, receipt_source = cost_receipt(usage)
@@ -602,7 +612,7 @@ def dispatch(jobs: list[dict], cases: dict, report: dict, output: Path,
         successful_response = (
             status == 200 and returned_model == MODEL and isinstance(provider, str)
             and provider.strip().casefold() == "minimax" and finish_reason == "stop"
-            and failure is None
+            and failure is None and sse_done_received
         )
         sample = {
             "job_id": f'{job["case_id"]}:{job["arm"]}:{job["repeat"]}',
@@ -612,6 +622,7 @@ def dispatch(jobs: list[dict], cases: dict, report: dict, output: Path,
             "requested_model": MODEL, "returned_model": returned_model, "provider": provider,
             "response_id": response_id, "usage": usage,
             "local_cost_estimate_usd": job["local_cost_estimate_usd"],
+            "sift_preprocessing_ms": job.get("sift_preprocessing_ms"),
             "provider_reported_cost_usd": actual,
             "reserved_cost_usd": reserve,
             "cost_receipt_source": receipt_source, "local_prompt_tokens": job["local_prompt_tokens"],
@@ -619,7 +630,8 @@ def dispatch(jobs: list[dict], cases: dict, report: dict, output: Path,
             "expected": job["expected"],
             "correct": successful_response and choice == job["expected"]
             if choice in "ABCD" and len(choice) == 1 else False,
-            "finish_reason": finish_reason, "failure": failure, "raw_sse_events": raw_events,
+            "finish_reason": finish_reason, "sse_done_received": sse_done_received,
+            "failure": failure, "raw_sse_events": raw_events,
             "request_started_utc": started_utc, "response_completed_utc": datetime.now(timezone.utc).isoformat(),
             "ttft_ms": (first_content_at - request_started) * 1000 if first_content_at is not None else None,
             "total_request_wall_ms": (request_finished - request_started) * 1000,
@@ -647,6 +659,9 @@ def dispatch(jobs: list[dict], cases: dict, report: dict, output: Path,
             elif ratio > MAX_RATIO:
                 report["status"] = "safety_guard_stopped"
                 report["stop_reason"] = "provider_local_input_ratio_exceeded"
+            elif not sse_done_received:
+                report["status"] = "safety_guard_stopped"
+                report["stop_reason"] = "missing_sse_done_terminal_event"
             elif actual > reserve:
                 report["status"] = "budget_guard_overrun"
                 report["stop_reason"] = "actual_request_cost_exceeded_its_reservation"
@@ -666,12 +681,18 @@ def dispatch(jobs: list[dict], cases: dict, report: dict, output: Path,
         report["in_flight"] = None
     report["completed_jobs"] = len(report["samples"])
     report["elapsed_wall_seconds"] = time.perf_counter() - started
+    if process_started_perf is not None:
+        report["process_wall_seconds"] = time.perf_counter() - process_started_perf
+    if process_started_utc is not None:
+        report["process_started_utc"] = process_started_utc
     report["completed_utc"] = datetime.now(timezone.utc).isoformat()
     atomic_write(output, report)
     return report
 
 
 def main() -> int:
+    process_started_perf = time.perf_counter()
+    process_started_utc = datetime.now(timezone.utc).isoformat()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, default=MANIFEST,
                         help="Frozen Stage 1 100-task manifest or reviewed primary 344-task manifest.")
@@ -719,6 +740,14 @@ def main() -> int:
     mode, _ = verify_provenance(manifest, args.manifest, args.dataset, args.tokenizer, args.template)
     jobs, cases = build_jobs(manifest, mode, args.dataset, args.tokenizer)
     report = prepare_report(args.manifest, manifest, mode, jobs, args.output)
+    report["prompt_build_wall_seconds"] = time.perf_counter() - process_started_perf
+    report["process_started_utc"] = process_started_utc
+    report["timing_semantics"] = {
+        "sift_preprocessing_ms": "one measured Sift compaction per task, repeated across that task's three Sift response samples",
+        "elapsed_wall_seconds": "dispatch loop only; excludes local prompt reconstruction and live route preflight",
+        "process_wall_seconds": "process start through dispatch completion, including local prompt reconstruction and live route preflight",
+        "sse_done_received": "true only when the stream terminates with the provider's [DONE] marker"
+    }
     if prior_report is not None:
         if (prior_report.get("manifest_sha256") != report.get("manifest_sha256")
                 or prior_report.get("schedule") != report.get("schedule")
@@ -741,7 +770,8 @@ def main() -> int:
                                               args.confirm_provider_billing_covers_cap)
     # Live route metadata must match the dated reserve before any paid request.
     report["live_route_validation"] = live_route
-    result = dispatch(jobs, cases, report, args.output, args.spend_cap_usd, api_key, live_route)
+    result = dispatch(jobs, cases, report, args.output, args.spend_cap_usd, api_key, live_route,
+                      process_started_perf, process_started_utc)
     print(json.dumps({"status": result["status"], "completed_jobs": result["completed_jobs"],
                       "actual_cost_usd": result.get("settled_actual_cost_usd"), "output": str(args.output)}, indent=2))
     return 0 if result["status"] == "complete" else 2
