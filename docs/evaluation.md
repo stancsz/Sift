@@ -399,6 +399,28 @@ This surfaced a client-size boundary in this test setup, not evidence that
 Sift caused the failure. The public task must be replaced with independently
 fixed blind cases for a promotion comparison.
 
+### LongBench v2 MiniMax 600-request sample, 2026-10-17
+
+The frozen 100-question development sample ran to completion as 300 matched
+requests per arm, with three repeats per question. Across 600 successful
+provider usage receipts, MiniMax reported 32,527,062 prompt and 1,239
+completion tokens. Full context used 24,245,610 prompt tokens; Sift used
+8,281,452 (65.84% fewer). Full answered 117/286 scorable responses correctly
+(40.91%) and Sift 106/290 (36.55%). Equal-task-weighted accuracy was 39.83%
+and 36.67%; task majorities were 40/100 and 34/100. There were 18 Full-only,
+12 Sift-only, 22 both-correct, and 48 neither-correct tasks.
+
+Five original requests had ambiguous network failures and no provider usage
+receipt. Each was retried once and succeeded; unknown usage from the original
+attempts is not counted as zero. Five successful responses ended at the output
+limit and were unscorable. All 100 task IDs were previously exposed during
+development, so this is not a blind holdout. Three repeats per task are
+clustered observations. This is a completed 100-question sample, not all 503
+LongBench v2 questions and not 600 unique questions. The outcome does not
+establish quality parity, dollar savings, or accepted Claude Code/Codex task
+quality. See the [complete protocol and audit](evals/longbench-v2-minimax-600-runner-2026-10-19.md)
+and [aggregate result artifact](results/longbench-v2-minimax-600-2026-10-19.json).
+
 ### LongBench v2 sample preparation, 2026-10-16
 
 To test long-context answer accuracy on an external public benchmark, I pinned

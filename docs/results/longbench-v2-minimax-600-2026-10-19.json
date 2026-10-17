@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "evaluation": "LongBench v2 structured-choice QA",
+  "model": "MiniMax M3 via OpenRouter",
+  "run_date": "2026-10-17",
+  "evidence_class": "exposed_development_sample",
+  "schedule": {
+    "distinct_questions": 100,
+    "repeats_per_question_per_arm": 3,
+    "arms": ["full_context", "sift"],
+    "completed_requests": 600,
+    "attempts": 605,
+    "schedule_sha256": "3eebd5ae2c02a8d8ee132b868500c522ba7fa4f76cef7e7c9843fadcd2820691",
+    "bundle_content_sha256": "6c9b5e6ff98318c13952072d0eec6f79f1a16f0680edaa6f07e8875dc25bbe71"
+  },
+  "provider_usage_receipts": {
+    "receipts": 600,
+    "unknown_attempts": 5,
+    "unknown_usage_is_not_counted_as_zero": true,
+    "prompt_tokens_total": 32527062,
+    "completion_tokens_total": 1239,
+    "total_tokens": 32528301,
+    "full_prompt_tokens": 24245610,
+    "sift_prompt_tokens": 8281452,
+    "sift_prompt_token_reduction_percent": 65.8435
+  },
+  "scores": {
+    "full_context": {
+      "correct": 117,
+      "scorable_responses": 286,
+      "response_accuracy_percent": 40.9091,
+      "equal_task_weighted_accuracy_percent": 39.8333,
+      "tasks_with_scorable_responses": 100,
+      "task_majority_correct": 40
+    },
+    "sift": {
+      "correct": 106,
+      "scorable_responses": 290,
+      "response_accuracy_percent": 36.5517,
+      "equal_task_weighted_accuracy_percent": 36.6667,
+      "tasks_with_scorable_responses": 100,
+      "task_majority_correct": 34
+    },
+    "paired_task_majorities": {
+      "full_only": 18,
+      "sift_only": 12,
+      "both_correct": 22,
+      "neither_correct": 48
+    }
+  },
+  "limitations": [
+    "These are 100 previously exposed public development questions, not a blind holdout.",
+    "The three repeats within each question are clustered observations, not independent questions.",
+    "Five original ambiguous attempts have unknown provider token usage; each scheduled request later completed after one retry.",
+    "Five responses ended with finish_reason=length and were unscorable.",
+    "This evaluation measures prompt tokens and structured-choice answers; it does not establish dollar savings, quality parity, or accepted Claude Code/Codex task completion."
+  ],
+  "source_report": ".runs/longbench-v2-minimax-600-continuation-6.json",
+  "source_bundle": ".runs/longbench-v2-minimax-600-v4-bundle.json.gz"
+}

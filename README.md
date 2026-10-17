@@ -42,25 +42,26 @@ Sift works with agent histories up to **1,000,000 estimated input tokens** and s
 
 *Illustrative standard-rate arithmetic for one uncached request with 10,000 output tokens in both arms, equal task completion, and provider input matching the 32,768-token target. Excludes cache reads/writes, retries, tool charges, and hosting. Rates checked 2026-10-16; see the [model cards and assumptions](docs/cost-comparison.md). These are modeled amounts, not API bills.*
 
-## LongBench v2: a 100-task development result
+## LongBench v2: 600-request MiniMax evaluation
 
-**100 public tasks · 3 repeats per task · 300 MiniMax M3 responses**
+**100 public questions · 3 repeats · Full context and Sift · 600 completed responses**
 
-On this sample, the Sift hybrid answered **44%** of exact-choice questions correctly, with a smaller prompt than full context. The matrix selector ran only on six previously audited task IDs; default Sift handled the other 94.
+On this fixed sample, Sift used **65.8% fewer provider-reported prompt tokens** than Full context. The answer-accuracy measurements are shown alongside token use so teams can judge the result for their workload.
 
-| Arm/reference | Exact answers | Task majorities | Provider prompt tokens | Cache-hit share | Upstream-reported cost |
-|---|---:|---:|---:|---:|---:|
-| **Sift hybrid** | **132/300 · 44.0%** | **43/100** | **7.80M** | 54.8% | **$1.316** |
-| Saved full-context run | 117/300 · 39.0% | 38/100 | 24.25M | 92.3% | $1.902 |
-| Saved Sift run | 104/300 · 34.7% | 31/100 | 8.28M | 94.3% | $0.611 |
+| Measure | Full context | Sift | Observed difference |
+|---|---:|---:|---:|
+| Provider prompt tokens | 24,245,610 | 8,281,452 | **65.8% fewer with Sift** |
+| Exact-choice response accuracy | 117/286 · 40.9% | 106/290 · 36.6% | −4.4 percentage points |
+| Equal-task-weighted accuracy | 39.8% | 36.7% | −3.2 percentage points |
+| Task majorities correct | 40/100 | 34/100 | 18 Full-only · 12 Sift-only |
 
-**Against the saved full-context run:** +5.0 percentage points exact accuracy, **67.8% fewer provider prompt tokens**, and **30.8% lower observed pass-through cost**. These are measured results from separate runs on the same 100 public tasks, not a randomized or concurrent comparison.
+This was **600 completed requests over 100 previously exposed development questions**, not 600 unique questions or the full 503-question LongBench v2 dataset. Five ambiguous original attempts were retried once; their token usage is unknown and excluded. Five responses ended at the output limit and were unscorable. Sift’s average provider prompt was 27,605 tokens versus 80,819 for Full. These measurements establish prompt-token reduction on this MiniMax setup, not quality parity, lower dollar cost, or faster end-to-end agent completion.
 
-**Cost depends on cache state.** The saved Sift run had a 94.3% cache-hit share versus 54.8% in this hybrid run. Its observed pass-through cost was lower ($0.61 vs $1.32), even though it used 5.8% more prompt tokens. This evaluation does **not** show a cost reduction versus historical Sift. Upstream-reported amounts are cache-inclusive provider receipts, not an invoice.
+[Read the protocol and complete-run status](docs/evals/longbench-v2-minimax-600-runner-2026-10-19.md) · [Aggregate result artifact](docs/results/longbench-v2-minimax-600-2026-10-19.json) · [Evaluation history and limitations](docs/evaluation.md)
 
-This is a 100-task **development sample**, not the full LongBench v2 suite or a blind holdout. The six matrix tasks were used during selector development; the other 94 test the hybrid policy with default Sift. Historical Full/Sift use an earlier Sift core and are non-concurrent, so report the scores as cross-run observations rather than causal lift. LongBench is structured-choice QA, not a Claude Code or Codex task-completion test; those native-agent workflows have separate evidence.
+### Earlier LongBench development runs
 
-[Read the validated hybrid scorecard and method](docs/evals/longbench-v2-minimax-hybrid-stage2-analysis-2026-10-17.md) · [Full/default baseline audit, paired uncertainty, and scoring sensitivity](docs/evals/longbench-v2-readiness-2026-10-17.md) · [Raw 300-response hybrid evidence (gzip JSON)](docs/results/longbench-v2-minimax-hybrid-stage2-continued-2026-10-17.json.gz) · [Raw 600-response Full/default evidence (gzip JSON)](docs/results/longbench-v2-minimax-m3-100-2026-10-16.json.gz) · [Evaluation history](docs/evaluation.md)
+Separate 100-task and smaller Qwen/MiniMax screens produced different results, including a six-task matrix-selector study. They are not replications of the 600-request run above and should not be combined into one score. See the [earlier hybrid analysis](docs/evals/longbench-v2-minimax-hybrid-stage2-analysis-2026-10-17.md), [baseline audit](docs/evals/longbench-v2-readiness-2026-10-17.md), and [evaluation history](docs/evaluation.md).
 
 ## The problem
 

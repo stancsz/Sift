@@ -29,79 +29,45 @@ responses per arm are not 300 independent questions. Treat scores as
 descriptive and do not make blind-holdout or statistical-independence claims.
 Incomplete runs must not be described as a completed comparison.
 
-## Current execution status
+## Completed execution and results
 
-The frozen offline bundle contains all 600 scheduled requests. The first paid
-attempt stopped incomplete on 2026-10-17 after **90 requests were attempted and
-89 completed**. Provider receipts reported **5,330,954 prompt tokens + 135
-completion tokens = 5,331,089 total tokens**. The 90th request, Sift job
-`6725db46bb02136c067d84b4:sift:2`, failed with an SSL exception before returning
-an HTTP status, response ID, or usage receipt. Its token outcome is unknown and
-is not counted as zero. The original report is
-`.runs/longbench-v2-minimax-600-run.json`.
+The frozen schedule is complete: **100 exposed questions × 3 repeats × 2 arms
+= 600 successful model responses**. There were **605 attempts** because five
+requests with unknown original outcomes were each retried once and then
+succeeded. An independent audit matched the full schedule, all request body
+hashes, and all provider usage receipts to the frozen bundle. The five failed
+attempts had no provider usage receipt; their token counts remain unknown and
+are excluded rather than treated as zero.
 
-The first continuation resumed the same frozen schedule, successfully retried
-job 89, then stopped at job 198 (`672494e5bb02136c067d7697:full:2`) after a
-`ConnectionError` with no HTTP response or provider usage receipt. The next
-continuation retried job 198 successfully and proceeded through job 223, which
-then stopped on an SSL exception with no HTTP response, generation ID, or usage
-receipt. Its report is `.runs/longbench-v2-minimax-600-continuation-2.json`.
-Combined status is **226 attempts, 223 unique scheduled jobs completed**. The
-three unknown-token attempts are the original job 89 attempt, the original job
-198 attempt, and job 223. Across 223 provider usage receipts, MiniMax reported
-**13,317,186 prompt + 396 completion = 13,317,582 tokens**. Unknown-token
-attempts remain unknown and are not counted as zero.
+Across the 600 successful provider receipts, MiniMax reported **32,527,062
+prompt + 1,239 completion = 32,528,301 tokens**. Full context used 24,245,610
+prompt tokens; Sift used 8,281,452, a **65.84% reduction** on this run. These
+are provider-reported token counts, not a dollar or end-to-end time measurement.
 
-Continuation 3 retried job 223 successfully and proceeded through job 318,
-which stopped on an SSL exception with no HTTP status, response ID, or usage
-receipt. Its report is `.runs/longbench-v2-minimax-600-continuation-3.json`.
-Combined status is **322 attempts, 318 unique scheduled jobs completed**.
-Provider receipts report **19,399,752 prompt + 600 completion = 19,400,352
-tokens**. Four attempts have unknown usage (indices 89, 198, 223, and 318); that
-usage is not counted as zero. The independent checkpoint audit verified the
-attempt sequence, frozen request hashes, 318 receipt rows, and token ledger.
+| Arm | Correct / scorable | Response accuracy | Equal-task-weighted accuracy | Task majorities correct |
+|---|---:|---:|---:|---:|
+| Full context | 117/286 | 40.91% | 39.83% | 40/100 |
+| Sift | 106/290 | 36.55% | 36.67% | 34/100 |
 
-Continuation 4 retried job 318 successfully and completed through job 549. It
-stopped before sending job 550 because Windows denied the atomic report rename
-(`WinError 5`). The committed JSON and `.tmp` checkpoints contain identical
-554 attempts through successful job 549; the `.tmp` file adds only the
-pre-request marker for job 550. Source order and the independent audit confirm
-that the provider call occurs after that checkpoint write, so job 550 was not
-sent and is not counted as an attempt or unknown-token request.
+There were 18 Full-only task majorities, 12 Sift-only, 22 both-correct, and 48
+neither-correct. Five successful responses ended with `finish_reason=length`
+and were unscorable. Results are descriptive: repeats are clustered within
+questions, all 100 question IDs were previously exposed during development,
+and answer differences do not reveal which evidence omission caused them.
+This run is not a blind holdout and does not establish quality parity, cost
+savings, or accepted-task quality in Claude Code or Codex.
 
-The recovered checkpoint
-`.runs/longbench-v2-minimax-600-continuation-4-recovery.json` resumed job 550
-and completed through job 554. Continuation 5 stopped at job 555 after a
-`ConnectionError` with no HTTP status, response ID, or usage receipt. Its report
-is `.runs/longbench-v2-minimax-600-continuation-5.json`. Combined status is
-**560 attempts, 555 unique scheduled jobs completed**. Provider receipts report
-**31,036,765 prompt + 1,150 completion = 31,037,915 tokens**. Five first
-attempts have unknown usage (indices 89, 198, 223, 318, and 555); this usage is
-not counted as zero. The independent audit verifies all 555 receipts, request
-hashes, and the token ledger.
+The final report is `.runs/longbench-v2-minimax-600-continuation-6.json`; the
+frozen bundle is `.runs/longbench-v2-minimax-600-v4-bundle.json.gz`. An
+aggregate-only copy intended for publication is
+[`../results/longbench-v2-minimax-600-2026-10-19.json`](../results/longbench-v2-minimax-600-2026-10-19.json).
+The report records the attempt history, including exactly one retry each for
+jobs 89, 198, 223, 318, and 555.
 
-The council review confirms the user's “Approve all retires” authorizes one
-retry of job 555, then jobs 556–599, with no repeated retry of the same job.
-The runner accepts this exact 560-attempt profile and preserves the five
-unknown attempts. Stop for renewed direction if job 555's retry itself fails
-ambiguously.
-
-Among completed responses so far, Full scored 105/264 scorable responses
-(39.8% response accuracy; 38.5% equal-task-weighted across 93 tasks). Sift
-scored 96/269 (35.7%; 35.7% equal-task-weighted across 93 tasks). These are
-partial, exposed-sample diagnostics, not final LongBench comparison results.
-
-Continuation validates the exact saved prefix against schedule hashes, row
-identities, request body hashes, provider token totals, and receipts. A user
-authorized one retry per ambiguous attempt, followed by schedule-order work;
-unknown outcomes remain separately recorded. A pre-request checkpoint failure
-resumes at the unsent index as attempt 1. Each continuation report is saved
-separately and carries an up-to-date provider token total.
-
-The user authorized up to $2,000 for the evaluation and confirmed billing
-headroom/no unsettled requests earlier in the run. Progress reporting focuses
-on provider-reported tokens; unknown-token attempts remain separate. The $2,000
-value is a client-side guard.
+The user authorized up to $2,000 for the original evaluation and asked that
+progress focus on provider-reported tokens rather than billing reconciliation.
+No spend claim is made here. Any new model comparison after changing Sift needs
+a separately frozen protocol and appropriate authorization.
 
 ## Commands
 
@@ -112,8 +78,9 @@ Build the deterministic offline bundle (no API key read and no network call):
   --bundle .runs\longbench-v2-minimax-600-v4-bundle.json.gz
 ```
 
-Continue from the audited continuation-5 checkpoint by retrying job 555 once,
-then dispatching jobs 556–599:
+The completed run can be audited offline from the saved report and bundle. Do
+not rerun the paid continuation command unless starting a new, explicitly
+frozen study. For the original completion, the command was:
 
 ```powershell
 \.venv\Scripts\python.exe benchmarks\run_longbench_v2_minimax_600.py `
