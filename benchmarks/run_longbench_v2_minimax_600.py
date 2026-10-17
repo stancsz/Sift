@@ -1,4 +1,4 @@
-"""Deterministic offline bundle and explicit first-N MiniMax pilot dispatcher.
+"""Deterministic offline bundle and explicit first-N MiniMax study dispatcher.
 
 The default command only reconstructs and writes the frozen Stage 1 600-job
 schedule. It does not read credentials or contact a provider. Dispatch is a
@@ -25,12 +25,12 @@ from benchmarks import run_longbench_v2_minimax_stage1_100 as stage
 
 ROOT = stage.ROOT
 BUNDLE_DEFAULT = ROOT / ".runs/longbench-v2-minimax-600-bundle.json.gz"
-OUTPUT_DEFAULT = ROOT / ".runs/longbench-v2-minimax-600-pilot.json"
+OUTPUT_DEFAULT = ROOT / ".runs/longbench-v2-minimax-600-run.json"
 SCHEMA_VERSION = 1
 EXPECTED_TASKS = 100
 EXPECTED_JOBS = 600
-DEFAULT_PREFIX = 10
-MAX_DISPATCH_PREFIX = 10
+DEFAULT_PREFIX = EXPECTED_JOBS
+MAX_DISPATCH_PREFIX = EXPECTED_JOBS
 CURRENT_MANIFEST = ROOT / "docs/evals/longbench-v2-minimax-stage1-100-current-2026-10-19.json"
 CURRENT_MANIFEST_SHA256 = "488d67a7072495878055e65c13a50048d85621f4346fd0844b17acf9377c3d64"
 LIVE_PARENT_MANIFEST = stage.MANIFEST_344_LIVE_ROUTE
@@ -131,7 +131,7 @@ def validate_prefix_and_cap(prefix: int, cap: float, jobs: list[dict[str, Any]],
                             input_price: float = stage.INPUT_PRICE,
                             output_price: float = stage.OUTPUT_PRICE) -> list[dict[str, Any]]:
     if type(prefix) is not int or not 1 <= prefix <= MAX_DISPATCH_PREFIX:
-        raise PilotError("Dispatch scope must be a first-N prefix from 1 through 10")
+        raise PilotError("Dispatch scope must be a first-N prefix from 1 through 600")
     if isinstance(cap, bool) or not isinstance(cap, (int, float)) or not math.isfinite(float(cap)) or cap <= 0:
         raise PilotError("Spend cap must be a finite positive dollar amount")
     selected = jobs[:prefix]
@@ -163,6 +163,45 @@ def account_receipt(report: dict[str, Any], receipt: float | None,
     if settled > cap:
         return "settled_cost_exceeds_client_cap"
     return None
+
+
+def score_sample(response_text: str, expected: str, valid_route: bool,
+                 sse_done: bool, failure: str | None,
+                 finish_reason: str | None) -> dict[str, Any]:
+    """Apply the frozen strict A–D scoring rule to a provider response."""
+    trimmed = response_text.strip()
+    choice = trimmed if trimmed in {"A", "B", "C", "D"} else None
+    scoreable = (choice is not None and valid_route and sse_done
+                 and failure is None and finish_reason in {"stop", "length"})
+    return {"choice": choice, "expected_answer": expected,
+            "scoreable": scoreable,
+            "correct": (choice == expected) if scoreable else None}
+
+
+def score_summary(samples: list[dict[str, Any]]) -> dict[str, Any]:
+    """Summarize only valid, strictly scorable responses, grouped by arm."""
+    result: dict[str, Any] = {}
+    for arm in ("full", "sift"):
+        rows = [sample for sample in samples if sample.get("arm") == arm]
+        correct = sum(sample.get("correct") is True for sample in rows)
+        scorable = sum(sample.get("scoreable") is True for sample in rows)
+        task_votes: dict[str, list[bool]] = {}
+        for sample in rows:
+            if sample.get("scoreable") is True:
+                task_votes.setdefault(sample["case_id"], []).append(sample["correct"] is True)
+        task_mean_accuracy = (
+            sum(sum(votes) / len(votes) for votes in task_votes.values()) / len(task_votes)
+            if task_votes else None
+        )
+        result[arm] = {
+            "scheduled_or_attempted": len(rows),
+            "scorable": scorable,
+            "correct": correct,
+            "response_accuracy": correct / scorable if scorable else None,
+            "tasks_with_scorable_responses": len(task_votes),
+            "equal_task_weighted_accuracy": task_mean_accuracy,
+        }
+    return result
 
 
 def verify_current_manifest(manifest: dict[str, Any], manifest_path: Path,
@@ -280,12 +319,14 @@ def _dispatch_prefix(manifest: dict[str, Any], jobs: list[dict[str, Any]],
         raise PilotError("Live price differs from frozen reserve assumptions")
     report: dict[str, Any] = {
         "schema_version": 1,
-        "status": "incomplete_pilot_prefix_dispatching",
+        "status": "dispatching",
         "evidence_class": bundle["evidence_class"],
         "actual_dispatch_started": True,
         "full_schedule_complete": False,
         "full_schedule_jobs": EXPECTED_JOBS,
         "dispatch_prefix_count": prefix,
+        "attempted_jobs": 0,
+        "completed_jobs": 0,
         "bundle_content_sha256": bundle["bundle_content_sha256"],
         "schedule_sha256": bundle["schedule_sha256"],
         "spend_cap_usd": cap,
@@ -363,13 +404,18 @@ def _dispatch_prefix(manifest: dict[str, Any], jobs: list[dict[str, Any]],
         ratio = None
         if isinstance(usage, dict) and type(usage.get("prompt_tokens")) is int and usage["prompt_tokens"] > 0:
             ratio = usage["prompt_tokens"] / job["local_prompt_tokens"]
+        response_text = "".join(fragments)
+        valid_route = (returned_model == stage.MODEL and isinstance(provider, str)
+                       and provider.strip().casefold() == "minimax")
+        scored = score_sample(response_text, bundle["scoring_keys"][job["case_id"]],
+                              valid_route, sse_done, failure, finish_reason)
         sample = {
             "index": index, "job_id": report["in_flight"]["job_id"],
             "case_id": job["case_id"], "arm": job["arm"], "repeat": job["repeat"],
             "request_body_sha256": job["body_sha256"], "http_status": status,
             "response_id": response_id, "returned_model": returned_model,
             "provider": provider, "finish_reason": finish_reason,
-            "response_text": "".join(fragments), "raw_events": raw_events,
+            "response_text": response_text, "raw_events": raw_events,
             "usage": usage, "cost_usd": receipt, "cost_receipt_source": receipt_source,
             "reserved_cost_usd": reserve, "sse_done_received": sse_done,
             "provider_local_input_ratio": ratio,
@@ -377,8 +423,10 @@ def _dispatch_prefix(manifest: dict[str, Any], jobs: list[dict[str, Any]],
             "ttft_seconds": first_content_at - started if first_content_at else None,
             "sift_preprocessing_ms": job.get("sift_preprocessing_ms"),
             "failure": failure,
+            **scored,
         }
         report["samples"].append(sample)
+        report["attempted_jobs"] = len(report["samples"])
         # A stream or route failure does not erase a valid upstream charge.
         # Reconcile the receipt before choosing the terminal stop reason.
         receipt_guard = account_receipt(report, receipt, receipt_source, reserve,
@@ -388,7 +436,7 @@ def _dispatch_prefix(manifest: dict[str, Any], jobs: list[dict[str, Any]],
             stop = stop or "request_failed_no_retry"
         elif not sse_done:
             stop = stop or "stream_missing_done_no_retry"
-        elif returned_model != stage.MODEL or not isinstance(provider, str) or provider.strip().casefold() != "minimax":
+        elif not valid_route:
             stop = stop or "route_or_model_mismatch"
         elif receipt is None:
             stop = stop or "positive_byok_upstream_receipt_required"
@@ -400,14 +448,17 @@ def _dispatch_prefix(manifest: dict[str, Any], jobs: list[dict[str, Any]],
             if finish_reason not in {"stop", "length"}:
                 stop = stop or "request_failed_or_incomplete"
         if stop:
-            report.update(status="stopped_incomplete_pilot", stop_reason=stop)
+            report.update(status="stopped_incomplete_run", stop_reason=stop)
             stage.atomic_write(output, report)
             break
+        report["completed_jobs"] += 1
         stage.atomic_write(output, report)
     else:
-        report["status"] = "completed_incomplete_pilot_prefix"
+        report["status"] = "complete" if prefix == EXPECTED_JOBS else "completed_prefix_incomplete_schedule"
+        report["full_schedule_complete"] = prefix == EXPECTED_JOBS
     report.setdefault("settled_cost_usd", 0.0)
-    report["pilot_wall_seconds"] = time.perf_counter() - started_all
+    report["score_summary"] = score_summary(report["samples"])
+    report["dispatch_wall_seconds"] = time.perf_counter() - started_all
     report["finished_utc"] = datetime.now(timezone.utc).isoformat()
     stage.atomic_write(output, report)
     return report
@@ -434,7 +485,8 @@ def dispatch(args: argparse.Namespace) -> int:
                               args.confirm_minimax_billing_headroom)
     print(json.dumps({key: result.get(key) for key in
                       ("status", "dispatch_prefix_count", "full_schedule_jobs",
-                       "settled_cost_usd", "stop_reason", "schedule_sha256")}, sort_keys=True))
+                       "attempted_jobs", "completed_jobs", "full_schedule_complete", "settled_cost_usd",
+                       "score_summary", "stop_reason", "schedule_sha256")}, sort_keys=True))
     return 0
 
 

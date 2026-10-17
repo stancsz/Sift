@@ -90,13 +90,26 @@ class Runner600Tests(unittest.TestCase):
             self.assertNotIn("expected", row["body"])
         self.assertEqual(len(self.bundle["scoring_keys"]), 100)
 
-    def test_dispatch_scope_is_first_n_and_rejects_invalid_caps(self):
-        prefix = pilot.validate_prefix_and_cap(10, 0.01, self.jobs)
-        self.assertEqual(len(prefix), 10)
-        self.assertEqual(prefix, self.jobs[:10])
-        for value in (0, -1, 11, 601, True):
+    def test_scoring_is_strict_and_requires_valid_completed_route(self):
+        self.assertEqual(pilot.score_sample(" A ", "A", True, True, None, "stop"),
+                         {"choice": "A", "expected_answer": "A", "scoreable": True, "correct": True})
+        for args in (
+            ("The answer is A", "A", True, True, None, "stop"),
+            ("A", "A", False, True, None, "stop"),
+            ("A", "A", True, False, None, "stop"),
+            ("A", "A", True, True, "http_status_not_200", "stop"),
+            ("A", "A", True, True, None, "content_filter"),
+        ):
+            with self.subTest(args=args):
+                self.assertFalse(pilot.score_sample(*args)["scoreable"])
+
+    def test_dispatch_scope_accepts_complete_schedule_and_rejects_invalid_caps(self):
+        prefix = pilot.validate_prefix_and_cap(600, 10, self.jobs)
+        self.assertEqual(len(prefix), 600)
+        self.assertEqual(prefix, self.jobs)
+        for value in (0, -1, 601, True):
             with self.subTest(prefix=value), self.assertRaises(pilot.PilotError):
-                pilot.validate_prefix_and_cap(value, 0.01, self.jobs)
+                pilot.validate_prefix_and_cap(value, 10, self.jobs)
         for cap in (0, -0.01, float("nan"), float("inf"), True, "1"):
             with self.subTest(cap=cap), self.assertRaises(pilot.PilotError):
                 pilot.validate_prefix_and_cap(10, cap, self.jobs)
@@ -110,7 +123,7 @@ class Runner600Tests(unittest.TestCase):
                                       reserve=0.001, cap=0.01, index=0,
                                       job_id="case-000:full:0")
         # The caller then classifies the missing [DONE] marker as terminal.
-        report.update(status="stopped_incomplete_pilot",
+        report.update(status="stopped_incomplete_run",
                       stop_reason="stream_missing_done_no_retry")
         self.assertIsNone(guard)
         self.assertEqual(report["settled_cost_usd"], 0.0005)
@@ -137,17 +150,49 @@ class Runner600Tests(unittest.TestCase):
 
     def test_mocked_dispatch_accounts_positive_receipt_when_done_marker_is_missing(self):
         report = self._run_mock_dispatch(cost=0.00005, cap=0.01, include_done=False)
-        self.assertEqual(report["status"], "stopped_incomplete_pilot")
+        self.assertEqual(report["status"], "stopped_incomplete_run")
         self.assertEqual(report["stop_reason"], "stream_missing_done_no_retry")
         self.assertEqual(report["settled_cost_usd"], 0.00005)
+        self.assertEqual(report["attempted_jobs"], 1)
+        self.assertEqual(report["completed_jobs"], 0)
         self.assertIsNone(report["in_flight"])
 
     def test_mocked_dispatch_preserves_over_reservation_receipt_at_cap_stop(self):
         report = self._run_mock_dispatch(cost=0.002, cap=0.0013, include_done=True)
-        self.assertEqual(report["status"], "stopped_incomplete_pilot")
+        self.assertEqual(report["status"], "stopped_incomplete_run")
         self.assertEqual(report["stop_reason"], "request_receipt_exceeds_reservation")
         self.assertEqual(report["settled_cost_usd"], 0.002)
         self.assertIsNone(report["in_flight"])
+
+    def test_mocked_full_dispatch_marks_complete_and_scores_all_600(self):
+        manifest = {"route_assumptions": {}}
+        live_route = {"input_usd_per_million": stage.INPUT_PRICE,
+                      "output_usd_per_million": stage.OUTPUT_PRICE}
+        usage = {"is_byok": True,
+                 "cost_details": {"upstream_inference_cost": 0.00005},
+                 "cost": 0.00005, "prompt_tokens": 100, "completion_tokens": 1}
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "complete.json"
+            with patch.object(stage, "live_account_route_preflight", return_value=live_route), \
+                 patch.object(stage.requests, "post",
+                              return_value=FakeStreamResponse(usage, include_done=True)) as post:
+                report = pilot._dispatch_prefix(
+                    manifest, self.jobs, self.bundle, output, 10, 600,
+                    "synthetic-key", True, True)
+            self.assertEqual(post.call_count, 600)
+            self.assertEqual(report["status"], "complete")
+            self.assertTrue(report["full_schedule_complete"])
+            self.assertEqual(report["completed_jobs"], 600)
+            self.assertEqual(report["attempted_jobs"], 600)
+            self.assertEqual(report["score_summary"]["full"]["scheduled_or_attempted"], 300)
+            self.assertEqual(report["score_summary"]["sift"]["scheduled_or_attempted"], 300)
+            self.assertEqual(report["score_summary"]["full"]["scorable"], 300)
+            self.assertEqual(report["score_summary"]["sift"]["scorable"], 300)
+            for arm in ("full", "sift"):
+                self.assertEqual(report["score_summary"][arm]["correct"], 75)
+                self.assertEqual(report["score_summary"][arm]["response_accuracy"], 0.25)
+                self.assertEqual(report["score_summary"][arm]["tasks_with_scorable_responses"], 100)
+                self.assertEqual(report["score_summary"][arm]["equal_task_weighted_accuracy"], 0.25)
 
 
 if __name__ == "__main__":
