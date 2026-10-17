@@ -2,19 +2,21 @@
 
 ## Objective
 
-Run a reproducible, provider-attributed comparison of Sift against full-context prompting on a frozen 100-task LongBench v2 development sample. Measure answer quality, input tokens, upstream-reported cost, cache use, and latency. Use the evidence to decide what Sift can claim and what to improve next.
+Complete a reproducible LongBench v2 follow-up using OpenRouter's MiniMax M3 route. First test a research-only relation-preserving Sift selector against unchanged default Sift on six preselected tasks, then expand to a 100-task Sift run only if that controlled screen passes. Measure answer quality, input tokens, upstream-reported cost, cache use, preprocessing, and latency. Preserve the earlier 100-task full-context comparison as historical context; it is not a concurrent control for the new experiment.
 
 ## OpenRouter MiniMax plan
 
-Use OpenRouter's MiniMax M3 route for a paired comparison: send each selected LongBench v2 task once with its full prompt and once with the same task compressed by Sift to a 32,768-token target. Pin both arms to the MiniMax provider with fallbacks disabled, run three matched repeats across 100 frozen tasks, and retain per-request provider, token, cache, cost, latency, and scoring receipts. Start the 600-generation main run only after the active Qwen evaluation is terminal and the live endpoint, source hashes, request-size preflight, smoke receipts, and spend gates pass. Analyze quality and efficiency together; distinguish observed cache-inclusive cost from reconstructed uncached estimates, and publish only results supported by the task-level evidence.
+Use OpenRouter's `minimax/minimax-m3` route, pinning requests to provider `minimax` with provider fallbacks disabled. Stage 1 is a randomized, interleaved, one-worker paired screen: six tasks × three matched repeats × two Sift arms (36 requests total), comparing unchanged default Sift with the default-off relation-closure candidate at a 32,768-token target. Do not spend on the 100-task extension unless Stage 1 has complete valid receipts, no route/usage/cost/target anomalies, zero candidate fallbacks, at least two candidate-only correct task majorities, and zero default-only correct task majorities. If Stage 1 passes, Stage 2 runs the candidate with explicit default-Sift fallback on unsupported or incomplete cases across the same frozen 100-task sample × three repeats (300 requests). Preserve per-request route, token, cache, cost, latency, scoring, and selector audit receipts. Recheck live endpoint metadata, source hashes, price, request limits, and total budget immediately before dispatch. Treat provider-reported cache-inclusive cost and reconstructed uncached estimates separately, and publish only conclusions supported by task-level evidence.
 
 ## Execution plan
 
-1. Use OpenRouter's `minimax/minimax-m3` route for both arms, pin requests to the MiniMax provider, and disable provider fallbacks. Recheck the selected endpoint, prompt limit, pricing, credentials, and frozen source hashes before spending on the main run.
-2. On the frozen 100-task public training-split sample, compare full-context prompts with Sift-compressed prompts at a 32,768-token target. Run three paired repeats per task with matched settings and seeds, for 600 generations total. Keep the task wording, question, and message roles consistent between arms.
-3. Start only after the Qwen job is terminal and the one-task smoke, request-size checks, receipt validation, and spend gates pass. Use two workers and a $19 primary-run ceiling, keeping total smoke-plus-main spend within the $20 working budget. This client-side ceiling is best-effort because already dispatched calls may still bill.
-4. Preserve every response and receipt. Compare answer accuracy and paired task outcomes alongside provider prompt-token reduction, cache-inclusive upstream cost, reconstructed uncached cost, latency, preprocessing, and wall-clock time. Report cache effects and sample limits next to any savings claim.
-5. Review the task-level failures, make only evidence-backed Sift changes, then rerun the same frozen sample and settings for a paired before/after readout. Publish only claims supported by those results; this sample is not a full-suite score or a blind holdout.
+1. Finish and independently validate the offline candidate, Stage 1 runner/analyzer, six-task manifest, protocol, and route metadata snapshot. Require exact core/runner/analyzer/manifest hashes and a dry run with no API dispatch.
+2. Immediately before Stage 1, fetch the official OpenRouter endpoint metadata again. Confirm the MiniMax provider pin, model alias, prompt limit, current input/output/cache rates, credentials, request-size projection, source hashes, and cumulative recorded plus unsettled spend. Keep the $20 aggregate authorization and a $4 Stage 1 client-side guard; stop if any gate is unclear or fails.
+3. Run exactly 36 Stage 1 requests: six preselected tasks, three matched seeds, two Sift arms. Randomize the order within adjacent pairs, use one worker, and do not retry. Save every request, response, error, score, usage/cost/cache receipt, route attribution, timing, and selector audit. Any fallback or missing/invalid receipt makes Stage 1 ineligible to expand.
+4. Run the frozen Stage 1 analyzer and independent review. Proceed only if the documented expansion gate passes; passing permits consideration of Stage 2 but does not establish a LongBench aggregate improvement or validate a marketing claim.
+5. If Stage 1 passes, recheck live prices, route, hashes, and aggregate budget, then run Stage 2 on the same frozen 100-task development sample for three repeats (300 Sift requests). Use relation closure only when its candidate audit shows complete supported groups; otherwise use unchanged default Sift and preserve the fallback reason. Enforce the $4 best-effort Stage 2 guard.
+6. Analyze quality and efficiency together, including task-level outcomes, provider prompt tokens, observed cache-inclusive upstream-reported cost, reconstructed uncached estimate, model latency, preprocessing, and wall-clock time. The historical full-context arm is non-concurrent and subject to provider drift; never present it as a contemporaneous control.
+7. Review failures independently, make only evidence-backed Sift changes, and preserve each run. Update the README only with independently reviewed, accurately scoped results. Commit and push each reviewed milestone.
 
 ## Route and limits
 
@@ -22,7 +24,7 @@ Use OpenRouter's MiniMax M3 route for a paired comparison: send each selected Lo
 - The frozen manifest records the provider-specific endpoint observed on 2026-10-16: `minimax/minimax-m3-20260531`, 524,288 maximum prompt tokens, 512,000 maximum completion tokens, and $0.30/M uncached input and $1.20/M output. OpenRouter's broader model page advertises a 1M context, but that is not the selected endpoint's prompt limit. Recheck live metadata and rates immediately before dispatch; stop if they changed.
 - Keep API credentials in environment configuration. Do not write secrets into source, manifests, logs, or result artifacts.
 
-## Frozen experiment
+## Historical first-round experiment (completed)
 
 - Dataset: pinned public LongBench v2 training data; 100 distinct task IDs in `docs/evals/longbench-v2-minimax-m3-100-manifest-2026-10-16.json`.
 - Sample: deterministic, length-conditioned development sample. Every full-context prompt is above the configurable 32,768-token Sift target and at most 150,000 local M3-rendered tokens. The frozen sample has 44 short, 56 medium, and zero `long` dataset labels; difficulty is balanced 50/50 and the candidate scan found 225 eligible cases. Say clearly that this is not a full-suite score or blind holdout.
@@ -30,7 +32,7 @@ Use OpenRouter's MiniMax M3 route for a paired comparison: send each selected Lo
 - Repeats: three paired repeats per task (600 generations total), randomized arm order within each pair, with matching generation settings and repeat seeds. Keep all attempts and failures; do not silently retry, substitute tasks, or drop invalid outputs.
 - Scoring: parse the benchmark's structured A–D choice and exact-match the published answer key. Report per-repeat accuracy, per-task majority outcomes, paired wins/losses/ties, invalid responses, and discordant cases. Do not select the best repeat.
 
-## Readiness checks and spend control
+## Historical first-round readiness and spend control
 
 1. Recheck endpoint/provider metadata, pricing, credentials, manifest hashes, target, and task count.
 2. Project request size using the runner's conservative 3.25× local-token estimate plus the 16-token output cap; every request must remain below the live 524,288 prompt limit.
