@@ -134,6 +134,11 @@ class _ResearchArray:
     records: tuple[_ResearchRecord, ...]
     opening: str = "["
     closing: str = "]"
+    map_field: str = ""
+    map_placeholder: str = ""
+    root_prefix: str = ""
+    root_template: str = ""
+    root_suffix: str = ""
 
 
 def _count(counter: TokenCounter, messages: list[dict[str, Any]]) -> int:
@@ -1336,6 +1341,351 @@ def _research_entity_map(
     return prefix, suffix, entries
 
 
+_RESEARCH_RECORD_MAP_FIELDS = ("entities", "concepts", "labels")
+
+
+def _research_record_map_bundle(
+    text: str,
+) -> tuple[str, str, str, list[tuple[str, str, list[tuple[str, Any, str]]]]] | None:
+    """Parse recognized top-level record maps while preserving other root fields.
+
+    Each recognized map must be a string-keyed object map whose values are
+    objects. Exact key/value slices are retained for selected records. The
+    returned root template contains one unique placeholder per recognized map
+    value; non-map members remain byte-for-byte as they appeared in the source.
+    """
+    root_start = text.find("{")
+    if root_start < 0:
+        return None
+    decoder = json.JSONDecoder()
+    try:
+        root, root_end = decoder.raw_decode(text, root_start)
+    except (json.JSONDecodeError, RecursionError):
+        return None
+    if not isinstance(root, dict):
+        return None
+    recognized = [key for key in _RESEARCH_RECORD_MAP_FIELDS if key in root]
+    if not recognized:
+        return None
+
+    maps: list[tuple[str, str, list[tuple[str, Any, str]]]] = []
+    replacements: list[tuple[int, int, str]] = []
+    cursor = root_start + 1
+    for key, expected in root.items():
+        while cursor < root_end and (text[cursor].isspace() or text[cursor] == ","):
+            cursor += 1
+        try:
+            parsed_key, after_key = decoder.raw_decode(text, cursor)
+        except (json.JSONDecodeError, RecursionError) as exc:
+            raise ValueError("unparseable top-level record map key") from exc
+        if parsed_key != key:
+            raise ValueError("top-level record map key mismatch")
+        cursor = after_key
+        while cursor < root_end and text[cursor].isspace():
+            cursor += 1
+        if cursor >= root_end or text[cursor] != ":":
+            raise ValueError("missing top-level record map colon")
+        cursor += 1
+        while cursor < root_end and text[cursor].isspace():
+            cursor += 1
+        value_start = cursor
+        try:
+            parsed_value, value_end = decoder.raw_decode(text, value_start)
+        except (json.JSONDecodeError, RecursionError) as exc:
+            raise ValueError("unparseable top-level record map value") from exc
+        cursor = value_end
+        if key not in _RESEARCH_RECORD_MAP_FIELDS:
+            continue
+        valid_record = lambda value: isinstance(value, dict) or (
+            key == "labels" and isinstance(value, str)
+        )
+        if (not isinstance(parsed_value, dict) or not isinstance(expected, dict)
+                or parsed_value != expected or not all(valid_record(value) for value in expected.values())):
+            raise ValueError(f"top-level {key!r} map is not a map of supported record values")
+
+        entries: list[tuple[str, Any, str]] = []
+        map_cursor = value_start + 1
+        value_close = value_end - 1
+        for record_id, record_value in expected.items():
+            while map_cursor < value_close and (text[map_cursor].isspace() or text[map_cursor] == ","):
+                map_cursor += 1
+            record_start = map_cursor
+            try:
+                parsed_id, map_cursor = decoder.raw_decode(text, map_cursor)
+            except (json.JSONDecodeError, RecursionError) as exc:
+                raise ValueError(f"unparseable record ID in top-level {key!r} map") from exc
+            if parsed_id != record_id:
+                raise ValueError(f"record ID mismatch in top-level {key!r} map")
+            while map_cursor < value_close and text[map_cursor].isspace():
+                map_cursor += 1
+            if map_cursor >= value_close or text[map_cursor] != ":":
+                raise ValueError(f"missing record colon in top-level {key!r} map")
+            map_cursor += 1
+            while map_cursor < value_close and text[map_cursor].isspace():
+                map_cursor += 1
+            try:
+                parsed_record, map_cursor = decoder.raw_decode(text, map_cursor)
+            except (json.JSONDecodeError, RecursionError) as exc:
+                raise ValueError(f"unparseable record in top-level {key!r} map") from exc
+            if not valid_record(parsed_record) or parsed_record != record_value:
+                raise ValueError(f"record value mismatch in top-level {key!r} map")
+            entries.append((text[record_start:map_cursor], parsed_record, str(record_id)))
+        while map_cursor < value_close and (text[map_cursor].isspace() or text[map_cursor] == ","):
+            map_cursor += 1
+        if map_cursor != value_close:
+            raise ValueError(f"trailing data in top-level {key!r} map")
+        marker_seed = hashlib.sha256(f"{key}|{root_start}|{value_start}|{value_end}".encode()).hexdigest()
+        marker = f"__SIFT_RECORD_MAP_{key.upper()}_{marker_seed}__"
+        while marker in text:
+            marker += "_X"
+        replacements.append((value_start - root_start, value_end - root_start, marker))
+        maps.append((key, marker, entries))
+
+    while cursor < root_end and (text[cursor].isspace() or text[cursor] == ","):
+        cursor += 1
+    if cursor != root_end - 1 or text[cursor] != "}":
+        raise ValueError("unconsumed or duplicate top-level record-map members")
+
+    root_template = text[root_start:root_end]
+    for start, end, marker in sorted(replacements, reverse=True):
+        root_template = root_template[:start] + marker + root_template[end:]
+    return text[:root_start], text[root_end:], root_template, maps
+
+
+_RESEARCH_IDENTITY_FIELDS = (
+    "name", "label", "title", "instanceOf", "subclassOf", "type", "category", "kind",
+)
+
+
+def _query_directed_relation_ids(value: Any) -> tuple[str, ...]:
+    """Read only direct Wikidata-style IDs from supported relation fields."""
+    found: list[str] = []
+
+    def add(raw: Any) -> None:
+        if not isinstance(raw, str) or not raw.strip():
+            raise ValueError("typed relation reference is not a non-empty string")
+        identifier = raw.strip()
+        if not _LINK_IDS.fullmatch(identifier):
+            raise ValueError("typed relation reference is not a supported QID")
+        found.append(identifier)
+
+    if not isinstance(value, dict):
+        raise ValueError("selected entity record is not an object")
+    relations = value.get("relations", [])
+    if not isinstance(relations, list):
+        raise ValueError("entity relations field is not a list")
+    for relation in relations:
+        if not isinstance(relation, dict):
+            raise ValueError("entity relation entry is not an object")
+        if "object" in relation:
+            add(relation["object"])
+    for field in ("instanceOf", "subclassOf"):
+        if field not in value:
+            continue
+        raw = value[field]
+        values = raw if isinstance(raw, list) else [raw]
+        for identifier in values:
+            add(identifier)
+    return tuple(dict.fromkeys(found))
+
+
+def _query_directed_label_compact(
+    messages: list[dict[str, Any]], count_tokens: TokenCounter, *,
+    target: int, instruction_end: int, latest_user: int, raw: int,
+) -> CompactionResult:
+    """Keep exact choice entities and append one-hop identity-only labels.
+
+    This opt-in path intentionally does not reuse the generic recursive
+    ``closure``: choices select complete entity records, and only their direct
+    ``relations[].object``, ``instanceOf``, and ``subclassOf`` IDs may receive
+    projected identity metadata.
+    """
+    query = _render(messages[latest_user])
+    choices = _prompt_choices(query)
+    choice_ids: list[str] = []
+    for choice in choices:
+        identifiers = list(dict.fromkeys(
+            identifier for identifier in _LINK_IDS.findall(choice)))
+        if len(identifiers) != 1:
+            raise CompactionError(
+                "each answer choice must contain exactly one explicit entity ID",
+                code="query_directed_label_unresolved",
+            )
+        choice_ids.append(identifiers[0])
+    if len(choice_ids) < 2:
+        raise CompactionError(
+            "query-directed labels require at least two explicit entity choices",
+            code="query_directed_label_unresolved",
+        )
+    choice_keys = [identifier.casefold() for identifier in choice_ids]
+    if len(set(choice_keys)) != len(choice_keys):
+        raise CompactionError(
+            "answer choices contain duplicate entity IDs",
+            code="query_directed_label_ambiguous",
+        )
+
+    candidates: list[tuple[int, str, str, str, str, list[tuple[str, str, list[tuple[str, Any, str]]]]]] = []
+    for message_index in range(instruction_end, latest_user):
+        message = messages[message_index]
+        if message.get("role") not in {"tool", "function", "user"}:
+            continue
+        content = message.get("content")
+        if not isinstance(content, str):
+            continue
+        try:
+            bundle = _research_record_map_bundle(content)
+        except ValueError as error:
+            raise CompactionError(
+                "recognized linked-record maps are ambiguous or malformed",
+                code="research_relation_unsupported",
+            ) from error
+        if bundle is None:
+            continue
+        prefix, suffix, template, record_maps = bundle
+        entity_maps = [entries for field, _, entries in record_maps if field == "entities"]
+        if len(entity_maps) != 1:
+            continue
+        entity_entries = entity_maps[0]
+        entity_by_id: dict[str, list[tuple[str, Any, str]]] = {}
+        for entry in entity_entries:
+            record_id = entry[2]
+            folded = record_id.casefold()
+            entity_by_id.setdefault(folded, []).append(entry)
+        if any(len(entity_by_id.get(key, ())) > 1 for key in choice_keys):
+            raise CompactionError(
+                "answer choice ID is ambiguous under case-folding",
+                code="query_directed_label_ambiguous",
+            )
+        exact_choice_ids = all(
+            len(entity_by_id.get(key, ())) == 1
+            and entity_by_id[key][0][2] == identifier
+            for key, identifier in zip(choice_keys, choice_ids)
+        )
+        if exact_choice_ids:
+            candidates.append((message_index, content, prefix, suffix, template, record_maps))
+
+    if len(candidates) != 1:
+        code = "query_directed_label_unresolved" if not candidates else "query_directed_label_ambiguous"
+        raise CompactionError(
+            "answer choices do not resolve to one unambiguous complete entity map",
+            code=code,
+        )
+    message_index, source, source_prefix, source_suffix, template, record_maps = candidates[0]
+    decoder = json.JSONDecoder()
+    root_start = source.find("{")
+    root, _ = decoder.raw_decode(source, root_start)
+    identity_field = "__sift_identity_labels"
+    if identity_field in root:
+        raise CompactionError(
+            "source already contains the reserved identity-label field",
+            code="query_directed_label_ambiguous",
+        )
+
+    entity_entries = next(entries for field, _, entries in record_maps if field == "entities")
+    entity_by_id = {record_id.casefold(): (raw_entry, value, record_id)
+                    for raw_entry, value, record_id in entity_entries}
+    selected_entries = [entity_by_id[key][0] for key in choice_keys]
+    selected_values = [entity_by_id[key][1] for key in choice_keys]
+    refs: list[str] = []
+    try:
+        for value in selected_values:
+            refs.extend(_query_directed_relation_ids(value))
+    except ValueError as error:
+        raise CompactionError(
+            "selected entity has malformed typed relation references",
+            code="research_relation_unsupported",
+        ) from error
+    choice_key_set = set(choice_keys)
+    required_label_ids = list(dict.fromkeys(
+        identifier for identifier in refs if identifier.casefold() not in choice_key_set))
+
+    identity_sources: dict[str, list[tuple[str, Any, str]]] = {}
+    for map_field, _, entries in record_maps:
+        for raw_entry, value, record_id in entries:
+            identity_sources.setdefault(record_id.casefold(), []).append(
+                (map_field, value, record_id))
+    projected: dict[str, dict[str, Any]] = {}
+    unresolved_label_ids: list[str] = []
+    for identifier in required_label_ids:
+        sources = identity_sources.get(identifier.casefold(), [])
+        source_spellings = {record_id for _, _, record_id in sources}
+        if len(source_spellings) > 1:
+            raise CompactionError(
+                "sibling identity maps contain case-colliding target IDs",
+                code="query_directed_label_ambiguous",
+            )
+        if source_spellings and identifier not in source_spellings:
+            raise CompactionError(
+                "typed relation ID differs from the source map spelling",
+                code="query_directed_label_ambiguous",
+            )
+        identity: dict[str, Any] = {}
+        for map_field, value, _ in sources:
+            if map_field == "labels" and isinstance(value, str):
+                candidate_fields = {"label": value}
+            elif isinstance(value, dict):
+                candidate_fields = {key: value[key] for key in _RESEARCH_IDENTITY_FIELDS
+                                    if key in value}
+            else:
+                candidate_fields = {}
+            for key, candidate_value in candidate_fields.items():
+                if key in identity and identity[key] != candidate_value:
+                    raise CompactionError(
+                        "identity maps disagree on a projected label field",
+                        code="query_directed_label_ambiguous",
+                    )
+                identity[key] = candidate_value
+        if not identity:
+            unresolved_label_ids.append(identifier)
+            continue
+        projected[identifier] = identity
+
+    # Rebuild only the entities map with exact complete choice-record slices;
+    # clear sibling recognized maps and append a separate identity-only map.
+    rebuilt = template
+    for map_field, marker, entries in record_maps:
+        rows = selected_entries if map_field == "entities" else []
+        body = "{" + ("\n" + ",\n".join(rows) + "\n" if rows else "") + "}"
+        if rebuilt.count(marker) != 1:
+            raise CompactionError(
+                "linked-record map placeholder is ambiguous",
+                code="research_relation_unsupported",
+            )
+        rebuilt = rebuilt.replace(marker, body)
+    if not rebuilt.endswith("}"):
+        raise CompactionError(
+            "source map root cannot accept projected identity labels",
+            code="research_relation_unsupported",
+        )
+    if projected:
+        identity_json = json.dumps(projected, ensure_ascii=False, separators=(",", ":"))
+        rebuilt = rebuilt[:-1] + f', "{identity_field}": {identity_json}' + "}"
+    output = deepcopy(messages)
+    output[message_index]["content"] = source_prefix + rebuilt + source_suffix
+    forwarded = _count(count_tokens, output)
+    if forwarded > target:
+        raise CompactionError(
+            "query-directed identity-label output exceeds the exact token target",
+            code="query_directed_label_target",
+        )
+    selected_count = len(selected_entries)
+    return CompactionResult(output, {
+        "compacted": True,
+        "input_tokens": raw,
+        "forwarded_tokens": forwarded,
+        "omitted_estimated_tokens": max(0, raw - forwarded),
+        "preserved_recent_turns": 0,
+        "preserved_recent_tool_cycles": 0,
+        "selected_excerpts": selected_count,
+        "selected_records": selected_count,
+        "projected_identity_labels": len(projected),
+        "projected_identity_ids": ",".join(projected),
+        "unresolved_identity_labels": len(unresolved_label_ids),
+        "unresolved_identity_ids": ",".join(unresolved_label_ids),
+        "method": "query_directed_one_hop_identity_labels",
+    })
+
+
 def _research_entity_name(value: dict[str, Any]) -> str:
     """Return a simple display name for exact query-mention matching."""
     for key in ("name", "label", "title"):
@@ -1357,9 +1707,10 @@ def _research_relation_compact(
     """Experimental closure over complete JSON rows or named KG concepts.
 
     This handles JSON arrays of object records, top-level ``entities`` maps,
-    and ``concepts`` maps in historical user or tool messages. Relationships
-    come only from explicit ID/ref/code fields; it never infers a join from
-    row position. The latest user message is excluded from source parsing.
+    and, in strict mode, sibling ``concepts``/``labels`` maps in historical
+    user or tool messages. Strict mode preserves non-map root members and
+    joins whole records only through explicit ID/ref/code fields; it never
+    infers a join from row position. The latest user message is excluded.
     """
     arrays: list[_ResearchArray] = []
     all_records: list[_ResearchRecord] = []
@@ -1378,6 +1729,43 @@ def _research_relation_compact(
         content = message.get("content")
         if not isinstance(content, str):
             continue
+        if require_complete_groups:
+            try:
+                bundle = _research_record_map_bundle(content)
+            except ValueError as error:
+                raise CompactionError(
+                    "recognized linked-record maps are ambiguous or malformed",
+                    code="research_relation_unsupported",
+                ) from error
+            if bundle is not None:
+                root_prefix, root_suffix, root_template, record_maps = bundle
+                for map_field, marker, map_entries in record_maps:
+                    source_records = [
+                        (entry, value, record_id,
+                         _research_entity_name(value) if isinstance(value, dict)
+                         else value.strip() if isinstance(value, str) else "")
+                        for entry, value, record_id in map_entries
+                    ]
+                    array_records: list[_ResearchRecord] = []
+                    for record_index, (record_text, value, entity_id, entity_name) in enumerate(source_records):
+                        matching = frozenset(
+                            terms.intersection(token.casefold() for token in _TERMS.findall(record_text))
+                        )
+                        frequencies.update(matching)
+                        total += 1
+                        bindings = set(_explicit_relation_bindings(value))
+                        bindings.add(entity_id.casefold())
+                        record = _ResearchRecord(
+                            len(all_records), message_index, record_index, record_text,
+                            frozenset(bindings), matching, 0, entity_name,
+                        )
+                        all_records.append(record)
+                        array_records.append(record)
+                    arrays.append(_ResearchArray(
+                        message_index, "", "", tuple(array_records), "{", "}",
+                        map_field, marker, root_prefix, root_template, root_suffix,
+                    ))
+                continue
         entities = _research_entity_map(content)
         concepts = None if entities is not None else _research_concept_map(content)
         if entities is not None:
@@ -1451,7 +1839,9 @@ def _research_relation_compact(
     arrays = [
         _ResearchArray(array.message_index, array.prefix, array.suffix,
                        tuple(all_records[record.index] for record in array.records),
-                       array.opening, array.closing)
+                       array.opening, array.closing, array.map_field,
+                       array.map_placeholder, array.root_prefix,
+                       array.root_template, array.root_suffix)
         for array in arrays
     ]
 
@@ -1478,10 +1868,44 @@ def _research_relation_compact(
                         pending.append(linked_index)
         return frozenset(found)
 
-    protected = deepcopy(messages)
-    for array in arrays:
-        protected[array.message_index]["content"] = (
-            array.prefix + array.opening + array.closing + array.suffix)
+    def materialize(record_indexes: set[int]) -> list[dict[str, Any]]:
+        result = deepcopy(messages)
+        arrays_by_message: dict[int, list[_ResearchArray]] = {}
+        for array in arrays:
+            arrays_by_message.setdefault(array.message_index, []).append(array)
+        for message_index, message_arrays in arrays_by_message.items():
+            map_arrays = [array for array in message_arrays if array.map_field]
+            if map_arrays:
+                root_template = map_arrays[0].root_template
+                for array in map_arrays:
+                    rows = [record.text for record in array.records
+                            if record.index in record_indexes]
+                    body = "{" + ("\n" + ",\n".join(rows) + "\n" if rows else "") + "}"
+                    if root_template.count(array.map_placeholder) != 1:
+                        raise CompactionError(
+                            "linked-record map placeholder is ambiguous",
+                            code="research_relation_unsupported",
+                        )
+                    root_template = root_template.replace(array.map_placeholder, body)
+                # Normalize only outer root whitespace; keep every root member
+                # and each retained record slice unchanged. This prevents
+                # pretty-print indentation from pushing an exact-fit complete
+                # group over its token target.
+                if root_template.startswith("{") and root_template.endswith("}"):
+                    root_template = "{" + root_template[1:-1].strip() + "}"
+                result[message_index]["content"] = (
+                    map_arrays[0].root_prefix + root_template + map_arrays[0].root_suffix)
+                continue
+            for array in message_arrays:
+                rows = [record.text for record in array.records
+                        if record.index in record_indexes]
+                body = (array.opening
+                        + ("\n" + ",\n".join(rows) + "\n" if rows else "")
+                        + array.closing)
+                result[array.message_index]["content"] = array.prefix + body + array.suffix
+        return result
+
+    protected = materialize(set())
     protected_count = _count(count_tokens, protected)
     if protected_count > target:
         raise CompactionError(
@@ -1490,17 +1914,6 @@ def _research_relation_compact(
         )
 
     selected: set[int] = set()
-
-    def materialize(record_indexes: set[int]) -> list[dict[str, Any]]:
-        result = deepcopy(protected)
-        for array in arrays:
-            rows = [record.text for record in array.records
-                    if record.index in record_indexes]
-            body = (array.opening
-                    + ("\n" + ",\n".join(rows) + "\n" if rows else "")
-                    + array.closing)
-            result[array.message_index]["content"] = array.prefix + body + array.suffix
-        return result
 
     named_candidates: list[tuple[int, int]] = []
     for record in all_records:
@@ -1866,6 +2279,7 @@ def compact_messages(
     protocol: Protocol = "openai",
     research_relation_closure: bool = False,
     complete_record_groups: bool = False,
+    query_directed_labels: bool = False,
     field_pruning: bool = False,
 ) -> CompactionResult:
     """Compact older text to `target` using the caller's exact token counter.
@@ -1876,6 +2290,9 @@ def compact_messages(
     `complete_record_groups=True` opts into all-or-nothing retention of
     required linked/named records or complete structured arrays for aggregate
     queries; it is experimental and remains disabled by default.
+    `query_directed_labels=True` opts into exact choice-record retention plus
+    one-hop identity-only labels from explicitly typed KG relation fields. It
+    is experimental and remains disabled by default.
     `field_pruning=True` opts into exact-choice row projection guarded by
     shared-summary evidence, the exact token target, and a 10% growth ceiling
     over default compaction. It is experimental and disabled by default.
@@ -1885,8 +2302,12 @@ def compact_messages(
             or max_input_characters <= 0 or type(max_input_nodes) is not int
             or max_input_nodes <= 0 or type(research_relation_closure) is not bool
             or type(complete_record_groups) is not bool
+            or type(query_directed_labels) is not bool
             or type(field_pruning) is not bool
-            or (field_pruning and (research_relation_closure or complete_record_groups))):
+            or (field_pruning and (research_relation_closure or complete_record_groups
+                                   or query_directed_labels))
+            or (query_directed_labels and (research_relation_closure
+                                           or complete_record_groups))):
         raise CompactionError("invalid compaction or pre-count limits")
     if not isinstance(messages, list) or not all(isinstance(msg, dict) for msg in messages):
         raise CompactionError("messages must be a list of objects")
@@ -1913,6 +2334,27 @@ def compact_messages(
                         if _real_user(messages[i], protocol)), -1)
     if latest_user < instruction_end:
         raise CompactionError("no active user turn", code="active_too_large")
+    if query_directed_labels:
+        if protocol != "openai":
+            raise CompactionError(
+                "query-directed labels currently support OpenAI-style tool messages",
+                code="research_relation_unsupported",
+            )
+        proposed = _query_directed_label_compact(
+            messages, count_tokens, target=target,
+            instruction_end=instruction_end, latest_user=latest_user, raw=raw,
+        )
+        baseline = compact_messages(
+            messages, count_tokens, target=target, raw_limit=raw_limit,
+            max_input_characters=max_input_characters,
+            max_input_nodes=max_input_nodes, protocol=protocol,
+        )
+        if proposed.audit["forwarded_tokens"] * 10 > baseline.audit["forwarded_tokens"] * 11:
+            raise CompactionError(
+                "query-directed labels exceed the 10% default-token growth ceiling",
+                code="query_directed_label_growth_limit",
+            )
+        return proposed
     if field_pruning:
         if protocol != "openai":
             raise CompactionError("field pruning currently supports OpenAI-style tool messages",

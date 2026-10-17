@@ -1,0 +1,295 @@
+{
+  "schema_version": 1,
+  "title": "LongBench v2 answer-blind query-directed-label development sample",
+  "status": "frozen development IDs copied from the prior answer-blind sample; no answer keys or model outputs used; no API calls",
+  "method": {
+    "dataset_id": "zai-org/LongBench-v2",
+    "dataset_revision": "2b48e494f2c7a2f0af81aae178e05c7e1dde0fe9",
+    "dataset_sha256": "15d61c22d92c96900b3c4948b6aeea218d3214b676a65df48e7b8555604c7fe2",
+    "selector_builder_path": "benchmarks/prepare_longbench_v2_record_ranking_sample.py",
+    "selector_builder_sha256": "2e2ac40ed0fe5695a07654052fc72f99d20c91578f841e4b3658697c1771157d",
+    "dataset_reader_path": "benchmarks/prepare_longbench_v2.py",
+    "dataset_reader_sha256": "b913c0c89ed6bea2a7b74b54b64516bfcaad7f7894067ebbac9c5085e47ae069",
+    "template_renderer_path": "benchmarks/prepare_longbench_v2_minimax.py",
+    "template_renderer_sha256": "2eb34e08fbdb3d1acb69339505e1e228030b930e2d967b174e67490006adee77",
+    "candidate_core_path": "src/sift/core.py",
+    "candidate_core_sha256": "c5d4cc9a06e08fd62fbd6c441d30b212517b3f31a96e1a9a5c413b38bdf0a520",
+    "census_path": "docs/evals/longbench-v2-field-pruning-census-2026-10-17.json",
+    "census_sha256": "729e53fa31c08c64727774b609f2bf366b5eee19d52700638ccd8cd422fa25a7",
+    "prior_relation_screen_manifest_path": "docs/evals/longbench-v2-minimax-relation-stage1-v3-manifest-2026-10-17.json",
+    "prior_relation_screen_manifest_sha256": "9a0d407fa09737160a99b73812bd9b8bbc3b9824c0efd237d2554111304159c5",
+    "target_tokens": 32640,
+    "pool": "all above-target tasks outside the 9 exposed field-pruning-eligible IDs whose context is parsed by the existing exact whole-record relation-closure parsers",
+    "selection_inputs": [
+      "context structure",
+      "domain",
+      "difficulty",
+      "length",
+      "pinned full-prompt token count used only for above-target eligibility"
+    ],
+    "selection_exclusions": [
+      "official answer values",
+      "question/choice semantics",
+      "model outputs",
+      "candidate outputs",
+      "prior quality scores"
+    ],
+    "salt": "sift-longbench-v2-record-ranking-2026-10-18-v1",
+    "strata_and_quotas": {
+      "prior_relation_screen": "all six earlier relation-matrix tasks are labeled prior_method_exposure and kept in development only",
+      "json_array": "2 fresh tasks in development (one Code Repository and one Long In-context Learning) and 5 fresh tasks held-out (four Code Repository and one Long In-context Learning), selected by salted hash",
+      "entity_or_concept_map": "2 fresh development tasks (one easy/long and one hard/medium) plus 5 held-out tasks (one easy/long, three easy/medium, one hard/medium), selected by salted hash"
+    },
+    "candidate_under_study": "separate opt-in use of core.compact_messages(..., query_directed_labels=True); preserves complete explicit QID choice records and adds only one-hop identity fields from typed relations[].object, instanceOf, and subclassOf references",
+    "interpretation": "mechanism and evidence-retention screen only; not a representative LongBench sample or answer-quality result",
+    "selection_note": "Copied prior frozen IDs and split labels exactly; selection was not rerun after implementation changes."
+  },
+  "exposed_ids_excluded": [
+    "66f2b5ec821e116aacb2b1ec",
+    "6719b96abb02136c067d4358",
+    "671b080abb02136c067d4dde",
+    "671b170cbb02136c067d4f4a",
+    "671b17d5bb02136c067d4f7d",
+    "671b2b57bb02136c067d508b",
+    "671b2c05bb02136c067d50c8",
+    "671b2c67bb02136c067d50f7",
+    "671b3cabbb02136c067d5252"
+  ],
+  "prior_relation_screen_ids_development_only": [
+    "672494e5bb02136c067d7697",
+    "67249705bb02136c067d76d1",
+    "6724c1d4bb02136c067d77ec",
+    "67285e1dbb02136c067d901b",
+    "67286036bb02136c067d9092",
+    "6724c4aabb02136c067d78a6"
+  ],
+  "candidate_pool_counts": {
+    "entity_or_concept_map": 15,
+    "json_array": 9
+  },
+  "selected_count": 20,
+  "development_count": 10,
+  "held_out_count": 10,
+  "selected": [
+    {
+      "id": "672494e5bb02136c067d7697",
+      "structure": "entity_or_concept_map",
+      "domain": "Long Structured Data Understanding",
+      "sub_domain": "Knowledge graph reasoning",
+      "difficulty": "easy",
+      "length": "medium",
+      "full_prompt_tokens": 129397,
+      "split": "development",
+      "prior_method_exposure": "relation_matrix_model_screen"
+    },
+    {
+      "id": "67249705bb02136c067d76d1",
+      "structure": "entity_or_concept_map",
+      "domain": "Long Structured Data Understanding",
+      "sub_domain": "Knowledge graph reasoning",
+      "difficulty": "easy",
+      "length": "medium",
+      "full_prompt_tokens": 131417,
+      "split": "development",
+      "prior_method_exposure": "relation_matrix_model_screen"
+    },
+    {
+      "id": "6724c1d4bb02136c067d77ec",
+      "structure": "entity_or_concept_map",
+      "domain": "Long Structured Data Understanding",
+      "sub_domain": "Knowledge graph reasoning",
+      "difficulty": "easy",
+      "length": "medium",
+      "full_prompt_tokens": 143366,
+      "split": "development",
+      "prior_method_exposure": "relation_matrix_model_screen"
+    },
+    {
+      "id": "6724c4aabb02136c067d78a6",
+      "structure": "entity_or_concept_map",
+      "domain": "Long Structured Data Understanding",
+      "sub_domain": "Knowledge graph reasoning",
+      "difficulty": "hard",
+      "length": "medium",
+      "full_prompt_tokens": 130246,
+      "split": "development",
+      "prior_method_exposure": "relation_matrix_model_screen"
+    },
+    {
+      "id": "6724c5febb02136c067d78e7",
+      "structure": "entity_or_concept_map",
+      "domain": "Long Structured Data Understanding",
+      "sub_domain": "Knowledge graph reasoning",
+      "difficulty": "hard",
+      "length": "medium",
+      "full_prompt_tokens": 306651,
+      "split": "development",
+      "prior_method_exposure": null
+    },
+    {
+      "id": "6724cae7bb02136c067d79be",
+      "structure": "entity_or_concept_map",
+      "domain": "Long Structured Data Understanding",
+      "sub_domain": "Knowledge graph reasoning",
+      "difficulty": "easy",
+      "length": "long",
+      "full_prompt_tokens": 2956261,
+      "split": "development",
+      "prior_method_exposure": null
+    },
+    {
+      "id": "67285e1dbb02136c067d901b",
+      "structure": "entity_or_concept_map",
+      "domain": "Long Structured Data Understanding",
+      "sub_domain": "Knowledge graph reasoning",
+      "difficulty": "easy",
+      "length": "medium",
+      "full_prompt_tokens": 130728,
+      "split": "development",
+      "prior_method_exposure": "relation_matrix_model_screen"
+    },
+    {
+      "id": "67286036bb02136c067d9092",
+      "structure": "entity_or_concept_map",
+      "domain": "Long Structured Data Understanding",
+      "sub_domain": "Knowledge graph reasoning",
+      "difficulty": "easy",
+      "length": "medium",
+      "full_prompt_tokens": 138457,
+      "split": "development",
+      "prior_method_exposure": "relation_matrix_model_screen"
+    },
+    {
+      "id": "66f2a80d821e116aacb2a760",
+      "structure": "json_array",
+      "domain": "Long In-context Learning",
+      "sub_domain": "New language translation",
+      "difficulty": "hard",
+      "length": "medium",
+      "full_prompt_tokens": 377641,
+      "split": "development",
+      "prior_method_exposure": null
+    },
+    {
+      "id": "66f39ac5821e116aacb2da81",
+      "structure": "json_array",
+      "domain": "Code Repository Understanding",
+      "sub_domain": "Code repo QA",
+      "difficulty": "easy",
+      "length": "short",
+      "full_prompt_tokens": 94137,
+      "split": "development",
+      "prior_method_exposure": null
+    },
+    {
+      "id": "67237d8ebb02136c067d6c06",
+      "structure": "entity_or_concept_map",
+      "domain": "Long Structured Data Understanding",
+      "sub_domain": "Knowledge graph reasoning",
+      "difficulty": "easy",
+      "length": "long",
+      "full_prompt_tokens": 472306,
+      "split": "held_out",
+      "prior_method_exposure": null
+    },
+    {
+      "id": "6724938fbb02136c067d7657",
+      "structure": "entity_or_concept_map",
+      "domain": "Long Structured Data Understanding",
+      "sub_domain": "Knowledge graph reasoning",
+      "difficulty": "easy",
+      "length": "medium",
+      "full_prompt_tokens": 162219,
+      "split": "held_out",
+      "prior_method_exposure": null
+    },
+    {
+      "id": "6728586bbb02136c067d8f4f",
+      "structure": "entity_or_concept_map",
+      "domain": "Long Structured Data Understanding",
+      "sub_domain": "Knowledge graph reasoning",
+      "difficulty": "easy",
+      "length": "medium",
+      "full_prompt_tokens": 202550,
+      "split": "held_out",
+      "prior_method_exposure": null
+    },
+    {
+      "id": "67285f8ebb02136c067d905d",
+      "structure": "entity_or_concept_map",
+      "domain": "Long Structured Data Understanding",
+      "sub_domain": "Knowledge graph reasoning",
+      "difficulty": "hard",
+      "length": "medium",
+      "full_prompt_tokens": 150188,
+      "split": "held_out",
+      "prior_method_exposure": null
+    },
+    {
+      "id": "672861afbb02136c067d90d8",
+      "structure": "entity_or_concept_map",
+      "domain": "Long Structured Data Understanding",
+      "sub_domain": "Knowledge graph reasoning",
+      "difficulty": "easy",
+      "length": "medium",
+      "full_prompt_tokens": 250811,
+      "split": "held_out",
+      "prior_method_exposure": null
+    },
+    {
+      "id": "66ec56dd821e116aacb1cd0e",
+      "structure": "json_array",
+      "domain": "Code Repository Understanding",
+      "sub_domain": "Code repo QA",
+      "difficulty": "easy",
+      "length": "long",
+      "full_prompt_tokens": 1131622,
+      "split": "held_out",
+      "prior_method_exposure": null
+    },
+    {
+      "id": "66f3c219821e116aacb2eb4e",
+      "structure": "json_array",
+      "domain": "Code Repository Understanding",
+      "sub_domain": "Code repo QA",
+      "difficulty": "hard",
+      "length": "medium",
+      "full_prompt_tokens": 117081,
+      "split": "held_out",
+      "prior_method_exposure": null
+    },
+    {
+      "id": "66f3cb88821e116aacb2eeb9",
+      "structure": "json_array",
+      "domain": "Code Repository Understanding",
+      "sub_domain": "Code repo QA",
+      "difficulty": "hard",
+      "length": "medium",
+      "full_prompt_tokens": 97522,
+      "split": "held_out",
+      "prior_method_exposure": null
+    },
+    {
+      "id": "66f3f1a5821e116aacb2fdc7",
+      "structure": "json_array",
+      "domain": "Long In-context Learning",
+      "sub_domain": "New language translation",
+      "difficulty": "easy",
+      "length": "medium",
+      "full_prompt_tokens": 377580,
+      "split": "held_out",
+      "prior_method_exposure": null
+    },
+    {
+      "id": "67066b87bb02136c067cfaa3",
+      "structure": "json_array",
+      "domain": "Code Repository Understanding",
+      "sub_domain": "Code repo QA",
+      "difficulty": "hard",
+      "length": "long",
+      "full_prompt_tokens": 1174641,
+      "split": "held_out",
+      "prior_method_exposure": null
+    }
+  ]
+}
