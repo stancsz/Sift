@@ -559,7 +559,7 @@ def load_previous_report(path: Path, manifest_hash: str, schedule_hash: str,
                 or (index, attempt) in seen_attempts or index < last_index):
             raise DispatchError("Previous report contains a duplicate, retried, or nonsequential attempt")
         if index == last_index:
-            if (not allow_invalid_retry or attempt != 2 or previous_sample is None
+            if (attempt != 2 or previous_sample is None
                     or previous_sample.get("index") != index
                     or previous_sample.get("attempt_number") != 1
                     or previous_sample.get("scoreable") is not False
@@ -607,6 +607,17 @@ def load_previous_report(path: Path, manifest_hash: str, schedule_hash: str,
              and job["eligibility"].get("status") == "eligible_by_local_token_estimate"),
             default=None,
         )
+        retry_in_flight = (
+            type(flight.get("index")) is int
+            and flight.get("index") == last_index
+            and flight.get("attempt_number") == 2
+            and previous_sample is not None
+            and previous_sample.get("index") == last_index
+            and previous_sample.get("attempt_number") == 1
+            and previous_sample.get("scoreable") is False
+            and previous_sample.get("failure") is None
+            and allow_invalid_retry
+        )
         if not allow_unknown:
             raise DispatchError("Previous report was interrupted during a request; use explicit --accept-unknown-and-continue after reconciliation")
         if (flight.get("state") != "request_started"
@@ -615,7 +626,9 @@ def load_previous_report(path: Path, manifest_hash: str, schedule_hash: str,
                 or by_index[flight["index"]]["eligibility"].get("status") != "eligible_by_local_token_estimate"
                 or flight.get("job_id") != by_index[flight["index"]]["job_id"]
                 or flight.get("request_body_sha256") != by_index[flight["index"]]["body_sha256"]
-                or flight["index"] != next_eligible):
+                or flight.get("attempt_number") not in {1, 2}
+                or (flight.get("attempt_number") == 2 and not retry_in_flight)
+                or flight["index"] != (last_index if retry_in_flight else next_eligible)):
             raise DispatchError("Interrupted request marker is inconsistent with the next eligible schedule row")
     elif status == "stopped_incomplete_run":
         retry_sample = samples[-1] if samples else None
