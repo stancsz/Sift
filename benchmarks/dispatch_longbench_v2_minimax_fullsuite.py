@@ -436,7 +436,8 @@ def reported_token_totals(samples: list[dict[str, Any]]) -> dict[str, Any]:
     for sample in samples:
         usage = sample.get("usage")
         if not isinstance(usage, dict):
-            unknown += 1
+            if sample.get("outcome_class") != "provider_context_limit_rejected_before_generation":
+                unknown += 1
             continue
         p, c = usage.get("prompt_tokens"), usage.get("completion_tokens")
         if type(p) is int and type(c) is int and p >= 0 and c >= 0:
@@ -477,6 +478,27 @@ def strict_score(text: str, expected: str, provider: str | None,
             else "unknown_transport_outcome"
         ),
     }
+
+
+def is_provider_context_limit_rejection(status: int | None,
+                                        raw_events: list[str]) -> bool:
+    """Recognize explicit provider HTTP 400s rejected before model generation."""
+    if status != 400:
+        return False
+    for event in raw_events:
+        try:
+            payload = json.loads(event)
+        except json.JSONDecodeError:
+            continue
+        error = payload.get("error") if isinstance(payload, dict) else None
+        if not isinstance(error, dict):
+            continue
+        message = error.get("message")
+        if (error.get("code") == 400 and isinstance(message, str)
+                and "maximum context length" in message.casefold()
+                and "requested" in message.casefold()):
+            return True
+    return False
 
 
 def score_summary(samples: list[dict[str, Any]]) -> dict[str, Any]:
@@ -689,6 +711,7 @@ def dispatch(args: argparse.Namespace, manifest: dict[str, Any],
         "attempted_jobs": 0,
         "completed_jobs": 0,
         "unknown_outcome_job_ids": [],
+        "runtime_ineligible_job_ids": [],
         "settled_upstream_cost_usd": 0.0,
         "in_flight": None,
     })
@@ -715,6 +738,8 @@ def dispatch(args: argparse.Namespace, manifest: dict[str, Any],
         completed_indices = {row["index"] for row in report["samples"]
                              if row.get("job_completed") is True}
         report["unknown_outcome_job_ids"] = list(previous.get("unknown_outcome_job_ids", []))
+        report["runtime_ineligible_job_ids"] = list(
+            previous.get("runtime_ineligible_job_ids", []))
         report["settled_upstream_cost_usd"] = float(previous.get("settled_upstream_cost_usd", 0.0))
         report["prior_report_path"] = str(args.resume_from_report)
         report["prior_unknown_outcome_accepted"] = args.accept_unknown_and_continue
@@ -842,6 +867,11 @@ def dispatch(args: argparse.Namespace, manifest: dict[str, Any],
         receipt_cost = _receipt_cost(usage)
         score = strict_score(text, expected_keys[job["case_id"]], returned_provider,
                              returned_model, status, done, failure, finish_reason)
+        context_rejected = is_provider_context_limit_rejection(status, raw_events)
+        if context_rejected:
+            score["outcome_class"] = "provider_context_limit_rejected_before_generation"
+            if job["job_id"] not in report["runtime_ineligible_job_ids"]:
+                report["runtime_ineligible_job_ids"].append(job["job_id"])
         sample = {
             "index": index, "job_id": job["job_id"], "attempt_number": attempt_number,
             "case_id": job["case_id"], "arm": job["arm"], "repeat": job["repeat"],
@@ -871,7 +901,12 @@ def dispatch(args: argparse.Namespace, manifest: dict[str, Any],
         report["provider_token_totals"] = reported_token_totals(report["samples"])
         report["in_flight"] = None
         terminal_reason = None
-        if failure is not None or status != 200:
+        if context_rejected:
+            # The provider explicitly rejected the input before generation. It
+            # has no usage receipt because no model request ran, so it is a
+            # resolved runtime ineligibility rather than ambiguous usage.
+            pass
+        elif failure is not None or status != 200:
             terminal_reason = "request_failed_no_retry"
         elif not done:
             terminal_reason = "missing_sse_done_no_retry"
@@ -915,7 +950,7 @@ def dispatch(args: argparse.Namespace, manifest: dict[str, Any],
                 report["unknown_outcome_job_ids"].append(job["job_id"])
             atomic_write(args.output, report)
             break
-        if score["scoreable"] or attempt_number == 2:
+        if score["scoreable"] or attempt_number == 2 or context_rejected:
             sample["job_completed"] = True
             report["completed_jobs"] += 1
         atomic_write(args.output, report)
