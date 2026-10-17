@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "title": "LongBench v2 MiniMax output-format sensitivity audit",
+  "status": "secondary_sensitivity_only",
+  "source_result": "docs/results/longbench-v2-minimax-m3-100-2026-10-16.json.gz",
+  "source_sha256": "09d80674f03cb432e7cd8c9917f327f9dfd9675446d912cbd3d5f9e1dadb3d62",
+  "dataset_revision": "2b48e494f2c7a2f0af81aae178e05c7e1dde0fe9",
+  "manifest_sha256": "865e27c21fdd2a6ce4b629b283123f4bff66b62e3c17f39c3b8be842b00a6f18",
+  "primary_rule": "Use the frozen per-response correct field; exact A-D answer parser from the original run.",
+  "sensitivity_rule": "In addition to primary correctness, count an answer only when the entire stripped answer is (A), (B), (C), or (D) and its letter equals the recorded expected choice.",
+  "rows": 600,
+  "task_count": 100,
+  "arms": {
+    "full": {
+      "responses": 300,
+      "primary_correct_responses": 117,
+      "sensitivity_correct_responses": 119,
+      "primary_task_majorities": 38,
+      "sensitivity_task_majorities": 38,
+      "answer_format_counts": {
+        "other_nonempty": 4,
+        "parenthesized_letter": 6,
+        "single_letter": 290
+      },
+      "finish_reason_length": 4
+    },
+    "sift": {
+      "responses": 300,
+      "primary_correct_responses": 104,
+      "sensitivity_correct_responses": 106,
+      "primary_task_majorities": 31,
+      "sensitivity_task_majorities": 32,
+      "answer_format_counts": {
+        "parenthesized_letter": 3,
+        "single_letter": 297
+      },
+      "finish_reason_length": 0
+    }
+  },
+  "primary_task_majority_pairs": {
+    "both": 26,
+    "full_only": 12,
+    "neither": 57,
+    "sift_only": 5
+  }
+}

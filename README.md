@@ -60,7 +60,7 @@ On this sample, the Sift hybrid answered **44%** of exact-choice questions corre
 
 This is a 100-task **development sample**, not the full LongBench v2 suite or a blind holdout. The six matrix tasks were used during selector development; the other 94 test the hybrid policy with default Sift. Historical Full/Sift use an earlier Sift core and are non-concurrent, so report the scores as cross-run observations rather than causal lift. LongBench is structured-choice QA, not a Claude Code or Codex task-completion test; those native-agent workflows have separate evidence.
 
-[Read the validated scorecard and method](docs/evals/longbench-v2-minimax-hybrid-stage2-analysis-2026-10-17.md) · [Raw 300-response evidence (gzip JSON)](docs/results/longbench-v2-minimax-hybrid-stage2-continued-2026-10-17.json.gz) · [Evaluation history](docs/evaluation.md)
+[Read the validated hybrid scorecard and method](docs/evals/longbench-v2-minimax-hybrid-stage2-analysis-2026-10-17.md) · [Full/default baseline audit, paired uncertainty, and scoring sensitivity](docs/evals/longbench-v2-readiness-2026-10-17.md) · [Raw 300-response hybrid evidence (gzip JSON)](docs/results/longbench-v2-minimax-hybrid-stage2-continued-2026-10-17.json.gz) · [Raw 600-response Full/default evidence (gzip JSON)](docs/results/longbench-v2-minimax-m3-100-2026-10-16.json.gz) · [Evaluation history](docs/evaluation.md)
 
 ## The problem
 

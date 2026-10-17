@@ -1,0 +1,468 @@
+{
+  "schema_version": 1,
+  "evaluation": "LongBench v2 100-task MiniMax M3 development sample",
+  "analyzed_utc": "2026-10-17T07:49:32.336185+00:00",
+  "analysis": {
+    "script": "D:/github/Sift/benchmarks/analyze_longbench_v2_minimax.py",
+    "script_sha256": "f9e17c69c958244968459c8447468b2985f136127e5042355d6a18fed2fa54a2",
+    "bootstrap_seed": 20261022,
+    "bootstrap_samples": 20000,
+    "input_price_per_million_usd": 0.3,
+    "cache_read_price_per_million_usd": 0.06,
+    "output_price_per_million_usd": 1.2
+  },
+  "run": {
+    "status": "complete",
+    "created_utc": "2026-10-16T23:52:59.566956+00:00",
+    "completed_utc": "2026-10-17T00:01:31.571488+00:00",
+    "wall_clock_seconds": 512.004532,
+    "model": "minimax/minimax-m3",
+    "route": "OpenRouter; requested model and MiniMax provider are verified per response; allow_fallbacks=false",
+    "provider_endpoint": {
+      "provider_slug": "minimax",
+      "provider_name": "Minimax",
+      "model_endpoint_id": "minimax/minimax-m3-20260531",
+      "metadata_source": "https://openrouter.ai/api/v1/models/minimax/minimax-m3/endpoints",
+      "metadata_checked_date": "2026-10-16",
+      "endpoint_context_tokens": 524288,
+      "max_prompt_tokens": 524288,
+      "max_completion_tokens": 512000,
+      "input_price_per_million_usd": 0.3,
+      "output_price_per_million_usd": 1.2,
+      "request_provider_policy": {
+        "only": [
+          "minimax"
+        ],
+        "allow_fallbacks": false
+      },
+      "note": "Provider family is pinned and fallbacks are disabled. Endpoint metadata can change; verify again immediately before the run."
+    },
+    "source_hashes": {
+      "runner_sha256": "0fc06a5d01605cac3e6a1ada1b66656ad21568227f7159434d82c04263e58c05",
+      "manifest_sha256": "865e27c21fdd2a6ce4b629b283123f4bff66b62e3c17f39c3b8be842b00a6f18",
+      "protocol_sha256": "9226e9fbe7b3d9f6d002454e6127de1272bcc87af757780e5488011e2687ce93",
+      "sample_preparation_script_sha256": "5c8bb308c24685bbc385c19f61da2548a191c516f8085cb94442943890835de1",
+      "dataset_preparation_module_sha256": "b913c0c89ed6bea2a7b74b54b64516bfcaad7f7894067ebbac9c5085e47ae069",
+      "m3_renderer_module_sha256": "2eb34e08fbdb3d1acb69339505e1e228030b930e2d967b174e67490006adee77",
+      "sift_core_sha256": "80a87f088448f2f6ee658e8e101a6ac8d85b0f3d3a45bc264f1d96ca38444371",
+      "tokenizer_sha256": "bb1f1626cf01448f1e3b6036d0a061ffc66c91d9046aada14ea23a5441b5ad6e",
+      "chat_template_sha256": "11421244f67553498e5c8112dae02802025bcc4305ec45ad380af95c96f9fe64"
+    },
+    "manifest_sha256": "865e27c21fdd2a6ce4b629b283123f4bff66b62e3c17f39c3b8be842b00a6f18",
+    "execution": {
+      "arms": [
+        "full",
+        "sift"
+      ],
+      "sift_target_tokens": 32768,
+      "full_context_local_token_cap": 150000,
+      "sift_safety_margin_tokens": 128,
+      "repeats": 3,
+      "concurrency": 2,
+      "cli_seed": 20261022,
+      "generation_seed_formula": "cli_seed + repeat + 1; paired arms share each case/repeat seed",
+      "request_order": "seeded shuffle across cases, arms, and repeats",
+      "temperature": 0.1,
+      "top_p": 0.8,
+      "reasoning": "disabled",
+      "max_output_tokens": 16,
+      "retries": 0,
+      "answer_format": "exactly one option letter; only exact A/B/C/D outputs are scorable",
+      "provider_usage_is_authoritative": true,
+      "requested_model": "minimax/minimax-m3",
+      "provider_policy": {
+        "only": [
+          "minimax"
+        ],
+        "allow_fallbacks": false
+      }
+    },
+    "preparation": {
+      "tokenizer_count": "MiniMax published tokenizer over published rendered chat template",
+      "job_generation_wall_ms": 364671.1116998922,
+      "sift_preprocessing_metric": "per-request job.sift_preprocessing_ms measures compact_messages plus post-compaction token recount; null for full-context arm",
+      "provider_count_note": "Per-request OpenRouter usage is authoritative; local token counts include a 128-token safety margin for Sift targets.",
+      "context_projection": {
+        "factor": 3.25,
+        "observed_request_token_limit": 524288,
+        "note": "The 3.25x projection is a conservative client-side check against the current provider-specific endpoint metadata; actual provider usage is captured per request."
+      }
+    }
+  },
+  "sample": {
+    "cases": 100,
+    "repeats": 3,
+    "responses_per_arm": 300,
+    "limitations": [
+      "length-conditioned sample of public training split",
+      "not a full-suite score or blind holdout",
+      "MiniMax implicit prompt caching is enabled; first repeat is not necessarily cold"
+    ]
+  },
+  "quality": {
+    "paired_task_majority": {
+      "both_correct": 26,
+      "full_only": 12,
+      "sift_only": 5,
+      "neither": 57,
+      "sift_minus_full_accuracy_difference": -0.07,
+      "exact_mcnemar_two_sided_p": 0.143463134765625,
+      "difference_ci95": {
+        "n_tasks": 100,
+        "estimate": -0.07,
+        "ci95_low": -0.15,
+        "ci95_high": 0.01,
+        "method": "percentile bootstrap resampling tasks as clusters",
+        "bootstrap_samples": 20000,
+        "bootstrap_seed": 20261022
+      }
+    },
+    "arms": {
+      "full": {
+        "response_level": {
+          "correct": 117,
+          "responses": 300,
+          "accuracy": 0.39,
+          "valid_choices": 290,
+          "invalid_choices": 10
+        },
+        "task_majority": {
+          "correct": 38,
+          "tasks": 100,
+          "accuracy": 0.38
+        }
+      },
+      "sift": {
+        "response_level": {
+          "correct": 104,
+          "responses": 300,
+          "accuracy": 0.3466666666666667,
+          "valid_choices": 297,
+          "invalid_choices": 3
+        },
+        "task_majority": {
+          "correct": 31,
+          "tasks": 100,
+          "accuracy": 0.31
+        }
+      }
+    },
+    "by_domain": {
+      "Code Repository Understanding": {
+        "full": {
+          "majority_correct": 4,
+          "tasks": 11,
+          "majority_accuracy": 0.36363636363636365
+        },
+        "sift": {
+          "majority_correct": 3,
+          "tasks": 11,
+          "majority_accuracy": 0.2727272727272727
+        }
+      },
+      "Long In-context Learning": {
+        "full": {
+          "majority_correct": 7,
+          "tasks": 20,
+          "majority_accuracy": 0.35
+        },
+        "sift": {
+          "majority_correct": 4,
+          "tasks": 20,
+          "majority_accuracy": 0.2
+        }
+      },
+      "Long Structured Data Understanding": {
+        "full": {
+          "majority_correct": 4,
+          "tasks": 11,
+          "majority_accuracy": 0.36363636363636365
+        },
+        "sift": {
+          "majority_correct": 2,
+          "tasks": 11,
+          "majority_accuracy": 0.18181818181818182
+        }
+      },
+      "Long-dialogue History Understanding": {
+        "full": {
+          "majority_correct": 6,
+          "tasks": 20,
+          "majority_accuracy": 0.3
+        },
+        "sift": {
+          "majority_correct": 6,
+          "tasks": 20,
+          "majority_accuracy": 0.3
+        }
+      },
+      "Multi-Document QA": {
+        "full": {
+          "majority_correct": 8,
+          "tasks": 20,
+          "majority_accuracy": 0.4
+        },
+        "sift": {
+          "majority_correct": 8,
+          "tasks": 20,
+          "majority_accuracy": 0.4
+        }
+      },
+      "Single-Document QA": {
+        "full": {
+          "majority_correct": 9,
+          "tasks": 18,
+          "majority_accuracy": 0.5
+        },
+        "sift": {
+          "majority_correct": 8,
+          "tasks": 18,
+          "majority_accuracy": 0.4444444444444444
+        }
+      }
+    }
+  },
+  "efficiency": {
+    "input_token_reduction_fraction": 0.6584349909117568,
+    "cache_inclusive_upstream_cost_savings_fraction": 0.6784541217913974,
+    "reconstructed_uncached_cost_savings_fraction": 0.658357127956965,
+    "reconstructed_cache_adjusted_cost_savings_fraction": 0.6784541217913972,
+    "rates_usd_per_million_tokens": {
+      "uncached_input": 0.3,
+      "cache_read_input": 0.06,
+      "output": 1.2
+    },
+    "rate_note": "Counterfactual reconstructions use configured endpoint rates and are not observed invoices."
+  },
+  "arms": {
+    "full": {
+      "requests": 300,
+      "response_level": {
+        "correct": 117,
+        "responses": 300,
+        "accuracy": 0.39,
+        "valid_choices": 290,
+        "invalid_choices": 10
+      },
+      "task_majority": {
+        "correct": 38,
+        "tasks": 100,
+        "accuracy": 0.38
+      },
+      "provider_prompt_tokens": {
+        "total": 24245610,
+        "n": 300,
+        "mean": 80818.7,
+        "median": 84272.0,
+        "p25": 44516.75,
+        "p75": 114107.5,
+        "p95": 131769.0000000001
+      },
+      "completion_tokens": {
+        "total": 366,
+        "n": 300,
+        "mean": 1.22,
+        "median": 1.0,
+        "p25": 1.0,
+        "p75": 1.0,
+        "p95": 1.0
+      },
+      "cached_prompt_tokens": {
+        "total": 22385631,
+        "fraction_of_prompt_tokens": 0.9232859474354327
+      },
+      "cache_write_tokens": {
+        "total": 0,
+        "all_zero": true
+      },
+      "cache_inclusive_upstream_cost_usd": 1.90157076,
+      "openrouter_reported_cost_usd": 0.0,
+      "openrouter_cost_receipts_missing": 0,
+      "reconstructed_uncached_cost_usd": 7.2741222,
+      "reconstructed_cache_adjusted_cost_usd": 1.9015707599999998,
+      "ttft_ms": {
+        "n": 300,
+        "mean": 1597.0658849955846,
+        "median": 1491.2831500405446,
+        "p25": 1310.3703751112334,
+        "p75": 1746.8430500593968,
+        "p95": 2629.490120045375
+      },
+      "end_to_end_ms": {
+        "n": 300,
+        "mean": 1652.949671994429,
+        "median": 1540.380800026469,
+        "p25": 1363.8419499620795,
+        "p75": 1790.3443500981666,
+        "p95": 2677.790205180645
+      },
+      "sift_preprocessing_ms": null
+    },
+    "sift": {
+      "requests": 300,
+      "response_level": {
+        "correct": 104,
+        "responses": 300,
+        "accuracy": 0.3466666666666667,
+        "valid_choices": 297,
+        "invalid_choices": 3
+      },
+      "task_majority": {
+        "correct": 31,
+        "tasks": 100,
+        "accuracy": 0.31
+      },
+      "provider_prompt_tokens": {
+        "total": 8281452,
+        "n": 300,
+        "mean": 27604.84,
+        "median": 29959.5,
+        "p25": 24216.25,
+        "p75": 32564.5,
+        "p95": 32629.05
+      },
+      "completion_tokens": {
+        "total": 597,
+        "n": 300,
+        "mean": 1.99,
+        "median": 2.0,
+        "p25": 2.0,
+        "p75": 2.0,
+        "p95": 2.0
+      },
+      "cached_prompt_tokens": {
+        "total": 7807124,
+        "fraction_of_prompt_tokens": 0.9427240537045919
+      },
+      "cache_write_tokens": {
+        "total": 0,
+        "all_zero": true
+      },
+      "cache_inclusive_upstream_cost_usd": 0.61144224,
+      "openrouter_reported_cost_usd": 0.0,
+      "openrouter_cost_receipts_missing": 0,
+      "reconstructed_uncached_cost_usd": 2.485152,
+      "reconstructed_cache_adjusted_cost_usd": 0.61144224,
+      "ttft_ms": {
+        "n": 300,
+        "mean": 1625.9793850026715,
+        "median": 1362.6824000384659,
+        "p25": 1219.1781749716029,
+        "p75": 1660.2606500964612,
+        "p95": 2707.848315010779
+      },
+      "end_to_end_ms": {
+        "n": 300,
+        "mean": 1701.6741829947568,
+        "median": 1454.6753000468016,
+        "p25": 1278.9419000037014,
+        "p75": 1755.7964999577962,
+        "p95": 2739.1634451691075
+      },
+      "sift_preprocessing_ms": {
+        "n": 300,
+        "mean": 1213.1931316643022,
+        "median": 1179.7965499572456,
+        "p25": 924.292950076051,
+        "p75": 1531.615200045053,
+        "p95": 1835.2057499112561
+      }
+    }
+  },
+  "latency": {
+    "paired_sift_minus_full_request_wall_ms": {
+      "n": 300,
+      "mean": 48.724511000327766,
+      "median": -96.19469998870045,
+      "p25": -368.7173498910852,
+      "p75": 222.5681249401532,
+      "p95": 1299.5614647865307
+    },
+    "paired_sift_minus_full_ttft_ms": {
+      "n": 300,
+      "mean": 28.913500007086743,
+      "median": -114.92780002299696,
+      "p25": -402.34267502091825,
+      "p75": 184.58935007220134,
+      "p95": 1229.6608897973795
+    },
+    "pairing_unit": "same task and repeat; lower values favor Sift"
+  },
+  "per_repeat": {
+    "1": {
+      "full": {
+        "requests": 100,
+        "correct": 35,
+        "accuracy": 0.35,
+        "prompt_tokens": 8081870,
+        "cached_tokens": 6224891,
+        "upstream_cost_usd": 0.93072636,
+        "uncached_cost_usd": 2.4247001999999998
+      },
+      "sift": {
+        "requests": 100,
+        "correct": 35,
+        "accuracy": 0.35,
+        "prompt_tokens": 2760484,
+        "cached_tokens": 2707962,
+        "upstream_cost_usd": 0.17847792,
+        "uncached_cost_usd": 0.8283887999999999
+      },
+      "savings": {
+        "input_token_reduction_fraction": 0.6584349909117568,
+        "cache_inclusive_cost_reduction_fraction": 0.8082380303486838,
+        "reconstructed_uncached_cost_reduction_fraction": 0.6583541338430211
+      }
+    },
+    "2": {
+      "full": {
+        "requests": 100,
+        "correct": 39,
+        "accuracy": 0.39,
+        "prompt_tokens": 8081870,
+        "cached_tokens": 8080370,
+        "upstream_cost_usd": 0.4854498,
+        "uncached_cost_usd": 2.4247386
+      },
+      "sift": {
+        "requests": 100,
+        "correct": 36,
+        "accuracy": 0.36,
+        "prompt_tokens": 2760484,
+        "cached_tokens": 2710066,
+        "upstream_cost_usd": 0.17796936,
+        "uncached_cost_usd": 0.8283851999999999
+      },
+      "savings": {
+        "input_token_reduction_fraction": 0.6584349909117568,
+        "cache_inclusive_cost_reduction_fraction": 0.6333928657504854,
+        "reconstructed_uncached_cost_reduction_fraction": 0.658361029102271
+      }
+    },
+    "3": {
+      "full": {
+        "requests": 100,
+        "correct": 43,
+        "accuracy": 0.43,
+        "prompt_tokens": 8081870,
+        "cached_tokens": 8080370,
+        "upstream_cost_usd": 0.4853946,
+        "uncached_cost_usd": 2.4246833999999997
+      },
+      "sift": {
+        "requests": 100,
+        "correct": 33,
+        "accuracy": 0.33,
+        "prompt_tokens": 2760484,
+        "cached_tokens": 2389096,
+        "upstream_cost_usd": 0.25499496,
+        "uncached_cost_usd": 0.828378
+      },
+      "savings": {
+        "input_token_reduction_fraction": 0.6584349909117568,
+        "cache_inclusive_cost_reduction_fraction": 0.47466461307975,
+        "reconstructed_uncached_cost_reduction_fraction": 0.6583562208575355
+      }
+    }
+  }
+}
