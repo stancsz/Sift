@@ -595,23 +595,36 @@ def validate_continuation(previous: dict[str, Any], bundle: dict[str, Any], jobs
             or previous.get("bundle_content_sha256") != bundle["bundle_content_sha256"]
             or previous.get("full_schedule_jobs") != EXPECTED_JOBS
             or previous.get("dispatch_prefix_count") != EXPECTED_JOBS
-            or not isinstance(samples, list) or len(samples) != 90):
-        raise PilotError("Continuation source is not the matching 89-complete/90-attempt full-schedule report")
+            or not isinstance(samples, list) or len(samples) not in {90, 200}):
+        raise PilotError("Continuation source is not a recognized stopped full-schedule report")
+    if len(samples) == 90:
+        expected_indices = list(range(90))
+        prior_unknown_indices: list[int] = []
+        target_index = 89
+        expected_failure = "request_exception:SSLError"
+    else:
+        expected_indices = [*range(90), 89, *range(90, 199)]
+        prior_unknown_indices = [89]
+        target_index = 198
+        expected_failure = "request_exception:ConnectionError"
+    if [sample.get("index") for sample in samples] != expected_indices:
+        raise PilotError("Continuation source attempts do not match the approved sequential prefix/retry history")
     failed = samples[-1]
     unknown = previous.get("in_flight")
-    expected_id = f'{jobs[89]["case_id"]}:{jobs[89]["arm"]}:{jobs[89]["repeat"]}'
-    if (failed.get("index") != 89 or failed.get("job_id") != expected_id
-            or failed.get("failure") != "request_exception:SSLError"
+    expected_id = f'{jobs[target_index]["case_id"]}:{jobs[target_index]["arm"]}:{jobs[target_index]["repeat"]}'
+    if (failed.get("index") != target_index or failed.get("job_id") != expected_id
+            or failed.get("failure") != expected_failure
             or failed.get("http_status") is not None or failed.get("response_id") is not None
             or failed.get("usage") is not None or failed.get("cost_usd") is not None
-            or not isinstance(unknown, dict) or unknown.get("index") != 89
+            or failed.get("attempt_number", 1) != 1
+            or failed.get("retry_of_attempt") is not None
+            or not isinstance(unknown, dict) or unknown.get("index") != target_index
             or unknown.get("job_id") != expected_id
             or unknown.get("state") != "unknown_outcome_requires_external_reconciliation"):
-        raise PilotError("Only the recorded unknown-outcome SSL failure at job 89 may use this retry path")
-    if [sample.get("index") for sample in samples] != list(range(90)):
-        raise PilotError("Continuation source attempts are not the exact frozen schedule prefix")
+        raise PilotError("Only the exact latest unknown network failure may use this one-retry continuation path")
     for index, sample in enumerate(samples):
-        job = jobs[index]
+        schedule_index = sample["index"]
+        job = jobs[schedule_index]
         expected_id = f'{job["case_id"]}:{job["arm"]}:{job["repeat"]}'
         if (sample.get("job_id") != expected_id
                 or sample.get("case_id") != job["case_id"]
@@ -619,18 +632,84 @@ def validate_continuation(previous: dict[str, Any], bundle: dict[str, Any], jobs
                 or sample.get("repeat") != job["repeat"]
                 or sample.get("request_body_sha256") != job["body_sha256"]):
             raise PilotError(f"Continuation source row {index} does not match the frozen scheduled job identity/hash")
-    completed_before = [sample for sample in samples[:89]
+    completed_before = [sample for sample in samples[:-1]
                         if sample.get("http_status") == 200
                         and sample.get("failure") is None
                         and sample.get("sse_done_received") is True
                         and sample.get("response_id")
                         and isinstance(sample.get("usage"), dict)
+                        and sample["usage"].get("is_byok") is True
+                        and type(sample["usage"].get("prompt_tokens")) is int
+                        and type(sample["usage"].get("completion_tokens")) is int
+                        and sample["usage"]["prompt_tokens"] >= 0
+                        and sample["usage"]["completion_tokens"] >= 0
                         and sample.get("provider", "").strip().casefold() == "minimax"
-                        and sample.get("returned_model") == stage.MODEL]
-    if len(completed_before) != 89 or previous.get("completed_jobs") != 89:
-        raise PilotError("Continuation source does not contain exactly 89 receipted completed jobs")
-    if len({sample["job_id"] for sample in completed_before}) != 89:
-        raise PilotError("Continuation source completed prefix contains duplicate scheduled job IDs")
+                        and sample.get("returned_model") == stage.MODEL
+                        and sample.get("finish_reason") in {"stop", "length"}
+                        and isinstance(sample.get("cost_usd"), (int, float))]
+    if (len(completed_before) != len(samples) - len(prior_unknown_indices) - 1
+            or previous.get("completed_jobs") != (89 if len(samples) == 90 else 198)):
+        raise PilotError("Continuation source does not contain the expected receipted completed prefix")
+    counts: dict[str, int] = {}
+    for sample in completed_before:
+        counts[sample["job_id"]] = counts.get(sample["job_id"], 0) + 1
+    expected_completed_ids = {f'{jobs[index]["case_id"]}:{jobs[index]["arm"]}:{jobs[index]["repeat"]}'
+                              for index in range(target_index)}
+    if set(counts) != expected_completed_ids:
+        raise PilotError("Continuation source is missing or has extra completed scheduled job IDs")
+    if any(count != 1 for count in counts.values()):
+        raise PilotError("Continuation source contains an unexpected duplicate successful attempt")
+    if len(samples) == 200:
+        retried = [sample for sample in samples
+                   if sample.get("index") == 89 and sample.get("attempt_number") == 2]
+        if (len(retried) != 1 or retried[0].get("retry_of_attempt") != 1
+                or retried[0].get("failure") is not None
+                or retried[0].get("http_status") != 200
+                or retried[0].get("sse_done_received") is not True
+                or not retried[0].get("response_id")):
+            raise PilotError("Job 89 retry is missing or its explicit attempt-2 audit metadata is invalid")
+        for sample in samples:
+            if sample is retried[0] or (sample.get("index") == 89
+                                       and sample.get("attempt_number") == 1):
+                continue
+            if sample.get("attempt_number") != 1 or sample.get("retry_of_attempt") is not None:
+                raise PilotError("Continuation source has an unexpected retry or attempt-number mutation")
+    for unknown_index in prior_unknown_indices:
+        attempt = next((sample for sample in samples
+                        if sample.get("index") == unknown_index
+                        and sample.get("attempt_number") == 1), None)
+        if (attempt is None or attempt.get("failure") != "request_exception:SSLError"
+                or attempt.get("http_status") is not None or attempt.get("response_id") is not None
+                or attempt.get("usage") is not None or attempt.get("cost_usd") is not None
+                or attempt.get("retry_of_attempt") is not None):
+            raise PilotError("Continuation source lost or altered the original job-89 unknown attempt")
+    settled_sum = 0.0
+    for sample in samples:
+        receipt, receipt_source = stage.cost_receipt(sample.get("usage"))
+        if receipt is None:
+            if sample.get("cost_usd") is not None:
+                raise PilotError("Continuation source has a cost without a matching provider usage receipt")
+            continue
+        if (sample.get("cost_usd") != receipt
+                or sample.get("cost_receipt_source") != receipt_source):
+            raise PilotError("Continuation source cost receipt does not match provider usage")
+        settled_sum += receipt
+    saved_settled = previous.get("settled_cost_usd")
+    if (not isinstance(saved_settled, (int, float)) or isinstance(saved_settled, bool)
+            or not math.isfinite(float(saved_settled))
+            or not math.isclose(settled_sum, float(saved_settled), rel_tol=1e-12, abs_tol=1e-9)):
+        raise PilotError("Continuation source settled receipts do not reconcile to its saved ledger")
+    known_tokens = reported_token_totals(samples)
+    if (previous.get("provider_token_totals") is not None
+            and previous.get("provider_token_totals") != known_tokens):
+        raise PilotError("Continuation source token totals do not match its preserved provider receipts")
+    if len(samples) == 200 and previous.get("provider_token_totals") is None:
+        raise PilotError("Latest continuation report is missing its provider token ledger")
+    if len(samples) == 200 and (previous.get("attempted_jobs") != 200
+                                or previous.get("completed_jobs") != 198
+                                or known_tokens.get("attempts_with_reported_usage") != 198
+                                or known_tokens.get("attempts_with_unknown_tokens") != 2):
+        raise PilotError("Latest continuation report counts do not match the audited 200-attempt state")
 
 
 def continue_dispatch(args: argparse.Namespace) -> int:

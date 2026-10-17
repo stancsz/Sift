@@ -49,17 +49,24 @@ two network-failed attempts (job 89's original attempt and job 198) have unknown
 token usage. Across 198 usage receipts, MiniMax reported **11,290,863 prompt +
 297 completion = 11,291,160 tokens**.
 
+The user subsequently directed continuation to completion. The next explicit
+continuation is limited to retrying job 198 once as attempt 2, then proceeding
+through jobs 199–599. It preserves the two unknown-token attempts and validates
+all 200 prior attempts, job IDs, request hashes, token totals, and receipts. Any
+new ambiguous failure stops this continuation.
+
 Among completed responses, Full scored 37/97 scorable responses (38.1% response
 accuracy; 37.9% equal-task-weighted across 33 tasks). Sift scored 26/97 (26.8%;
 26.3% equal-task-weighted across 33 tasks). This is an incomplete, exposed-sample
 diagnostic, not a LongBench comparison result.
 
-Continuation explicitly retries only the saved unknown SSL attempt. It checks
-the exact saved prefix against schedule hashes, row identities and request body
-hashes; preserves the original attempt; records the retry as attempt 2; then
-continues in schedule order. It never retries other failures. A new ambiguous
-failure stops the run. The continuation report is saved separately and sums
-provider-reported tokens only, with unknown-token attempts counted separately.
+Continuation explicitly retries only the latest saved, eligible unknown
+network attempt. It checks the exact saved prefix against schedule hashes, row
+identities, request body hashes, provider token totals, and cost receipts;
+preserves every earlier attempt; records a retry as attempt 2; then continues in
+schedule order. It never retries other failures. A new ambiguous failure stops
+the run. Each continuation report is saved separately and sums provider-reported
+tokens only, with unknown-token attempts counted separately.
 
 Refresh the live OpenRouter route before sending. The user authorized up to
 $2,000. Provider balance after the initial attempt is unverified, so the command
@@ -82,12 +89,12 @@ route check and record provider balance as unverified:
 
 ```powershell
 \.venv\Scripts\python.exe benchmarks\run_longbench_v2_minimax_600.py `
-  --continue-from-report .runs\longbench-v2-minimax-600-run.json `
+  --continue-from-report .runs\longbench-v2-minimax-600-continuation.json `
   --retry-unknown-once --spend-cap-usd 2000 `
   --accept-unknown-prior-outcome `
   --user-authorized-spend-cap-with-unverified-provider-balance `
   --bundle .runs\longbench-v2-minimax-600-v4-bundle.json.gz `
-  --output .runs\longbench-v2-minimax-600-continuation.json
+  --output .runs\longbench-v2-minimax-600-continuation-2.json
 ```
 
 Only `status: complete` with `full_schedule_complete: true`, all 600 completed
