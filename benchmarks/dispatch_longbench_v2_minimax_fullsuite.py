@@ -578,21 +578,31 @@ def load_previous_report(path: Path, manifest_hash: str, schedule_hash: str,
         if (job is None or job["eligibility"].get("status") != "eligible_by_local_token_estimate"
                 or sample.get("job_id") != job["job_id"]
                 or sample.get("request_body_sha256") != job["body_sha256"]
-                or type(attempt) is not int or attempt not in {1, 2}
+                or type(attempt) is not int or attempt not in {1, 2, 3}
                 or (index, attempt) in seen_attempts or index < last_index):
             raise DispatchError("Previous report contains a duplicate, retried, or nonsequential attempt")
         if index == last_index:
-            if (attempt != 2 or previous_sample is None
-                    or previous_sample.get("index") != index
-                    or previous_sample.get("attempt_number") != 1
-                    or previous_sample.get("scoreable") is not False
-                    or not (previous_sample.get("provider_usage_cost_usd") is not None
-                            or (allow_unknown_retry
-                                and previous_sample.get("unknown_attempt_without_receipt") is True
-                                and sample.get("job_id") in report.get("unknown_outcome_job_ids", []))
-                            or (previous_sample.get("failure") is None
-                                and previous_sample.get("provider_usage_cost_usd") is not None))):
-                raise DispatchError("Only one explicit retry of a receipt-backed unscorable response is allowed")
+            valid_second_attempt = (
+                attempt == 2 and previous_sample is not None
+                and previous_sample.get("index") == index
+                and previous_sample.get("attempt_number") == 1
+                and previous_sample.get("scoreable") is False
+                and ((previous_sample.get("provider_usage_cost_usd") is not None
+                      and previous_sample.get("failure") is None)
+                     or (allow_unknown_retry
+                         and previous_sample.get("unknown_attempt_without_receipt") is True
+                         and sample.get("job_id") in report.get("unknown_outcome_job_ids", [])))
+            )
+            valid_third_attempt = (
+                attempt == 3 and allow_unknown_retry and previous_sample is not None
+                and previous_sample.get("index") == index
+                and previous_sample.get("attempt_number") == 2
+                and previous_sample.get("scoreable") is False
+                and previous_sample.get("unknown_attempt_without_receipt") is True
+                and sample.get("job_id") in report.get("unknown_outcome_job_ids", [])
+            )
+            if not (valid_second_attempt or valid_third_attempt):
+                raise DispatchError("Retry history is not permitted by the saved receipt and approval policy")
         elif attempt != 1:
             raise DispatchError("A first attempt must be numbered 1")
         seen_attempts.add((index, attempt))
@@ -626,28 +636,24 @@ def load_previous_report(path: Path, manifest_hash: str, schedule_hash: str,
     if isinstance(flight, dict) and flight.get("state") == "unknown_outcome_requires_external_reconciliation":
         if not allow_unknown:
             raise DispatchError("Previous report has an ambiguous attempt; use explicit --accept-unknown-and-continue only after reconciliation")
-        saved_unknown_sample = (
-            previous_sample is not None
-            and previous_sample.get("index") == last_index
-            and previous_sample.get("attempt_number") == 1
-            and previous_sample.get("scoreable") is False
-            and previous_sample.get("provider_usage_cost_usd") is None
-            and previous_sample.get("job_id") == flight.get("job_id")
-            and flight.get("job_id") in unknown_ids
+        flight_samples = [row for row in samples if row.get("job_id") == flight.get("job_id")]
+        latest_flight_attempt = flight_samples[-1] if flight_samples else None
+        valid_unknown_retry_flight = (
+            allow_unknown_retry and flight.get("job_id") in unknown_ids
+            and flight.get("index") == by_index.get(flight.get("index"), {}).get("index")
+            and ((not flight_samples and flight.get("index") == last_index + 1)
+                 or (latest_flight_attempt is not None
+                     and latest_flight_attempt.get("scoreable") is False
+                     and latest_flight_attempt.get("provider_usage_cost_usd") is None
+                     and latest_flight_attempt.get("attempt_number") in {1, 2}
+                     and (flight.get("attempt_number") is None
+                          or latest_flight_attempt.get("attempt_number") == flight.get("attempt_number"))))
         )
-        allowed_unknown_index = (
-            {last_index, last_index + 1} if allow_unknown_retry
-            else {last_index}
-        )
-        if flight.get("index") not in allowed_unknown_index:
+        if allow_unknown_retry:
+            if not valid_unknown_retry_flight:
+                raise DispatchError("Ambiguous in-flight retry does not match its saved unknown attempt")
+        elif flight.get("index") != last_index:
             raise DispatchError("Ambiguous in-flight index does not match the latest recorded attempt")
-        if (allow_unknown_retry and flight.get("index") == last_index
-                and not saved_unknown_sample):
-            raise DispatchError("Unknown retry requires one saved first attempt or an unsaved in-flight attempt")
-        if (allow_unknown_retry and flight.get("index") == last_index
-                and previous_sample is not None
-                and previous_sample.get("attempt_number") == 2):
-            raise DispatchError("The one authorized retry already had an unknown outcome; do not send a third attempt")
         if allow_unknown_retry and flight.get("job_id") not in unknown_ids:
             raise DispatchError("Unknown-outcome retry is missing its preserved unknown job ID")
     elif status == "dispatching" and isinstance(flight, dict):
@@ -792,16 +798,19 @@ def dispatch(args: argparse.Namespace, manifest: dict[str, Any],
             report.setdefault("retried_unknown_outcome_job_ids", [])
             if flight_id not in report["retried_unknown_outcome_job_ids"]:
                 report["retried_unknown_outcome_job_ids"].append(flight_id)
-            has_saved_unknown = any(
-                row.get("job_id") == flight_id and row.get("attempt_number") == 1
+            flight_attempt = prior_flight.get("attempt_number") or (
+                1 + sum(row.get("job_id") == flight_id for row in report["samples"]))
+            saved_unknown_row = next((
+                row for row in report["samples"]
+                if row.get("job_id") == flight_id
+                and row.get("attempt_number") == flight_attempt
                 and row.get("scoreable") is False
                 and row.get("provider_usage_cost_usd") is None
-                for row in report["samples"]
-            )
-            if not has_saved_unknown:
+            ), None)
+            if saved_unknown_row is None:
                 report["samples"].append({
                 "index": flight_job["index"], "job_id": flight_id,
-                "attempt_number": 1, "case_id": flight_job["case_id"],
+                "attempt_number": flight_attempt, "case_id": flight_job["case_id"],
                 "arm": flight_job["arm"], "repeat": flight_job["repeat"],
                 "seed": flight_job["seed"],
                 "request_body_sha256": flight_job["body_sha256"],
@@ -823,9 +832,7 @@ def dispatch(args: argparse.Namespace, manifest: dict[str, Any],
                 report["samples"].sort(key=lambda row: (row["index"], row["attempt_number"]))
                 report["attempted_jobs"] = len(report["samples"])
             else:
-                for row in report["samples"]:
-                    if row.get("job_id") == flight_id and row.get("attempt_number") == 1:
-                        row["unknown_attempt_without_receipt"] = True
+                saved_unknown_row["unknown_attempt_without_receipt"] = True
             report["interrupted_in_flight_reconciled_as_unknown"] = {
                 "index": prior_flight["index"], "job_id": flight_id,
                 "request_body_sha256": prior_flight["request_body_sha256"],
@@ -852,6 +859,7 @@ def dispatch(args: argparse.Namespace, manifest: dict[str, Any],
             start_index = max(start_index, interrupted["index"] + 1)
     selected_indices = {job["index"] for job in selected}
     jobs_to_dispatch = list(selected)
+    queued_retry_indices: set[int] = set()
     if previous is not None and args.retry_invalid_response:
         pending_retry_indices = {
             row.get("index") for row in previous.get("samples", [])
@@ -863,14 +871,23 @@ def dispatch(args: argparse.Namespace, manifest: dict[str, Any],
         }
         jobs_to_dispatch.extend(
             job for job in selected if job["index"] in pending_retry_indices)
+        queued_retry_indices.update(pending_retry_indices)
+    if (args.retry_unknown_outcome
+            and isinstance(report.get("interrupted_in_flight_reconciled_as_unknown"), dict)
+            and report["interrupted_in_flight_reconciled_as_unknown"].get("decision", "").startswith("one_retry_authorized")):
+        unknown_retry_index = report["interrupted_in_flight_reconciled_as_unknown"]["index"]
+        if unknown_retry_index not in queued_retry_indices:
+            jobs_to_dispatch.extend(job for job in selected if job["index"] == unknown_retry_index)
+        queued_retry_indices.add(unknown_retry_index)
     elapsed_start = time.perf_counter()
     for job in jobs_to_dispatch:
         index = job["index"]
-        if index < start_index or index in completed_indices:
+        if ((index < start_index and index not in queued_retry_indices)
+                or index in completed_indices):
             continue
         attempt_number = 1 + sum(sample.get("index") == index
                                  for sample in report["samples"])
-        if attempt_number > 2 or (attempt_number == 2
+        if attempt_number > (3 if args.retry_unknown_outcome else 2) or (attempt_number == 2
                                   and not (args.retry_invalid_response
                                            or args.retry_unknown_outcome)):
             raise DispatchError(f"Retry policy does not permit attempt {attempt_number} for {job['job_id']}")
@@ -990,6 +1007,8 @@ def dispatch(args: argparse.Namespace, manifest: dict[str, Any],
             **score,
         }
         report["samples"].append(sample)
+        if receipt_cost is None and failure is not None and not context_rejected:
+            sample["unknown_attempt_without_receipt"] = True
         report["samples"].sort(key=lambda row: (row["index"], row["attempt_number"]))
         report["attempted_jobs"] = len(report["samples"])
         report["provider_token_totals"] = reported_token_totals(report["samples"])
@@ -1044,7 +1063,7 @@ def dispatch(args: argparse.Namespace, manifest: dict[str, Any],
                 report["unknown_outcome_job_ids"].append(job["job_id"])
             atomic_write(args.output, report)
             break
-        if score["scoreable"] or attempt_number == 2 or context_rejected:
+        if score["scoreable"] or attempt_number >= 2 or context_rejected:
             sample["job_completed"] = True
             report["completed_jobs"] += 1
         atomic_write(args.output, report)
