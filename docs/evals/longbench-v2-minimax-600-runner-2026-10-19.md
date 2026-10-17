@@ -61,24 +61,34 @@ tokens**. Four attempts have unknown usage (indices 89, 198, 223, and 318); that
 usage is not counted as zero. The independent checkpoint audit verified the
 attempt sequence, frozen request hashes, 318 receipt rows, and token ledger.
 
-The next continuation is prepared to retry job 318 once as attempt 2, then
-proceed through jobs 319–599. The runner accepts only this exact 322-attempt
-profile and preserves all four unknown-token attempts. Following the council's
-recommendation, do not run it until the user explicitly approves this retry.
-Any further ambiguous network failure stops the run.
+Continuation 4 retried job 318 successfully and completed through job 549. It
+stopped before sending job 550 because Windows denied the atomic report rename
+(`WinError 5`). The committed JSON and `.tmp` checkpoints contain identical
+554 attempts through successful job 549; the `.tmp` file adds only the
+pre-request marker for job 550. Source order and the independent audit confirm
+that the provider call occurs after that checkpoint write, so job 550 was not
+sent and is not counted as an attempt or unknown-token request.
 
-Among completed responses so far, Full scored 59/155 scorable responses (38.1%
-response accuracy; 37.4% equal-task-weighted across 53 tasks). Sift scored
-46/154 (29.9%; 30.2% equal-task-weighted across 53 tasks). This remains a
-partial, exposed-sample diagnostic, not a LongBench comparison result.
+The recovered checkpoint is
+`.runs/longbench-v2-minimax-600-continuation-4-recovery.json`. It records 554
+attempts and 550 unique completed jobs. Provider receipts report **30,882,116
+prompt + 1,142 completion = 30,883,258 tokens**. Four earlier attempts remain
+unknown (indices 89, 198, 223, and 318). The next request is job 550 as its
+first attempt, followed by jobs 551–599. The runner validates this exact
+recovery state before dispatch. Its report writer now uses unique temporary
+files and bounded retries for short Windows sharing locks.
 
-Continuation explicitly retries only the latest saved, eligible unknown
-network attempt. It checks the exact saved prefix against schedule hashes, row
-identities, request body hashes, provider token totals, and cost receipts;
-preserves every earlier attempt; records a retry as attempt 2; then continues in
-schedule order. It never retries other failures. A new ambiguous failure stops
-the run. Each continuation report is saved separately and sums provider-reported
-tokens only, with unknown-token attempts counted separately.
+Among completed responses so far, Full scored 104/262 scorable responses
+(39.7% response accuracy; 38.8% equal-task-weighted across 92 tasks). Sift
+scored 94/266 (35.3%; 35.5% equal-task-weighted across 92 tasks). These are
+partial, exposed-sample diagnostics, not final LongBench comparison results.
+
+Continuation validates the exact saved prefix against schedule hashes, row
+identities, request body hashes, provider token totals, and receipts. A user
+authorized one retry per ambiguous attempt, followed by schedule-order work;
+unknown outcomes remain separately recorded. A pre-request checkpoint failure
+resumes at the unsent index as attempt 1. Each continuation report is saved
+separately and carries an up-to-date provider token total.
 
 The user authorized up to $2,000 for the evaluation and confirmed billing
 headroom/no unsettled requests earlier in the run. Progress reporting focuses
@@ -94,17 +104,17 @@ Build the deterministic offline bundle (no API key read and no network call):
   --bundle .runs\longbench-v2-minimax-600-v4-bundle.json.gz
 ```
 
-After explicit approval to retry the latest unknown attempt, continue the
-frozen schedule:
+Continue from the verified pre-request checkpoint. Job 550 was not sent, so this
+resumes it as its first attempt:
 
 ```powershell
 \.venv\Scripts\python.exe benchmarks\run_longbench_v2_minimax_600.py `
-  --continue-from-report .runs\longbench-v2-minimax-600-continuation-3.json `
+  --continue-from-report .runs\longbench-v2-minimax-600-continuation-4-recovery.json `
   --retry-unknown-once --spend-cap-usd 2000 `
   --accept-unknown-prior-outcome `
   --user-authorized-spend-cap-with-unverified-provider-balance `
   --bundle .runs\longbench-v2-minimax-600-v4-bundle.json.gz `
-  --output .runs\longbench-v2-minimax-600-continuation-4.json
+  --output .runs\longbench-v2-minimax-600-continuation-5.json
 ```
 
 Only `status: complete` with `full_schedule_complete: true`, all 600 completed

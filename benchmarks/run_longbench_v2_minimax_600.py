@@ -54,6 +54,25 @@ def deterministic_gzip_json(value: dict[str, Any]) -> bytes:
     return target.getvalue()
 
 
+def atomic_write_report(path: Path, value: dict[str, Any]) -> None:
+    """Atomically checkpoint a report, retrying short Windows sharing locks."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp = path.with_name(f"{path.name}.{os.getpid()}.{time.time_ns()}.tmp")
+    temp.write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    try:
+        for attempt in range(8):
+            try:
+                temp.replace(path)
+                return
+            except PermissionError:
+                if attempt == 7:
+                    raise
+                time.sleep(min(0.1 * (2 ** attempt), 1.0))
+    finally:
+        if temp.exists():
+            temp.unlink()
+
+
 def load_continuation_bundle(path: Path, rebuilt: dict[str, Any]) -> dict[str, Any]:
     """Load the original frozen bundle and permit runner-provenance changes only.
 
@@ -392,8 +411,14 @@ def _dispatch_prefix(manifest: dict[str, Any], jobs: list[dict[str, Any]],
     }
     first_index = 0
     successful_job_ids: set[str] = set()
+    retry_target_index: int | None = None
     if previous_report is not None:
-        first_index = int(previous_report["samples"][-1]["index"])
+        previous_flight = previous_report.get("in_flight") or {}
+        if previous_flight.get("state") == "unknown_outcome_requires_external_reconciliation":
+            retry_target_index = int(previous_flight["index"])
+            first_index = retry_target_index
+        else:
+            first_index = int(previous_report["samples"][-1]["index"]) + 1
         report.update({key: value for key, value in previous_report.items()
                        if key not in {"finished_utc", "dispatch_wall_seconds", "score_summary"}})
         report.update(status="dispatching", full_schedule_complete=False,
@@ -413,14 +438,21 @@ def _dispatch_prefix(manifest: dict[str, Any], jobs: list[dict[str, Any]],
         report["completed_jobs"] = len(successful_job_ids)
         report["attempted_jobs"] = len(report["samples"])
         report["reconciliation_history"] = list(report.get("reconciliation_history", []))
-        report["reconciliation_history"].append({
-            "unknown_attempt": {key: previous_report["samples"][-1].get(key)
-                                for key in ("index", "job_id", "failure", "http_status",
-                                            "response_id", "usage", "cost_usd")},
-            "retry_authorized_by": "explicit --continue-from-report --retry-unknown-once",
-            "retry_started_utc": datetime.now(timezone.utc).isoformat(),
-        })
-    stage.atomic_write(output, report)
+        if retry_target_index is not None:
+            report["reconciliation_history"].append({
+                "unknown_attempt": {key: previous_report["samples"][-1].get(key)
+                                    for key in ("index", "job_id", "failure", "http_status",
+                                                "response_id", "usage", "cost_usd")},
+                "retry_authorized_by": "explicit --continue-from-report --retry-unknown-once",
+                "retry_started_utc": datetime.now(timezone.utc).isoformat(),
+            })
+        else:
+            report["reconciliation_history"].append({
+                "checkpoint_recovery": previous_report.get("checkpoint_write_recovery"),
+                "next_request_index": first_index,
+                "recovered_utc": datetime.now(timezone.utc).isoformat(),
+            })
+    atomic_write_report(output, report)
     started_all = time.perf_counter()
     for index in range(first_index, prefix):
         job = jobs[index]
@@ -432,12 +464,12 @@ def _dispatch_prefix(manifest: dict[str, Any], jobs: list[dict[str, Any]],
                           stop_reason="next_request_reservation_exceeds_cap")
             break
         job_id = f'{job["case_id"]}:{job["arm"]}:{job["repeat"]}'
-        is_explicit_retry = previous_report is not None and index == first_index
+        is_explicit_retry = retry_target_index is not None and index == retry_target_index
         report["in_flight"] = {"index": index, "job_id": job_id,
                                "attempt_number": 2 if is_explicit_retry else 1,
                                "retry_of_attempt": 1 if is_explicit_retry else None,
                                "reserved_cost_usd": reserve, "state": "request_started"}
-        stage.atomic_write(output, report)
+        atomic_write_report(output, report)
         started = time.perf_counter()
         first_content_at = None
         fragments: list[str] = []
@@ -520,6 +552,7 @@ def _dispatch_prefix(manifest: dict[str, Any], jobs: list[dict[str, Any]],
         }
         report["samples"].append(sample)
         report["attempted_jobs"] = len(report["samples"])
+        report["provider_token_totals"] = reported_token_totals(report["samples"])
         # A stream or route failure does not erase a valid upstream charge.
         # Reconcile the receipt before choosing the terminal stop reason.
         receipt_guard = account_receipt(report, receipt, receipt_source, reserve,
@@ -542,12 +575,12 @@ def _dispatch_prefix(manifest: dict[str, Any], jobs: list[dict[str, Any]],
                 stop = stop or "request_failed_or_incomplete"
         if stop:
             report.update(status="stopped_incomplete_run", stop_reason=stop)
-            stage.atomic_write(output, report)
+            atomic_write_report(output, report)
             break
         sample["job_completed"] = True
         successful_job_ids.add(sample["job_id"])
         report["completed_jobs"] = len(successful_job_ids)
-        stage.atomic_write(output, report)
+        atomic_write_report(output, report)
     else:
         report["status"] = "complete" if report["completed_jobs"] == EXPECTED_JOBS else "completed_prefix_incomplete_schedule"
         report["full_schedule_complete"] = report["completed_jobs"] == EXPECTED_JOBS
@@ -556,7 +589,7 @@ def _dispatch_prefix(manifest: dict[str, Any], jobs: list[dict[str, Any]],
     report["provider_token_totals"] = reported_token_totals(report["samples"])
     report["dispatch_wall_seconds"] = time.perf_counter() - started_all
     report["finished_utc"] = datetime.now(timezone.utc).isoformat()
-    stage.atomic_write(output, report)
+    atomic_write_report(output, report)
     return report
 
 
@@ -595,7 +628,7 @@ def validate_continuation(previous: dict[str, Any], bundle: dict[str, Any], jobs
             or previous.get("bundle_content_sha256") != bundle["bundle_content_sha256"]
             or previous.get("full_schedule_jobs") != EXPECTED_JOBS
             or previous.get("dispatch_prefix_count") != EXPECTED_JOBS
-            or not isinstance(samples, list) or len(samples) not in {90, 200, 226, 322}):
+            or not isinstance(samples, list) or len(samples) not in {90, 200, 226, 322, 554}):
         raise PilotError("Continuation source is not a recognized stopped full-schedule report")
     if len(samples) == 90:
         expected_indices = list(range(90))
@@ -616,7 +649,7 @@ def validate_continuation(previous: dict[str, Any], bundle: dict[str, Any], jobs
         expected_retries = {89, 198}
         target_index = 223
         expected_failure = "request_exception:SSLError"
-    else:
+    elif len(samples) == 322:
         expected_indices = [*range(90), 89, *range(90, 199), 198,
                             *range(199, 224), 223, *range(224, 319)]
         prior_unknowns = {89: "request_exception:SSLError",
@@ -625,21 +658,47 @@ def validate_continuation(previous: dict[str, Any], bundle: dict[str, Any], jobs
         expected_retries = {89, 198, 223}
         target_index = 318
         expected_failure = "request_exception:SSLError"
+    else:
+        expected_indices = [*range(90), 89, *range(90, 199), 198,
+                            *range(199, 224), 223, *range(224, 319), 318,
+                            *range(319, 550)]
+        prior_unknowns = {89: "request_exception:SSLError",
+                          198: "request_exception:ConnectionError",
+                          223: "request_exception:SSLError",
+                          318: "request_exception:SSLError"}
+        expected_retries = {89, 198, 223, 318}
+        target_index = 550
+        expected_failure = None
     if [sample.get("index") for sample in samples] != expected_indices:
         raise PilotError("Continuation source attempts do not match the approved sequential prefix/retry history")
-    failed = samples[-1]
     unknown = previous.get("in_flight")
     expected_id = f'{jobs[target_index]["case_id"]}:{jobs[target_index]["arm"]}:{jobs[target_index]["repeat"]}'
-    if (failed.get("index") != target_index or failed.get("job_id") != expected_id
-            or failed.get("failure") != expected_failure
-            or failed.get("http_status") is not None or failed.get("response_id") is not None
-            or failed.get("usage") is not None or failed.get("cost_usd") is not None
-            or failed.get("attempt_number") != 1
-            or failed.get("retry_of_attempt") is not None
-            or not isinstance(unknown, dict) or unknown.get("index") != target_index
-            or unknown.get("job_id") != expected_id
-            or unknown.get("state") != "unknown_outcome_requires_external_reconciliation"):
-        raise PilotError("Only the exact latest unknown network failure may use this one-retry continuation path")
+    if len(samples) == 554:
+        last = samples[-1]
+        if (last.get("index") != 549 or last.get("failure") is not None
+                or last.get("usage") is None or last.get("attempt_number") != 1
+                or not isinstance(unknown, dict) or unknown.get("index") != target_index
+                or unknown.get("job_id") != expected_id
+                or unknown.get("request_body_sha256") != jobs[target_index]["body_sha256"]
+                or unknown.get("state") != "not_sent_before_request"
+                or previous.get("stop_reason") != "checkpoint_write_failed_before_request"
+                or previous.get("checkpoint_write_recovery", {}).get("request_started") is not False
+                or previous.get("checkpoint_write_recovery", {}).get("request_body_sha256")
+                   != jobs[target_index]["body_sha256"]
+                or previous.get("checkpoint_write_recovery", {}).get("samples_match_committed_report") is not True):
+            raise PilotError("Only the exact checkpoint-write failure before job 550 may resume without a retry")
+    else:
+        failed = samples[-1]
+        if (failed.get("index") != target_index or failed.get("job_id") != expected_id
+                or failed.get("failure") != expected_failure
+                or failed.get("http_status") is not None or failed.get("response_id") is not None
+                or failed.get("usage") is not None or failed.get("cost_usd") is not None
+                or failed.get("attempt_number") != 1
+                or failed.get("retry_of_attempt") is not None
+                or not isinstance(unknown, dict) or unknown.get("index") != target_index
+                or unknown.get("job_id") != expected_id
+                or unknown.get("state") != "unknown_outcome_requires_external_reconciliation"):
+            raise PilotError("Only the exact latest unknown network failure may use this one-retry continuation path")
     for index, sample in enumerate(samples):
         schedule_index = sample["index"]
         job = jobs[schedule_index]
@@ -650,7 +709,8 @@ def validate_continuation(previous: dict[str, Any], bundle: dict[str, Any], jobs
                 or sample.get("repeat") != job["repeat"]
                 or sample.get("request_body_sha256") != job["body_sha256"]):
             raise PilotError(f"Continuation source row {index} does not match the frozen scheduled job identity/hash")
-    completed_before = [sample for sample in samples[:-1]
+    completed_rows = samples if len(samples) == 554 else samples[:-1]
+    completed_before = [sample for sample in completed_rows
                         if sample.get("http_status") == 200
                         and sample.get("failure") is None
                         and sample.get("sse_done_received") is True
@@ -665,7 +725,7 @@ def validate_continuation(previous: dict[str, Any], bundle: dict[str, Any], jobs
                         and sample.get("returned_model") == stage.MODEL
                         and sample.get("finish_reason") in {"stop", "length"}
                         and isinstance(sample.get("cost_usd"), (int, float))]
-    expected_completed_count = {90: 89, 200: 198, 226: 223, 322: 318}[len(samples)]
+    expected_completed_count = {90: 89, 200: 198, 226: 223, 322: 318, 554: 550}[len(samples)]
     if (len(completed_before) != expected_completed_count
             or previous.get("completed_jobs") != expected_completed_count):
         raise PilotError("Continuation source does not contain the expected receipted completed prefix")
@@ -710,6 +770,10 @@ def validate_continuation(previous: dict[str, Any], bundle: dict[str, Any], jobs
                                     or known_tokens.get("attempts_with_reported_usage") != 318
                                     or known_tokens.get("attempts_with_unknown_tokens") != 4):
             raise PilotError("Latest continuation report counts do not match the audited 322-attempt state")
+        if len(samples) == 554 and (previous.get("completed_jobs") != 550
+                                    or known_tokens.get("attempts_with_reported_usage") != 550
+                                    or known_tokens.get("attempts_with_unknown_tokens") != 4):
+            raise PilotError("Checkpoint recovery report counts do not match the audited 554-attempt state")
         if len(samples) == 200 and (previous.get("completed_jobs") != 198
                                     or known_tokens.get("attempts_with_reported_usage") != 198
                                     or known_tokens.get("attempts_with_unknown_tokens") != 2):
@@ -742,7 +806,7 @@ def validate_continuation(previous: dict[str, Any], bundle: dict[str, Any], jobs
     if (previous.get("provider_token_totals") is not None
             and previous.get("provider_token_totals") != known_tokens):
         raise PilotError("Continuation source token totals do not match its preserved provider receipts")
-    if len(samples) in {200, 226, 322} and previous.get("provider_token_totals") is None:
+    if len(samples) in {200, 226, 322, 554} and previous.get("provider_token_totals") is None:
         raise PilotError("Latest continuation report is missing its provider token ledger")
 
 
@@ -791,7 +855,7 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--continue-from-report", type=Path,
                    help="Explicitly continue an audited stopped checkpoint in a new output report")
     p.add_argument("--retry-unknown-once", action="store_true",
-                   help="Retry the latest eligible unknown attempt exactly once, preserving its original attempt")
+                   help="Enable explicit continuation; retry the latest eligible unknown once, or resume the next unsent index")
     p.add_argument("--prefix", type=int, default=DEFAULT_PREFIX,
                    help="Number of first scheduled jobs; no arbitrary job selection")
     p.add_argument("--spend-cap-usd", type=float, help="Positive client-side spend cap for this prefix")
