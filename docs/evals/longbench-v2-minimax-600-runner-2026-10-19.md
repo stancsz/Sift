@@ -52,15 +52,24 @@ three unknown-token attempts are the original job 89 attempt, the original job
 **13,317,186 prompt + 396 completion = 13,317,582 tokens**. Unknown-token
 attempts remain unknown and are not counted as zero.
 
-The user directed continuation through all 600 requests and instructed that
-progress reporting focus on token use. The next continuation retries job 223
-once as attempt 2, then proceeds through jobs 224–599. It validates and retains
-all 226 prior attempts, frozen job identities, request hashes, provider token
-totals, and receipts. Any further ambiguous network failure stops the run.
+Continuation 3 retried job 223 successfully and proceeded through job 318,
+which stopped on an SSL exception with no HTTP status, response ID, or usage
+receipt. Its report is `.runs/longbench-v2-minimax-600-continuation-3.json`.
+Combined status is **322 attempts, 318 unique scheduled jobs completed**.
+Provider receipts report **19,399,752 prompt + 600 completion = 19,400,352
+tokens**. Four attempts have unknown usage (indices 89, 198, 223, and 318); that
+usage is not counted as zero. The independent checkpoint audit verified the
+attempt sequence, frozen request hashes, 318 receipt rows, and token ledger.
 
-Among completed responses so far, Full scored 48/109 scorable responses (44.0%
-response accuracy; 43.7% equal-task-weighted across 37 tasks). Sift scored
-31/109 (28.4%; 27.9% equal-task-weighted across 37 tasks). This remains a
+The next continuation is prepared to retry job 318 once as attempt 2, then
+proceed through jobs 319–599. The runner accepts only this exact 322-attempt
+profile and preserves all four unknown-token attempts. Following the council's
+recommendation, do not run it until the user explicitly approves this retry.
+Any further ambiguous network failure stops the run.
+
+Among completed responses so far, Full scored 59/155 scorable responses (38.1%
+response accuracy; 37.4% equal-task-weighted across 53 tasks). Sift scored
+46/154 (29.9%; 30.2% equal-task-weighted across 53 tasks). This remains a
 partial, exposed-sample diagnostic, not a LongBench comparison result.
 
 Continuation explicitly retries only the latest saved, eligible unknown
@@ -71,11 +80,10 @@ schedule order. It never retries other failures. A new ambiguous failure stops
 the run. Each continuation report is saved separately and sums provider-reported
 tokens only, with unknown-token attempts counted separately.
 
-Refresh the live OpenRouter route before sending. The user authorized up to
-$2,000. Provider balance after the initial attempt is unverified, so the command
-records that limitation rather than claiming a fresh balance attestation. The
-$2,000 value is a client-side guard; OpenRouter BYOK does not impose a
-MiniMax-side hard cap.
+The user authorized up to $2,000 for the evaluation and confirmed billing
+headroom/no unsettled requests earlier in the run. Progress reporting focuses
+on provider-reported tokens; unknown-token attempts remain separate. The $2,000
+value is a client-side guard.
 
 ## Commands
 
@@ -86,18 +94,17 @@ Build the deterministic offline bundle (no API key read and no network call):
   --bundle .runs\longbench-v2-minimax-600-v4-bundle.json.gz
 ```
 
-The user authorized up to **$2,000**, and earlier confirmed no unsettled
-requests and at least $14.69 of MiniMax headroom. Continue with a fresh live
-route check and record provider balance as unverified:
+After explicit approval to retry the latest unknown attempt, continue the
+frozen schedule:
 
 ```powershell
 \.venv\Scripts\python.exe benchmarks\run_longbench_v2_minimax_600.py `
-  --continue-from-report .runs\longbench-v2-minimax-600-continuation-2.json `
+  --continue-from-report .runs\longbench-v2-minimax-600-continuation-3.json `
   --retry-unknown-once --spend-cap-usd 2000 `
   --accept-unknown-prior-outcome `
   --user-authorized-spend-cap-with-unverified-provider-balance `
   --bundle .runs\longbench-v2-minimax-600-v4-bundle.json.gz `
-  --output .runs\longbench-v2-minimax-600-continuation-3.json
+  --output .runs\longbench-v2-minimax-600-continuation-4.json
 ```
 
 Only `status: complete` with `full_schedule_complete: true`, all 600 completed

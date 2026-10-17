@@ -595,7 +595,7 @@ def validate_continuation(previous: dict[str, Any], bundle: dict[str, Any], jobs
             or previous.get("bundle_content_sha256") != bundle["bundle_content_sha256"]
             or previous.get("full_schedule_jobs") != EXPECTED_JOBS
             or previous.get("dispatch_prefix_count") != EXPECTED_JOBS
-            or not isinstance(samples, list) or len(samples) not in {90, 200, 226}):
+            or not isinstance(samples, list) or len(samples) not in {90, 200, 226, 322}):
         raise PilotError("Continuation source is not a recognized stopped full-schedule report")
     if len(samples) == 90:
         expected_indices = list(range(90))
@@ -609,12 +609,21 @@ def validate_continuation(previous: dict[str, Any], bundle: dict[str, Any], jobs
         expected_retries = {89}
         target_index = 198
         expected_failure = "request_exception:ConnectionError"
-    else:
+    elif len(samples) == 226:
         expected_indices = [*range(90), 89, *range(90, 199), 198, *range(199, 224)]
         prior_unknowns = {89: "request_exception:SSLError",
                           198: "request_exception:ConnectionError"}
         expected_retries = {89, 198}
         target_index = 223
+        expected_failure = "request_exception:SSLError"
+    else:
+        expected_indices = [*range(90), 89, *range(90, 199), 198,
+                            *range(199, 224), 223, *range(224, 319)]
+        prior_unknowns = {89: "request_exception:SSLError",
+                          198: "request_exception:ConnectionError",
+                          223: "request_exception:SSLError"}
+        expected_retries = {89, 198, 223}
+        target_index = 318
         expected_failure = "request_exception:SSLError"
     if [sample.get("index") for sample in samples] != expected_indices:
         raise PilotError("Continuation source attempts do not match the approved sequential prefix/retry history")
@@ -656,7 +665,7 @@ def validate_continuation(previous: dict[str, Any], bundle: dict[str, Any], jobs
                         and sample.get("returned_model") == stage.MODEL
                         and sample.get("finish_reason") in {"stop", "length"}
                         and isinstance(sample.get("cost_usd"), (int, float))]
-    expected_completed_count = {90: 89, 200: 198, 226: 223}[len(samples)]
+    expected_completed_count = {90: 89, 200: 198, 226: 223, 322: 318}[len(samples)]
     if (len(completed_before) != expected_completed_count
             or previous.get("completed_jobs") != expected_completed_count):
         raise PilotError("Continuation source does not contain the expected receipted completed prefix")
@@ -697,6 +706,10 @@ def validate_continuation(previous: dict[str, Any], bundle: dict[str, Any], jobs
                                     or known_tokens.get("attempts_with_reported_usage") != 223
                                     or known_tokens.get("attempts_with_unknown_tokens") != 3):
             raise PilotError("Latest continuation report counts do not match the audited 226-attempt state")
+        if len(samples) == 322 and (previous.get("completed_jobs") != 318
+                                    or known_tokens.get("attempts_with_reported_usage") != 318
+                                    or known_tokens.get("attempts_with_unknown_tokens") != 4):
+            raise PilotError("Latest continuation report counts do not match the audited 322-attempt state")
         if len(samples) == 200 and (previous.get("completed_jobs") != 198
                                     or known_tokens.get("attempts_with_reported_usage") != 198
                                     or known_tokens.get("attempts_with_unknown_tokens") != 2):
@@ -729,7 +742,7 @@ def validate_continuation(previous: dict[str, Any], bundle: dict[str, Any], jobs
     if (previous.get("provider_token_totals") is not None
             and previous.get("provider_token_totals") != known_tokens):
         raise PilotError("Continuation source token totals do not match its preserved provider receipts")
-    if len(samples) in {200, 226} and previous.get("provider_token_totals") is None:
+    if len(samples) in {200, 226, 322} and previous.get("provider_token_totals") is None:
         raise PilotError("Latest continuation report is missing its provider token ledger")
 
 
@@ -776,9 +789,9 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--output", type=Path, default=OUTPUT_DEFAULT)
     p.add_argument("--dispatch", action="store_true", help="Explicitly dispatch a first-N pilot")
     p.add_argument("--continue-from-report", type=Path,
-                   help="Explicitly continue the sole eligible unknown SSL attempt in a new output report")
+                   help="Explicitly continue an audited stopped checkpoint in a new output report")
     p.add_argument("--retry-unknown-once", action="store_true",
-                   help="Authorize exactly one retry of job 89, preserving its unknown first attempt")
+                   help="Retry the latest eligible unknown attempt exactly once, preserving its original attempt")
     p.add_argument("--prefix", type=int, default=DEFAULT_PREFIX,
                    help="Number of first scheduled jobs; no arbitrary job selection")
     p.add_argument("--spend-cap-usd", type=float, help="Positive client-side spend cap for this prefix")
