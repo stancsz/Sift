@@ -215,3 +215,427 @@ Posthoc engine accounting matched complete prompt/decode/release records by slot
 | Codex / Sift | 187,738 | 17,617 | 170,121 | 6,979 | 91.62 |
 
 These are totals over different task paths, not equal-workload token savings, provider wire-usage receipts or bills. All artifacts failed acceptance, so no cheaper successful-task claim is supported. The [complete aggregate report](results/native-build-pilot-2026-10-15.json) preserves sources, fixture/artifact/evidence hashes, estimated counts, client usage, chronology and limitations. Raw native traces remain private; fixture/source reproduction does not reproduce the original stochastic outputs exactly. After saving all logs, the dedicated benchmark gateway was removed and the existing Qwen engine left running idle with unchanged configuration. Running Subroute production and staging gateways were not reloaded.
+
+## Native research-evidence selector stress pilot, 2026-10-15
+
+A separate public research-audit development task passed visible and independent gold checks in one full-context, one Sift and one recency Claude Code run. Sift and recency used the same predeclared 8,192-token stress target; the Sift default at experiment time was 24,576. The current source candidate changes that default to 32,768. All inference used local Qwen3.8-27B, and the engine cache was shared and not reset.
+
+| Arm | Accepted | Task seconds | Mean client TTFT (samples) | Engine weighted decode tok/s | Requests compacted |
+|---|---:|---:|---:|---:|---:|
+| Full | Yes | 97.10 | 2.656 (6) | 45.32 | 0/7 |
+| Sift, 8K target | Yes | 108.29 | 4.891 (5) | 45.40 | 2/6 |
+| Recency, 8K target | Yes | 133.02 | 2.840 (8) | 45.63 | 4/9 |
+
+Sift compacted before the evidence artifact edit and preserved the accepted result. In this one fixed-order run its task time and mean TTFT were higher than full context, even though its client-reported total input-plus-cache tokens were lower. The engine processed more prompt tokens under Sift, while reported cache reads were lower. This flags prefix reuse for investigation, but task paths and cache state differed, so it is not a causal speed estimate. API spend was $0 for all arms; hardware costs and any Astra bill were not measured. See the [full pilot](evals/native-research-pilot-2026-10-15.md), [predeclared plan](evals/native-research-pilot-plan-2026-10-15.json), and [machine-readable data](results/native-research-pilot-2026-10-15.json).
+
+## Query-independent epoch coverage development screen, 2026-10-15
+
+The frozen-release screen showed that a source-fidelity repair did not improve
+weak-overlap narrative retrieval. Following an Advisor recommendation, the
+unreleased `0.11.0.dev0` candidate now reserves one optional excerpt per
+completed four-cycle epoch. It chooses the best signal-bearing source excerpt
+without query terms during the existing ranking pass, replacing the lowest
+ranked query-selected excerpt. Diagnostic evidence, the protected task, and
+the active tool cycle retain priority. The rule adds no dependency, service,
+model call, configuration, or extra candidate scan.
+
+The public synthetic fixture was fixed and hashed before either selector was
+scored. Each of six cases contains nine tool cycles, query-word distractors,
+and one exact weak-overlap span in the first four-cycle epoch. The target is
+4,000 estimated tokens using `ceil(len(json.dumps(messages))/4)`, which is a
+character estimate rather than a provider tokenizer. The baseline is core
+SHA256 `010b7dda0336362d0334fc7054c2957ce40bbee86a07647f83ff8e01b2165f18`;
+the candidate is `6c856b8bebc61c9ade96c1f6bc51438dffa1c9b9cc86f9ec0d12872619ea3003`.
+
+| Selector | Exact spans | Complete cases | Budget | Task/latest cycle/input invariants |
+|---|---:|---:|---:|---:|
+| Baseline at `3bc15e3` | 0/6 | 0/6 | 6/6 | 6/6 each |
+| Coverage-reserve candidate | 5/6 | 5/6 | 6/6 | 6/6 each |
+
+The candidate misses the refund-retention span. These cases are now public
+development data and must not be called held-out validation or tuned until
+they appear better. They measure exact span retention, not model answers or
+agent task success. The [baseline report](results/coverage-reserve-baseline-2026-10-15.json),
+[candidate report](results/coverage-reserve-candidate-2026-10-15.json), and
+[fixture](../benchmarks/coverage_reserve_cases.json) preserve the denominators
+and hashes.
+
+A separate CPU screen used 991,386 estimated input tokens, 72 tool cycles,
+and a 24,576 target. Three alternating runs measured median selector process
+CPU of 1.047 seconds at baseline and 1.000 second for the candidate. The
+4.5% difference is within this small local run's timing noise; it is not an
+inference latency or cache result. The [performance report](results/coverage-reserve-perf-2026-10-15.json)
+and [replay script](../benchmarks/coverage_reserve_perf.py) define the setup.
+All 75 repository tests passed with 24 optional skips. This supports keeping
+the change as a development candidate, not claiming general reliability or a
+performance win. An independent read-only review found no must-fix invariant
+violation and reproduced the 5/6 versus 0/6 retention result. Its separate CPU
+rerun measured equal 1.031-second medians for baseline and candidate, rather
+than the original 1.047-second and 1.000-second medians. The runs therefore
+show timing noise, not a reliable CPU comparison. The reviewer also identified
+the need to state the reserve policy and its limitation in the algorithm
+contract; that documentation is now included there.
+
+A GPT-6.1 Sol and Gemini 3.8 Flash council review recommended keeping this
+candidate unreleased and testing it on a small independently authored, blinded
+paired set before further tuning. The proposed set should include weak-overlap
+required facts competing with query-relevant evidence, and measure exact-span
+retention, critical-context eviction, accepted task success, invariants, and
+selector CPU. Stop promotion for a protected-context or budget invariant
+failure, critical-context eviction, or reproducible task-success regression.
+The consultation used 3,190 prompt, 106 completion, and 3,296 total tokens for
+Gemini, and 682 prompt, 176 completion, and 858 total tokens for Sol. The
+review reinforced the existing decision to freeze this implementation and
+change only from verified failures. Fresh independently authored cases and
+accepted agent tasks remain necessary.
+
+### Reproduced query-echo miss and development fix, 2026-10-16
+
+Inspection of the failed `refund_retention` case found a concrete false
+positive: the task query's word `must` appeared in distractor excerpts, so a
+query-independent reserve selected one of those distractors instead of the
+required retention instruction. The candidate now requires a matched signal
+that does not occur in the task query; `retain`, `retention`, and `shred` are
+eligible signals for this reserve. This repairs the known miss on the same
+public cases that exposed it. It may miss useful evidence when every available
+signal overlaps the query.
+
+The fixed candidate retains 6/6 exact spans and completes 6/6 cases. Budget,
+protected task, latest tool cycle, and input immutability checks pass 6/6.
+These are tuned public development cases, not a blind test, generalization
+result, or model-answer/agent-task quality measure. The report records core
+SHA256 `c37f84829cf75a38f410e4eebb219ebf99c27c89a5c0b62a0ca9b70c36265de7`.
+
+As a supplemental tokenizer check, the six compacted requests were counted
+without inference by the local Qwen 3.8 27B llama.cpp server's exact rendered
+prompt-token endpoint. Counts ranged from 1,995 to 2,085, below the 4,096
+comparison cap. This is not the selector's own counter, a latency measurement,
+or evidence that the selected context improves answers. The machine-readable
+[fixed development report](results/coverage-reserve-query-echo-fix-2026-10-16.json)
+contains selector estimates and invariants; the exact tokenizer counts were
+collected separately and must not be confused with its 4,000 estimated-token
+target.
+
+The next gate remains a newly authored, blinded paired set with weak-overlap
+targets competing against query-relevant evidence, critical-context eviction
+checks, and accepted agent-task outcomes. A shorter prompt alone does not
+establish sharper answers, less drift, or lower end-to-end cost.
+
+## Direct answer probe with LLMLingua-2, 2026-10-16
+
+To check whether retention translated into answers, I sent the six already
+public coverage-reserve cases through one local Qwen 3.8 27B IQ3_S completion
+per arm. Arms used the same answer wrapper, temperature 0.7, top-p 0.8, top-k
+20, seed, 256-token output cap, and disabled thinking mode. Arm order was
+randomized per case. Sift and recency had a hard 4,096 **exact Qwen prompt-token**
+cap; full context had the 28,672 input limit. LLMLingua-2 compressed historical
+tool text with its 2,800-token target and ran as a text-only baseline. Its
+requests were also checked with the exact Qwen tokenizer before inference.
+
+| Arm | Required-answer marker checks | Required spans retained | Mean exact prompt tokens |
+|---|---:|---:|---:|
+| Full context | 5/6 | 6/6 | 13,034 |
+| Sift | 3/6 | 6/6 | 1,990 |
+| Complete-unit recency | 0/6 | 0/6 | 2,775 |
+| LLMLingua-2, text-only | 1/6 | 0/6 | 3,742 |
+
+This is direct evidence that exact retention did not guarantee a usable answer
+in this sample: Sift kept every required string, yet Qwen missed three answers
+that full context answered correctly. Full context also missed the timezone
+case, where query-echo distractors competed with the answer. LLMLingua-2
+answered the refund question correctly without retaining its exact source
+sentence. Those examples argue for scoring downstream answers and tasks, not
+just retained spans.
+
+Inspection of Sift's three false-negative prompts found one repeated pattern:
+each quoted the same later query-echo distractor from source message 8 in three
+overlapping excerpts. That text repeats the task wording and says “reference
+only, no value or instruction recorded,” while the required fact appears once
+in an earlier excerpt. This is a plausible attention/conflict mechanism and
+repeated text waste, not a proven cause. The cases are exposed, so the current
+candidate stays frozen; a future blinded evaluation should measure overlapping
+excerpt duplication and answer quality before any repair is promoted.
+
+The six cases were already visible and used to fix the selector; they are
+synthetic development data, not a blind sample. Each cell is one stochastic
+completion, marker checks are not human-reviewed task acceptance, and no
+latency or Astra bill was measured. The run also emitted a Transformers
+warning about a 1,440-token sequence exceeding the compressor tokenizer's
+512-token setting, although compression completed and no arm request failed.
+Treat the LLMLingua result as a preliminary text-only screen until that warning
+and a newly authored held-out evaluation are addressed. The [machine-readable
+report](results/llmlingua2-development-2026-10-16.json), [invalid first
+attempt](results/llmlingua2-development-invalid-output-cap-2026-10-16.json),
+[runner](../benchmarks/llmlingua2_development.py), and [isolated dependency
+lock](../benchmarks/llmlingua2-development.lock) preserve the result and setup.
+
+The Qwen API spend was $0; the temporary CPU compressor used about 46.85
+seconds of wall time per case on average (42.76 to 48.08 seconds). That is not a monetary cost comparison. The
+next action is the held-out, paired task protocol, not tuning against these six
+answers.
+
+### Native operations incident task screen, 2026-10-16
+
+I ran the public fictional incident-reconstruction task through Claude Code
+2.1.251 with local Qwen3.8-27B IQ3_S, the current Sift source, and a
+24,576-token estimated target. Inputs and the independent gold test were
+hash-frozen before the randomized recency, Sift, full order. This is a public
+development fixture, not a blind quality result.
+
+| Arm | Accepted | Native time | Client-reported mean TTFT | Terminal outcome |
+|---|---:|---:|---:|---|
+| Recency | No | 398 s | 7,168 ms (21 samples) | Claude Code reported a 32 MB conversation limit; one request also received Sift's 413 for an oversized active tool cycle. |
+| Sift | No | 69 s | 5,698 ms (6 samples) | Claude Code reported the 32 MB conversation limit; no artifact was written. |
+| Full context | No | 48 s | 2,859 ms (6 samples) | 34,555 prompt tokens exceeded Qwen's 32,768-token context. |
+
+All three outcomes failed acceptance, so these timing and usage observations do
+not establish quality, speed, or savings. The Sift selector did compact an
+observed 26,461-token request to 24,518 estimated tokens, but that did not
+prevent Claude Code's later size error. Local provider API spend was $0;
+electricity and hardware cost were not measured, and cost per accepted task is
+unavailable. See the [machine-readable screen](results/native-incident-reconstruction-development-2026-10-16.json)
+and [frozen fixture manifest](evals/incident-reconstruction-development-manifest-2026-10-16.json).
+This surfaced a client-size boundary in this test setup, not evidence that
+Sift caused the failure. The public task must be replaced with independently
+fixed blind cases for a promotion comparison.
+
+### LongBench v2 sample preparation, 2026-10-16
+
+To test long-context answer accuracy on an external public benchmark, I pinned
+the Apache-2.0 `zai-org/LongBench-v2` dataset at revision
+`2b48e494f2c7a2f0af81aae178e05c7e1dde0fe9`. The 465,490,535-byte `data.json`
+matched SHA-256
+`15d61c22d92c96900b3c4948b6aeea218d3214b676a65df48e7b8555604c7fe2`. Using
+the local Qwen tokenizer endpoint, a deterministic rule froze 23 cases across
+all six categories before generation: 16 have exact full prompts above the
+24,576 Sift target and below the 28,672 full-input cap; seven are below target
+as no-op controls. The model and selector have not seen generations for this
+sample.
+
+This is a focused diagnostic set, not enough to establish general parity or a
+top-percentile claim. The preparation scan tokenized only rows with context up
+to 500,000 characters; 202 longer rows were excluded by this prefilter, and
+all 23 selected rows are in the dataset's `short` length category. The
+[selection manifest](evals/longbench-v2-qwen-screen-2026-10-16.json) records
+IDs, answer keys, prompt hashes, exact counts, categories, and the frozen Sift
+source hash. The [preparation script](../benchmarks/prepare_longbench_v2.py)
+verifies the pinned data hash and refuses to overwrite the selection. No model
+calls or cost were incurred during preparation.
+
+### LongBench v2 structured-choice rerun, 2026-10-16
+
+The first 128-token scoring pass is retained only as a harness diagnostic: seven
+outputs hit the cap, mostly with full context, and the report kept only the
+first 500 answer characters. Those counts are not a valid quality comparison.
+Before rerunning, a local smoke test and a 12-call pilot verified strict JSON
+Schema choice output. The frozen protocol then ran all 23 cases, four arms,
+three randomized repeats, with no retries, no prompt cache, and a 16-token
+structured output cap. All 276 outputs parsed as one A-D choice and ended
+normally. The [protocol](evals/longbench-v2-qwen-structured-protocol-2026-10-16.md),
+[pilot](results/longbench-v2-qwen-schema-pilot-2026-10-16.json),
+[runner](../benchmarks/run_longbench_v2.py), and
+[full report](results/longbench-v2-qwen-schema-2026-10-16.json) retain settings,
+hashes, per-call outputs, token counts, timing, and preprocessing cost.
+
+For the 16 above-target cases (48 repeated completions per arm), the result was:
+
+| Arm | Exact answers | Mean Qwen input tokens | Mean TTFT | Mean decode speed | Preprocess wall time per case |
+|---|---:|---:|---:|---:|---:|
+| Full context | 20/48 (41.7%) | 26,822 | 18.69 s | 36.73 tok/s | — |
+| Sift | 15/48 (31.3%) | 19,347 | 13.42 s | 38.55 tok/s | 0.44 s |
+| Naive recency | 13/48 (27.1%) | 221 | 1.23 s | 42.17 tok/s | 0.10 s |
+| LLMLingua-2 text-only | 21/48 (43.8%) | 17,875 | 11.94 s | 38.48 tok/s | 52.42 s |
+
+Sift reduced the mean local Qwen input by 27.9% and reduced mean model TTFT by
+28.2% in this cold-prefix-cache screen. Under the official answer keys, full
+context scored 20/48 and Sift 15/48 on the 16 above-target cases. The five
+paired official-key losses and no wins occurred on two public long-dialogue
+aggregation questions, so the 48 repeated outputs are not 48 independent
+tasks. In the seven below-target controls, Sift, full, and recency had identical
+prompt-token counts and the same answer on all 21 paired outputs. The score
+gap is an investigation signal, not a broad quality estimate.
+
+A source audit of the first affected case supports its official key: the
+per-player history says `player_7` bid 40 in round four, the highest of the ten
+player logs, and the key is `player_7`. In the reconstructed Sift prompt, the
+player ID and bid appear in separate excerpts; none of the 20 `round_records`
+objects is preserved as a whole excerpt. That is concrete evidence that this
+compaction can separate an entity from its value, while the three repeated
+answers remain one task-level observation.
+
+The second case's key is unresolved. Summing the per-player history's logged
+receipts gives `player_2` 158, who is not an offered choice. Among the offered
+players, `player_4` has 156 and `player_7` has 153, while the official key is
+`player_7`. The aggregate `round_records` contain response vectors without
+player IDs, so they cannot independently settle the mapping. Keep the frozen
+official score unchanged and show sensitivity: excluding only this uncertain
+case gives full 18/45 versus Sift 15/45; excluding both audited cases gives
+15/42 for each. This is not a re-score and does not establish parity.
+
+The [reproducible row audit](../benchmarks/audit_longbench_v2_rows.py) checks
+the pinned data and reconstructs Sift's excerpts; its [machine-readable
+output](results/longbench-v2-gold-audit-2026-10-16.json) retains the source
+facts and score sensitivities. Keep the core frozen. The current next quality
+gate is the independently checked [natural-agent pilot](evals/natural-agent-pilot-2026-10-16.md).
+The earlier [relation-binding pilot](evals/relation-binding-pilot-2026-10-16.md)
+remains unrun after its case-authoring attempt failed its length and gold-pointer
+checks.
+
+For a post-hoc task-level diagnostic, strict majority over each case's three
+existing repeats yields 5 tasks correct in both arms, 2 full-only, 0 Sift-only,
+and 9 neither. Excluding the label-uncertain second audited row leaves 5 both,
+1 full-only, 0 Sift-only, and 9 neither. Excluding both audited rows leaves 5
+both-correct and 9 neither, with no discordant tasks. This aggregation was not
+predeclared and is descriptive only; the three repeats do not increase the
+independent task count. One full-only task is the source-supported relation
+loss described above. These data do not establish a general task-quality gap,
+but they do show a concrete case where extraction changed a correct answer.
+The preregistered relation-binding diagnostic has not run: its authored prompts
+were below the Sift trigger and all gold pointers failed independent validation.
+The next effort is the [natural-agent pilot](evals/natural-agent-pilot-2026-10-16.md),
+which must first represent long context across prior turns and tool results.
+
+The recency baseline is not a meaningful competitor on this data shape: the
+single historical context is one large user message, and the baseline drops
+most of it entirely when over budget. LLMLingua-2 emitted a Transformers warning
+that the 31,053-token source exceeded its 512-token encoder limit. Its result is
+therefore only a diagnostic comparator, not a validated quality or runtime
+baseline. All model calls used local Qwen and cost $0 in provider API spend;
+the times above are not Astra measurements. See the separate
+[Astra cost comparison](cost-comparison.md).
+
+### LongBench v2 Qwen extension, 2026-10-16
+
+The [frozen extension protocol](evals/longbench-v2-qwen-extension-protocol-2026-10-16.md)
+selected all ten remaining above-target rows that fit the full-input cap,
+without manual exclusions. The completed randomized run made three calls per
+case and arm, for 90 calls total. All 90 terminated normally and returned a
+valid structured answer. The [machine-readable report](results/longbench-v2-qwen-extension-2026-10-16.json)
+preserves every response, exact input count, timing, and selector cost.
+
+| Arm | Exact answers | Mean prompt tokens | Preprocess / case | Mean TTFT | Mean decode speed | Mean endpoint + preprocess |
+|---|---:|---:|---:|---:|---:|---:|
+| Full context | 16/30 (53.3%) | 26,216 | <0.01 s | 18.15 s | 36.49 tok/s | 18.47 s |
+| Sift | 15/30 (50.0%) | 24,544 | 0.55 s | 16.80 s | 34.75 tok/s | 17.69 s |
+| Complete-unit recency | 15/30 (50.0%) | 260 | 0.11 s | 1.17 s | 42.37 tok/s | 1.55 s |
+
+Strict task majority over the three repeats gives five cases correct for both
+full context and Sift, no discordant cases, and five wrong for both. This is
+descriptive evidence of neither a quality loss nor a quality gain on these ten
+tasks; it is too small and public to establish parity or generalization. Sift
+reduced mean prompt tokens 6.4% and mean TTFT 7.4%, with 4.8% lower mean decode
+speed. Including Sift's measured preprocessing, mean endpoint-plus-preprocess
+time was 4.2% lower. The small speed difference is not evidence that answers
+got sharper. Recency drops almost all of the single historical user message on
+these examples, so its 260-token average is a degenerate control rather than a
+useful comparison. All calls used local Qwen, with $0 provider API spend;
+electricity and hardware cost were not measured. These numbers do not establish
+GPT-6 Astra savings.
+
+### Context-budget Qwen development screen, 2026-10-16
+
+The [development report](evals/context-budget-qwen-development-2026-10-16.md)
+compares Sift targets of 8,192 and 16,384 on the same ten public LongBench v2
+extension questions, then reuses the 24,576 result above. Each arm has three
+generations per task. The public inputs have already been seen, so the screen
+is useful for target sizing and latency exploration only.
+
+At 8,192, mean exact input was 8,153 tokens and mean TTFT was 5.82 seconds;
+full context used 26,216 tokens and had 17.71-second mean TTFT. The 16,384
+target used 16,357 tokens and had 10.80-second mean TTFT. Task-majority scores
+were five of ten for both Sift and full context at all three targets. The
+16,384 paired table had one full-only and one Sift-only task; the 8,192 and
+24,576 tables had five both-correct and five neither-correct tasks. These
+small, public results do not establish noninferiority or justify changing the
+default.
+
+Applying Astra's current standard short-context $10/M input rate to the local
+mean token counts gives an illustrative input-only charge per request of
+$0.2622 full, $0.0815 at 8,192, $0.1636 at 16,384, and $0.2454 at 24,576. These
+are not provider bills. The experiment used local Qwen, disabled prompt
+caching, and did not measure Astra usage. See the [official rates](https://developers.openai.com/api/docs/pricing)
+and the [raw 8,192](results/context-budget-qwen-8192-2026-10-16.json) and
+[16,384 results](results/context-budget-qwen-16384-2026-10-16.json).
+
+### Native network-audit MiniMax development comparison, 2026-10-16
+
+On one exposed synthetic operations task, the no-Sift arm completed and passed 7 visible plus 20 independent gold tests in 88.8 seconds. The Sift arm at 16,384 estimated tokens compacted 81 requests, reducing selector estimates by 88.2% in aggregate, but reached the 80-turn client limit without editing the implementation or creating its required report. Its native task time was 394.3 seconds and its client-reported MiniMax cost was $3.225 versus $0.588 for full context. This rejected run is a useful negative development result; it does not establish that compaction alone caused the behavior or that Sift is generally slower or more expensive.
+
+Repricing those particular MiniMax usage totals at GPT-6 Astra's standard short-context rates gives an illustrative $1.140 full-context and $6.424 Sift. It is arithmetic from another model's usage, not an Astra run or a cost-per-accepted-task result. The task is retired from unseen evaluation, and the next quality comparison needs a newly authored frozen case. The [report](evals/native-network-audit-development-2026-10-16.md) and [machine-readable result](results/native-network-audit-minimax-m3-2026-10-16.json) include the full qualifications and usage breakdown.
+
+### Stable history anchor development check, 2026-10-16
+
+A query-shift review found that a new user question can reorder the entire older-history summary. The unreleased candidate puts one query-independent historical anchor in its own message before the query-ranked excerpts. The anchor uses at most one eighth of the target and is dropped when it would crowd the active work. Structured records that share a prefix are excluded to avoid duplicating table headers. Query-aware excerpts remain separate and continue to change with the question.
+
+Two deterministic regressions cover ordinary history and a 48-cycle tool transcript. For both payment-to-incident topic shifts, the first summary message is byte-identical, while the following query-ranked message changes and retains the matching fact marker. Both runs stay within their 2,000- and 6,000-token test budgets. These are synthetic selector tests using the test counter; they do not establish provider cache hits, lower billed cost, or no quality regression on natural histories. A GPT-6 Advisor council endorsed this as a fixed-budget pilot and required provider-route cache and accepted-task evidence before adoption claims. Keep it unreleased pending replay on frozen natural traces and paired provider measurements.
+
+### Native Claude Code least-privilege context calibration, 2026-10-16
+
+A single exposed development task was tested once per arm at 24,576 and 16,384 tokens. At 24K, Sift completed and passed independent checks but did not compact before the edit, so the run does not demonstrate a Sift effect. At 16K, Sift compacted, then returned two HTTP 413 errors because the active task or latest tool cycle exceeded the target; it produced no edit or required artifact. Full context passed at both targets. The [calibration report](evals/native-agent-context-calibration-2026-10-16.md) and [machine-readable results](results/native-agent-least-privilege-rollup-context-calibration-2026-10-16.json) preserve per-arm acceptance, task time, client-reported TTFT and usage, and the limitations. Tokens per second were not captured. Local Qwen incurred no provider API charge; the Astra figures are usage arithmetic only and not measured Astra costs. This is a concrete 16K boundary failure and an unqualified 24K Sift pass, not evidence that Sift generally helps or hurts.
+
+### Native MiniMax M3 least-privilege diagnostic, 2026-10-16
+
+The corrected OpenRouter M3 profile completed a fixed-order diagnostic on the
+same exposed least-privilege rollup fixture. Full context and Sift at a 16,384
+target both passed the same visible and independent gold checks. An independent
+trace audit verified that Sift compacted request 29 before the first direct
+edit, from 88,037 to 16,352 estimated tokens, with all four required source
+spans present. Across 31 Sift requests, summed estimates fell 74.1%, but the
+accepted task took 131.2 seconds and Claude Code reported $1.492, versus 63.3
+seconds and $0.421 for full context. The Sift 24,576 arm did not compact; the
+16,384 recency arm failed closed before editing. TTFT sample counts differed,
+decode throughput was unavailable, and runs were not randomized or repeated.
+This is one exposed development diagnostic, not a quality, speed, or savings
+claim. See the [full report](evals/native-m3-least-privilege-rollup-2026-10-16.md)
+and [machine-readable result](results/native-m3-least-privilege-rollup-2026-10-16.json).
+
+
+## MiniMax LongBench v2 hybrid Stage 2, 2026-10-17
+
+This completed evaluation covers 100 public LongBench v2 training-split tasks,
+three repeats each, and 300 Sift responses through OpenRouter's
+`minimax/minimax-m3` model with the MiniMax provider pinned. The option-aligned
+relation matrix was enabled only for six previously audited in-sample task IDs;
+unchanged default Sift was used for the other 94. All requests used a 32,768
+token target, 128-token answer cap, no fallback, and no retry. Eight malformed
+or incomplete billable answers were retained as incorrect; 292 were valid.
+
+| Arm/reference | Exact answers | Task majorities | Provider prompt tokens | Cache-hit share | Upstream-reported cost |
+|---|---:|---:|---:|---:|---:|
+| Sift hybrid | 132/300 (44.0%) | 43/100 | 7,801,125 | 54.8% | $1.315868 |
+| Historical Full | 117/300 (39.0%) | 38/100 | 24,245,610 | 92.3% | $1.901571 |
+| Historical Sift | 104/300 (34.7%) | 31/100 | 8,281,452 | 94.3% | $0.611442 |
+
+On this sample, the hybrid recorded 5.0 percentage points more exact answers,
+67.8% fewer provider prompt tokens, and 30.8% lower observed pass-through cost
+than the saved Full-context run. Against saved Sift it recorded 9.3 percentage
+points more exact answers and 5.8% fewer prompt tokens, but its observed
+pass-through cost was 115.2% higher ($1.315868 versus $0.611442). Historical
+Sift had a 94.3% cache-hit share versus 54.8% for this hybrid run. Do not claim
+a measured cost reduction versus Sift from this experiment; the comparison is
+strongly cache-sensitive.
+
+The first request through completion took 26m 32.1s, including the safe
+checkpoint and later continuation. The resumed 207 requests took 10m 46.8s.
+Per-request end-to-end median was 1.80s and p95 was 3.30s. The complete Stage 2
+receipt total was $1.31586798. The remaining 207-request cost ($0.59055102)
+matched the aggregate OpenRouter BYOK usage delta after the checkpoint. The
+final task-scoped ledger is $16.20458423 of the user's $20 cap; the run stayed
+below its $4 guard. OpenRouter BYOK counters are aggregate and unitemized, so
+they are not an account invoice.
+
+The historical Full and Sift runs are non-concurrent and use an earlier Sift
+core; provider behavior and cache state may differ. These public training tasks
+are development data, not a blind holdout or the full LongBench v2 suite. The
+matrix was developed on its six evaluation IDs; only the hybrid policy receives
+100-task coverage. Results do not establish a causal Sift effect, generalized
+matrix quality, or native Claude Code/Codex task performance.
+
+The [validated scorecard](evals/longbench-v2-minimax-hybrid-stage2-analysis-2026-10-17.md)
+links the [analysis JSON](evals/longbench-v2-minimax-hybrid-stage2-analysis-2026-10-17.json)
+and [gzip-compressed 300-response report](results/longbench-v2-minimax-hybrid-stage2-continued-2026-10-17.json.gz).
+The raw report SHA-256 (compressed artifact) is recorded in the analysis JSON;
+the gzip stream contains the exact 79,680,922-byte JSON used for analysis.
+The [run protocol](evals/longbench-v2-minimax-hybrid-stage2-protocol-2026-10-17.md)
+and [Stage 2 manifest](evals/longbench-v2-minimax-hybrid-stage2-manifest-2026-10-17-v3.json)
+pin the prompt, route, source, and request-generation settings.

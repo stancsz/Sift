@@ -4,50 +4,63 @@
 
 # Sift
 
-**Keep the evidence. Drop the transcript weight.**
+**Keep your agent’s working memory lean. Keep the evidence it needs.**
 
+[![Tests](https://github.com/stancsz/sift/actions/workflows/test.yml/badge.svg)](https://github.com/stancsz/sift/actions/workflows/test.yml)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](pyproject.toml)
 [![MIT license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Release](https://img.shields.io/github/v/tag/stancsz/sift?label=release)](https://github.com/stancsz/sift/tags)
 
-Sift is a CPU-only Python library and **LiteLLM Proxy callback for extractive context compaction**. It keeps recent work exact, selects relevant evidence from older chat and tool history, and fits the result to a configurable token budget. It is deterministic and makes no extra model call.
+Sift is a deterministic, CPU-only context compressor for coding and research agents. It trims older chat and tool history to a configurable token budget while preserving the current request and active tool work exactly when they fit. If they do not fit, Sift fails closed. It makes no summarization call and adds no model dependency.
 
-For long-running agents, a growing transcript means more input tokens to process on every call. Sift bounds that history before it reaches the model, while keeping the current task and active tool work intact. On supported backends, stable history between tool-cycle boundaries can also help prefix-cache reuse.
+Use Sift as a Python library or a **LiteLLM Proxy callback**. On supported backends, stable history between tool-cycle boundaries can also help prefix-cache reuse.
 
-**Preview status: experimental.** Selected tests show large input reductions and lower cold-prefill latency, but task-quality preservation, real provider savings, and end-to-end completion-time benefits are not established. Use Sift to evaluate context control; do not treat modeled price differences as measured savings. [Evidence and limitations](docs/evaluation.md) · [Release roadmap](ROADMAP.md).
+[Try Sift with LiteLLM](#install-and-use-with-litellm) · [How it works](docs/algorithm.md) · [Full evaluation](docs/evaluation.md)
 
-## Pay less for premium context
+> **Preview:** try the published `v0.10.0` release at a 24,576-token default, or configure the current `main` candidate's 32,768-token default for your route. Leave room for model output; see the [release roadmap](ROADMAP.md).
 
-**Send fewer premium tokens. Cut modeled per-request API cost by 85–96%** in these 500K–1M input examples by compacting to Sift's 32,768-token target.
+### A lighter working set for long-running agents
 
-| Premium model | Raw input | Full-context cost | With Sift | **Modeled savings** |
+- **Keep the task in view.** Preserve the latest request and active tool work exactly when they fit the configured budget.
+- **Bring forward useful history.** Select older evidence against the current task, including bounded links between related identifiers.
+- **Keep the pipeline simple.** Run deterministic CPU work locally or at the LiteLLM Proxy; no second model call or summarization dependency.
+
+Sift works with agent histories up to **1,000,000 estimated input tokens** and supports a configurable target. Set that target for your model route and reserve output capacity separately.
+
+**A quick scale check:** one authored synthetic history compacted from **966,253 estimated tokens to 22,579** under a 24,576-token target, kept both required facts, and took **1.86 seconds** of CPU time on one Windows desktop. [See the evaluation scope](docs/evaluation.md#what-is-measured).
+
+## Put long-context requests on a smaller budget
+
+**Model the cost impact: 85–96% lower per-request API cost** when a 500K–1M-token input is compacted to 32,768 tokens.
+
+| Premium model | Raw input | Full context | With Sift | Modeled savings |
 |---|---:|---:|---:|---:|
 | [GPT-6 Astra](https://developers.openai.com/api/docs/models/gpt-6-astra) | 500K | $10.75 | $0.83 | **92.3% · save $9.92** |
 | [GPT-6 Astra](https://developers.openai.com/api/docs/models/gpt-6-astra) | 1M | $20.75 | $0.83 | **96.0% · save $19.92** |
 | [Claude Opus 5.5](https://platform.claude.com/docs/en/models/opus-5-5/overview) | 500K | $2.20 | $0.33 | **85.0% · save $1.87** |
 | [Claude Opus 5.5](https://platform.claude.com/docs/en/models/opus-5-5/overview) | 1M | $4.20 | $0.33 | **92.1% · save $3.87** |
 
-*Illustrative one-request price math, not measured savings:* assumes 10,000 output tokens in both arms, uncached input, equal task success, and provider-billed input matching Sift's estimated 32,768-token target. It excludes cache reads/writes, retries, tool charges, and hosting. **This is not a measured 500K–1M multi-turn result or proof of equal task quality.** Rates checked 2026-10-16. See the [full assumptions](docs/cost-comparison.md).
+*Illustrative standard-rate arithmetic for one uncached request with 10,000 output tokens in both arms, equal task completion, and provider input matching the 32,768-token target. Excludes cache reads/writes, retries, tool charges, and hosting. Rates checked 2026-10-16; see the [model cards and assumptions](docs/cost-comparison.md). These are modeled amounts, not API bills.*
 
-## Benchmark and agent results
+## LongBench v2: a 100-task development result
 
-**LongBench v2 was run as structured-choice QA on local Qwen3.8-27B; these are not Claude Code or Codex scores.** Both public samples are small diagnostics at a 24,576-token Sift target, not blind validation or a comparison at the 32,768 product default.
+**100 public tasks · 3 repeats per task · 300 MiniMax M3 responses**
 
-| Evaluation | Full context | With Sift | Readout |
-|---|---:|---:|---|
-| LongBench v2, 16 above-target tasks × 3 repeats | 20/48 (41.7%) | 15/48 (31.3%) | 27.9% fewer mean input tokens and 28.2% lower mean TTFT; task majority: 5 both correct, 2 full-only, 0 Sift-only, 9 neither. One source-audited relation loss. |
-| LongBench v2 extension, 10 additional tasks × 3 repeats | 16/30 (53.3%) | 15/30 (50.0%) | 6.4% fewer mean prompt tokens and 7.4% lower mean TTFT; task majority: 5 both correct, no discordant tasks, 5 neither. |
+On this sample, the Sift hybrid answered **44%** of exact-choice questions correctly, with a smaller prompt than full context. The matrix selector ran only on six previously audited task IDs; default Sift handled the other 94.
 
-**Native clients are a separate evidence stream:**
+| Arm/reference | Exact answers | Task majorities | Provider prompt tokens | Cache-hit share | Upstream-reported cost |
+|---|---:|---:|---:|---:|---:|
+| **Sift hybrid** | **132/300 · 44.0%** | **43/100** | **7.80M** | 54.8% | **$1.316** |
+| Saved full-context run | 117/300 · 39.0% | 38/100 | 24.25M | 92.3% | $1.902 |
+| Saved Sift run | 104/300 · 34.7% | 31/100 | 8.28M | 94.3% | $0.611 |
 
-| Agent client and task | Result | Sift observation | Qualification |
-|---|---|---|---|
-| Claude Code · research-evidence task, local Qwen | Full and Sift both accepted; 97.1 s vs 108.3 s | Compacted before the artifact edit | One exposed task and warm/mixed cache; Sift was slower in this run. No API bill or general speed claim. |
-| Claude Code + Codex · build-planner pilot, local Qwen | All four Sift/recency arms failed independent gold | Codex/Sift did not compact; Claude Code/Sift compacted only after its final edit | No accepted Sift comparison. |
+**Against the saved full-context run:** +5.0 percentage points exact accuracy, **67.8% fewer provider prompt tokens**, and **30.8% lower observed pass-through cost**. These are measured results from separate runs on the same 100 public tasks, not a randomized or concurrent comparison.
 
-See the detailed [LongBench v2 scores](docs/evaluation.md#longbench-v2-structured-choice-rerun-2026-10-16), [fresh extension](docs/evaluation.md#longbench-v2-qwen-extension-2026-10-16), and [native agent results](docs/evaluation.md#completed-frozen-native-build-pilot-2026-10-15). The QA benchmark is not an agent-workflow test, and neither benchmark family establishes premium-model savings or quality parity.
+**Cost depends on cache state.** The saved Sift run had a 94.3% cache-hit share versus 54.8% in this hybrid run. Its observed pass-through cost was lower ($0.61 vs $1.32), even though it used 5.8% more prompt tokens. This evaluation does **not** show a cost reduction versus historical Sift. Upstream-reported amounts are cache-inclusive provider receipts, not an invoice.
 
-An initial LongBench v2 screen included a text-only [LLMLingua-2](https://arxiv.org/abs/2403.12968) arm at the same downstream token ceiling. Its encoder warned that benchmark inputs exceeded its 512-token limit, so treat that arm as diagnostic; a valid learned-compressor comparison remains open.
+This is a 100-task **development sample**, not the full LongBench v2 suite or a blind holdout. The six matrix tasks were used during selector development; the other 94 test the hybrid policy with default Sift. Historical Full/Sift use an earlier Sift core and are non-concurrent, so report the scores as cross-run observations rather than causal lift. LongBench is structured-choice QA, not a Claude Code or Codex task-completion test; those native-agent workflows have separate evidence.
+
+[Read the validated scorecard and method](docs/evals/longbench-v2-minimax-hybrid-stage2-analysis-2026-10-17.md) · [Raw 300-response evidence (gzip JSON)](docs/results/longbench-v2-minimax-hybrid-stage2-continued-2026-10-17.json.gz) · [Evaluation history](docs/evaluation.md)
 
 ## The problem
 
@@ -170,19 +183,12 @@ Read [the algorithm and acceptance contract](docs/algorithm.md) for selection ru
 ```sh
 git clone --branch v0.10.0 https://github.com/stancsz/sift.git
 cd sift
-python -m pip install -e .
+python -m pip install -e ".[litellm]"
 python -m unittest discover -s tests -q
 python benchmarks/compare.py
 ```
 
-All tests run locally from the checkout; the repository does not use GitHub Actions. The unittest command discovers the complete `tests/` suite. To include the pinned LiteLLM integration tests, install the optional dependency before running the same command:
-
-```sh
-python -m pip install -e ".[litellm]"
-python -m unittest discover -s tests -q
-```
-
-The comparison benchmark is a separate local check. The tests cover hard budgets, protocol preservation, active tool loops, append-only behavior inside fixed boundaries, diagnostic context, identifier joins, contradictory facts, unsupported inputs, and the optional LiteLLM callback.
+GitHub Actions runs the same full unit suite and offline comparison benchmark on Python 3.11 through 3.14. The tests cover hard budgets, protocol preservation, active tool loops, append-only behavior inside fixed boundaries, diagnostic context, identifier joins, contradictory facts, unsupported inputs, and the LiteLLM callback.
 
 The [native-agent guide](docs/native-agents.md) includes opt-in Claude Code and Codex runs, public development fixtures with separate gold checks, and an isolated LiteLLM comparison gateway. These source-checkout benchmarks are separate from the installed callback and make real model calls.
 
