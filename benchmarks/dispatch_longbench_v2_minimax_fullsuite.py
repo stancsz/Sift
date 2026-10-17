@@ -746,8 +746,9 @@ def dispatch(args: argparse.Namespace, manifest: dict[str, Any],
         start_index = max(start_index,
                           report["interrupted_in_flight_reconciled_as_unknown"]["index"] + 1)
     selected_indices = {job["index"] for job in selected}
+    jobs_to_dispatch = list(selected)
     elapsed_start = time.perf_counter()
-    for job in selected:
+    for job in jobs_to_dispatch:
         index = job["index"]
         if index < start_index or index in completed_indices:
             continue
@@ -892,7 +893,13 @@ def dispatch(args: argparse.Namespace, manifest: dict[str, Any],
         elif finish_reason not in {"stop", "length"}:
             terminal_reason = "request_incomplete_or_unexpected_finish_reason"
         elif not score["scoreable"] and attempt_number == 1:
-            terminal_reason = "response_not_strictly_scoreable"
+            if args.retry_invalid_response:
+                # The user-approved policy permits one receipt-backed retry for
+                # strict-format failures. Queue it after the original schedule so
+                # the full manifest preflight is not repeated for each bad answer.
+                jobs_to_dispatch.append(job)
+            else:
+                terminal_reason = "response_not_strictly_scoreable"
         if receipt_cost is not None:
             settled += receipt_cost
             report["settled_upstream_cost_usd"] = settled
@@ -908,8 +915,9 @@ def dispatch(args: argparse.Namespace, manifest: dict[str, Any],
                 report["unknown_outcome_job_ids"].append(job["job_id"])
             atomic_write(args.output, report)
             break
-        sample["job_completed"] = True
-        report["completed_jobs"] += 1
+        if score["scoreable"] or attempt_number == 2:
+            sample["job_completed"] = True
+            report["completed_jobs"] += 1
         atomic_write(args.output, report)
     else:
         report["status"] = "complete" if report["completed_jobs"] == len(selected) else "prefix_incomplete"
