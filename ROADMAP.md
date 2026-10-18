@@ -8,7 +8,7 @@ The tested `v0.10.0` release is a Python library and LiteLLM Proxy callback. The
 
 ## Current adoption work
 
-- **Reliable local checks:** the full offline suite now passes in the repository virtual environment (359 tests on Python 3.14). Pull requests receive a 39-test core/invariant/CLI smoke check; the cross-version full suite and offline comparison run weekly and manually.
+- **Reliable local checks:** the full offline suite now passes in the repository virtual environment (361 tests on Python 3.14). Pull requests receive a 43-test core/invariant/CLI/demo smoke check; the cross-version full suite and offline comparison run weekly and manually.
 - **Clear first use:** the live site explains the workflow and trade-offs, but its current Ollama example is still a tiny pass-through request. A revised long-history compaction demo is local and awaits rendered review before publication.
 - **Public site:** GitHub Pages is live at <https://stancsz.github.io/sift/> with the problem, workflow, quick starts, measured evidence, limits, and contribution path. The pending quick-start revision must pass visual QA and a fresh Pages deployment before the published version is considered current.
 - **Broader quality evidence:** a 344-case/three-repeat paired LongBench v2 cohort is prepared, but all task IDs are exposed development data and the paid run remains behind exposure, route, account, and numeric-cap gates. Add independently authored held-out coding and research tasks, compare accepted outcomes against full context and protocol-preserving controls, and measure total task cost and time.
