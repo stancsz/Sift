@@ -132,7 +132,7 @@ class NativeMiniMaxProfileTests(unittest.TestCase):
                                 text=True, capture_output=True, timeout=30)
         self.assertEqual(result.returncode, 0, result.stderr)
 
-    def test_preflight_only_fingerprints_equivalent_arm_payloads_without_model_alias(self):
+    def test_preflight_only_fingerprints_identical_client_model_aliases(self):
         env = os.environ.copy()
         env.update({
             "PYTHONPATH": str(ROOT / "benchmarks") + os.pathsep + env.get("PYTHONPATH", ""),
@@ -146,16 +146,52 @@ class NativeMiniMaxProfileTests(unittest.TestCase):
         script = "\n".join((
             "import native_callback as c",
             "base = {'messages': [{'role': 'user', 'content': 'same task'}], 'temperature': 0}",
-            "full = {**base, 'model': 'minimax-m3-full', 'metadata': {'sift_benchmark': {'arm': 'full'}}}",
-            "sift = {**base, 'model': 'minimax-m3-sift', 'metadata': {'sift_benchmark': {'arm': 'sift'}}}",
+            "full = {**base, 'model': c.MODEL, 'metadata': {'sift_benchmark': {'arm': 'full'}}}",
+            "sift = {**base, 'model': c.MODEL, 'metadata': {'sift_benchmark': {'arm': 'sift'}}}",
             "assert c._request_fingerprint(full) == c._request_fingerprint(sift)",
             "assert len(c._request_fingerprint(full)) == 64",
+            "assert c._request_fingerprint_components(full) == c._request_fingerprint_components(sift)",
+            "assert len(c._request_fingerprint_components(full)['messages']) == 64",
             "changed = {**base, 'messages': [{'role': 'user', 'content': 'different task'}]}",
             "assert c._request_fingerprint(full) != c._request_fingerprint(changed)",
         ))
         result = subprocess.run([sys.executable, "-c", script], cwd=ROOT, env=env,
                                 text=True, capture_output=True, timeout=30)
         self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_fixed_full_arm_can_use_the_same_client_model_alias_as_sift(self):
+        env = os.environ.copy()
+        env.update({
+            "PYTHONPATH": str(ROOT / "benchmarks") + os.pathsep + env.get("PYTHONPATH", ""),
+            "SIFT_BENCH_ARM": "full",
+            "SIFT_BENCH_MODEL": "minimax-m3-shared",
+            "SIFT_BENCH_FULL_MODEL": "minimax-m3-full",
+            "SIFT_BENCH_PROFILE": "passthrough",
+            "SIFT_BENCH_TARGET": "32000",
+            "SIFT_BENCH_MIN_RAW_TOKENS": "500000",
+        })
+        script = "\n".join((
+            "import asyncio, logging",
+            "logging.basicConfig(level=logging.INFO)",
+            "import native_callback as c",
+            "from litellm.proxy import proxy_server",
+            "proxy_server.llm_router = object()",
+            "assert c._is_full_request(c.MODEL)",
+            "assert c.benchmark_hook.model_targets == {c.MODEL: c.TARGET}",
+            "assert c._is_full_request(c.FULL_MODEL)",
+            "async def forbidden_selector(*args, **kwargs):",
+            "    raise AssertionError('full arm invoked the Sift selector')",
+            "c.integration.SiftLiteLLMHook.async_pre_call_hook = forbidden_selector",
+            "def count(router, data, **kwargs):",
+            "    return {'metadata': {'sift': {'input_tokens': 550000, 'forwarded_tokens': 550000}}}",
+            "c.integration.compact_proxy_request = count",
+            "assert asyncio.run(c.benchmark_hook.async_pre_call_hook(None, None, {'model': c.MODEL, 'messages': [{'role': 'user', 'content': 'task'}]}, 'acompletion')) is None",
+        ))
+        result = subprocess.run([sys.executable, "-c", script], cwd=ROOT, env=env,
+                                text=True, capture_output=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("selector=full", result.stderr)
+        self.assertIn("input_tokens=550000 forwarded_tokens=550000", result.stderr)
 
     def test_preflight_only_sift_logs_count_and_blocks_before_provider(self):
         env = os.environ.copy()

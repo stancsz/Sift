@@ -158,6 +158,9 @@ vite.config.ts.timestamp-*
 
 # Local benchmark inputs, image review boards and Python build artifacts.
 tmp/
+.runs/
+.advisor-packet.txt
+docs/results/*.tmp
 __pycache__/
 *.egg-info/
 build/

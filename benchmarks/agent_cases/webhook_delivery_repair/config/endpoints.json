@@ -1,0 +1,10 @@
+{
+  "primary": {
+    "url": "https://hooks.example.invalid/primary",
+    "secret": "fixture-primary-secret"
+  },
+  "backup": {
+    "url": "https://hooks.example.invalid/backup",
+    "secret": "fixture-backup-secret"
+  }
+}

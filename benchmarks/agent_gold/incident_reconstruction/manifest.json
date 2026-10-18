@@ -1,0 +1,16 @@
+{
+  "status": "public authored development fixture; not held-out evidence",
+  "frozen_at_utc": "2026-10-16T05:57:58Z",
+  "input_sha256": {
+    "findings.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+    "incident_1.jsonl": "332345d0c04eb3bf629cde932adbf5e3ec077fbc3868eb07473536714de07ee5",
+    "incident_2.jsonl": "84ad0aa04706b1e4e26fa674a13b277d0bd9ce7239baa1b500e0525ea0dac6e7",
+    "incident_3.jsonl": "3cc2cece0bf9c2ba9ed4e9351061315ccb80b977678d6f2f3a28ccb40041de2e",
+    "incident_4.jsonl": "2794dec3bbd2d02ec0a5fa93c435a2cb69753d5328df65f594d0fdcb5acf7b60",
+    "README.md": "30c41e5469ce534eb22c3e5a27f84f81c43eb821011968b24074af4f93cba6f2",
+    "test_incident_reconstruction.py": "b835b1643e5212b3c927612119390ab3937830bdb2fc3731418fae4023d83b10"
+  },
+  "acceptance_sha256": {
+    "test_incident_gold.py": "697d25f15b1e206a5b01843709f3365986bdc61c36f2c8b23978aed9731e7237"
+  }
+}

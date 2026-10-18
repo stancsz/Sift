@@ -2,8 +2,12 @@ from __future__ import annotations
 
 import io
 import json
+from pathlib import Path
+import tempfile
 import unittest
+from unittest.mock import patch
 
+import benchmarks.audit_longbench_v2_candidate_trace_metadata as audit_module
 from benchmarks.audit_longbench_v2_candidate_trace_metadata import (
     StreamingWhitelistJSON,
     UnsafeJSON,
@@ -96,8 +100,65 @@ class CandidateTraceMetadataParserTests(unittest.TestCase):
         with self.assertRaises(UnsafeJSON):
             StreamingWhitelistJSON(io.StringIO(source)).read()
 
-    def test_frozen_audit_has_expected_paired_coverage_and_no_forbidden_fields(self) -> None:
-        audit = build_audit()
+    def test_build_audit_counts_paired_fixture_without_leaking_answers(self) -> None:
+        # Keep the unit suite independent of large, answer-bearing local run
+        # artifacts. The production audit remains available as an opt-in script.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            field_ids = [f"field-{index}" for index in range(9)]
+            query_ids = [f"query-{index}" for index in range(9)]
+            union_path = Path("candidate-union.json")
+            historical_path = Path("results/historical.json")
+            pilot_path = Path("results/pilot.json")
+            manifest_path = Path("historical-manifest.json")
+            preflight_path = Path("pilot-preflight.json")
+
+            (root / union_path).write_text(json.dumps({
+                "ids": {"field_pruning": field_ids, "query_directed": query_ids}
+            }), encoding="utf-8")
+            (root / historical_path).parent.mkdir(parents=True)
+            historical = [
+                {"case_id": case_id, "repeat": 1, "arm": arm, "answer": "SECRET_ANSWER"}
+                for case_id in (field_ids + query_ids)[:14]
+                for arm in ("full", "default_sift")
+            ]
+            pilot = [
+                {"case_id": case_id, "repeat": 2, "arm": arm, "answer": "SECRET_ANSWER"}
+                for case_id in field_ids[:4]
+                for arm in ("full", "default_sift", "field_pruning")
+            ]
+            (root / historical_path).write_text(json.dumps({"results": historical}), encoding="utf-8")
+            (root / pilot_path).write_text(json.dumps({"results": pilot}), encoding="utf-8")
+            (root / manifest_path).write_text(json.dumps({
+                "provider_endpoint": {
+                    "provider_name": "MiniMax",
+                    "provider_slug": "minimax",
+                    "model_endpoint_id": "fixture-endpoint",
+                    "request_provider_policy": {"allow_fallbacks": False, "only": ["minimax"]},
+                }
+            }), encoding="utf-8")
+            (root / preflight_path).write_text(json.dumps({
+                "model": "minimax/minimax-m3",
+                "config": {
+                    "provider_policy": {"only": ["minimax"], "allow_fallbacks": False},
+                    "workers": 1,
+                    "repeats": 1,
+                    "arms": ["full", "default_sift", "field_pruning"],
+                    "cli_seed": 7,
+                    "randomization": "fixture",
+                    "generation_seed_formula": "fixture-{case_id}-{repeat}-{arm}",
+                },
+            }), encoding="utf-8")
+
+            with (
+                patch.object(audit_module, "ROOT", root),
+                patch.object(audit_module, "UNION_PATH", union_path),
+                patch.object(audit_module, "SOURCES", (historical_path, pilot_path)),
+                patch.object(audit_module, "HISTORICAL_MANIFEST", manifest_path),
+                patch.object(audit_module, "PILOT_PREFLIGHT", preflight_path),
+            ):
+                audit = build_audit()
+
         self.assertEqual(audit["summary"]["candidate_ids"], 18)
         self.assertEqual(audit["summary"]["ids_with_historical_full_default"], 14)
         self.assertEqual(audit["summary"]["ids_with_concurrent_field_pruning_triplets"], 4)
@@ -106,7 +167,7 @@ class CandidateTraceMetadataParserTests(unittest.TestCase):
         encoded = json.dumps(audit)
         for key in ("answer", "expected", "correct", "choice", "response", "raw_sse", "raw_error"):
             self.assertNotIn(f'"{key}"', encoded)
-        self.assertNotIn("SENTINEL_MUST_NOT_SURFACE", encoded)
+        self.assertNotIn("SECRET_ANSWER", encoded)
 
 
 if __name__ == "__main__":

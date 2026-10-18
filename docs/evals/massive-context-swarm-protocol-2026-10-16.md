@@ -43,19 +43,35 @@ route instrumentation, shared workspace policy, and run-trace audit as the
 webhook case. This is a separate task family, not extra context appended to
 the webhook task.
 
-The cross-domain packet is **1,768,250 bytes** with a **608,714-token
-packet-only estimate** from LiteLLM 1.103.0. A constructed tool-cycle request
-using the updated swarm task counted **609,660 raw tokens**. In the provider-
-free adapter preflight, full forwarded all 609,660; Sift forwarded **63,935**
-at 64K and **31,871** at 32K, with **1.02–1.14 seconds** local selector time.
-Both scale/budget checks passed. This case has no exact-span manifest, so
-retention is evaluated through the report's cited evidence and independent
-acceptance suite, plus the agent trace showing any source retrieval. These are
-constructed-request results, not a captured Claude request or paid agent run.
+The cross-domain packet is **1,768,250 bytes**. The first synthetic preflight
+used only the frozen task file and did not match the native runner's final
+prompt. That mismatch is fixed: the runner and preflight now share the same
+prompt builder, and a regression test checks byte-for-byte equality for the
+multi-domain task, four required roles, output paths, and test instructions.
+The aligned constructed tool-cycle request counts **610,444 raw tokens** with
+LiteLLM 1.103.0. Sift forwards **63,836 / 47,950 / 31,854 / 23,848 / 15,877**
+tokens at 64K, 48K, 32K, 24K, and 16K, taking **0.97–1.12 seconds** of local
+selector time. All eight hashed evidence records were retained at every
+target. The result is saved at
+`.runs/multi_domain_swarm_500k_native_prompt_preflight_20261016.json`. This
+remains a provider-free constructed-request diagnostic.
 
-The exact current packet is **1,849,622 bytes** and has a **559,763-token
-packet-only local estimate** with pinned LiteLLM 1.103.0 and a fixed system
-message. That clears the fixture-design scale estimate, not the trial gate.
+A separate Claude Code 2.1.251 request-shape check used the MiniMax M3
+LiteLLM 1.103.0 route and the 37-chunk persisted checkpoint. With the same
+model alias and absolute workspace in both arms, the request fingerprints and
+all semantic component hashes matched. Each request independently counted
+**615,670 raw tokens**; Full forwarded all tokens and Sift forwarded **63,937**
+at 64K. The callback returned HTTP 409 before provider selection, so this
+produced no model output or spend. It qualifies only the matched request shape,
+not the task comparison: the checkpoint packet predates the current frozen
+task and source records. The body-free evidence is in
+`.runs/native_prompt_request_qualification_20261016.json`. Rebuild the
+checkpoint from the current fixture before using a paid task run for quality,
+cost, TTFT, or decode-throughput claims.
+
+The webhook packet is **1,849,622 bytes** and has a **559,763-token packet-only
+local estimate** with pinned LiteLLM 1.103.0 and a fixed system message. That
+clears the fixture-design scale estimate, not the trial gate.
 The actual prepared historical request in each arm must be measured at 500,000
 or more input tokens by the deployed route counter before selection. The full
 arm must also confirm provider-reported input usage. Use a 500K–900K measured
@@ -69,6 +85,11 @@ arm. Freeze the task prompt, input/gold manifest, exact context packet, model
 aliases, client settings, and workspace before the first run. Verify the
 gateway uses the pinned MiniMax profile with a 1,044,480-token input limit; the
 currently running older profile is capped at about 200K and is ineligible.
+Start the isolated native gateway with
+`SIFT_NATIVE_CONFIG=/bench/native_litellm_minimax_m3.yaml`; the Compose default
+remains the Qwen config. Use the same client model alias for both arms and
+select Full or Sift in separate gateway processes so Claude receives an
+identical system/tool prompt.
 
 Prepare the checkpoint with `benchmarks/seed_claude_checkpoint.py`, using the
 full-context alias and an isolated new `CLAUDE_CONFIG_DIR`. A single oversized
@@ -96,7 +117,13 @@ first task request after checkpoint preparation:
    task request in every arm. Record a body-free per-request event for the full
    and Sift arms with sequence, raw count, forwarded count, target, and count
    status. A packet-only estimate or sum across requests does not qualify.
-2. Sift forwards no more than the assigned target (64,000 or 32,000 tokens),
+   Apply the raw floor to each arm independently. For every later generation,
+   retain and report its raw and forwarded counts as a separate observation;
+   show the distribution and number of generations still above 500K. Do not
+   average or sum request sizes to imply that a smaller generation was a
+   500K-context request.
+2. Sift forwards no more than the assigned target (64,000, 48,000, 32,000,
+   24,000, or 16,000 tokens),
    with the task instructions and active tool cycle preserved. Exact verbatim
    retention of every gold span is a diagnostic, not a qualification gate:
    agents in both arms can inspect and retrieve from the same workspace.
@@ -122,7 +149,7 @@ Sift at 64K, 48K, 32K, 24K, and 16K without contacting a provider. The packet
 is **1,849,622 bytes** (SHA-256
 `b29a4fd63a906764e026ba6ffc1e698e4fc41d9e62519e591597f0c0ca07400e`).
 
-The latest provider-free preflight counted **560,436 raw input tokens**. The
+The latest webhook provider-free preflight counted **560,436 raw input tokens**. The
 full arm forwarded all 560,436 unchanged. Sift forwarded **63,904 / 47,756 /
 31,989 / 23,918 / 15,899** at the five targets, taking **0.97–1.12 seconds**
 of local selector time per target. All five were under their requested token
@@ -139,6 +166,26 @@ workspace after compaction. The preflight is still not a qualified agent
 comparison or quality result. Paid runs remain gated on exact-request scale
 qualification, provider usage instrumentation, and an enforceable spend
 ceiling.
+
+For the incident swarm, select its own frozen task and role profile. The
+runner supports `--swarm-profile multi-domain-incident`, which requires the
+four roles specified by that fixture (`deployment_auditor`,
+`identity_auditor`, `network_payment_auditor`, and `response_auditor`); the
+default webhook profile requires the API, worker, migration, and operations
+roles. The current incident packet has a SHA-256-bound `evidence.json` with
+eight critical source records. Reproduce the sweep with:
+
+```powershell
+docker exec sift-m3-500k-native-benchmark-1 python /bench/preflight_massive_context_sift.py `
+  --packet /bench/agent_cases/multi_domain_incident_swarm_500k/swarm_context.md `
+  --gold /bench/agent_gold/multi_domain_incident_swarm_500k `
+  --target 64000 --target 48000 --target 32000 --target 24000 --target 16000
+```
+
+This command uses the pinned LiteLLM benchmark container and makes no provider
+request. Exact-span retention remains a diagnostic; the acceptance run must
+still measure the real prepared request, prove task quality, and meet the
+provider spend gate.
 
 ### Retrieval-prompt candidate (provider-free, 2026-10-16)
 
@@ -190,13 +237,16 @@ cost per accepted task so the Sift arm does not get an accounting advantage.
 
 ## Arms and outcomes
 
-For each task family, compare full context, Sift at 64K, and Sift at 32K at
-the same measured raw-input size. After both task families qualify, repeat at
-larger measured bands (for example 750K and 900K) with a newly frozen,
-task-relevant packet for each band. Keep model, client version,
-output cap, spend cap, permissions, fixture, initial prompt, and completion
-limits fixed. Randomize arm order within paired blocks and repeat from the
-same frozen task/workspace state. Preserve failed runs and their spend.
+For each task family, compare full context with Sift at 64K, 48K, 32K, 24K,
+and 16K from the same frozen checkpoint and measured raw-input size. Each
+arm's first prepared task request must independently clear the 500K raw-input
+floor; do not qualify by summing requests or using packet-only estimates. After
+both task families qualify, repeat at larger measured bands (for example 750K
+and 900K) with a newly frozen, task-relevant packet for each band. Keep model,
+client version, output cap, spend cap, permissions, fixture, initial prompt,
+and completion limits fixed. Randomize arm order within paired blocks and
+repeat from the same frozen task/workspace state. Preserve failed runs and
+their spend.
 
 The independent gold suite checks API behavior, tenant-scoped idempotency,
 payload conflict handling, retry ordering/backoff, migration compatibility,
@@ -247,10 +297,14 @@ harness are prepared, and targeted offline tests pass. The older 612,519-token
 offline preflight used a different incident-reconstruction packet and does
 not qualify this webhook workload. The latest webhook-specific constructed
 history exceeds 560K tokens, but its current selector misses many exact
-contract spans as detailed above. That is a retrieval diagnostic, not a reason
-to exclude Sift from task evaluation. The paired 500K+ agent tasks have not
-run. Continue only after selecting a total spend ceiling and qualifying the
-exact forked requests for the paired experiment. The two fixtures are initial
+contract spans as detailed above. The prompt-aligned incident preflight counts
+610,444 constructed raw tokens and retains all eight exact evidence spans at
+64K, 48K, 32K, 24K, and 16K targets. A matched native request-shape pair
+counts 615,670 raw tokens in both arms and forwards 63,937 in the 64K Sift
+arm, but its checkpoint predates the current task packet. Neither result is a
+task-quality comparison. The paired 500K+ agent tasks have not run. Continue
+only after rebuilding the checkpoint from the frozen current fixture and
+selecting an enforceable total spend ceiling. The two fixtures are initial
 pilots, not enough to generalize across domains. The earlier embedded
 initial-user-message path is ineligible for measuring Sift compaction and must
 not be used to claim a 500K result.

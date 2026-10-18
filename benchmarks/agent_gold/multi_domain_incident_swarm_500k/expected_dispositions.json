@@ -1,6 +1,65 @@
 {
   "incident_id": "CHG-88421",
   "root_cause": "CHG-88421 attached egress policy net-export-17 and permitted exporter-prod to assume finance-export-writer; the session lacked owner tag and sent data to unapproved sink 198.51.100.77.",
+  "expected_claims": {
+    "root_cause": "CHG-88421 attached net-export-17; exporter-prod assumed finance-export-writer without the owner tag and sent data to the unapproved sink 198.51.100.77.",
+    "confirmed_exposure": "Unauthorized egress to the unapproved sink is confirmed, and the customer reported the payout export there; the payload contents are not independently verified.",
+    "payment_reconciliation": "EXP-771204 posted once for 4,819,920 USD minor units; the settlement matches and no duplicate posting is evidenced.",
+    "customer_impact": "Customer org-0042 reported that a confidential payout export appeared at a third-party endpoint in P1 ticket CS-88421.",
+    "containment_order": "Follow the runbook containment sequence, then roll back CHG-88421."
+  },
+  "expected_facts": {
+    "root_cause": {
+      "change_id": "CHG-88421",
+      "egress_policy": "net-export-17",
+      "principal": "role/exporter-prod",
+      "action": "AssumeRole",
+      "resource": "role/finance-export-writer",
+      "session": "sess-incident-88421",
+      "owner_tag_present": false,
+      "destination": "198.51.100.77",
+      "egress_action": "ACCEPT",
+      "policy_exception_present": false
+    },
+    "confirmed_exposure": {
+      "unauthorized_egress_observed": true,
+      "customer_reported_export_at_sink": true,
+      "payload_contents_independently_verified": false,
+      "rollback_prevented_exposure": false
+    },
+    "payment_reconciliation": {
+      "export_id": "EXP-771204",
+      "settlement_status": "posted",
+      "amount_minor": 4819920,
+      "currency": "USD",
+      "settlement_total_matches": true,
+      "duplicate_settlement_posting": false
+    },
+    "customer_impact": {
+      "ticket_id": "CS-88421",
+      "customer_id": "org-0042",
+      "severity": "P1",
+      "reported_confidential_export_at_third_party_endpoint": true,
+      "payload_contents_independently_verified": false
+    },
+    "containment_order": {
+      "actions": [
+        "revoke sess-incident-88421",
+        "rotate finance-export-writer credentials",
+        "block 198.51.100.77",
+        "preserve evidence",
+        "notify affected customer",
+        "rollback CHG-88421"
+      ],
+      "rollback_after_containment": true
+    }
+  },
+  "expected_uncertainty": {
+    "unknown_facts": [
+      "exact_payload_received_by_external_sink",
+      "whether_observed_flow_contained_only_one_export"
+    ]
+  },
   "confirmed_exposure": true,
   "payment_posting_duplicate": false,
   "containment_order": [

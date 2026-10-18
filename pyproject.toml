@@ -13,11 +13,15 @@ license-files = ["LICENSE"]
 authors = [{name = "stancsz"}]
 
 [project.urls]
-Homepage = "https://github.com/stancsz/Sift"
-Issues = "https://github.com/stancsz/Sift/issues"
+Homepage = "https://github.com/stancsz/sift"
+Issues = "https://github.com/stancsz/sift/issues"
+
+[project.scripts]
+sift = "sift.cli:main"
 
 [project.optional-dependencies]
 litellm = ["litellm[proxy]==1.103.0"]
+test = ["pytest>=8,<9"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

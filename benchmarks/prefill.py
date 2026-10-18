@@ -135,7 +135,9 @@ def _native_stream_evidence(stream: Any) -> tuple[Any, dict[str, int | None], bo
 
 def _stream_sample(completion: Callable[..., Any], messages: list[dict[str, str]],
                    *, model: str, base_url: str, api_key: str,
-                   max_output_tokens: int = 768) -> dict[str, Any]:
+                   max_output_tokens: int = 768,
+                   cache_prompt: bool = False,
+                   tools: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     sample: dict[str, Any] = {
         "ttft_ms": None, "first_visible_text_ms": None,
         "finish_reason": None, "failure": None,
@@ -145,12 +147,15 @@ def _stream_sample(completion: Callable[..., Any], messages: list[dict[str, str]
     stream = None
     answer: list[str] = []
     try:
-        stream = completion(
+        request = dict(
             model="openai/" + model, api_base=base_url, api_key=api_key,
             messages=messages, stream=True, stream_options={"include_usage": True},
             temperature=0, seed=773, max_tokens=max_output_tokens, num_retries=0,
-            timeout=90, extra_body={"cache_prompt": False},
+            timeout=90, extra_body={"cache_prompt": cache_prompt},
         )
+        if tools is not None:
+            request["tools"] = tools
+        stream = completion(**request)
         for chunk in stream:
             usage = _get(chunk, "usage")
             if usage is not None:

@@ -22,7 +22,7 @@ from typing import Any, BinaryIO, TextIO
 ROOT = Path(__file__).resolve().parents[1]
 UNION_PATH = Path("docs/evals/longbench-v2-candidate-census-union-2026-10-18.json")
 SOURCES = (
-    Path("docs/results/longbench-v2-minimax-m3-100-2026-10-16.json"),
+    Path("docs/results/longbench-v2-minimax-m3-100-2026-10-16.json.gz"),
     Path("docs/results/longbench-v2-minimax-field-pruning-pilot-2026-10-17.json"),
 )
 HISTORICAL_MANIFEST = Path("docs/evals/longbench-v2-minimax-m3-100-manifest-2026-10-16.json")

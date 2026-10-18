@@ -222,8 +222,8 @@ def verify_provenance(followup: dict[str, Any], historical: dict[str, Any], *,
                  and _sha256(path) == expected,
                  f"Follow-up report {name} does not match the specified source file")
 
-    frozen_sources = baseline_manifest.get("source_hashes")
-    _require(isinstance(frozen_sources, dict), "Baseline manifest source_hashes are missing")
+    frozen_sources = baseline_manifest.get("harness")
+    _require(isinstance(frozen_sources, dict), "Baseline manifest harness source hashes are missing")
     _require(report_sources.get("baseline_core_sha256") == historical.get("sift_core_sha256")
              and report_sources.get("tokenizer_sha256") == baseline_manifest.get("model", {}).get("tokenizer_sha256")
              and report_sources.get("chat_template_sha256") == baseline_manifest.get("model", {}).get("chat_template_sha256"),

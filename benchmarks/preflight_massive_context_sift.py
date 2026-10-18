@@ -1,4 +1,4 @@
-"""Run a provider-free 500K+ compaction preflight on the frozen swarm packet."""
+"""Run a provider-free synthetic 500K+ compaction sizing preflight."""
 
 from __future__ import annotations
 
@@ -27,10 +27,14 @@ TASK_REQUEST = (
     "incident evidence, run the full test suite, and report unresolved assumptions."
 )
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_CASE = REPOSITORY_ROOT / "benchmarks/agent_cases/multi_domain_incident_swarm_500k"
+DEFAULT_GOLD = REPOSITORY_ROOT / "benchmarks/agent_gold/multi_domain_incident_swarm_500k"
 sys.path.insert(0, str(REPOSITORY_ROOT / "src"))
 sys.path.insert(0, str(REPOSITORY_ROOT / "benchmarks"))
 from sift.litellm_proxy import compact_proxy_request
 from evidence_retention import audit_retention, load_required_spans
+from agents import (SWARM_PROFILES, TOOL_TEST_PYTHON, build_initial_prompt,
+                    resolve_task_file)
 
 
 def _chunks(packet: bytes, size: int = 48 * 1024) -> list[str]:
@@ -66,6 +70,26 @@ def _messages(packet: bytes, task_request: str = TASK_REQUEST) -> list[dict[str,
     return messages
 
 
+def resolve_task_request(packet_path: Path, explicit_path: Path | None = None) -> str:
+    """Use the same frozen task-file resolution as the native agent runner."""
+    return resolve_task_file(packet_path.parent, explicit_path).read_text(encoding="utf-8")
+
+
+def build_experiment_prompt(packet_path: Path, task_text: str) -> str:
+    """Build the runner's final user prompt for the multi-domain swarm case."""
+    if packet_path.parent.name != "multi_domain_incident_swarm_500k":
+        return task_text
+    return build_initial_prompt(
+        task_text,
+        editable=[],
+        allowed_outputs=["incident_report.json", "remediation_plan.md"],
+        require_agent_calls=4,
+        max_agent_calls=4,
+        profile=SWARM_PROFILES["multi-domain-incident"],
+        test_python=TOOL_TEST_PYTHON,
+    )
+
+
 def preflight(packet_path: Path, gold_dir: Path, model: str, targets: list[int],
               task_request: str = TASK_REQUEST) -> dict[str, Any]:
     installed_litellm = version("litellm")
@@ -74,7 +98,8 @@ def preflight(packet_path: Path, gold_dir: Path, model: str, targets: list[int],
     packet = packet_path.read_bytes()
     evidence_manifest = gold_dir / "evidence.json"
     spans = load_required_spans(evidence_manifest) if evidence_manifest.is_file() else ()
-    messages = _messages(packet, task_request)
+    final_prompt = build_experiment_prompt(packet_path, task_request)
+    messages = _messages(packet, final_prompt)
     router = Router(model_list=[
         {"model_name": alias, "litellm_params": {"model": model, "api_key": "offline-count-only"}}
         for alias in ("minimax-m3-full", "minimax-m3-sift")
@@ -124,6 +149,9 @@ def preflight(packet_path: Path, gold_dir: Path, model: str, targets: list[int],
         "qualified_agent_comparison": False,
         "task_request_sha256": hashlib.sha256(task_request.encode("utf-8")).hexdigest(),
         "task_request_chars": len(task_request),
+        "final_runner_prompt_sha256": hashlib.sha256(final_prompt.encode("utf-8")).hexdigest(),
+        "final_runner_prompt_utf8_bytes": len(final_prompt.encode("utf-8")),
+        "resolved_task_file": str(resolve_task_file(packet_path.parent)),
         "token_counter": f"LiteLLM Router._count_pre_call_check_tokens {installed_litellm} {model}",
         "packet": {
             "path": str(packet_path),
@@ -147,11 +175,11 @@ def preflight(packet_path: Path, gold_dir: Path, model: str, targets: list[int],
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--packet", type=Path, default=REPOSITORY_ROOT / "benchmarks/agent_cases/webhook_swarm_500k/swarm_context.md")
-    parser.add_argument("--gold", type=Path, default=REPOSITORY_ROOT / "benchmarks/agent_gold/webhook_swarm_500k")
+    parser.add_argument("--packet", type=Path, default=DEFAULT_CASE / "swarm_context.md")
+    parser.add_argument("--gold", type=Path, default=DEFAULT_GOLD)
     parser.add_argument("--model", default="openrouter/minimax/minimax-m3")
     parser.add_argument("--task-request-file", type=Path,
-                        help="use a frozen task request from a UTF-8 file instead of the built-in request")
+                        help="use a frozen task request from a UTF-8 file (defaults to task.md, then README.md)")
     parser.add_argument("--target", type=int, action="append", dest="targets",
                         help="Sift target in tokens; repeat to compare several targets (default: 64000 and 32000)")
     args = parser.parse_args()
@@ -159,8 +187,7 @@ def main() -> int:
     if any(target <= 0 or target > 1_000_000 for target in targets):
         parser.error("targets must be between 1 and 1000000")
     try:
-        task_request = (args.task_request_file.read_text(encoding="utf-8")
-                        if args.task_request_file else TASK_REQUEST)
+        task_request = resolve_task_request(args.packet, args.task_request_file)
         result = preflight(args.packet, args.gold, args.model, targets, task_request)
     except Exception as error:
         print(json.dumps({"passed": False, "error_type": type(error).__name__,

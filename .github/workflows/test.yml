@@ -2,8 +2,11 @@ name: Test
 
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
+  schedule:
+    - cron: "17 6 * * 1"
 
 permissions:
   contents: read
@@ -13,8 +16,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
-    name: Python ${{ matrix.python-version }}
+  smoke:
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    name: Core smoke (Python 3.12)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install -e ".[test]"
+      - run: python -m unittest discover -s tests -p test_core.py -q
+      - run: python -m unittest discover -s tests -p test_invariants.py -q
+      - run: python -m unittest discover -s tests -p test_cli.py -q
+
+  full-suite:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    name: Full suite (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -28,6 +49,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
           cache-dependency-path: pyproject.toml
-      - run: python -m pip install -e ".[litellm]"
-      - run: python -m unittest discover -s tests -q
+      - run: python -m pip install -e ".[litellm,test]"
+      - run: python -m pytest tests -q
       - run: python benchmarks/compare.py

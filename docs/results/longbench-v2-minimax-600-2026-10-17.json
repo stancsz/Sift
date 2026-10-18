@@ -76,6 +76,5 @@
     "The provider-reported upstream cost reduction covers successful cache-inclusive BYOK receipts only; five ambiguous original attempt costs are unknown, and these values are not invoice-verified.",
     "This evaluation does not establish quality parity, general cost savings, or accepted Claude Code/Codex task completion."
   ],
-  "source_report": ".runs/longbench-v2-minimax-600-continuation-6.json",
-  "source_bundle": ".runs/longbench-v2-minimax-600-v4-bundle.json.gz"
+  "raw_source_artifacts": "retained outside this repository; request and response bodies are not published"
 }

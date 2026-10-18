@@ -11,8 +11,11 @@ Use the complete historical packet and produce `incident_report.json` and
 `task.md`, then have the parent reconcile their exact source IDs, conflicts,
 and unknowns. The report must separate observed facts from inference, rank
 conflicting sources by `authority.md`, and state what the evidence cannot
-establish. Follow the output schema and containment ordering specified in
-`task.md`. Run `python -m unittest -q` before delivery.
+establish. Follow the output schema, canonical claim sentences, structured
+factual fields, explicit uncertainty, and containment ordering specified in
+`task.md`. The isolated gold suite validates those values as well as citations,
+so correct source IDs beside a false prose claim do not count as acceptance.
+Run `python -m unittest -q` before delivery.
 
 Rebuild from the repository root with:
 

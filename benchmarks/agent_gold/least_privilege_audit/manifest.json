@@ -1,0 +1,19 @@
+{
+  "acceptance_sha256": {
+    "test_audit_iam_gold.py": "60c608990fa37a7fc050f6bd7b06794847e9ec8b0abe7cdc92c3cf058b4cab0c"
+  },
+  "fixture": "least_privilege_audit",
+  "frozen_at_utc": "2026-10-16T06:22:47Z",
+  "input_sha256": {
+    "README.md": "7ce3d0d91a7e2aa14b7b11a2e708b8dca3b5dc959979c0ab5fb56d17b4c8562f",
+    "audit_iam.py": "ca9adbb19015256e266b7bc2c04b986c7f9f15558c126e7f3ca5ca399f5e469d",
+    "data/audit_events_2024_legacy.log": "514d979ab8a3bba67eb2c31776f5717a8998374f1179e91ad64e9f4d0a382763",
+    "data/audit_events_2025_archive.log": "259b4407efbacaacf80b00d461ee9d1c7a360df5cb331541f3eaac92f30bdf7e",
+    "data/audit_events_2026_q3.log": "0541151d360a6ddd5878e77550a2984635205fc753e9cf0cf20288fcb40f923b",
+    "data/audit_events_2026_q4.log": "25dfe2e44e750e342969620b39de272f652e2e9e7992e7b228d23c296b8f8088",
+    "data/policy_notes.md": "83d5c8d33f3dfe82d08a9d3d56dd4eeab51610be4cbbef983642914f598a1949",
+    "data/role_request.txt": "e4a4081ec8b95e32222387682826c5eefeed467c21bfb83a91487d144d4ec5b8",
+    "test_audit_iam.py": "2028b9636ec326c3fd2d404d4bd31fcb95747337ffc0e84608ebde9329fbc6ef"
+  },
+  "status": "public synthetic development fixture; not held-out evidence"
+}

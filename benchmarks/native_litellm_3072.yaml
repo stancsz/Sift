@@ -1,0 +1,45 @@
+# Same model profile for all arms. Reserve 3,072 output tokens inside the 32,768
+# context; the full arm therefore admits at most 29,696 input tokens.
+model_list:
+  # Baseline alias bypasses the callback's configured qwen3.8-27b target.
+  - model_name: qwen3.8-27b-full
+    model_info:
+      max_input_tokens: 29696
+      max_output_tokens: 3072
+      context_window: 32768
+    litellm_params:
+      model: openai/qwen3.8-27b
+      api_base: os.environ/SIFT_NATIVE_BACKEND_URL
+      api_key: local
+      use_chat_completions_api: true
+      max_tokens: 3072
+      timeout: 90
+  - model_name: qwen3.8-27b
+    model_info:
+      max_input_tokens: 29696
+      max_output_tokens: 3072
+      context_window: 32768
+    litellm_params:
+      model: openai/qwen3.8-27b
+      api_base: os.environ/SIFT_NATIVE_BACKEND_URL
+      api_key: local
+      use_chat_completions_api: true
+      max_tokens: 3072
+      timeout: 90
+
+router_settings:
+  enable_pre_call_checks: true
+  num_retries: 0
+  fallbacks: []
+  context_window_fallbacks: []
+
+litellm_settings:
+  use_chat_completions_url_for_anthropic_messages: true
+  callbacks:
+    - native_callback.benchmark_hook
+  turn_off_message_logging: true
+  set_verbose: false
+
+general_settings:
+  master_key: os.environ/SIFT_NATIVE_GATEWAY_KEY
+  cancel_on_disconnect: true

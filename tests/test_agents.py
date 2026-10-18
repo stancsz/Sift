@@ -151,6 +151,104 @@ class AgentEvidenceTests(unittest.TestCase):
         restricted_allowed = restricted[restricted.index("--allowedTools") + 1]
         self.assertNotIn(f"{shell}({agents.TOOL_TEST_PYTHON} audit.py:*)", restricted_allowed)
 
+    def test_claude_checkpoint_run_forks_persisted_session(self):
+        session_id = "3f2d6404-b9c1-4df2-9d04-4a756c2a939b"
+        command = agents.client_command(
+            SimpleNamespace(client="claude", model="offline", resume_session_id=session_id),
+            "claude", ["service/api.py"])
+        self.assertEqual(session_id, command[command.index("--resume") + 1])
+        self.assertIn("--fork-session", command)
+        self.assertNotIn("--no-session-persistence", command)
+
+    def test_claude_can_create_only_predeclared_outputs(self):
+        command = agents.client_command(
+            SimpleNamespace(client="claude", model="offline"), "claude", [],
+            ["incident_report.json", "remediation_plan.md"])
+        tools = command[command.index("--tools") + 1].split(",")
+        allowed = command[command.index("--allowedTools") + 1].split(",")
+        self.assertIn("Write", tools)
+        self.assertIn("Write(./incident_report.json)", allowed)
+        self.assertIn("Write(./remediation_plan.md)", allowed)
+        self.assertNotIn("Write(./other.json)", allowed)
+
+    def test_claude_swarm_uses_four_read_only_agents_and_a_budget_cap(self):
+        args = SimpleNamespace(client="claude", model="offline", require_agent_calls=4,
+                               max_agent_calls=4, claude_max_budget_usd=8.0)
+        command = agents.client_command(args, "claude", ["service/api.py"])
+        definitions = json.loads(command[command.index("--agents") + 1])
+        self.assertEqual({"api-auditor", "worker-auditor", "migration-auditor", "operations-auditor"},
+                         set(definitions))
+        self.assertTrue(all(agent["tools"] == ["Read", "Grep", "Glob"] for agent in definitions.values()))
+        self.assertEqual("8.0", command[command.index("--max-budget-usd") + 1])
+        self.assertIn("Agent", command[command.index("--tools") + 1].split(","))
+        self.assertIn("Agent", command[command.index("--allowedTools") + 1].split(","))
+
+    def test_multi_domain_swarm_profile_matches_fixture_workstreams(self):
+        args = SimpleNamespace(client="claude", model="offline", require_agent_calls=4,
+                               max_agent_calls=4, claude_max_budget_usd=8.0,
+                               swarm_profile="multi-domain-incident")
+        command = agents.client_command(args, "claude", ["incident_report.md"])
+        definitions = json.loads(command[command.index("--agents") + 1])
+        required = {"deployment_auditor", "identity_auditor",
+                    "network_payment_auditor", "response_auditor"}
+        self.assertEqual(required, set(definitions))
+        self.assertTrue(all(agent["tools"] == ["Read", "Grep", "Glob"]
+                            for agent in definitions.values()))
+        self.assertTrue(agents.swarm_trace_qualified(4, list(required), 4, 4, tuple(required)))
+        self.assertFalse(agents.swarm_trace_qualified(4, list(agents.SWARM_AGENT_TYPES), 4, 4,
+                                                     tuple(required)))
+
+    def test_claude_event_evidence_counts_only_linked_successful_subagent_results(self):
+        events = [
+            {"type": "assistant", "message": {"content": [
+                {"type": "tool_use", "id": "agent-1", "name": "Agent", "input": {"subagent_type": "api-auditor"}},
+                {"type": "tool_use", "id": "agent-2", "name": "Task", "input": {"subagent_type": "worker-auditor"}},
+            ]}},
+            {"type": "user", "message": {"content": [
+                {"type": "tool_result", "tool_use_id": "agent-2", "content": [{"type": "text", "text": "worker findings"}], "is_error": False},
+                {"type": "tool_result", "tool_use_id": "agent-1", "content": "API findings", "is_error": False},
+            ]}},
+            {"type": "result", "subtype": "success", "is_error": False},
+        ]
+        result = agents.event_evidence("claude", "\n".join(map(json.dumps, events)))
+        self.assertEqual(result["agent_tool_calls"], 2)
+        self.assertEqual(result["successful_agent_tool_calls"], 2)
+        self.assertEqual(result["agent_subagent_types"], ["api-auditor", "worker-auditor"])
+        self.assertEqual([item["outcome"] for item in result["agent_call_outcomes"]],
+                         ["completed", "completed"])
+        self.assertNotIn("content", result["agent_call_outcomes"][0])
+
+    def test_claude_subagent_trace_excludes_failed_missing_and_empty_results(self):
+        events = [
+            {"type": "assistant", "message": {"content": [
+                {"type": "tool_use", "id": "success", "name": "Agent", "input": {"subagent_type": "api-auditor"}},
+                {"type": "tool_use", "id": "failed", "name": "Agent", "input": {"subagent_type": "worker-auditor"}},
+                {"type": "tool_use", "id": "empty", "name": "Task", "input": {"subagent_type": "migration-auditor"}},
+                {"type": "tool_use", "id": "missing", "name": "Task", "input": {"subagent_type": "operations-auditor"}},
+            ]}},
+            {"type": "user", "message": {"content": [
+                {"type": "tool_result", "tool_use_id": "failed", "content": "worker failed", "is_error": True},
+                {"type": "tool_result", "tool_use_id": "empty", "content": "  \n", "is_error": False},
+                {"type": "tool_result", "tool_use_id": "success", "content": "API findings", "is_error": False},
+            ]}},
+            {"type": "result", "subtype": "success", "is_error": False},
+        ]
+        result = agents.event_evidence("claude", "\n".join(map(json.dumps, events)))
+        self.assertEqual(result["agent_tool_calls"], 4)  # attempted calls, used for the hard maximum
+        self.assertEqual(result["successful_agent_tool_calls"], 1)
+        self.assertEqual(result["agent_subagent_types"], ["api-auditor"])
+        self.assertEqual([item["outcome"] for item in result["agent_call_outcomes"]],
+                         ["completed", "failed", "empty_result", "missing_result"])
+
+    def test_swarm_role_coverage_requires_successful_results_for_each_role(self):
+        all_roles = list(agents.SWARM_AGENT_TYPES)
+        self.assertTrue(agents.swarm_trace_qualified(4, all_roles, 4, 4))
+        self.assertFalse(agents.swarm_trace_qualified(3, all_roles[:-1], 4, 4))
+        self.assertFalse(agents.swarm_trace_qualified(5, all_roles, 4, 4))
+        # A role's attempted tool call does not appear in the successful role list.
+        successful_roles = ["api-auditor", "worker-auditor", "worker-auditor", "operations-auditor"]
+        self.assertFalse(agents.swarm_trace_qualified(4, successful_roles, 4, 4))
+
     def test_claude_output_cap_cannot_exceed_gateway_limit(self):
         argv = ["agents.py", "--client", "claude", "--case", "case", "--gold", "gold",
                 "--editable", "solution.py", "--base-url", "http://127.0.0.1:4010/v1",
@@ -330,6 +428,7 @@ class AgentEvidenceTests(unittest.TestCase):
             for directory in (case, gold, run):
                 directory.mkdir()
             (case / "README.md").write_text("Generate report.json by editing implementation.py.", encoding="utf-8")
+            (case / "swarm_context.md").write_text("Unique audit fact: tenant=17, state=retry", encoding="utf-8")
             implementation = case / "implementation.py"
             implementation.write_text(
                 'from pathlib import Path\nimport json\nPath("report.json").write_text(json.dumps({"ok": False}))\n',
@@ -352,6 +451,7 @@ class AgentEvidenceTests(unittest.TestCase):
                 if "--version" in command:
                     return {"exit_code": 0, "timed_out": False, "seconds": 0.1,
                             "stdout": "fake-native 1.0", "stderr": ""}
+                self.assertIn("Unique audit fact: tenant=17, state=retry", kwargs["text"])
                 self.assertFalse((directory / "report.json").exists(),
                                  "a baseline test's generated artifact must not leak into the client workspace")
                 (directory / "implementation.py").write_text(
@@ -362,10 +462,15 @@ class AgentEvidenceTests(unittest.TestCase):
 
             argv = ["agents.py", "--client", "claude", "--case", str(case), "--gold", str(gold),
                     "--editable", "implementation.py", "--allowed-output", "report.json",
+                    "--context-file", str(case / "swarm_context.md"),
+                    "--require-agent-calls", "4", "--max-agent-calls", "4",
+                    "--claude-max-budget-usd", "8",
                     "--base-url", "http://unused.invalid/v1", "--model", "offline",
                     "--api-key-env", "SIFT_OFFLINE_KEY"]
             successful_events = {"native_terminal_success": True, "observed_test_loop": True,
                                  "test_tool_calls": 2, "client_reported_usage": None,
+                                 "agent_tool_calls": 4,
+                                 "agent_subagent_types": list(agents.SWARM_AGENT_TYPES),
                                  "client_reported_ttft_ms": [], "mean_client_reported_ttft_ms": None}
             with patch.object(sys, "argv", argv), patch.dict(os.environ, {"SIFT_OFFLINE_KEY": key}), \
                     patch.object(agents.Path, "home", return_value=base), \
@@ -377,6 +482,7 @@ class AgentEvidenceTests(unittest.TestCase):
             report = json.loads((run / "result.json").read_text(encoding="utf-8"))
             self.assertEqual(status, 0, json.dumps(report, indent=2))
             self.assertTrue(report["accepted"])
+            self.assertTrue(report["swarm_qualified"])
             self.assertEqual(report["baseline"]["exit_code"], 1)
             self.assertTrue((run / "baseline-check" / "report.json").is_file())
             self.assertEqual(report["created_outputs"], ["report.json"])
@@ -384,6 +490,10 @@ class AgentEvidenceTests(unittest.TestCase):
             self.assertEqual(report["extra_files"], [])
             self.assertTrue(report["visible"]["passed"])
             self.assertTrue(report["gold"]["passed"])
+            self.assertEqual(report["context_file"], "swarm_context.md")
+            self.assertIsNotNone(report["context_file_sha256"])
+            self.assertEqual(report["context_file_delivery"], "active_user_turn")
+            self.assertFalse(report["historical_context_compaction_eligible"])
 
     def test_codex_owned_home_exists_before_version_and_native_startup(self):
         with tempfile.TemporaryDirectory(prefix="sift-codex-home-regression-") as temporary:

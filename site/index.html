@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#e9e5dc">
+  <meta name="description" content="Sift reduces coding-agent history by selecting older context likely relevant to the current request. Deterministic compaction, no extra model call.">
+  <title>Sift — keep the evidence</title><link rel="icon" href="assets/sift-logo.png" type="image/png">
+  <link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="repairs.css"><script src="script.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="topbar"><a class="brand" href="#top" aria-label="Sift home"><img src="assets/sift-logo.png" alt="" width="38" height="38"><span>sift<span class="brand-period">.</span></span></a>
+    <nav class="main-nav" aria-label="Main navigation"><a href="#how">How it works</a><a href="#proof">Evidence</a><a href="#start">Quick start</a><a class="nav-github" href="https://github.com/stancsz/sift" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a></nav>
+  </header>
+  <main id="main">
+    <section class="hero wrap" id="top" aria-labelledby="hero-title">
+      <div class="hero-copy"><p class="eyebrow"><span class="live-dot"></span> Deterministic context filtering for coding agents</p>
+        <h1 id="hero-title">A smaller prompt.<br><em>More room to work.</em></h1>
+        <p class="hero-lede">Sift ranks older history against the current request, keeping recent work exact when it fits. It can still drop useful context, so measure task quality on your workload. No extra model call.</p>
+        <div class="hero-actions"><a class="button button-dark" href="#start">Try it locally <span aria-hidden="true">↘</span></a><a class="text-link" href="https://github.com/stancsz/sift" target="_blank" rel="noreferrer">Read the source <span aria-hidden="true">↗</span></a></div>
+        <ul class="trust-row" aria-label="Sift properties"><li><span aria-hidden="true">◈</span> Deterministic</li><li><span aria-hidden="true">⌁</span> No second model call</li><li><span aria-hidden="true">◉</span> Runs on your machine</li></ul>
+      </div>
+      <div class="hero-art" aria-label="Illustrative diagram: a key-rotation request highlights an older matching conversation excerpt">
+        <div class="art-stamp">ILLUSTRATIVE · NOT MEASURED</div>
+        <div class="source-card"><div class="diagram-head"><span>INPUT / example-session</span><span>OLDER HISTORY</span></div>
+          <div class="source-query"><span>CURRENT TASK</span>Which key rotation did we decide?</div>
+          <div class="source-lines" aria-hidden="true"><i></i><i></i></div>
+          <div class="source-match"><span class="match-dot"></span><span class="match-copy">“Rotate the key after export; keep the prior key active for one full reconciliation cycle.”</span></div>
+          <div class="source-noise" aria-hidden="true"><i></i><i></i></div>
+        </div>
+        <div class="flow-arrow" aria-hidden="true"><span></span> sift <span></span></div>
+        <div class="kept-note"><div class="kept-top"><span class="kept-tag"><span></span> KEPT · VERBATIM</span><span>example excerpt</span></div><p>“Rotate the key after export; keep the prior key active for one full reconciliation cycle.”</p><div class="kept-foot"><span>fictional billing scenario</span><span>↗</span></div></div>
+        <div class="art-caption"><span class="caption-rule"></span> Match old evidence to the task at hand.</div>
+      </div><div class="vertical-note" aria-hidden="true">CONTEXT / CONTROL / CLARITY</div>
+    </section>
+    <section class="proof-band" id="proof" aria-labelledby="proof-title"><div class="wrap proof-grid">
+      <div class="proof-intro"><p class="eyebrow">MEASURED · WITH THE CAVEATS INCLUDED</p><h2 id="proof-title">Less history in.<br>More room to work.</h2><p>In one matched LongBench v2 study, Sift cut provider-reported prompt tokens. The same run also showed a quality gap. Both belong in the headline.</p><a class="text-link" href="https://github.com/stancsz/sift/blob/main/docs/evals/longbench-v2-minimax-600-runner-2026-10-17.md">Read how it was measured <span aria-hidden="true">↗</span></a></div>
+      <div class="proof-number"><div class="big-number">65.8<span>%</span></div><p><strong>Prompt-token reduction</strong><br>in 600 matched responses</p><div class="mini-meter" aria-label="Full context 100 percent; Sift 34.2 percent"><div><span>FULL</span><i class="meter-full"></i></div><div><span>SIFT</span><i class="meter-sift"></i></div></div></div>
+      <div class="proof-caveat"><div class="caveat-label"><span class="caveat-mark">!</span> SAME RUN · QUALITY TRADEOFF</div><div class="gap-number">−4.36<span> pp</span></div><p><strong>Exact-choice accuracy gap</strong><br>vs full context in that run.</p><a href="https://github.com/stancsz/sift#longbench-v2-658-fewer-prompt-tokens">See the full table and limits <span aria-hidden="true">↗</span></a></div>
+    </div><div class="wrap proof-footnote">100 previously exposed questions · 3 repeats per arm · not a blind holdout · structured-choice QA is not agent-loop success · <a href="https://github.com/stancsz/sift/blob/main/docs/evaluation.md">Full protocol &amp; limitations</a></div>
+      <div class="wrap proof-footnote">Separate broader run: 446 of 503 questions had matched scoreable answers; Sift was 1.1 percentage points lower and used 75.8% fewer provider prompt tokens. The one-repeat run is incomplete, uses the same publicly exposed dataset, and does not prove parity. <a href="https://github.com/stancsz/sift/blob/main/docs/results/longbench-v2-minimax-m3-fullsuite-progress-2026-10-17.md">See its status and limits</a>.</div></section>
+    <section class="how-section wrap" id="how" aria-labelledby="how-title"><div class="section-head"><div><p class="eyebrow">THE MECHANISM</p><h2 id="how-title">A sieve, not a summary.</h2></div><p>No model decides what to remember. Sift ranks older evidence against the current task, carries nearby diagnostic lines and follows bounded links between identifiers.</p></div>
+      <div class="steps-grid">
+        <article class="step-card"><div class="step-index">01 / INTAKE</div><div class="step-glyph glyph-stack" aria-hidden="true"><i></i><i></i><i></i><i></i></div><h3>History gets heavy</h3><p>Tool output and routine chatter crowd out the one failure or decision that still matters.</p></article>
+        <article class="step-card step-featured"><div class="step-index">02 / SIFT</div><div class="step-glyph glyph-sieve" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><h3>Relevant evidence stays</h3><p>Task-aware ranking preserves exact recent work and selects older excerpts that match the live request.</p></article>
+        <article class="step-card"><div class="step-index">03 / CONTINUE</div><div class="step-glyph glyph-path" aria-hidden="true"><i></i><i></i><i></i></div><h3>The agent keeps moving</h3><p>A smaller working context leaves more room for the next tool cycle. If critical current work cannot fit, Sift refuses safely.</p></article>
+      </div><div class="mechanism-strip"><span>01</span> Extractive; no generated memory <b>·</b> <span>02</span> CPU-only; no added model dependency <b>·</b> <span>03</span> Fails closed when exact active work cannot fit</div>
+    </section>
+    <section class="start-section" id="start" aria-labelledby="start-title"><div class="wrap start-wrap"><div class="start-copy"><p class="eyebrow">START SMALL · STAY LOCAL</p><h2 id="start-title">Try it without<br>changing your stack.</h2><p>Use the LiteLLM callback if you already have a proxy. Or run the standalone CLI against Ollama or another OpenAI-compatible endpoint—no LiteLLM install.</p>
+      <div class="start-tabs" role="tablist" aria-label="Choose an install path"><button type="button" role="tab" id="tab-ollama" aria-selected="true" aria-controls="panel-ollama">Ollama / any base URL</button><button type="button" role="tab" id="tab-callback" aria-selected="false" aria-controls="panel-callback" tabindex="-1">LiteLLM callback</button></div></div>
+      <div class="code-panel" id="panel-ollama" role="tabpanel" aria-labelledby="tab-ollama"><div class="code-panel-head"><span class="terminal-dot"></span> TERMINAL / LOCAL</div><pre><code><span class="code-dim"># Ollama must be installed and running</span>
+<span class="code-dim"># if needed, run ollama serve in another terminal</span>
+ollama pull qwen3.5:4b
+# if needed, start Ollama with: ollama serve
+
+<span class="code-dim"># install from source (Python 3.11+)</span>
+git clone https://github.com/stancsz/sift.git
+cd sift
+python -m pip install -e .
+
+<span class="code-dim"># start Sift, then send the curl request shown below</span>
+sift serve \
+  --base-url http://127.0.0.1:11434/v1 \
+  --target 4096 \
+  --tokenizer byte-estimate
+
+<span class="code-dim"># in another terminal: call through Sift</span>
+curl -i http://127.0.0.1:4011/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"qwen3.5:4b","messages":[{"role":"user","content":"Reply with the result of 1 + 1."}]}'</code></pre><div class="code-panel-foot"><span>Ollama must be running · Sift binds to localhost</span><span>NO LITELLM</span></div></div>
+      <div class="code-panel" id="panel-callback" role="tabpanel" aria-labelledby="tab-callback" hidden><div class="code-panel-head"><span class="terminal-dot"></span> PYTHON / LITELLM</div><pre><code><span class="code-dim"># install the tested release</span>
+python -m pip install \
+  "sift-context[litellm] @ git+https://github.com/stancsz/sift.git@v0.10.0"
+
+<span class="code-dim"># add to your LiteLLM callback module</span>
+from sift.litellm_proxy import SiftLiteLLMHook
+
+sift_callback = SiftLiteLLMHook(
+  {"local-chat": 24_576},
+  raw_limit=1_000_000,
+)</code></pre><div class="code-panel-foot"><span>Works with existing LiteLLM routes</span><span>PYTHON 3.11+</span></div></div>
+    </div><div class="wrap estimate-note"><span class="estimate-icon">≈</span><p><strong>Estimates aren’t model tokens.</strong> The standalone CLI’s <code>byte-estimate</code> budgets UTF-8 request size, <strong>not your model’s tokenizer</strong>; it <strong>cannot guarantee upstream context fit</strong>. The LiteLLM path can use its provider counter. Both paths leave critical recent work exact and refuse when it cannot fit.</p><a href="https://github.com/stancsz/sift#quick-start">All setup details <span aria-hidden="true">↗</span></a></div></section>
+    <section class="fit-section wrap" aria-labelledby="fit-title"><div class="fit-heading"><p class="eyebrow">GOOD FIT / HONEST LIMITS</p><h2 id="fit-title">For long-running agent work.</h2></div><div class="fit-columns">
+      <div><h3><span>+</span> Reach for Sift when</h3><ul><li>Your agent has long coding or research sessions</li><li>Logs and tool output bury earlier evidence</li><li>You want deterministic selection without a second model</li><li>You can set a budget and measure task quality on your own workload</li></ul></div>
+      <div><h3><span>−</span> Keep in mind</h3><ul><li>Compression can remove information; measured quality was lower in the published LongBench run</li><li>Token estimates vary by protocol and provider</li><li>It is not an agent memory database or a semantic summary</li><li>Verify task completion and quality before broad rollout</li></ul></div>
+    </div></section>
+  </main>
+  <footer class="footer"><div class="wrap footer-inner"><a class="brand footer-brand" href="#top"><img src="assets/sift-logo.png" alt="" width="32" height="32"><span>sift<span class="brand-period">.</span></span></a><p>Small working context. Evidence intact.</p><nav aria-label="Footer links"><a href="https://github.com/stancsz/sift" target="_blank" rel="noreferrer">Source</a><a href="https://github.com/stancsz/sift#reproduce-and-contribute" target="_blank" rel="noreferrer">Contribute</a><a href="https://github.com/stancsz/sift/blob/main/docs/algorithm.md" target="_blank" rel="noreferrer">Algorithm</a><a href="https://github.com/stancsz/sift/blob/main/docs/evaluation.md" target="_blank" rel="noreferrer">Evaluations</a><a href="https://github.com/stancsz/sift/blob/main/LICENSE" target="_blank" rel="noreferrer">MIT License</a></nav></div><div class="wrap footer-last"><span>© 2026 Sift</span><span>Deterministic · Local · Measured trade-offs</span></div></footer>
+</body>
+</html>

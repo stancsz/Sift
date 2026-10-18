@@ -4,6 +4,6 @@ from sift.litellm_proxy import SiftLiteLLMHook
 
 
 sift_callback = SiftLiteLLMHook(
-    {"local-chat": 24_576},
+    {"local-chat": 32_768},
     raw_limit=1_000_000,
 )

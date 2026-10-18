@@ -1,0 +1,62 @@
+{
+  "approved_permissions": [
+    {
+      "action": "s3:GetObject",
+      "resource": "     arn:aws:s3:::analytics-prod/*"
+    },
+    {
+      "action": "s3:GetObject",
+      "resource": "     arn:aws:s3:::logs-archive/*"
+    },
+    {
+      "action": "s3:GetObject",
+      "resource": "     arn:aws:s3:::user-uploads/*"
+    },
+    {
+      "action": "kms:Decrypt",
+      "resource": "      arn:aws:kms:us-east-1:123456789012:key/analytics-key"
+    },
+    {
+      "action": "dynamodb:Query",
+      "resource": "   arn:aws:dynamodb:us-east-1:123456789012:table/sessions-prod"
+    },
+    {
+      "action": "rds:DescribeDBInstances",
+      "resource": "arn:aws:rds:us-east-1:123456789012:db:prod-cluster"
+    }
+  ],
+  "generated_at": "2026-10-16T12:43:12.054282+00:00",
+  "request_effective": "2026-11-01",
+  "requested_permissions": [
+    {
+      "action": "s3:GetObject",
+      "resource": "     arn:aws:s3:::analytics-prod/*"
+    },
+    {
+      "action": "s3:GetObject",
+      "resource": "     arn:aws:s3:::logs-archive/*"
+    },
+    {
+      "action": "s3:GetObject",
+      "resource": "     arn:aws:s3:::user-uploads/*"
+    },
+    {
+      "action": "kms:Decrypt",
+      "resource": "      arn:aws:kms:us-east-1:123456789012:key/analytics-key"
+    },
+    {
+      "action": "dynamodb:Query",
+      "resource": "   arn:aws:dynamodb:us-east-1:123456789012:table/sessions-prod"
+    },
+    {
+      "action": "rds:DescribeDBInstances",
+      "resource": "arn:aws:rds:us-east-1:123456789012:db:prod-cluster"
+    }
+  ],
+  "review_window": {
+    "end": "2026-10-16",
+    "start": "2026-07-18"
+  },
+  "role": "data-eng-prod-read",
+  "subject": "alice.chen@stratus.example"
+}

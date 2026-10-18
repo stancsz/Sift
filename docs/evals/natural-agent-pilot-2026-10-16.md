@@ -12,8 +12,16 @@ parity, general superiority, or a top-one-percent claim.
 
 ## Evidence and freeze
 
-The selector remains frozen at SHA256
-`c37f84829cf75a38f410e4eebb219ebf99c27c89a5c0b62a0ca9b70c36265de7`.
+Use the reproducible selector freeze at Git commit
+`59494ba60474404d9330b36304a39d46ad0cfcfe`; its exact
+`src/sift/core.py` blob SHA-256 is
+`88521ac93678bbc241149248e0b7162dfe3a79595b400559f98811be3b6fc9d5`.
+Earlier LongBench result artifacts declared core hash
+`c37f84829cf75a38f410e4eebb219ebf99c27c89a5c0b62a0ca9b70c36265de7`, which
+does not match a source version in this repository's Git history. Keep those
+scores as historical diagnostics, but do not use them as reproducible evidence
+for this pilot.
+
 The public LongBench diagnostics have not shown a quality advantage: the 23-task
 structured screen scored Sift 15/48 and full context 20/48 above target; the
 10-task extension scored 15/30 and 16/30. These are small, public, diagnostic
@@ -35,6 +43,20 @@ limit without creating any fixture files. It reported $1.823873 cost, 759,988
 input tokens, and 25,446 output tokens. This is a failed authoring attempt, not
 evaluation evidence. Do not retry the same large assignment unchanged.
 
+A bounded MiniMax M3 authoring feasibility check through OpenRouter produced
+two fixture briefs, both rejected at preflight. The first proposed tax-form and
+expiry behavior that its cited source records did not establish, and included a
+gold assertion with no source requirement. The second proposed a Markdown link
+auditor, but its alleged cross-file metadata join was directly resolvable from
+the target file, its version correction compared unrelated files, and its
+baseline/test requirements contradicted each other. No fixture files were
+created and no task inference ran. Four successful HTTP requests used 1,472 prompt
+and 5,762 completion tokens; OpenRouter reported $0.00723312 upstream inference
+cost while marking the requests BYOK, so this is not an invoice. Two of those
+requests ended at the token limit without final content; one malformed request
+was rejected before inference. This authoring path has not yet produced
+a valid independent fixture; do not count these briefs as cases or evidence.
+
 A temporary development probe prepended synthetic project-history text to the
 public research-audit task. The single resulting README user message measured
 22,602 exact Qwen tokens. The first Sift request received HTTP 413 with “active
@@ -55,12 +77,31 @@ See the [README's request-size limit](../../README.md#the-problem).
 ## Pilot population and procedure
 
 Use eight distinct, executable agent tasks spanning at least four domains.
-Each task must begin with a realistic multi-turn history above the 24,576-token
-Sift trigger and fit under the full-context input ceiling with the output
-reserve. The current actionable request must require at least one older fact or
-constraint. Acceptance must verify the delivered artifact, not just the
-agent's explanation. Include a failing baseline, allowed-file list, normal
-terminal evidence, and independently maintained post-run tests.
+The native runner starts each task with one user request, so the task must grow
+its history naturally through necessary investigation and tool results. It
+qualifies only if a complete rendered model request crosses the 24,576-token
+Sift trigger before the first evidence-dependent code edit and before final
+passing tests, while the full-context input stays at or below 28,672 tokens.
+That is the 32,768-token model window minus the reserved 4,096 output tokens.
+The earlier evidence must contain at least one fact or constraint required by
+the delivered artifact. Keep every
+active task/tool cycle within Sift's target; reject oversized single messages,
+synthetic history prefixes, and filler activity. Gateway evidence must show
+that compaction actually occurred before the qualifying edit. Acceptance must
+verify the delivered artifact, not just the agent's explanation. Include a
+failing baseline, allowed-file list, normal terminal evidence, and
+independently maintained post-run tests.
+
+For each pilot case, annotate required exact source spans with opaque IDs,
+fixture-relative character offsets, and hashes. Set
+`SIFT_BENCH_EVIDENCE_MANIFEST` for every arm and preserve the gateway log. Join
+the per-request sequence and UTC timestamp to the native trace with
+`benchmarks/audit_native_evidence.py`; it supports direct Claude file-edit
+tools and reports other edit paths as unknown. `retained` means only
+that the complete literal span appeared in the forwarded request. It does not
+prove model attention or causal use. `omitted`, `not_in_input`, and
+`forwarded_only` are distinct outcomes and must not be collapsed into a single
+retention score.
 
 Compare full context, Sift at 24,576, and complete-unit recency at the same
 budget. Randomize arm order and predeclare cache handling. Keep model, native
@@ -69,6 +110,21 @@ every failure and abnormal end. For each run capture exact rendered input and
 output tokens, cache usage, client TTFT samples, backend decode tokens/second,
 selector preprocessing time, wall time, accepted outcome, and provider usage.
 Do not substitute task duration for decode speed or missing TTFT.
+
+## Follow-up experiment: compaction cadence
+
+After the held-out task set and cache telemetry are validated, compare
+per-request Sift compaction with Sift compaction at preregistered task
+boundaries. Keep the selector, token target, model, output cap, tasks, and
+baseline arms fixed. Boundary-only requests must still obey the same input
+ceiling; crossing it is a capacity failure, not an implicit extra compaction.
+Measure accepted outcomes first, then cache-read tokens, cache-adjusted input
+cost, TTFT, selector time, and whole-task time. It requires a benchmark-only
+cadence gate and a task-boundary signal declared before each run, but no
+selector change. Do not combine it with the
+16K-to-64K budget sweep, or attribute a cache difference without provider
+cache telemetry. Stop if accepted-task outcomes fall below the preregistered
+noninferiority threshold, even if token savings improve.
 
 ## Harness preflight, 2026-10-15
 
@@ -307,3 +363,46 @@ it. To test “less drift,” future blinded cases should score required facts,
 instruction adherence, unsupported claims, and task completion, while holding
 cache conditions and output budget stable. Report omission and regression
 rates alongside concision. A lower token count alone is not a quality metric.
+
+The saved Sift request audit shows one natural trigger crossing among 19
+requests: input rose to 26,063 estimated tokens and was forwarded as 14,094.
+That confirms the callback compacted at least one organically grown request.
+At the 24,576-token ceiling, this request was only 1,487 tokens over budget,
+yet selection removed 11,969 and left 10,482 tokens of nominal headroom. This
+is a reason to measure retained required evidence and target utilization; it is
+not by itself proof that the selection was harmful.
+The trace does not establish that compaction preceded the first
+evidence-dependent edit, and the exposed single-task run cannot establish
+retained-fact quality. It therefore does not meet the held-out pilot gate.
+
+## MiniMax profile and webhook fixture preflight, 2026-10-16
+
+The temporary MiniMax gateway used in the earlier network-audit diagnostic was
+miswired: its full alias was also registered as the compaction alias. Do not
+reuse that endpoint or its full-context label. A pinned LiteLLM profile now
+maps distinct full and compacted aliases to the same OpenRouter MiniMax M3
+model; model-free tests verify that the full alias bypasses the callback, the
+Sift and recency aliases dispatch to their fixed selectors, and a 65,536-token
+target is accepted only by the large-context profile. OpenRouter currently
+lists M3 at 1,048,576 tokens of context. The corrected profile later completed
+the exposed least-privilege diagnostic below. See the
+[profile guide](../native-agents.md#minimax-m3-through-openrouter).
+
+The new `webhook_delivery_repair` fixture was independently audited and revised
+before inference. Evidence annotations are pinned in the gold directory rather
+than shown to the agent. Its manifest and all 12 source spans verify; the
+visible baseline has 3 failing tests and the independent gold suite has 8
+failures plus 1 error across 9 checks. Its flattened source estimate is only
+2,333 Qwen tokens, excluding tool schemas. That is not a natural-compaction
+qualification. Use it as a pilot only if live request evidence shows the 16K
+target is crossed before the first evidence-dependent edit; otherwise stop and
+author a larger naturally complex task without adding filler.
+
+The native task report now derives client-stream decode tokens/second from
+first/last generated-content timestamps and output-token usage when both exist,
+and records Claude Code's reported cost field with its source. These remain
+client-reported metrics, not backend throughput or an independently verified
+provider invoice. Missing timing remains null. The corrected M3 profile then
+completed a fixed-order, single-task exposed diagnostic. It is harness and
+acceptance evidence, not the held-out multi-task pilot; no general speed, cost,
+or quality claim is supported. See the [M3 report](native-m3-least-privilege-rollup-2026-10-16.md).

@@ -1,6 +1,19 @@
 # Same model and ceiling for both arms. NativeBenchmarkHook rejects an explicit
 # larger output request; absent limits use this configured 4096-token default.
 model_list:
+  # Baseline alias bypasses the callback's configured qwen3.8-27b target.
+  - model_name: qwen3.8-27b-full
+    model_info:
+      max_input_tokens: 28672
+      max_output_tokens: 4096
+      context_window: 32768
+    litellm_params:
+      model: openai/qwen3.8-27b
+      api_base: os.environ/SIFT_NATIVE_BACKEND_URL
+      api_key: local
+      use_chat_completions_api: true
+      max_tokens: 4096
+      timeout: 90
   - model_name: qwen3.8-27b
     model_info:
       max_input_tokens: 28672

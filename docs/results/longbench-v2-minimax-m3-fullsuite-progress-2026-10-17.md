@@ -30,8 +30,7 @@ These figures use only the matched paired answers. Provider-reported upstream co
 
 - Frozen manifest SHA-256: `72f502946ce2b3269b52fed3c0bb9433f5c96a9d3e5ff143a7e80f9aca6fdc7e`
 - Frozen schedule SHA-256: `f8d21e02f8a96f8d0b690d7c16b5c299a0faae868987af8ce5a03b203eb24b4c`
-- Latest raw checkpoint: `.runs/longbench-v2-minimax-fullsuite-run-all-retry9.json`
-- Checkpoint SHA-256: `d0b964b1a44e9f7b42edea7bc7f7761586dbd9e9b616f11fd13a3d9d624ed14a` (3,852,073 bytes)
+- Latest raw checkpoint is retained outside this repository. Its SHA-256 is `d0b964b1a44e9f7b42edea7bc7f7761586dbd9e9b616f11fd13a3d9d624ed14a` (3,852,073 bytes). A [sanitized paired-row aggregate](longbench-v2-minimax-m3-fullsuite-paired-aggregate-2026-10-17.json) is published beside this report.
 - Runner sources: `benchmarks/prepare_longbench_v2_minimax_fullsuite.py` and `benchmarks/dispatch_longbench_v2_minimax_fullsuite.py`
 
 The raw checkpoint retains individual provider receipts and responses locally; this report publishes aggregate evidence only. Keep README claims scoped to the paired result above and its limitations.
