@@ -93,9 +93,15 @@ def _compact_payload(payload: dict[str, Any], *, target: int, raw_limit: int) ->
 
 
 def _upstream_url(base_url: str, request_target: str) -> str:
-    base = urlsplit(base_url)
+    try:
+        base = urlsplit(base_url)
+        port = base.port
+    except ValueError as error:
+        raise ValueError("base URL must be a valid http(s) URL with a valid port") from error
     if base.scheme not in {"http", "https"} or not base.netloc or base.username or base.password:
         raise ValueError("base URL must be an http(s) URL without embedded credentials")
+    if port == 0:
+        raise ValueError("base URL port must be between 1 and 65535")
     if base.query or base.fragment:
         raise ValueError("base URL must not include a query or fragment")
     request = urlsplit(request_target)
@@ -334,7 +340,7 @@ def main() -> int:
         parser.error("--timeout must be positive")
     try:
         return args.run(args)
-    except OSError as error:
+    except (OSError, ValueError) as error:
         print(f"sift: {error}", file=sys.stderr)
         return 1
 

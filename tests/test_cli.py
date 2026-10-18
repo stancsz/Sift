@@ -8,7 +8,7 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 from unittest.mock import patch
 
-from sift.cli import _SiftHTTPServer, _compact_payload, _request_size_estimate, build_parser
+from sift.cli import _SiftHTTPServer, _compact_payload, _request_size_estimate, _upstream_url, build_parser
 
 
 class _BackendHandler(BaseHTTPRequestHandler):
@@ -207,6 +207,35 @@ class CliTests(unittest.TestCase):
         with redirect_stderr(StringIO()), self.assertRaises(SystemExit) as error:
             parser.parse_args(["serve", "--base-url", "http://localhost:11434/v1"])
         self.assertEqual(error.exception.code, 2)
+
+    def test_compatible_base_url_shapes(self):
+        request_target = "/v1/chat/completions?client=demo"
+        self.assertEqual(
+            _upstream_url("http://localhost:11434", request_target),
+            "http://localhost:11434/v1/chat/completions?client=demo",
+        )
+        self.assertEqual(
+            _upstream_url("https://gateway.example/api/v1/", request_target),
+            "https://gateway.example/api/v1/chat/completions?client=demo",
+        )
+        self.assertEqual(
+            _upstream_url("http://gateway.example/custom", request_target),
+            "http://gateway.example/custom/v1/chat/completions?client=demo",
+        )
+
+    def test_unsafe_or_ambiguous_base_urls_are_rejected(self):
+        for base_url in (
+            "http://user:password@localhost:11434/v1",
+            "http://localhost:11434/v1?key=secret",
+            "http://localhost:11434/v1#fragment",
+            "http://localhost:0/v1",
+            "http://localhost:65536/v1",
+            "http://localhost:not-a-port/v1",
+            "http://[::1/v1",
+            "file:///tmp/model",
+        ):
+            with self.subTest(base_url=base_url), self.assertRaises(ValueError):
+                _upstream_url(base_url, "/v1/chat/completions")
 
 
 if __name__ == "__main__":
