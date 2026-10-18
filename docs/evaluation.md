@@ -30,7 +30,7 @@ Receipt costs are provider-reported OpenRouter BYOK data, not invoice totals. Im
 
 A larger Full/Sift schedule is prepared for 344 questions selected by the historical modeled paired-fit screen from the same public 503-question set, with three repeats per arm (2,064 planned generations). These IDs and labels were exposed during development; a future run would broaden the exposed comparison, not create a holdout. The prepared schedule's historical-rate planning reserve is approximately $41.87, not a live quote or spending authorization. No inference for this schedule has been made. Before dispatch, reconcile the unresolved prior attempt and account exposure, refresh the exact MiniMax route and pricing, verify available credits, and obtain an explicit user-set cap sufficient for the refreshed reserve. Report exclusions and all failures alongside scoreable pairs.
 
-For new generalization evidence, use separately sourced held-out tasks with blinded answers and a frozen harness; LongBench v2's public set cannot serve as that holdout. See the [held-out quality and cost protocol](evals/quality-comparison-protocol-2026-10-16.md).
+For new generalization evidence, use separately sourced held-out tasks with blinded answers and a frozen harness; LongBench v2's public set cannot serve as that holdout. AppWorld `test_challenge` is under consideration as an aggregate-only agent-task validation source. It has not been run; its [source review and protocol](evals/agent-holdout-source-review-2026-10-18.md) requires an aggregate-only output rehearsal before any test access and rules out task-level error analysis.
 
 ## Native-agent checks
 
