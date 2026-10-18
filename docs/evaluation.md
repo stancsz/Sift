@@ -4,7 +4,7 @@ Sift is still a preview. These checks show what it currently does on selected te
 
 ## Local verification
 
-The latest recorded full-suite runs on the PR branch passed all 361 tests in isolated Python 3.14.0 and Python 3.11.14 environments (17 dependency warnings in each run). Root-level `python -m pytest -q` works because discovery is scoped to `tests/`; this avoids duplicate-module collection from benchmark fixtures. `python benchmarks/compare.py` passed 100/100 authored middle-fact placements. These are offline software checks. Pull request #2 run [#174](https://github.com/stancsz/sift/actions/runs/39171962304) passed the 43-test Python 3.12 smoke in 17 seconds at head `735c014`; its full compatibility matrix was skipped because the workflow runs that matrix on schedule or manual dispatch, not on every PR.
+The latest local full-suite run on the PR branch passed 363 tests in isolated Python 3.14.0 in 91.76 seconds (17 dependency warnings). Python 3.11.14 passed 361 tests in 97.18 seconds before the latest two CLI regression tests were added. Root-level `python -m pytest -q` works because discovery is scoped to `tests/`; this avoids duplicate-module collection from benchmark fixtures. The latest `python benchmarks/compare.py` run passed 100/100 authored middle-fact placements in 0.335 CPU seconds. These are offline software checks. Pull request #2 run [#179](https://github.com/stancsz/sift/actions/runs/39172780683) passed the 43-test Python 3.12 smoke in 23 seconds at head `ec17e06`; its full compatibility matrix was skipped because the workflow runs that matrix on schedule or manual dispatch, not on every PR.
 
 ## LongBench v2
 
