@@ -61,11 +61,17 @@ python -m venv .venv
 
 <span class="code-dim"># Windows PowerShell</span>
 .\.venv\Scripts\python.exe -m pip install -e .
-.\.venv\Scripts\python.exe -m sift.cli serve --base-url http://127.0.0.1:11434/v1 --target 4096 --tokenizer byte-estimate
+.\.venv\Scripts\python.exe -m sift.cli serve `
+  --base-url http://127.0.0.1:11434/v1 `
+  --target 4096 `
+  --tokenizer byte-estimate
 
 <span class="code-dim"># macOS / Linux</span>
 .venv/bin/python -m pip install -e .
-.venv/bin/python -m sift.cli serve --base-url http://127.0.0.1:11434/v1 --target 4096 --tokenizer byte-estimate
+.venv/bin/python -m sift.cli serve \
+  --base-url http://127.0.0.1:11434/v1 \
+  --target 4096 \
+  --tokenizer byte-estimate
 
 <span class="code-dim"># second terminal: from the cloned repository root</span>
 python examples/ollama_compaction_demo.py --model qwen3.5:4b</code></pre><div class="code-panel-foot"><span>Confirms x-sift-compacted: true · synthetic demo</span><span>NO LITELLM</span></div></div>
