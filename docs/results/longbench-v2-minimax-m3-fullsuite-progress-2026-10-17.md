@@ -13,7 +13,7 @@ The paired comparison includes **446 questions with a valid, scoreable answer fr
 | Provider-reported upstream inference cost | $13.9004 | $3.2311 | **76.8% lower** |
 | Mean request wall time per paired answer | 3.23 s | 1.95 s | 39.7% lower request time |
 
-Paired correctness outcomes were **136 both correct, 191 both incorrect, 62 Full-only correct, and 57 Sift-only correct**. The approximate paired interval for the accuracy difference is −5.9 to +3.7 percentage points. The observed accuracy is close on this sample, with unresolved uncertainty; this does not prove parity or non-inferiority. Request time excludes Sift preprocessing, so it is not an end-to-end speed claim.
+Paired correctness outcomes were **136 both correct, 191 both incorrect, 62 Full-only correct, and 57 Sift-only correct**. A deterministic 20,000-resample question-level bootstrap over the 446 matched question rows gives a 95% percentile interval of **−6.1 to +3.6 percentage points** for Sift minus Full accuracy. The same paired bootstrap estimates prompt-token reduction at **75.8%**, with a 95% interval of **73.7% to 77.6%**. Both intervals are conditional on the 446/503 questions with scoreable answers in both arms and describe resampling variability within this exposed sample. They do not cover unscoreable or unresolved slots, and do not establish holdout performance, parity, non-inferiority, or generalization. Request time excludes Sift preprocessing, so it is not an end-to-end speed claim.
 
 These figures use only the matched paired answers. Provider-reported upstream cost is an OpenRouter BYOK receipt field, not a verified MiniMax invoice. Implicit caching was enabled. The comparison therefore describes this route, cache behavior, sample, and one-repeat setup; it does not establish uncached or general dollar savings.
 
@@ -32,5 +32,6 @@ These figures use only the matched paired answers. Provider-reported upstream co
 - Frozen schedule SHA-256: `f8d21e02f8a96f8d0b690d7c16b5c299a0faae868987af8ce5a03b203eb24b4c`
 - Latest raw checkpoint is retained outside this repository. Its SHA-256 is `d0b964b1a44e9f7b42edea7bc7f7761586dbd9e9b616f11fd13a3d9d624ed14a` (3,852,073 bytes). A [sanitized paired-row aggregate](longbench-v2-minimax-m3-fullsuite-paired-aggregate-2026-10-17.json) is published beside this report.
 - Runner sources: `benchmarks/prepare_longbench_v2_minimax_fullsuite.py` and `benchmarks/dispatch_longbench_v2_minimax_fullsuite.py`
+- The aggregate-only bootstrap is reproducible without model calls: `python benchmarks/bootstrap_longbench_v2_pairs.py`. It checks that the paired rows reconcile to the correctness cells, scores, and prompt-token totals before resampling. Default settings are 20,000 paired question-level percentile resamples with seed `20261018`; the script emits aggregate metrics only.
 
 The raw checkpoint retains individual provider receipts and responses locally; this report publishes aggregate evidence only. Keep README claims scoped to the paired result above and its limitations.
