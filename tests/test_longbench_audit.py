@@ -10,8 +10,26 @@ SPEC = importlib.util.spec_from_file_location("sift_longbench_audit", AUDIT_PATH
 audit = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(audit)
 
+OFFLINE_COST_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "benchmarks"
+    / "audit_longbench_v2_minimax_fullsuite_offline.py"
+)
+OFFLINE_COST_SPEC = importlib.util.spec_from_file_location(
+    "sift_longbench_v2_minimax_offline_cost", OFFLINE_COST_PATH
+)
+offline_cost_audit = importlib.util.module_from_spec(OFFLINE_COST_SPEC)
+OFFLINE_COST_SPEC.loader.exec_module(offline_cost_audit)
+
 
 class LongBenchAuditTests(unittest.TestCase):
+    def test_offline_reserve_counts_one_output_cap_per_request(self):
+        one_request = offline_cost_audit.reserve_usd(0, 3, 0, 1)
+        four_requests = offline_cost_audit.reserve_usd(0, 3, 0, 1, request_count=4)
+
+        self.assertAlmostEqual(one_request, 3 * 16 / 1_000_000)
+        self.assertAlmostEqual(four_requests, 4 * one_request)
+
     def test_majority_results_are_paired_by_task(self):
         report = {
             "sift_target_estimated_tokens": 100,

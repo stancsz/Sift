@@ -42,7 +42,7 @@ from run_longbench_v2_minimax import (  # noqa: E402
     PROVIDER_CONTEXT_ESTIMATE_FACTOR,
     SAFETY_MARGIN,
 )
-from sift import compact_messages  # noqa: E402
+from sift import CompactionError, compact_messages  # noqa: E402
 
 
 DEFAULT_DATASET = ROOT / ".runs" / "longbench-v2-data-pinned.json"
@@ -130,11 +130,12 @@ def iter_answer_blind_rows(path: Path, *, chunk_size: int = 2 * 1024 * 1024) -> 
         raise ValueError("Dataset ended inside a row")
 
 
-def reserve_usd(input_tokens: int, repeats: int, input_rate: float, output_rate: float) -> float:
-    """Historical planning reserve: 1.5x local input plus fixed output cap."""
+def reserve_usd(input_tokens: int, repeats: int, input_rate: float, output_rate: float,
+                request_count: int = 1) -> float:
+    """Historical reserve for local input tokens and one output cap per request."""
     raw = repeats * (
         INPUT_COST_SAFETY_FACTOR * input_tokens * input_rate
-        + OUTPUT_TOKENS * output_rate
+        + request_count * OUTPUT_TOKENS * output_rate
     ) / 1_000_000
     return round(raw, 10)
 
@@ -211,7 +212,7 @@ def build_report(dataset: Path, tokenizer_path: Path, template_path: Path,
             sift_target_fit = sift_tokens <= EFFECTIVE_TARGET
             sift_projected = math.ceil(sift_tokens * PROVIDER_CONTEXT_ESTIMATE_FACTOR)
             compact_method = str(sift_result.audit.get("method", ""))
-        except Exception as error:
+        except CompactionError as error:
             code = str(getattr(error, "code", None) or type(error).__name__)
             compact_failures[code] += 1
             sift_tokens = None
@@ -258,7 +259,9 @@ def build_report(dataset: Path, tokenizer_path: Path, template_path: Path,
         tokkey = "full_local_prompt_tokens" if arm == "full" else "default_sift_local_prompt_tokens"
         valid = [r for r in items if r[tokkey] is not None]
         total = sum(r[tokkey] for r in valid)
-        return reserve_usd(total, repeats, input_rate, output_rate) if valid else 0.0
+        return reserve_usd(
+            total, repeats, input_rate, output_rate, request_count=len(valid)
+        ) if valid else 0.0
 
     duration = time.perf_counter() - started
     return {
@@ -286,7 +289,7 @@ def build_report(dataset: Path, tokenizer_path: Path, template_path: Path,
             "route_projection_factor": PROVIDER_CONTEXT_ESTIMATE_FACTOR,
             "route_projection_factor_status": "historical local-to-provider projection from frozen runner; modeled, not a current provider guarantee",
             "output_cap_tokens": OUTPUT_TOKENS,
-            "cost_reserve_formula": "repeats * (1.5 * local_input_tokens * input_usd_per_million + output_cap_tokens * output_usd_per_million) / 1e6",
+            "cost_reserve_formula": "repeats * (1.5 * local_input_tokens * input_usd_per_million + request_count * output_cap_tokens * output_usd_per_million) / 1e6",
             "cost_safety_factor": INPUT_COST_SAFETY_FACTOR,
             "route_assumptions": route_assumptions,
             "route_assumptions_authorize_dispatch": False,
@@ -329,7 +332,7 @@ def build_report(dataset: Path, tokenizer_path: Path, template_path: Path,
         "limitations": [
             "Route limit and rates are from the dated 2026-10-17 endpoint snapshot and must be refreshed before dispatch.",
             "Provider-token projection uses the runner historical 3.25 factor; measured local tokenizer counts are not provider usage receipts.",
-            "The 1.5x input reserve and 16-token output cap are historical runner planning assumptions, not an invoice, cap, or spend authorization.",
+            "The 1.5x input reserve and per-request 16-token output cap are historical runner planning assumptions, not an invoice, cap, or spend authorization.",
             "Rows excluded by the historical local cap or route projection are not priced as dispatchable requests in the matched-pair reserve.",
             "This audit does not select or freeze an evaluation sample, examine answers, score responses, or override the active 100-task pilot gates.",
         ],

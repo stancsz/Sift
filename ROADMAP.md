@@ -4,16 +4,16 @@ Sift reduces repeated agent history with deterministic, extractive compaction. I
 
 ## Available now
 
-The tested `v0.10.0` release is a Python library and LiteLLM Proxy callback. The unreleased `0.11.0.dev0` source adds a LiteLLM-free `sift` command for OpenAI Chat Completions clients, including Ollama and other compatible base URLs. Its explicit `byte-estimate` mode measures UTF-8 request size; it is not a provider tokenizer and cannot guarantee context fit.
+The tested `v0.10.0` release is a Python library and LiteLLM Proxy callback. The unreleased `0.11.0.dev0` source also adds a LiteLLM-free `sift` command for OpenAI Chat Completions clients, including Ollama and other compatible base URLs. Its explicit `byte-estimate` mode measures UTF-8 request size; it is not a provider tokenizer and cannot guarantee context fit.
 
 ## Current adoption work
 
-- **Reliable local checks:** run the full offline suite locally. Pull requests receive a fast core/invariant/CLI smoke check; the cross-version full suite runs weekly and manually.
-- **Clear first use:** explain what Sift changes in an agent request, show a runnable Ollama example, and place quality limits next to the token-saving claim.
-- **Public site:** publish a static GitHub Pages site with the problem, workflow, quick starts, measured evidence, limits, and contribution path.
-- **Broader quality evidence:** add independently authored held-out coding and research tasks, compare accepted outcomes against full context and protocol-preserving controls, and measure total task cost and time.
+- **Reliable local checks:** the full offline suite now passes in the repository virtual environment (359 tests on Python 3.14). Pull requests receive a 39-test core/invariant/CLI smoke check; the cross-version full suite and offline comparison run weekly and manually.
+- **Clear first use:** the live site explains the workflow and trade-offs, but its current Ollama example is still a tiny pass-through request. A revised long-history compaction demo is local and awaits rendered review before publication.
+- **Public site:** GitHub Pages is live at <https://stancsz.github.io/sift/> with the problem, workflow, quick starts, measured evidence, limits, and contribution path. The pending quick-start revision must pass visual QA and a fresh Pages deployment before the published version is considered current.
+- **Broader quality evidence:** a 344-case/three-repeat paired LongBench v2 cohort is prepared, but all task IDs are exposed development data and the paid run remains behind exposure, route, account, and numeric-cap gates. Add independently authored held-out coding and research tasks, compare accepted outcomes against full context and protocol-preserving controls, and measure total task cost and time.
 - **Compatibility:** check real client and tool-call behavior for the standalone CLI and existing LiteLLM paths before a stable release.
-- **Release:** verify the new CI workflows on GitHub, publish the Pages site, then decide whether to release `0.11.0` and package Sift on PyPI.
+- **Release:** the workflow and Pages deployment have passed on GitHub. Decide whether the standalone `0.11.0` candidate meets release gates, then package and publish it to PyPI.
 
 ## Evidence today
 

@@ -56,18 +56,18 @@ ollama pull qwen3.5:4b
 <span class="code-dim"># install from source (Python 3.11+)</span>
 git clone https://github.com/stancsz/sift.git
 cd sift
-python -m pip install -e .
+python -m venv .venv
 
-<span class="code-dim"># start Sift, then send the curl request shown below</span>
-sift serve \
-  --base-url http://127.0.0.1:11434/v1 \
-  --target 4096 \
-  --tokenizer byte-estimate
+<span class="code-dim"># Windows PowerShell</span>
+.\.venv\Scripts\python.exe -m pip install -e .
+.\.venv\Scripts\python.exe -m sift.cli serve --base-url http://127.0.0.1:11434/v1 --target 4096 --tokenizer byte-estimate
 
-<span class="code-dim"># in another terminal: call through Sift</span>
-curl -i http://127.0.0.1:4011/v1/chat/completions \
-  -H 'Content-Type: application/json' \
-  -d '{"model":"qwen3.5:4b","messages":[{"role":"user","content":"Reply with the result of 1 + 1."}]}'</code></pre><div class="code-panel-foot"><span>Ollama must be running · Sift binds to localhost</span><span>NO LITELLM</span></div></div>
+<span class="code-dim"># macOS / Linux</span>
+.venv/bin/python -m pip install -e .
+.venv/bin/python -m sift.cli serve --base-url http://127.0.0.1:11434/v1 --target 4096 --tokenizer byte-estimate
+
+<span class="code-dim"># second terminal: from the cloned repository root</span>
+python examples/ollama_compaction_demo.py --model qwen3.5:4b</code></pre><div class="code-panel-foot"><span>Confirms x-sift-compacted: true · synthetic demo</span><span>NO LITELLM</span></div></div>
       <div class="code-panel" id="panel-callback" role="tabpanel" aria-labelledby="tab-callback" hidden><div class="code-panel-head"><span class="terminal-dot"></span> PYTHON / LITELLM</div><pre><code><span class="code-dim"># install the tested release</span>
 python -m pip install \
   "sift-context[litellm] @ git+https://github.com/stancsz/sift.git@v0.10.0"
