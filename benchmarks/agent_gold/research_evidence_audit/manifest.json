@@ -1,0 +1,16 @@
+{
+  "acceptance_sha256": {
+    "test_research_gold.py": "9426d7d0f3fd2977f4b7bb00592244d570859e53d47a91d7eab21afde4fdccbd"
+  },
+  "frozen_at_utc": "2026-10-16T00:00:53.916566Z",
+  "input_sha256": {
+    "README.md": "e5644c366d8ae32aad12eb8fb3c4d40c40874a9343df8b5b66c107a261a254ac",
+    "corrections.jsonl": "917da665a9cc7924b6a080741d6b9bc5ed59d1347a65d76e0228a2eeecd91188",
+    "dataset_and_limits.jsonl": "62361fe909e95f091a7dccf123ea434f0a08f5120da46e71ce82c610288bec4e",
+    "findings.json": "e3566b3a06430868d71e9287dfd6c6c520a3da027aabea01951d407ee131dc2f",
+    "registry.jsonl": "85c19786cbbe04800fed014bbd5a793e42ae13ac427dfefe84f354fa0ac78fb6",
+    "report_revisions.jsonl": "61f8eed7f868dc0de6aa9952413726f8ae4541fcb7f27ef916c6cfcc0d2908b4",
+    "test_research_schema.py": "f65ecaf794e20cfc958183f15003928fa8cc474b68852515e1556867fb538052"
+  },
+  "status": "public authored development fixture; previously disclosed, not held-out evidence"
+}

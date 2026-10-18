@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "frozen_at_utc": "2026-10-16T12:08:26.300710Z",
+  "input_sha256": {
+    "audit.py": "72b7a8b3f8b5c7ab73cb6c86222dced574d5d305fac0b260300947fc668e7f21",
+    "data/baseline.json": "82315285cbba87b77b1d74af97b40de25dafb378f67f223a7f6a21e3c8a700f6",
+    "data/maintenance_windows.json": "59a2b54025e646b95244c1d591320f5ccd0cae895d42acc9eac331ecb32297d7",
+    "data/telemetry.jsonl": "02cd86896e2b7330e99027c903b5797c9344a777fde9e71c6c2c5b660ec2e998",
+    "data/tickets.json": "2f4cffee882fb14c5c0b145175c913e2d837570a6c8dcb07985f68a03973e63f",
+    "docs/comms/ops_channel.md": "ec22bb45b2d590793bdad312e11551df738a1712d055ec0ad5a67c9ffe929213",
+    "docs/policy/change_management.md": "901bbb3e38ee227b2fd6fb62b655d9e5aa47fffd612813c63eaf7996c1094c05",
+    "docs/policy/rollback_playbook.md": "b1475c54d5e36d02121f83d2e2f41b988b009d266e7fa14638ec8f4480e244a5",
+    "docs/policy/v2_legacy.md": "6ecaae61ee9372503057682d1425dfb7e178ba45f7efddccd2e3acd99bbf8aea",
+    "logs/controller_events.jsonl": "fcfa28b1320c2878795715cd2e17892fee7d98c623220186a4103567442edd09",
+    "logs/switch_fabric.log": "d55046f7a794eafd0f124d7c661461672422c5e4877b893f20087203a5f732b5",
+    "README.md": "0f204c8fc4bd93e6cf357461403ec542367a9637d2954183acb5a9d4c3bd82cf",
+    "test_task.py": "35019b131f7ed1e1b4e086108769db45c64a3b80af36043db244ebdc8fbedf52"
+  },
+  "acceptance_sha256": {
+    "test_gold.py": "dab8d65994c3b6e3bf28b105e7ea7c1310d484bcb4cfd564bbe63ae0c78a96cb"
+  },
+  "source_prompt_tokens": 19496,
+  "source_prompt_tokenizer": "http://127.0.0.1:8088",
+  "source_prompt_method": "Qwen chat-template count of the system prompt plus every case file once, flattened into one user message; excludes native tool schemas and is not an actual multi-turn request measurement",
+  "required_source_prompt_token_range": [
+    12000,
+    30000
+  ],
+  "fixture": "network_audit",
+  "status": "public synthetic development fixture; not held-out evidence"
+}

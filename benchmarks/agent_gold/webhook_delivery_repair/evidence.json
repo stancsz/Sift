@@ -1,0 +1,126 @@
+{
+  "schema": 1,
+  "status": "gold-only annotations for public authored development fixture; not held-out evidence",
+  "facts": [
+    {
+      "file": "docs/delivery_policy.md",
+      "byte_offset": [
+        220,
+        535
+      ],
+      "text": "An event is identified by the pair `(tenant_id, event_id)`. A successfully delivered pair must not be sent again to that tenant, even if another endpoint configuration is loaded later. The same event ID belonging to a different tenant is a distinct delivery. A failed attempt does not reserve the pair as delivered.",
+      "sha256": "8d1b570ce48d31c9d952d7ddd919b6a3bdd0e49aeaa0ad8e3bf2639dccbf4870",
+      "file_sha256": "2429144ed728506969ab8a8b793d7d9a9ed03c3655ee965c0425f54624247351"
+    },
+    {
+      "file": "docs/delivery_policy.md",
+      "byte_offset": [
+        647,
+        822
+      ],
+      "text": "Only an HTTP status in `[200, 300)` confirms delivery. A 409 response is a receiver conflict, not proof of delivery. Record a delivery as successful only after a 2xx response.",
+      "sha256": "6a59a92a3d345729fea33cbe655103cdd599f042af2ee68fa8c1d16c5acf629b",
+      "file_sha256": "2429144ed728506969ab8a8b793d7d9a9ed03c3655ee965c0425f54624247351"
+    },
+    {
+      "file": "docs/delivery_policy.md",
+      "byte_offset": [
+        841,
+        1198
+      ],
+      "text": "The initial attempt is attempt 1. Retry network exceptions, HTTP 408, HTTP 429, and HTTP 5xx responses. Do not retry other 4xx responses; return state `permanent_failure` with no scheduled retry. The maximum is four total attempts, including the initial one. After the final retryable failure, return state `dead_letter` and do not schedule another attempt.",
+      "sha256": "daff235c3a6392f7be52fa11adb817f8acbf0ec9c6fd33eea7ed3e21409f7b1e",
+      "file_sha256": "2429144ed728506969ab8a8b793d7d9a9ed03c3655ee965c0425f54624247351"
+    },
+    {
+      "file": "docs/delivery_policy.md",
+      "byte_offset": [
+        1200,
+        1593
+      ],
+      "text": "For retries without a server delay, use `min(30, 2 ** (attempt - 1))` seconds, where `attempt` is the just-failed attempt number. For HTTP 429, a valid non-negative integer `Retry-After` value in seconds takes precedence, capped at 30 seconds. Missing, malformed, negative, or non-integer values use the exponential delay. Return `next_attempt_at` as the supplied integer `now` plus the delay.",
+      "sha256": "98919e524b45b2f96ed216056d9c9fcd393e1516df5f3685e7212740c71cd8b0",
+      "file_sha256": "2429144ed728506969ab8a8b793d7d9a9ed03c3655ee965c0425f54624247351"
+    },
+    {
+      "file": "docs/delivery_policy.md",
+      "byte_offset": [
+        1678,
+        1983
+      ],
+      "text": "Serialize the event payload as compact, key-sorted UTF-8 JSON. The signature is lowercase hexadecimal HMAC-SHA256 over those exact bytes, using the endpoint's `secret`. Pass it in the `X-Webhook-Signature` header as `sha256=<hex>`. Retries must use the same bytes and signature for the same event payload.",
+      "sha256": "34235e39ea49bcf6b8ca7412bed2fea452d3591fca2b4445986ba9c462358871",
+      "file_sha256": "2429144ed728506969ab8a8b793d7d9a9ed03c3655ee965c0425f54624247351"
+    },
+    {
+      "file": "docs/delivery_policy.md",
+      "byte_offset": [
+        2352,
+        2585
+      ],
+      "text": "`attempts` is the cumulative attempt count for this event pair during this dispatcher lifetime. A call makes at most one network request. If `now` is before a scheduled retry, return the existing retry state without making a request.",
+      "sha256": "d019c7e25c75c4a69b50fba01c5a8f220ff5371366c415b54226ee2bfe889432",
+      "file_sha256": "2429144ed728506969ab8a8b793d7d9a9ed03c3655ee965c0425f54624247351"
+    },
+    {
+      "file": "docs/delivery_policy.md",
+      "byte_offset": [
+        2651,
+        2766
+      ],
+      "text": "`signature` is the exact value sent in the request header, or `None` when this invocation makes no network request.",
+      "sha256": "44c68151fe35dbbbb5222b150b0253753af7b52fe8d30e8b75a3f2caaf13f141",
+      "file_sha256": "2429144ed728506969ab8a8b793d7d9a9ed03c3655ee965c0425f54624247351"
+    },
+    {
+      "file": "docs/ops_notes.md",
+      "byte_offset": [
+        339,
+        533
+      ],
+      "text": "An endpoint's signing secret is endpoint-specific. Configuration reloads are common during secret rotation, so deduplication identity must not include the secret, URL, or configuration revision.",
+      "sha256": "349f64334b36af8795789deb44fc7024b7544dd274ab88a370b80d3660e8fe7a",
+      "file_sha256": "802a4169835d19de29342385797ca80826ea54da7857b465bb7e04c09804b2e3"
+    },
+    {
+      "file": "logs/relay.jsonl",
+      "byte_offset": [
+        0,
+        144
+      ],
+      "text": "{\"ts\":\"2026-09-14T08:11:00Z\",\"tenant\":\"acme\",\"event\":\"evt-77\",\"endpoint\":\"primary\",\"attempt\":1,\"status\":429,\"retry_after\":\"9\",\"result\":\"queued\"}",
+      "sha256": "741d689bc01efbdddff77729f482dcc9777b576178b493308aa75ea5edfc72e7",
+      "file_sha256": "07e4901e4e059523f621d27892901fbaf23916c726aaf76ebaa444163f10d2ae"
+    },
+    {
+      "file": "logs/relay.jsonl",
+      "byte_offset": [
+        420,
+        548
+      ],
+      "text": "{\"ts\":\"2026-09-14T08:12:00Z\",\"tenant\":\"acme\",\"event\":\"evt-77\",\"endpoint\":\"backup\",\"attempt\":1,\"status\":200,\"result\":\"delivered\"}",
+      "sha256": "1323c5cdacc3f1a36eb00ca6a871a21141f88796ff42cf07d9df7fab01c92922",
+      "file_sha256": "07e4901e4e059523f621d27892901fbaf23916c726aaf76ebaa444163f10d2ae"
+    },
+    {
+      "file": "logs/relay.jsonl",
+      "byte_offset": [
+        549,
+        678
+      ],
+      "text": "{\"ts\":\"2026-09-14T08:20:00Z\",\"tenant\":\"beta\",\"event\":\"evt-77\",\"endpoint\":\"primary\",\"attempt\":1,\"status\":200,\"result\":\"delivered\"}",
+      "sha256": "87a99ecc386a004529a5308fa9c65e205e82be33a79550b04683d41fef1ed403",
+      "file_sha256": "07e4901e4e059523f621d27892901fbaf23916c726aaf76ebaa444163f10d2ae"
+    },
+    {
+      "file": "config/endpoints.json",
+      "byte_offset": [
+        73,
+        107
+      ],
+      "text": "\"secret\": \"fixture-primary-secret\"",
+      "sha256": "6a0b03e942e73fe75a998aeabb9571f42bff81d1997757c6873d7be85da4a051",
+      "file_sha256": "c5a8b7930bf21bf402dbb7262f6194f7d96ea7b7b6055c3bdd1f4aa62dab2366"
+    }
+  ]
+}

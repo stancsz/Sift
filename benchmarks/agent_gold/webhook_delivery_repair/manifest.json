@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "frozen_at_utc": "2026-10-16T15:34:35.393541Z",
+  "input_sha256": {
+    "config/endpoints.json": "c5a8b7930bf21bf402dbb7262f6194f7d96ea7b7b6055c3bdd1f4aa62dab2366",
+    "dispatcher.py": "4bcd75aeab0de20d074e1cb8984a130c59f334334fbe0107d9fcd98e7588187e",
+    "docs/delivery_policy.md": "2429144ed728506969ab8a8b793d7d9a9ed03c3655ee965c0425f54624247351",
+    "docs/ops_notes.md": "802a4169835d19de29342385797ca80826ea54da7857b465bb7e04c09804b2e3",
+    "logs/relay.jsonl": "07e4901e4e059523f621d27892901fbaf23916c726aaf76ebaa444163f10d2ae",
+    "README.md": "9fb3d440b080ad4ccc3d042ea2689aa8b1292688be9f7249a26441c0c79cf892",
+    "test_task.py": "4f0614817593594a722b9499f738032f71a779b37bd70688225fca8f094b9b44"
+  },
+  "acceptance_sha256": {
+    "test_gold.py": "77f408e0c53bfaddb2e177e75709f606cbf53a891b8e7529e40d2670d60f7b5c"
+  },
+  "source_prompt_tokens": 2333,
+  "source_prompt_tokenizer": "http://127.0.0.1:8088",
+  "source_prompt_method": "Qwen chat-template count of the system prompt plus every case file once, flattened into one user message; excludes native tool schemas and is not an actual multi-turn request measurement",
+  "required_source_prompt_token_range": [
+    1,
+    100000
+  ],
+  "fixture": "webhook_delivery_repair",
+  "status": "public authored development fixture; not held-out evidence",
+  "evidence_sha256": "7c3e01dd8bc1946f547bfae6019910facf84bc139231d4440bd05061a0c46230",
+  "acceptance_traceability": {
+    "test_signature_uses_compact_sorted_json_and_hmac_sha256": "delivery_policy.md > Request signing; relay.jsonl records a retried event.",
+    "test_same_event_id_is_scoped_by_tenant": "delivery_policy.md > Identity and delivery; relay.jsonl records evt-77 for acme and beta.",
+    "test_delivered_pair_stays_deduplicated_after_endpoint_config_rotation": "delivery_policy.md > Identity and delivery; ops_notes.md > endpoint secret rotation; relay.jsonl records acme evt-77 at primary and backup.",
+    "test_503_uses_exponential_schedule_and_does_not_run_early": "delivery_policy.md > Retry policy and API / response shape.",
+    "test_network_exception_is_retryable": "delivery_policy.md > Retry policy.",
+    "test_429_retry_after_is_capped_at_thirty_seconds": "delivery_policy.md > Retry policy; relay.jsonl contains Retry-After records.",
+    "test_408_is_retryable": "delivery_policy.md > Retry policy.",
+    "test_permanent_4xx_is_not_retried_and_409_is_not_success": "delivery_policy.md > Identity and delivery; Retry policy specifies permanent_failure.",
+    "test_four_total_retryable_attempts_end_in_dead_letter": "delivery_policy.md > Retry policy and exponential schedule."
+  }
+}

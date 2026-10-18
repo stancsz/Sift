@@ -68,18 +68,9 @@ and answer differences do not reveal which evidence omission caused them.
 This run is not a blind holdout and does not establish quality parity, cost
 savings, or accepted-task quality in Claude Code or Codex.
 
-The final report is `.runs/longbench-v2-minimax-600-continuation-6.json`; the
-frozen bundle is `.runs/longbench-v2-minimax-600-v4-bundle.json.gz`. An
-aggregate-only copy intended for publication is
-[`../results/longbench-v2-minimax-600-2026-10-19.json`](../results/longbench-v2-minimax-600-2026-10-19.json).
-The report records the attempt history, including exactly one retry each for
-jobs 89, 198, 223, 318, and 555.
+The raw report and frozen request bundle are retained outside this repository. The public aggregate-only result records the completed comparison without request bodies, response text, or provider identifiers.
 
-The user authorized up to $2,000 for the original evaluation and asked that
-progress focus on provider-reported tokens rather than account billing
-reconciliation. The receipt totals above are not an account statement. Any new
-model comparison after changing Sift needs a separately frozen protocol and
-appropriate authorization.
+The receipt totals above are provider-reported study data, not an account statement. Any new paid evaluation requires a fresh numeric cap, reconciliation of unsettled exposure, and a current billing-headroom check.
 
 ## Commands
 
@@ -90,22 +81,4 @@ Build the deterministic offline bundle (no API key read and no network call):
   --bundle .runs\longbench-v2-minimax-600-v4-bundle.json.gz
 ```
 
-The completed run can be audited offline from the saved report and bundle. Do
-not rerun the paid continuation command unless starting a new, explicitly
-frozen study. For the original completion, the command was:
-
-```powershell
-\.venv\Scripts\python.exe benchmarks\run_longbench_v2_minimax_600.py `
-  --continue-from-report .runs\longbench-v2-minimax-600-continuation-5.json `
-  --retry-unknown-once --spend-cap-usd 2000 `
-  --accept-unknown-prior-outcome `
-  --user-authorized-spend-cap-with-unverified-provider-balance `
-  --bundle .runs\longbench-v2-minimax-600-v4-bundle.json.gz `
-  --output .runs\longbench-v2-minimax-600-continuation-6.json
-```
-
-Only `status: complete` with `full_schedule_complete: true`, all 600 completed
-jobs, and no in-flight request represents a completed study. A partial report
-must be called partial and reported with unique scheduled completions, total
-attempts, provider-reported prompt and completion tokens, unknown-token attempts,
-and scorable responses. Never infer usage for an attempt without a provider receipt.
+The completed run can be audited offline from its aggregate-only result and frozen bundle. Raw request and response bodies are intentionally not included in this repository. Do not repeat a paid run without a new frozen schedule, current provider checks, and fresh explicit authorization.

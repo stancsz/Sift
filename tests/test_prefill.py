@@ -62,14 +62,17 @@ def fake_provider(*, finish=None, usage=None):
 
 @unittest.skipIf(litellm is None, "install sift-context[litellm] for native SDK benchmark checks")
 class PrefillProvenanceTests(unittest.TestCase):
-    def sample(self, **scenario):
+    def sample(self, *, cache_prompt=False, tools=None, **scenario):
         self.assertEqual(version("litellm"), "1.103.0")
         with fake_provider(**scenario) as (base_url, requests):
             result = prefill._stream_sample(
                 litellm.completion, [{"role": "user", "content": "Reply label_1"}],
-                model="gpt-4o-mini", base_url=base_url, api_key="local-test-key")
+                model="gpt-4o-mini", base_url=base_url, api_key="local-test-key",
+                cache_prompt=cache_prompt, tools=tools)
             self.assertEqual(len(requests), 1)
-            self.assertFalse(requests[0]["cache_prompt"])
+            self.assertEqual(requests[0]["cache_prompt"], cache_prompt)
+            if tools is not None:
+                self.assertEqual(requests[0]["tools"], tools)
             self.assertEqual(requests[0]["max_tokens"], 768)
         self.assertTrue(result["native_provenance_supported"])
         return result
@@ -117,6 +120,16 @@ class PrefillProvenanceTests(unittest.TestCase):
         self.assertIsNone(result["usage"]["input_tokens"])
         self.assertIsNone(result["usage"]["output_tokens"])
         self.assertEqual(result["usage"]["cached_tokens"], 0)
+
+    def test_warm_mode_forwards_cache_and_tool_definitions(self):
+        tools = [{"type": "function", "function": {
+            "name": "ReadLog", "description": "Read a log", "parameters": {
+                "type": "object", "properties": {"cycle": {"type": "integer"}}}}}]
+        result = self.sample(cache_prompt=True, tools=tools, finish="stop", usage={
+            "prompt_tokens": 120, "completion_tokens": 8, "total_tokens": 128,
+            "prompt_tokens_details": {"cached_tokens": 80}})
+        self.assertTrue(result["normal"])
+        self.assertEqual(result["usage"]["cached_tokens"], 80)
 
 
 if __name__ == "__main__":

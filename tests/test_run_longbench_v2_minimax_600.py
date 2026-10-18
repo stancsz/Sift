@@ -162,21 +162,28 @@ class Runner600Tests(unittest.TestCase):
                             "job_id": f'{job["case_id"]}:{job["arm"]}:{job["repeat"]}',
                             "case_id": job["case_id"], "arm": job["arm"],
                             "repeat": job["repeat"], "request_body_sha256": job["body_sha256"],
+                            "attempt_number": 1,
                             "http_status": 200, "failure": None,
                             "sse_done_received": True, "response_id": f"r-{index}",
-                            "usage": {"prompt_tokens": 100, "completion_tokens": 1},
+                            "finish_reason": "stop", "cost_usd": 0.00005,
+                            "cost_receipt_source": "upstream_and_openrouter",
+                            "usage": {"is_byok": True, "prompt_tokens": 100,
+                                      "completion_tokens": 1, "cost": 0,
+                                      "cost_details": {"upstream_inference_cost": 0.00005}},
                             "provider": "minimax", "returned_model": stage.MODEL})
         failed_job = self.jobs[89]
         failed_id = f'{failed_job["case_id"]}:{failed_job["arm"]}:{failed_job["repeat"]}'
         samples.append({"index": 89, "job_id": failed_id,
                         "case_id": failed_job["case_id"], "arm": failed_job["arm"],
                         "repeat": failed_job["repeat"], "request_body_sha256": failed_job["body_sha256"],
+                        "attempt_number": 1,
                         "failure": "request_exception:SSLError", "http_status": None,
                         "response_id": None, "usage": None, "cost_usd": None})
         report = {"status": "stopped_incomplete_run", "schedule_sha256": self.bundle["schedule_sha256"],
                   "bundle_content_sha256": self.bundle["bundle_content_sha256"],
                   "full_schedule_jobs": 600, "dispatch_prefix_count": 600,
                   "completed_jobs": 89, "samples": samples,
+                  "settled_cost_usd": 89 * 0.00005,
                   "in_flight": {"index": 89, "job_id": failed_id,
                                 "state": "unknown_outcome_requires_external_reconciliation"}}
         pilot.validate_continuation(report, self.bundle, self.jobs)

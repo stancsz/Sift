@@ -186,10 +186,13 @@ class RecencyAdapterTests(unittest.TestCase):
     def test_isolated_startup_selector_is_fixed_and_audits_no_bodies(self):
         # Exercise startup policy independently of the host's optional SDK
         # version. Deployed 1.103.0 compatibility is checked separately.
-        with patch.dict(sys.modules, {"recency": recency}), patch.dict(os.environ, {"SIFT_BENCH_ARM": "recency"}), \
+        with patch.dict(sys.modules, {"recency": recency}), patch.dict(os.environ, {
+            "SIFT_BENCH_ARM": "recency", "SIFT_BENCH_TARGET": "700"}), \
                 patch("importlib.metadata.version", return_value="1.103.0"), \
                 patch.object(integration, "compact_messages", integration.compact_messages):
             callback = self.load_callback()
+            self.assertEqual(callback.TARGET, 700)
+            self.assertEqual(callback.benchmark_hook.model_targets[callback.MODEL], 700)
             os.environ["SIFT_BENCH_ARM"] = "sift"
             with self.assertLogs("LiteLLM Proxy", level="INFO") as logs:
                 result = callback.observed_selection(
@@ -218,6 +221,15 @@ class RecencyAdapterTests(unittest.TestCase):
                 with self.assertRaises(RuntimeError):
                     self.load_callback()
                 self.assertIs(integration.compact_messages, original)
+
+    def test_invalid_benchmark_target_fails_at_startup(self):
+        for target in ("0", "28673", "not-an-integer"):
+            with self.subTest(target=target), patch.dict(sys.modules, {"recency": recency}), \
+                    patch.dict(os.environ, {"SIFT_BENCH_ARM": "sift", "SIFT_BENCH_TARGET": target}), \
+                    patch("importlib.metadata.version", return_value="1.103.0"), \
+                    patch.object(integration, "compact_messages", integration.compact_messages):
+                with self.assertRaises(RuntimeError):
+                    self.load_callback()
 
     def test_native_anthropic_qwen_profile_preserves_objects_and_output_contract(self):
         from litellm.llms.anthropic.experimental_pass_through.adapters.transformation import (

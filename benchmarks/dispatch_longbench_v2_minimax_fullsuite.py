@@ -18,6 +18,7 @@ import json
 import math
 import os
 from pathlib import Path
+import platform
 import sys
 import time
 from typing import Any
@@ -29,6 +30,7 @@ sys.path.insert(0, str(ROOT / "benchmarks"))
 import prepare_longbench_v2_minimax_fullsuite as preparer  # noqa: E402
 
 from tokenizers import Tokenizer  # noqa: E402
+import tokenizers  # noqa: E402
 from prepare_longbench_v2 import (  # noqa: E402
     DATASET_REVISION,
     DATASET_SHA256,
@@ -44,6 +46,10 @@ from prepare_longbench_v2_minimax import (  # noqa: E402
     render_minimax,
 )
 from sift import CompactionError, compact_messages  # noqa: E402
+from longbench_prepared_input_cache import (  # noqa: E402
+    PreparedInputCache,
+    make_cache_key,
+)
 
 
 DATASET_DEFAULT = preparer.DATASET_DEFAULT
@@ -51,13 +57,15 @@ TOKENIZER_DEFAULT = preparer.TOKENIZER_DEFAULT
 TEMPLATE_DEFAULT = preparer.TEMPLATE_DEFAULT
 MANIFEST_DEFAULT = preparer.OUTPUT_DEFAULT
 PREPARED_DEFAULT = ROOT / ".runs/longbench-v2-minimax-fullsuite-prepared.json"
+PREPARED_CACHE_DEFAULT = ROOT / "tmp/longbench-v2-minimax-fullsuite-prepared-input-cache"
 DISPATCH_DEFAULT = ROOT / ".runs/longbench-v2-minimax-fullsuite-run.json"
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
+ENDPOINTS_URL = "https://openrouter.ai/api/v1/models/minimax/minimax-m3/endpoints"
 MODEL = MODEL_ID
 PROVIDER = "minimax"
+EXPECTED_ROUTE_TAG = "minimax/fp8"
 EXPECTED_ROWS = preparer.EXPECTED_ROWS
 EXPECTED_JOBS = EXPECTED_ROWS * 2
-MAX_SPEND_CAP_USD = 2_000.0
 INPUT_PRICE_USD_PER_MILLION = 0.30
 OUTPUT_PRICE_USD_PER_MILLION = 1.20
 INPUT_RESERVE_FACTOR = 1.5
@@ -207,9 +215,78 @@ def _request_body(messages: list[dict[str, str]], seed: int,
 
 
 def reconstruct(manifest: dict[str, Any], tokenizer_path: Path,
-                dataset_path: Path) -> tuple[list[dict[str, Any]], dict[str, str], dict[str, Any]]:
+                dataset_path: Path, *, cache: PreparedInputCache | None = None,
+                manifest_file_sha256: str | None = None
+                ) -> tuple[list[dict[str, Any]], dict[str, str], dict[str, Any]]:
     """Rebuild all 1,006 scheduled bodies and verify each against the manifest."""
     protocol = validate_protocol(manifest)
+    if cache is not None and manifest_file_sha256 is None:
+        raise DispatchError("Prepared-input cache requires the exact manifest file hash")
+    source_hashes = manifest.get("source_hashes")
+    if not isinstance(source_hashes, dict):
+        raise DispatchError("Manifest source_hashes must be an object")
+    cache_source_identities = {
+        "python_version": platform.python_version(),
+        "tokenizers_version": tokenizers.__version__,
+        "dispatcher_sha256": file_sha256(Path(__file__)),
+        "cache_helper_sha256": file_sha256(Path(__file__).with_name(
+            "longbench_prepared_input_cache.py")),
+    }
+    cache_sift_parameters = {
+        key: protocol[key]
+        for key in ("sift_configured_target_tokens", "sift_safety_margin_tokens",
+                    "sift_effective_target_tokens", "sift_raw_limit_tokens",
+                    "sift_max_input_characters", "sift_max_input_nodes")
+    }
+    cache_stats = {"enabled": cache is not None, "hits": 0, "misses": 0, "writes": 0}
+
+    def cached_record(case_id: str, dataset_index: int, arm: str
+                      ) -> tuple[str, dict[str, Any] | None]:
+        if cache is None:
+            return "", None
+        key = make_cache_key(
+            manifest_sha256=manifest_file_sha256,
+            source_hashes=source_hashes,
+            source_identities=cache_source_identities,
+            case_id=case_id,
+            dataset_index=dataset_index,
+            arm=arm,
+            protocol=protocol,
+            sift_parameters=cache_sift_parameters,
+        )
+        record = cache.get(key)
+        return key, record
+
+    def cache_record(key: str, *, messages: list[dict[str, Any]],
+                     metadata: dict[str, Any]) -> None:
+        if cache is None:
+            return
+        cache.put(key, messages=messages, metadata=metadata)
+        cache_stats["writes"] += 1
+
+    def cached_metadata_is_consistent(record: dict[str, Any],
+                                      body: dict[str, Any] | None,
+                                      frozen: dict[str, Any],
+                                      arm: str) -> bool:
+        metadata = record["metadata"]
+        prompt_hash = metadata.get("prompt_sha256")
+        messages = record["messages"]
+        if prompt_hash is not None and prompt_hash != prompt_sha256(messages):
+            return False
+        if arm == "full" and (not messages or not isinstance(prompt_hash, str)):
+            return False
+        if type(metadata.get("local_prompt_tokens")) is not int:
+            return False
+        if not isinstance(metadata.get("eligibility"), dict):
+            return False
+        for field in ("prompt_sha256", "local_prompt_tokens", "eligibility"):
+            if metadata.get(field) != frozen.get(field):
+                return False
+        if arm == "sift" and metadata.get("audit") != frozen.get("audit"):
+            return False
+        body_hash = canonical_sha256(body) if body is not None else None
+        return metadata.get("body_sha256") == body_hash
+
     tokenizer = Tokenizer.from_file(str(tokenizer_path))
 
     def count_messages(messages: list[dict[str, str]]) -> int:
@@ -243,44 +320,98 @@ def reconstruct(manifest: dict[str, Any], tokenizer_path: Path,
         case_meta = expected_case_map.get(case_id)
         if case_meta is None or row.get("answer") != keys.get(case_id):
             raise DispatchError(f"Dataset ID or separate answer key mismatch for {case_id}")
-        messages = make_messages(row)
-        full_tokens = count_messages(messages)
-        full_prompt_hash = prompt_sha256(messages)
         seed = protocol["seed"] + dataset_index + 1
-        full_body = _request_body(messages, seed, protocol["max_output_tokens"])
-        full_status = preparer._route_status(
-            full_tokens, manifest["provider_route_assumption"]["input_cap_tokens"])
-        try:
-            compacted = compact_messages(
-                messages,
-                count_messages,
-                target=protocol["sift_effective_target_tokens"],
-                raw_limit=protocol["sift_raw_limit_tokens"],
-                max_input_characters=protocol["sift_max_input_characters"],
-                max_input_nodes=protocol["sift_max_input_nodes"],
-                protocol="openai",
+        full_key, full_record = cached_record(case_id, dataset_index, "full")
+        if full_record is not None:
+            candidate_body = _request_body(
+                full_record["messages"], seed, protocol["max_output_tokens"])
+            if cached_metadata_is_consistent(
+                    full_record, candidate_body, case_meta.get("full", {}), "full"):
+                cache_stats["hits"] += 1
+                messages = full_record["messages"]
+                full_tokens = full_record["metadata"]["local_prompt_tokens"]
+                full_prompt_hash = full_record["metadata"]["prompt_sha256"]
+                full_status = full_record["metadata"]["eligibility"]
+                full_body = candidate_body
+            else:
+                cache_stats["misses"] += 1
+                full_record = None
+        elif cache is not None:
+            cache_stats["misses"] += 1
+        if full_record is None:
+            messages = make_messages(row)
+            full_tokens = count_messages(messages)
+            full_prompt_hash = prompt_sha256(messages)
+            full_body = _request_body(messages, seed, protocol["max_output_tokens"])
+            full_status = preparer._route_status(
+                full_tokens, manifest["provider_route_assumption"]["input_cap_tokens"])
+            cache_record(full_key, messages=messages, metadata={
+                "prompt_sha256": full_prompt_hash,
+                "body_sha256": canonical_sha256(full_body),
+                "local_prompt_tokens": full_tokens,
+                "eligibility": full_status,
+            })
+
+        sift_key, sift_record = cached_record(case_id, dataset_index, "sift")
+        if sift_record is not None:
+            candidate_body = (
+                _request_body(sift_record["messages"], seed, protocol["max_output_tokens"])
+                if sift_record["metadata"].get("body_sha256") is not None else None
             )
-            sift_messages = compacted.messages
-            sift_tokens = compacted.audit["forwarded_tokens"]
-            sift_prompt_hash = prompt_sha256(sift_messages)
-            sift_body = _request_body(sift_messages, seed, protocol["max_output_tokens"])
-            sift_status = preparer._route_status(
-                sift_tokens, manifest["provider_route_assumption"]["input_cap_tokens"])
-            sift_audit = {
-                key: compacted.audit.get(key)
-                for key in ("compacted", "input_tokens", "forwarded_tokens",
-                            "omitted_estimated_tokens", "preserved_recent_turns",
-                            "preserved_recent_tool_cycles", "selected_excerpts", "method")
-                if key in compacted.audit
-            }
-        except CompactionError as error:
-            reason = error.code if error.code == "raw_limit" else "compaction_error"
-            sift_tokens = full_tokens
-            sift_prompt_hash = None
-            sift_body = None
-            sift_status = {"status": "ineligible", "reason": reason,
-                           "error_code": error.code}
-            sift_audit = None
+            if cached_metadata_is_consistent(
+                    sift_record, candidate_body, case_meta.get("sift", {}), "sift"):
+                cache_stats["hits"] += 1
+                sift_messages = sift_record["messages"]
+                sift_tokens = sift_record["metadata"]["local_prompt_tokens"]
+                sift_prompt_hash = sift_record["metadata"]["prompt_sha256"]
+                sift_body = candidate_body
+                sift_status = sift_record["metadata"]["eligibility"]
+                sift_audit = sift_record["metadata"].get("audit")
+            else:
+                cache_stats["misses"] += 1
+                sift_record = None
+        elif cache is not None:
+            cache_stats["misses"] += 1
+        if sift_record is None:
+            try:
+                compacted = compact_messages(
+                    messages,
+                    count_messages,
+                    target=protocol["sift_effective_target_tokens"],
+                    raw_limit=protocol["sift_raw_limit_tokens"],
+                    max_input_characters=protocol["sift_max_input_characters"],
+                    max_input_nodes=protocol["sift_max_input_nodes"],
+                    protocol="openai",
+                )
+                sift_messages = compacted.messages
+                sift_tokens = compacted.audit["forwarded_tokens"]
+                sift_prompt_hash = prompt_sha256(sift_messages)
+                sift_body = _request_body(sift_messages, seed, protocol["max_output_tokens"])
+                sift_status = preparer._route_status(
+                    sift_tokens, manifest["provider_route_assumption"]["input_cap_tokens"])
+                sift_audit = {
+                    key: compacted.audit.get(key)
+                    for key in ("compacted", "input_tokens", "forwarded_tokens",
+                                "omitted_estimated_tokens", "preserved_recent_turns",
+                                "preserved_recent_tool_cycles", "selected_excerpts", "method")
+                    if key in compacted.audit
+                }
+            except CompactionError as error:
+                reason = error.code if error.code == "raw_limit" else "compaction_error"
+                sift_tokens = full_tokens
+                sift_prompt_hash = None
+                sift_messages = []
+                sift_body = None
+                sift_status = {"status": "ineligible", "reason": reason,
+                               "error_code": error.code}
+                sift_audit = None
+            cache_record(sift_key, messages=sift_messages, metadata={
+                "prompt_sha256": sift_prompt_hash,
+                "body_sha256": canonical_sha256(sift_body) if sift_body is not None else None,
+                "local_prompt_tokens": sift_tokens,
+                "eligibility": sift_status,
+                "audit": sift_audit,
+            })
 
         actual_case_summaries[case_id] = {
             "dataset_index": dataset_index,
@@ -376,7 +507,8 @@ def reconstruct(manifest: dict[str, Any], tokenizer_path: Path,
                            "manifest_sha256": manifest["manifest_sha256"],
                            "schedule_sha256": manifest["schedule_sha256"],
                            "source_hashes": manifest["source_hashes"],
-                           "protocol": protocol}
+                           "protocol": protocol,
+                           "prepared_input_cache": cache_stats}
 
 
 def build_report(manifest: dict[str, Any], manifest_path: Path,
@@ -398,6 +530,7 @@ def build_report(manifest: dict[str, Any], manifest_path: Path,
         "manifest_sha256": validated["manifest_sha256"],
         "schedule_sha256": validated["schedule_sha256"],
         "source_hashes": validated["source_hashes"],
+        "prepared_input_cache": validated["prepared_input_cache"],
         "provider": PROVIDER,
         "requested_model": MODEL,
         "fallbacks_allowed": False,
@@ -700,13 +833,109 @@ def load_previous_report(path: Path, manifest_hash: str, schedule_hash: str,
     return report
 
 
+def live_account_route_preflight(api_key: str, manifest: dict[str, Any],
+                                 jobs: list[dict[str, Any]], spend_cap: float,
+                                 *, no_unsettled_attested: bool,
+                                 provider_headroom_attested: bool,
+                                 provider_balance_unverified_authorized: bool) -> dict[str, Any]:
+    """Fail closed on live route, pricing, account metadata, and operator attestations.
+
+    OpenRouter credit totals are diagnostics only for BYOK MiniMax requests. This
+    client cannot verify the upstream MiniMax balance or enforce its billing cap.
+    """
+    if not no_unsettled_attested:
+        raise DispatchError("Before dispatch, reconcile prior/in-flight requests and pass --confirm-no-unsettled-requests")
+    if not provider_headroom_attested and not provider_balance_unverified_authorized:
+        raise DispatchError("Confirm MiniMax billing headroom or explicitly authorize dispatch with its balance unverified")
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+    try:
+        import requests
+        endpoint_response = requests.get(ENDPOINTS_URL, headers=headers, timeout=(10, 30))
+        credits_response = requests.get("https://openrouter.ai/api/v1/credits", headers=headers, timeout=(10, 30))
+        key_response = requests.get("https://openrouter.ai/api/v1/key", headers=headers, timeout=(10, 30))
+        endpoint_response.raise_for_status()
+        credits_response.raise_for_status()
+        key_response.raise_for_status()
+        endpoint_data = endpoint_response.json().get("data", {})
+        endpoints = endpoint_data.get("endpoints", [])
+        credits_data = credits_response.json().get("data", {})
+        key_data = key_response.json().get("data", {})
+    except Exception as error:
+        raise DispatchError(f"Live OpenRouter route/account preflight failed closed: {type(error).__name__}: {error}") from error
+    if not isinstance(credits_data, dict) or not isinstance(key_data, dict):
+        raise DispatchError("OpenRouter credits/key diagnostics returned malformed metadata")
+    if (type(key_data.get("is_management_key")) is not bool
+            or type(key_data.get("include_byok_in_limit")) is not bool):
+        raise DispatchError("OpenRouter key diagnostics lack BYOK accounting metadata")
+    if key_data["is_management_key"] is not False or key_data["include_byok_in_limit"] is not False:
+        raise DispatchError("OpenRouter key type or BYOK limit semantics changed; re-evaluate billing and cap handling")
+    expected_route = manifest.get("provider_route_assumption", {})
+    if (expected_route.get("requested_model") != MODEL
+            or expected_route.get("provider_slug") != PROVIDER
+            or expected_route.get("fallbacks_allowed") is not False):
+        raise DispatchError("Manifest route is not pinned to MiniMax M3 without fallbacks")
+    if not isinstance(endpoints, list):
+        raise DispatchError("Live OpenRouter endpoint response has no endpoint list")
+    minimax_endpoints = [endpoint for endpoint in endpoints if isinstance(endpoint, dict)
+                         and str(endpoint.get("provider_name", "")).strip().casefold() == "minimax"]
+    if (len(minimax_endpoints) != 1
+            or minimax_endpoints[0].get("model_id") != MODEL
+            or minimax_endpoints[0].get("tag") != EXPECTED_ROUTE_TAG):
+        raise DispatchError("Live MiniMax route is missing, ambiguous, or differs from the expected model and minimax/fp8 tag")
+    endpoint = minimax_endpoints[0]
+    max_prompt = endpoint.get("max_prompt_tokens")
+    max_completion = endpoint.get("max_completion_tokens")
+    if type(max_prompt) is not int or max_prompt <= 0 or type(max_completion) is not int or max_completion <= 0:
+        raise DispatchError("Live MiniMax route lacks explicit prompt/completion limits")
+    # The prepared prompt count uses MiniMax's published tokenizer and chat
+    # template, which is the frozen schedule's local projection basis.
+    if max(job["local_prompt_tokens"] for job in jobs) > max_prompt:
+        raise DispatchError("Selected prefix exceeds the live MiniMax prompt limit")
+    output_cap = manifest["protocol"]["max_output_tokens"]
+    if output_cap > max_completion:
+        raise DispatchError("Configured output cap exceeds the live MiniMax completion limit")
+    pricing = endpoint.get("pricing")
+    if not isinstance(pricing, dict):
+        raise DispatchError("Live MiniMax route omitted pricing")
+    if any(type(pricing.get(field)) is bool for field in ("prompt", "completion")):
+        raise DispatchError("Live MiniMax route pricing is malformed")
+    try:
+        input_rate = float(pricing["prompt"])
+        output_rate = float(pricing["completion"])
+    except (KeyError, TypeError, ValueError) as error:
+        raise DispatchError("Live MiniMax route pricing is malformed") from error
+    if not (math.isfinite(input_rate) and math.isfinite(output_rate)
+            and input_rate > 0 and output_rate > 0):
+        raise DispatchError("Live MiniMax route pricing is invalid")
+    reserve = (sum(job["local_prompt_tokens"] for job in jobs)
+               * INPUT_RESERVE_FACTOR * input_rate
+               + len(jobs) * output_cap * output_rate)
+    if spend_cap < reserve:
+        raise DispatchError(f"Cap ${spend_cap:.6f} is below live-route selected-prefix reserve ${reserve:.6f}")
+    return {
+        "checked_utc": datetime.now(timezone.utc).isoformat(),
+        "model_id": endpoint["model_id"], "provider_name": endpoint["provider_name"],
+        "route_tag": endpoint["tag"], "max_prompt_tokens": max_prompt,
+        "max_completion_tokens": max_completion,
+        "input_usd_per_million": input_rate * 1_000_000,
+        "output_usd_per_million": output_rate * 1_000_000,
+        "selected_prefix_reserve_usd": reserve,
+        "prompt_projection_basis": "local published MiniMax tokenizer and rendered chat template",
+        "openrouter_credits_response": "ok; diagnostics only; excluded from MiniMax BYOK cap coverage",
+        "openrouter_key_metadata_check": "ok",
+        "provider_billing_headroom_attested": provider_headroom_attested,
+        "provider_balance_unverified_authorized": provider_balance_unverified_authorized,
+        "prior_in_flight_reconciliation": "operator attestation; upstream settlement is not API-verifiable",
+        "note": "Client-side reserve only; neither OpenRouter nor this dispatcher can enforce an upstream hard spend cap.",
+    }
+
+
 def dispatch(args: argparse.Namespace, manifest: dict[str, Any],
              ordered_jobs: list[dict[str, Any]], validated: dict[str, Any],
              expected_keys: dict[str, str], prepared_report: dict[str, Any]) -> dict[str, Any]:
     # Validate bounds and full-schedule reserve before touching credentials.
-    if (not math.isfinite(args.spend_cap_usd) or args.spend_cap_usd <= 0
-            or args.spend_cap_usd > MAX_SPEND_CAP_USD):
-        raise DispatchError(f"--spend-cap-usd must be positive and no more than ${MAX_SPEND_CAP_USD:.2f}")
+    if not math.isfinite(args.spend_cap_usd) or args.spend_cap_usd <= 0:
+        raise DispatchError("--spend-cap-usd must be finite and positive")
     eligible = validated["eligible_jobs"]
     if type(args.prefix) is not int or not 1 <= args.prefix <= len(eligible):
         raise DispatchError(f"--prefix must be from 1 through {len(eligible)} eligible jobs")
@@ -732,6 +961,12 @@ def dispatch(args: argparse.Namespace, manifest: dict[str, Any],
     api_key = os.environ.get("OPENROUTER_API_KEY")
     if not api_key:
         raise DispatchError("OPENROUTER_API_KEY is required only for explicit --dispatch")
+    live_preflight = live_account_route_preflight(
+        api_key, manifest, selected, args.spend_cap_usd,
+        no_unsettled_attested=args.confirm_no_unsettled_requests,
+        provider_headroom_attested=args.confirm_minimax_billing_headroom,
+        provider_balance_unverified_authorized=args.authorize_unverified_minimax_balance,
+    )
     import requests  # lazy import; offline/help modes do not construct provider clients
 
     report = dict(prepared_report)
@@ -741,6 +976,7 @@ def dispatch(args: argparse.Namespace, manifest: dict[str, Any],
         "dispatch_prefix_count": args.prefix,
         "eligible_prefix_job_ids": [job["job_id"] for job in selected],
         "spend_cap_usd": args.spend_cap_usd,
+        "live_route_account_preflight": live_preflight,
         "dispatch_started_utc": datetime.now(timezone.utc).isoformat(),
         "samples": [],
         "attempted_jobs": 0,
@@ -1107,11 +1343,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--dataset", type=Path, default=DATASET_DEFAULT)
     parser.add_argument("--tokenizer", type=Path, default=TOKENIZER_DEFAULT)
     parser.add_argument("--template", type=Path, default=TEMPLATE_DEFAULT)
+    cache_mode = parser.add_mutually_exclusive_group()
+    cache_mode.add_argument("--prepared-cache", type=Path, default=PREPARED_CACHE_DEFAULT,
+                            help="Offline content-addressed cache for prepared prompts.")
+    cache_mode.add_argument("--no-prepared-cache", action="store_true",
+                            help="Reconstruct every prompt without reading or writing a cache.")
     parser.add_argument("--output", type=Path, default=None)
     parser.add_argument("--prefix", type=int, default=None,
                         help="Dispatch the first N eligible jobs in frozen schedule order.")
     parser.add_argument("--spend-cap-usd", type=float, default=None,
-                        help="Explicit client-side cap, at most $2,000.")
+                        help="User-approved client-side cap; it must cover the live-route reserve.")
     parser.add_argument("--resume-from-report", type=Path, default=None,
                         help="Continue after a reviewed report; an unknown request is never retried.")
     parser.add_argument("--accept-unknown-and-continue", action="store_true",
@@ -1120,6 +1361,13 @@ def main(argv: list[str] | None = None) -> int:
                         help="Retry once after a receipt-backed response fails strict choice scoring; all attempts remain reported.")
     parser.add_argument("--retry-unknown-outcome", action="store_true",
                         help="After explicit acceptance, retry one unknown-usage request; its original usage remains unknown.")
+    parser.add_argument("--confirm-no-unsettled-requests", action="store_true",
+                        help="Attest that earlier and in-flight requests have been externally reconciled before dispatch.")
+    billing_group = parser.add_mutually_exclusive_group()
+    billing_group.add_argument("--confirm-minimax-billing-headroom", action="store_true",
+                               help="Attest that the upstream MiniMax account has sufficient billing headroom.")
+    billing_group.add_argument("--authorize-unverified-minimax-balance", action="store_true",
+                               help="Explicitly authorize the approved cap while MiniMax account balance remains unverified.")
     args = parser.parse_args(argv)
     dispatch_mode = bool(args.dispatch)
     if dispatch_mode:
@@ -1132,14 +1380,22 @@ def main(argv: list[str] | None = None) -> int:
         if args.retry_unknown_outcome and not (args.resume_from_report
                                                and args.accept_unknown_and_continue):
             raise DispatchError("--retry-unknown-outcome requires a report and --accept-unknown-and-continue")
+        if not args.confirm_no_unsettled_requests:
+            raise DispatchError("Before dispatch, reconcile prior/in-flight exposure and pass --confirm-no-unsettled-requests")
+        if not (args.confirm_minimax_billing_headroom or args.authorize_unverified_minimax_balance):
+            raise DispatchError("Before dispatch, confirm MiniMax billing headroom or explicitly authorize an unverified balance")
     elif (any(value is not None for value in (args.spend_cap_usd, args.prefix, args.resume_from_report))
           or args.accept_unknown_and_continue or args.retry_invalid_response
-          or args.retry_unknown_outcome):
+          or args.retry_unknown_outcome or args.confirm_no_unsettled_requests
+          or args.confirm_minimax_billing_headroom or args.authorize_unverified_minimax_balance):
         raise DispatchError("Dispatch options require explicit --dispatch")
 
     manifest = load_manifest(args.manifest)
     validate_source_hashes(manifest, args.dataset, args.tokenizer, args.template)
-    ordered_jobs, scoring_keys, validated = reconstruct(manifest, args.tokenizer, args.dataset)
+    cache = None if args.no_prepared_cache else PreparedInputCache(args.prepared_cache)
+    ordered_jobs, scoring_keys, validated = reconstruct(
+        manifest, args.tokenizer, args.dataset, cache=cache,
+        manifest_file_sha256=file_sha256(args.manifest) if cache is not None else None)
     output = args.output or (DISPATCH_DEFAULT if dispatch_mode else PREPARED_DEFAULT)
     report = build_report(manifest, args.manifest, ordered_jobs, validated,
                           args.spend_cap_usd if dispatch_mode else None)
@@ -1153,6 +1409,7 @@ def main(argv: list[str] | None = None) -> int:
             "full_schedule_rows": report["full_schedule_rows"],
             "eligible_jobs": report["eligible_jobs"],
             "eligible_counts_by_arm": report["eligible_counts_by_arm"],
+            "prepared_input_cache": report["prepared_input_cache"],
             "output": str(output),
         }, sort_keys=True))
         return 0

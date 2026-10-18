@@ -1,0 +1,9 @@
+{
+  "source": "Meridian Grid baseline (fictional) — 30-day normal state",
+  "scope": "mdc3-uplink-aggr",
+  "window": "2026-08-31/2026-09-29",
+  "avg_loss_pct": 0.02,
+  "jitter_ms": 0.8,
+  "rx_bytes_per_s": 348000000,
+  "tx_bytes_per_s": 327000000
+}

@@ -1,0 +1,14 @@
+{
+  "status": "public authored development fixture; not held-out evidence",
+  "frozen_at_utc": "2026-10-16T05:57:58Z",
+  "input_sha256": {
+    "build_manifest.py": "83f27148483137ffc097801c6fc23744f2c9cd9f52df8e5144f4b028c65811e7",
+    "incremental.py": "683a521751141a78a12b21be27de8e89f0790393ac4a04edc1393fe1e95bb9a4",
+    "README.md": "95e8d619381930d95b9931aa37744462dea31d85789a03096cda85b0addc1a7b",
+    "test_build_planner.py": "ab9ce929f832cff6cde968ca63efbb932c41f4172fae9d66aab3f29dc2b220cc"
+  },
+  "acceptance_sha256": {
+    "test_build_holdout.py": "bce38f96af57abfc05be91cf3509db9d1cf807bbceae04025f83ec7034e7ca3e",
+    "test_postrun_contract.py": "2b1dca315f68d2f2747861ab88e485a7899b909dbf2de0e3e2cb7ec924b346c2"
+  }
+}

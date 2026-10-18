@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "multi_domain_incident_swarm_500k",
+  "required_spans": [
+    {"id": "dep_000000", "source": {"file": "swarm_context.md", "start_char": 5128, "end_char": 5682}, "sha256": "279282fe81d1cc997fef60265284d46203efff1a4e0a48d65e7f10d13bc212c2"},
+    {"id": "pay_008997", "source": {"file": "swarm_context.md", "start_char": 55443, "end_char": 56065}, "sha256": "fb4e48cae447c3d83ceccd28b611ebe219566626502b9b55c539c3901ac971c5"},
+    {"id": "iam_inc_003001", "source": {"file": "swarm_context.md", "start_char": 886935, "end_char": 887572}, "sha256": "6d7fb7b8d0637362c38e7c233b2b7684da9050a885d3f522c7ed58c8d4975698"},
+    {"id": "dash_88421", "source": {"file": "swarm_context.md", "start_char": 921742, "end_char": 922275}, "sha256": "5db6258eb51762fabe67481fd3e7c58c4faa434447e3725da520fe695949d1dd"},
+    {"id": "tic_011999", "source": {"file": "swarm_context.md", "start_char": 1707226, "end_char": 1707889}, "sha256": "3e0124cf1a2d34ea8f62e92c6a30d8e5561c04ac164626b6379818fe19364276"},
+    {"id": "dep_017999", "source": {"file": "swarm_context.md", "start_char": 1766335, "end_char": 1766929}, "sha256": "6a2e4e34db6ca69f2dfe31924ce546cced467b11441fb11e7fa3954367b15ac9"},
+    {"id": "run_012000", "source": {"file": "swarm_context.md", "start_char": 1766930, "end_char": 1767645}, "sha256": "dc8d6d00d066fc0addd5c0c09f355f85ae75dc99342984be69418907e9fab4b0"},
+    {"id": "net_005999", "source": {"file": "swarm_context.md", "start_char": 1767646, "end_char": 1768249}, "sha256": "d7b8bc8b89e256ecbfb16b6b8444d67bd265787971e02300a6987e42be20a424"}
+  ]
+}

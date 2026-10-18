@@ -37,7 +37,7 @@ services:
       retries: 30
       start_period: 2s
     networks: [engine]
-    command: ["--config", "/bench/native_litellm.yaml", "--port", "4000", "--host", "0.0.0.0", "--telemetry", "False"]
+    command: ["--config", "${SIFT_NATIVE_CONFIG:-/bench/native_litellm.yaml}", "--port", "4000", "--host", "0.0.0.0", "--telemetry", "False"]
 
 networks:
   engine:

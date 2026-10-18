@@ -70,6 +70,11 @@ _evidence_manifest = os.environ.get("SIFT_BENCH_EVIDENCE_MANIFEST")
 _required_evidence = load_required_spans(_evidence_manifest) if _evidence_manifest else ()
 
 
+def _is_full_request(model):
+    """Classify the full arm while allowing both arms to share a client alias."""
+    return model == FULL_MODEL or (ARM == "full" and model == MODEL)
+
+
 def _evidence_status(messages, forwarded):
     if not _required_evidence:
         return ""
@@ -119,6 +124,22 @@ def _request_fingerprint(data):
         _logger.info("sift_benchmark_fingerprint status=failed error_type=%s", type(error).__name__)
         raise HTTPException(422, detail="Native benchmark request cannot be fingerprinted") from error
     return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+
+def _request_fingerprint_components(data):
+    """Return hashes of semantic fields only; useful for body-free pair audits."""
+    semantic_fields = {
+        "messages", "system", "tools", "tool_choice", "functions", "function_call",
+        "temperature", "top_p", "n", "stream", "stop", "max_tokens",
+        "max_completion_tokens", "max_output_tokens", "presence_penalty",
+        "frequency_penalty", "logit_bias", "user", "response_format", "seed",
+        "parallel_tool_calls", "reasoning_effort", "extra_body",
+    }
+    return {
+        key: hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True,
+                                       separators=(",", ":"), default=str).encode("utf-8")).hexdigest()
+        for key, value in sorted(data.items()) if key in semantic_fields
+    }
 
 
 def install_benchmark_counter_fix():
@@ -258,7 +279,8 @@ class NativeBenchmarkHook(integration.SiftLiteLLMHook):
     async_post_call_response_headers_hook = integration.SiftLiteLLMHook.async_post_call_response_headers_hook
 
     def _run_preflight_only(self, router, data, translated, call_type, fingerprint):
-        target = 1_000_000 if data.get("model") == FULL_MODEL else TARGET
+        is_full = _is_full_request(data.get("model"))
+        target = 1_000_000 if is_full else TARGET
         audited = integration.compact_proxy_request(
             router, translated, call_type=call_type, target=target, raw_limit=1_000_000,
         )
@@ -269,7 +291,7 @@ class NativeBenchmarkHook(integration.SiftLiteLLMHook):
         raw, forwarded = audit.get("input_tokens"), audit.get("forwarded_tokens")
         if type(raw) is not int or type(forwarded) is not int:
             raise HTTPException(500, detail="Native benchmark preflight received invalid route counts")
-        arm = "full" if data.get("model") == FULL_MODEL else ARM
+        arm = "full" if is_full else ARM
         status = "provider_blocked"
         if raw < MIN_RAW_TOKENS:
             status = "below_raw_floor"
@@ -277,9 +299,11 @@ class NativeBenchmarkHook(integration.SiftLiteLLMHook):
             status = "full_mutated"
         elif arm == "sift" and forwarded > TARGET:
             status = "above_target"
+        component_hashes = _request_fingerprint_components(data)
         _logger.info(
-            "sift_benchmark_preflight run_id=%s arm=%s model=%s request_seq=%d fingerprint=%s raw_tokens=%d forwarded_tokens=%d target=%d minimum_raw_tokens=%d status=%s",
+            "sift_benchmark_preflight run_id=%s arm=%s model=%s request_seq=%d fingerprint=%s component_hashes=%s raw_tokens=%d forwarded_tokens=%d target=%d minimum_raw_tokens=%d status=%s",
             RUN_ID, arm, data.get("model"), _current_request_sequence.get(), fingerprint,
+            json.dumps(component_hashes, sort_keys=True, separators=(",", ":")),
             raw, forwarded, target if arm == "full" else TARGET, MIN_RAW_TOKENS, status,
         )
         if status != "provider_blocked":
@@ -328,7 +352,7 @@ class NativeBenchmarkHook(integration.SiftLiteLLMHook):
         except Exception as error:
             _logger.info(
                 "sift_benchmark_selection selector=full model=%s request_seq=%d observed_utc_ns=%d target=none status=failed error_type=%s count_method=litellm_1_103_0 wall_ms=%.3f",
-                FULL_MODEL, _current_request_sequence.get(), time.time_ns(), type(error).__name__,
+                _current_model.get() or FULL_MODEL, _current_request_sequence.get(), time.time_ns(), type(error).__name__,
                 (time.perf_counter() - wall) * 1000,
             )
             raise
@@ -345,12 +369,12 @@ class NativeBenchmarkHook(integration.SiftLiteLLMHook):
         if MIN_RAW_TOKENS and raw < MIN_RAW_TOKENS:
             _logger.info(
                 "sift_benchmark_selection selector=full model=%s request_seq=%d observed_utc_ns=%d target=none status=below_raw_floor input_tokens=%d minimum_raw_tokens=%d",
-                FULL_MODEL, _current_request_sequence.get(), time.time_ns(), raw, MIN_RAW_TOKENS,
+                _current_model.get() or FULL_MODEL, _current_request_sequence.get(), time.time_ns(), raw, MIN_RAW_TOKENS,
             )
             raise HTTPException(422, detail=f"Native benchmark requires at least {MIN_RAW_TOKENS} raw input tokens")
         _logger.info(
             "sift_benchmark_selection selector=full model=%s request_seq=%d observed_utc_ns=%d target=none status=ok input_tokens=%d forwarded_tokens=%d count_method=litellm_router_1_103_0 wall_ms=%.3f evidence=%s",
-            FULL_MODEL, _current_request_sequence.get(), time.time_ns(), raw, forwarded,
+            _current_model.get() or FULL_MODEL, _current_request_sequence.get(), time.time_ns(), raw, forwarded,
             (time.perf_counter() - wall) * 1000,
             _evidence_status(data.get("messages", []), data.get("messages", [])),
         )
@@ -368,7 +392,8 @@ class NativeBenchmarkHook(integration.SiftLiteLLMHook):
             model_token = _current_model.set(data["model"])
             metadata_key, metadata = integration.get_or_create_metadata_bucket(data)
             data[metadata_key] = {**metadata, "sift_benchmark": {
-                "arm": ARM, "model": data["model"], "request_seq": sequence,
+                "arm": "full" if _is_full_request(data["model"]) else ARM,
+                "model": data["model"], "request_seq": sequence,
             }}
             fingerprint = None
         else:
@@ -386,13 +411,14 @@ class NativeBenchmarkHook(integration.SiftLiteLLMHook):
                 if router is None:
                     raise HTTPException(503, detail="Native benchmark route counter is unavailable")
                 self._run_preflight_only(router, data, translated, call_type, fingerprint)
-            if data.get("model") == FULL_MODEL:
+            if _is_full_request(data.get("model")):
                 from litellm.proxy import proxy_server
 
                 router = proxy_server.llm_router
                 if router is None:
                     raise HTTPException(503, detail="Native benchmark route counter is unavailable")
                 self._measure_full_request(router, translated, call_type)
+                return translated if translated is not data else None
             selected = await super().async_pre_call_hook(user_api_key_dict, cache, translated, call_type)
             if selected is not None:
                 return selected

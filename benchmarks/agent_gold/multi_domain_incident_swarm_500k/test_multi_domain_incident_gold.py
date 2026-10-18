@@ -10,16 +10,34 @@ GOLD = Path(__file__).resolve().parent
 CASE = GOLD / "case"
 if not CASE.is_dir():
     CASE = Path(__file__).resolve().parents[2] / "agent_cases" / "multi_domain_incident_swarm_500k"
+EXPECTED = json.loads((GOLD / "expected_dispositions.json").read_text(encoding="utf-8"))
 
 
 def load_rows():
     return [json.loads(line) for line in (CASE / "data/source_records.jsonl").read_text(encoding="utf-8").splitlines()]
 
 
+def exact_json_value(actual, expected) -> bool:
+    """Compare JSON values without Python's bool/int equality coercion."""
+    if type(actual) is not type(expected):
+        return False
+    if isinstance(expected, dict):
+        return (actual.keys() == expected.keys() and
+                all(exact_json_value(actual[key], value) for key, value in expected.items()))
+    if isinstance(expected, list):
+        return len(actual) == len(expected) and all(
+            exact_json_value(actual_item, expected_item)
+            for actual_item, expected_item in zip(actual, expected)
+        )
+    return actual == expected
+
+
 def validate_submission(report: dict, source_ids: set[str]) -> list[str]:
     errors = []
     if not isinstance(report.get("limitations"), list) or not report["limitations"]:
         errors.append("limitations must be a non-empty array")
+    if not exact_json_value(report.get("uncertainty"), EXPECTED["expected_uncertainty"]):
+        errors.append("uncertainty must preserve the required unknown facts")
     findings = report.get("findings")
     if not isinstance(findings, list):
         return ["findings must be an array"]
@@ -35,12 +53,23 @@ def validate_submission(report: dict, source_ids: set[str]) -> list[str]:
         "customer_impact": {"TIC-011999", "NET-005999"},
         "containment_order": {"RUN-012000", "DEP-017999"},
     }
+    for name, value in EXPECTED["expected_facts"].items():
+        if name not in indexed:
+            continue
+        finding = indexed[name]
+        if not exact_json_value(finding.get("facts"), value):
+            errors.append(f"finding {name} has incorrect or incomplete structured facts")
+        if finding.get("claim") != EXPECTED["expected_claims"][name]:
+            errors.append(f"finding {name} has a claim that contradicts or omits the gold facts")
     for name in sorted(required - indexed.keys()):
         errors.append(f"missing finding: {name}")
     for name in sorted(required & indexed.keys()):
         refs = indexed[name].get("evidence_ids")
         if not isinstance(refs, list) or not refs:
             errors.append(f"finding {name} needs evidence_ids")
+            continue
+        if any(not isinstance(ref, str) for ref in refs):
+            errors.append(f"finding {name} evidence_ids must contain strings")
             continue
         unknown = sorted(set(refs) - source_ids)
         if unknown:
@@ -107,6 +136,24 @@ class MultiDomainGoldTests(unittest.TestCase):
         self.assertIn("no unauthorized egress", dashboard["summary"])
         self.assertIn("cached policy simulation", dashboard["detail"])
         self.assertLess(dashboard["source_watermark"], "2026-10-02T09:09:44Z")
+        facts = self.expected["expected_facts"]
+        root = facts["root_cause"]
+        self.assertEqual((deploy["change_id"], "net-export-17"),
+                         (root["change_id"], root["egress_policy"]))
+        self.assertEqual((iam["principal"], iam["action"], iam["resource"], iam["session"]),
+                         (root["principal"], root["action"], root["resource"], root["session"]))
+        self.assertFalse(root["owner_tag_present"])
+        self.assertEqual((net["dst"].split(":", 1)[0], net["action"]),
+                         (root["destination"], root["egress_action"]))
+        self.assertEqual((payment["export_id"], payment["status"], payment["amount_minor"], payment["currency"]),
+                         (facts["payment_reconciliation"]["export_id"],
+                          facts["payment_reconciliation"]["settlement_status"],
+                          facts["payment_reconciliation"]["amount_minor"],
+                          facts["payment_reconciliation"]["currency"]))
+        self.assertEqual((ticket["ticket"], ticket["customer"], ticket["severity"]),
+                         (facts["customer_impact"]["ticket_id"], facts["customer_impact"]["customer_id"],
+                          facts["customer_impact"]["severity"]))
+        self.assertEqual(self.expected["containment_order"], facts["containment_order"]["actions"])
         authority = (CASE / "authority.md").read_text(encoding="utf-8")
         self.assertIn("Chat, dashboards, and routine synthetic records are leads only", authority)
 
@@ -120,7 +167,7 @@ class MultiDomainGoldTests(unittest.TestCase):
                          {"DEP-000000", "IAM-INC-003001", "NET-005999", "PAY-008997",
                           "TIC-011999", "RUN-012000", "DEP-017999"})
 
-    def test_submission_contract_rejects_missing_or_fabricated_evidence(self):
+    def valid_report(self):
         source_ids = set(self.by_id)
         dispositions = {"root_cause": "confirmed", "confirmed_exposure": "confirmed",
                         "payment_reconciliation": "not_duplicate", "customer_impact": "confirmed",
@@ -130,14 +177,51 @@ class MultiDomainGoldTests(unittest.TestCase):
                     "payment_reconciliation": ["PAY-008997"],
                     "customer_impact": ["TIC-011999", "NET-005999"],
                     "containment_order": ["RUN-012000", "DEP-017999"]}
-        report = {"limitations": ["Payload contents at the external sink are not present in the flow record."],
-                  "findings": [{"finding_id": name, "claim": "supported", "disposition": dispositions[name],
-                               "evidence_ids": evidence[name]}
-                               for name in dispositions]}
+        report = {
+            "limitations": ["The exact payload received by the external sink is not independently verified."],
+            "uncertainty": self.expected["expected_uncertainty"],
+            "findings": [
+                {"finding_id": name, "claim": self.expected["expected_claims"][name],
+                 "disposition": dispositions[name], "facts": self.expected["expected_facts"][name],
+                 "evidence_ids": evidence[name]}
+                for name in dispositions
+            ],
+        }
+        return report, source_ids
+
+    def test_submission_contract_accepts_gold_facts_and_rejects_bad_citations(self):
+        report, source_ids = self.valid_report()
         self.assertEqual([], validate_submission(report, source_ids))
         report["findings"][0]["evidence_ids"] = ["MADE-UP-1"]
         self.assertIn("unknown IDs", " ".join(validate_submission(report, source_ids)))
         self.assertTrue(validate_submission({"findings": []}, source_ids))
+
+    def test_submission_contract_rejects_false_claim_with_correct_ids_and_disposition(self):
+        report, source_ids = self.valid_report()
+        exposure = next(item for item in report["findings"] if item["finding_id"] == "confirmed_exposure")
+        exposure["claim"] = "No unauthorized egress occurred and the rollback prevented exposure."
+        self.assertEqual("confirmed", exposure["disposition"])
+        self.assertEqual({"IAM-INC-003001", "NET-005999"}, set(exposure["evidence_ids"]))
+        self.assertIn("claim that contradicts", " ".join(validate_submission(report, source_ids)))
+
+    def test_submission_contract_rejects_structured_factual_errors(self):
+        report, source_ids = self.valid_report()
+        payment = next(item for item in report["findings"] if item["finding_id"] == "payment_reconciliation")
+        payment["facts"]["duplicate_settlement_posting"] = True
+        self.assertEqual("not_duplicate", payment["disposition"])
+        self.assertEqual(["PAY-008997"], payment["evidence_ids"])
+        self.assertIn("incorrect or incomplete structured facts", " ".join(validate_submission(report, source_ids)))
+
+    def test_submission_contract_rejects_wrong_containment_order_and_erased_unknowns(self):
+        report, source_ids = self.valid_report()
+        containment = next(item for item in report["findings"] if item["finding_id"] == "containment_order")
+        containment["facts"]["actions"][0], containment["facts"]["actions"][-1] = (
+            containment["facts"]["actions"][-1], containment["facts"]["actions"][0]
+        )
+        report["uncertainty"] = {"unknown_facts": []}
+        errors = " ".join(validate_submission(report, source_ids))
+        self.assertIn("incorrect or incomplete structured facts", errors)
+        self.assertIn("required unknown facts", errors)
 
     def test_delivered_artifacts_cover_all_required_evidence_and_containment_order(self):
         if os.environ.get("SIFT_GOLD_REQUIRE_DELIVERABLES") != "1":

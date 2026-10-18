@@ -14,7 +14,7 @@ For scale, suppose one uncached request would otherwise send 500,000 or
 and Sift instead has a **32,768-token estimated forwarding target**. Assume both
 runs generate the same 10,000 output tokens,
 and that the provider bills exactly the estimated forwarded count. These
-examples use standard global API rates checked on 2026-10-19.
+examples use standard global API rates checked on 2026-10-18.
 
 | Provider and input | Without Sift | With Sift | Modeled reduction |
 |---|---:|---:|---:|
@@ -44,7 +44,7 @@ matched 500K–1M Astra/Opus task comparison yet.
 
 Current model cards: [GPT-6 Astra](https://developers.openai.com/api/docs/models/gpt-6-astra)
 and [Claude Opus 5.5](https://platform.claude.com/docs/en/models/opus-5-5/overview).
-Rates checked 2026-10-19 against [OpenAI pricing](https://developers.openai.com/api/docs/pricing)
+Rates checked 2026-10-18 against [OpenAI pricing](https://developers.openai.com/api/docs/pricing)
 and [Anthropic pricing](https://platform.claude.com/docs/en/about-claude/pricing).
 
 ### Warm-prefix sensitivity

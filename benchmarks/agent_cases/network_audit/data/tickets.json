@@ -1,0 +1,123 @@
+{
+  "source": "Meridian Grid change board (fictional) export",
+  "scope": "MDC-3",
+  "as_of_utc": "2026-10-01T00:00:00Z",
+  "tickets": [
+    {
+      "change_id": "CHG-2026-1147",
+      "title": "Meridian backbone link swap",
+      "severity": "major",
+      "requester": "dana.ferro",
+      "approvals": [
+        {
+          "approver": "p.sandoval",
+          "role": "network engineering lead"
+        }
+      ],
+      "window_id": "MW-2026-118",
+      "superseded_by": "CHG-2026-1188",
+      "created_utc": "2026-09-20T09:00:00Z",
+      "status_note": "board entry; see superseded_by",
+      "site": "MDC-3",
+      "link_scope": "mdc3-uplink-aggr"
+    },
+    {
+      "change_id": "CHG-2026-1188",
+      "title": "Meridian backbone link swap (re-cut)",
+      "severity": "major",
+      "requester": "dana.ferro",
+      "approvals": [
+        {
+          "approver": "p.sandoval",
+          "role": "network engineering lead"
+        }
+      ],
+      "window_id": "MW-2026-118",
+      "superseded_by": null,
+      "created_utc": "2026-09-28T14:00:00Z",
+      "status_note": "re-cut after 1147 found stale design review",
+      "site": "MDC-3",
+      "link_scope": "mdc3-uplink-aggr"
+    },
+    {
+      "change_id": "CHG-2026-1193",
+      "title": "OSPF cost trim on MDC-3 uplinks",
+      "severity": "minor",
+      "requester": "m.okafor",
+      "approvals": [
+        {
+          "approver": "l.brandt",
+          "role": "senior network engineer"
+        }
+      ],
+      "window_id": "MW-2026-118",
+      "superseded_by": null,
+      "created_utc": "2026-09-25T11:00:00Z",
+      "status_note": "route cost adjustment on mdc3-up-1 and mdc3-up-2",
+      "site": "MDC-3",
+      "link_scope": "mdc3-uplink-aggr"
+    },
+    {
+      "change_id": "CHG-2026-1201",
+      "title": "BGP max-prefix tighten on mdc3-up-1",
+      "severity": "major",
+      "requester": "r.castellano",
+      "approvals": [
+        {
+          "approver": "p.sandoval",
+          "role": "network engineering lead"
+        },
+        {
+          "approver": "t.vidal",
+          "role": "security officer"
+        }
+      ],
+      "window_id": "MW-2026-118",
+      "superseded_by": null,
+      "created_utc": "2026-09-26T08:30:00Z",
+      "status_note": "max-prefix with reset on mdc3-up-1",
+      "site": "MDC-3",
+      "link_scope": "mdc3-uplink-aggr"
+    },
+    {
+      "change_id": "CHG-2026-1210",
+      "title": "Firmware 26.1.4 on toes-sw-02",
+      "severity": "critical",
+      "requester": "j.blythe",
+      "approvals": [
+        {
+          "approver": "j.blythe",
+          "role": "network engineering lead"
+        },
+        {
+          "approver": "a.reeves",
+          "role": "security officer"
+        }
+      ],
+      "window_id": "MW-2026-118",
+      "superseded_by": null,
+      "created_utc": "2026-09-27T16:45:00Z",
+      "status_note": "controller firmware rollout, second switch",
+      "site": "MDC-3",
+      "link_scope": "mdc3-uplink-aggr"
+    },
+    {
+      "change_id": "CHG-2026-1255",
+      "title": "MDC-2 uplink failover drill",
+      "severity": "minor",
+      "requester": "k.osei",
+      "approvals": [
+        {
+          "approver": "k.osei",
+          "role": "senior network engineer"
+        }
+      ],
+      "window_id": "MW-2026-121",
+      "superseded_by": null,
+      "created_utc": "2026-09-29T07:15:00Z",
+      "status_note": "different site (MDC-2); listed here only because the board export was not filtered by site",
+      "site": "MDC-2",
+      "link_scope": "mdc2-uplink-aggr"
+    }
+  ]
+}

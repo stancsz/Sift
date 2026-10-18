@@ -1,0 +1,171 @@
+{
+  "status": "authored synthetic development fixture; public before runs, not held-out evidence",
+  "frozen_at_utc": "2026-10-15T23:48:01Z",
+  "input_sha256": {
+    "current_export.csv": "0c22a9a966e2d15e7d81607a3503a6323b3840d6dbbf92a85a1a291e0280a435",
+    "docs/acmepay-v1-notes-2024-06-01.md": "0349f2f03a1effbb90900812e5d7783b9520682b7a74847c6fa0e3ebc73e02bd",
+    "docs/acmepay-v2-notes-2025-01-15.md": "138883a3c24d2b3b5a2cc61a03e8fc62ed0d4388ff4041130fef917c74eaf1b3",
+    "orders.csv": "51b13bafffd6b0f9c64d085a01843a31169d8624f197692387ba0ecf2818835d",
+    "README.md": "eee1f1ef24423d17be1c652bc988dd1c66df379f0887e4796f260ef0f5bd6438",
+    "reconcile.py": "388ea5e999a5145c3e693a4bc82531f90bb54cda1e8eee07f5125b44260f4db9",
+    "reports/discrepancies.csv": "385360742de52cbacbaa05fedd880fa0d61221ccd2b7f57954d36f627e1b9813",
+    "test_reconcile.py": "9c3c8683aa2381d354d66ab9684be816a45851b8b499b5d49986108464efc09e"
+  },
+  "required_evidence_spans": [
+    {
+      "claim": "v2 schema supersedes v1 refund-sign and field names",
+      "spans": [
+        {
+          "file": "docs/acmepay-v2-notes-2025-01-15.md",
+          "lines": [
+            1,
+            3,
+            24
+          ]
+        },
+        {
+          "file": "docs/acmepay-v1-notes-2024-06-01.md",
+          "lines": [
+            3,
+            4,
+            7,
+            8
+          ]
+        }
+      ]
+    },
+    {
+      "claim": "refunds are positive cents linked by parent event; settled-only",
+      "spans": [
+        {
+          "file": "docs/acmepay-v2-notes-2025-01-15.md",
+          "lines": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            13,
+            14
+          ]
+        }
+      ]
+    },
+    {
+      "claim": "exact replays idempotent; conflicting duplicate IDs rejected",
+      "spans": [
+        {
+          "file": "docs/acmepay-v2-notes-2025-01-15.md",
+          "lines": [
+            10,
+            11,
+            12
+          ]
+        }
+      ]
+    },
+    {
+      "claim": "integer cents and currency must match; offsets compare as UTC instants",
+      "spans": [
+        {
+          "file": "docs/acmepay-v2-notes-2025-01-15.md",
+          "lines": [
+            15,
+            16,
+            17,
+            18,
+            19,
+            20
+          ]
+        }
+      ]
+    },
+    {
+      "claim": "ORD-8101's shortfall matches its partial refund; ORD-8102's status is stale after a later full refund",
+      "spans": [
+        {
+          "file": "reports/discrepancies.csv",
+          "lines": [
+            2,
+            3
+          ]
+        },
+        {
+          "file": "current_export.csv",
+          "lines": [
+            2,
+            4,
+            7,
+            9
+          ]
+        },
+        {
+          "file": "docs/acmepay-v2-notes-2025-01-15.md",
+          "lines": [
+            10,
+            13,
+            14
+          ]
+        }
+      ]
+    },
+    {
+      "claim": "included event IDs are unique and sorted lexicographically",
+      "spans": [
+        {
+          "file": "README.md",
+          "lines": [
+            40,
+            48,
+            49
+          ]
+        }
+      ]
+    },
+    {
+      "claim": "current export contains charge, refund, duplicate, pending and orphan examples",
+      "spans": [
+        {
+          "file": "current_export.csv",
+          "lines": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        }
+      ]
+    },
+    {
+      "claim": "order amounts and currencies",
+      "spans": [
+        {
+          "file": "orders.csv",
+          "lines": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8
+          ]
+        }
+      ]
+    }
+  ],
+  "acceptance_sha256": {
+    "test_reconcile_gold.py": "f19cd6d591d5576b381d7d281078ff0ad934965fe7574718ebe828cb86c4b7b9"
+  },
+  "acceptance": {
+    "gold_test": "test_reconcile_gold.py",
+    "predeclared_before_first_model_call": true
+  }
+}

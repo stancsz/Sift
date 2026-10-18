@@ -1,0 +1,10 @@
+{
+  "service": {"name": "worker"},
+  "logging": {
+    "file": "var/log/worker.log",
+    "level": "warning",
+    "max_bytes": 5242880,
+    "backup_count": 7,
+    "compress": true
+  }
+}
