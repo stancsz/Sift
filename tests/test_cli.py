@@ -8,7 +8,7 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 from unittest.mock import patch
 
-from sift.cli import _SiftHTTPServer, _compact_payload, _request_size_estimate, _upstream_url, build_parser
+from sift.cli import _SiftHTTPServer, _compact_payload, _request_size_estimate, _upstream_url, build_parser, main
 
 
 class _BackendHandler(BaseHTTPRequestHandler):
@@ -236,6 +236,16 @@ class CliTests(unittest.TestCase):
         ):
             with self.subTest(base_url=base_url), self.assertRaises(ValueError):
                 _upstream_url(base_url, "/v1/chat/completions")
+
+    def test_invalid_upstream_url_fails_cleanly_at_startup(self):
+        stderr = StringIO()
+        with patch("sys.argv", [
+            "sift", "serve", "--tokenizer", "byte-estimate",
+            "--base-url", "http://localhost:65536/v1",
+        ]):
+            with redirect_stderr(stderr):
+                self.assertEqual(main(), 1)
+        self.assertIn("base URL must be a valid http(s) URL with a valid port", stderr.getvalue())
 
 
 if __name__ == "__main__":
