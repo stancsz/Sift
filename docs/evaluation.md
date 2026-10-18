@@ -4,7 +4,7 @@ Sift is still a preview. These checks show what it currently does on selected te
 
 ## Local verification
 
-The current source snapshot passed `python -m pytest tests -q` (356 passed, 17 dependency warnings) in a clean Python 3.14 environment with the project-declared `.[litellm,test]` extras. The pull-request smoke commands passed 29 core, 3 invariant, and 7 CLI tests. `python benchmarks/compare.py` passed 100/100 authored middle-fact placements. These are offline software checks. On GitHub, the Python 3.12 pull-request core smoke passed; the full Python matrix was skipped for this PR and remains available on schedule or manual dispatch.
+The latest recorded full-suite runs on the PR branch passed all 361 tests in isolated Python 3.14.0 and Python 3.11.14 environments (17 dependency warnings in each run). Root-level `python -m pytest -q` works because discovery is scoped to `tests/`; this avoids duplicate-module collection from benchmark fixtures. `python benchmarks/compare.py` passed 100/100 authored middle-fact placements. These are offline software checks. Pull request #2 run [#173](https://github.com/stancsz/sift/actions/runs/39171698463) passed the 43-test Python 3.12 smoke in 18 seconds at head `01a1405`; its full compatibility matrix was skipped because the workflow runs that matrix on schedule or manual dispatch, not on every PR.
 
 ## LongBench v2
 
