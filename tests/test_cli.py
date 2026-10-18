@@ -2,7 +2,7 @@ import json
 from contextlib import redirect_stderr
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from io import StringIO
-from threading import Thread
+from threading import Event, Thread
 import unittest
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
@@ -15,6 +15,8 @@ class _BackendHandler(BaseHTTPRequestHandler):
     requests = []
     stream_body = b'data: {"choices":[]}\n\ndata: [DONE]\n\n'
     response_body = b'{"choices":[]}'
+    stream_gate = None
+    response_status = 200
 
     def do_POST(self):
         self.__class__.requests.append({
@@ -25,8 +27,9 @@ class _BackendHandler(BaseHTTPRequestHandler):
         if self.path != "/v1/chat/completions":
             self.send_error(404)
             return
-        body = self.stream_body if self.__class__.requests[-1]["payload"].get("stream") else self.response_body
-        self.send_response(200)
+        streaming = self.__class__.requests[-1]["payload"].get("stream")
+        body = self.stream_body if streaming else self.response_body
+        self.send_response(self.__class__.response_status)
         self.send_header("Content-Type", "text/event-stream" if b"data:" in body else "application/json")
         self.send_header("x-request-id", "fixture-request-123")
         self.send_header("x-ratelimit-remaining-requests", "7")
@@ -34,6 +37,13 @@ class _BackendHandler(BaseHTTPRequestHandler):
         self.send_header("x-internal-hop", "must-not-cross-proxy")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
+        if streaming and self.__class__.stream_gate is not None:
+            split = body.index(b"\n\n") + 2
+            self.wfile.write(body[:split])
+            self.wfile.flush()
+            self.__class__.stream_gate.wait(timeout=2)
+            self.wfile.write(body[split:])
+            return
         self.wfile.write(body)
 
     def log_message(self, *_args):
@@ -44,6 +54,8 @@ class CliTests(unittest.TestCase):
     def setUp(self):
         _BackendHandler.requests = []
         _BackendHandler.response_body = b'{"choices":[]}'
+        _BackendHandler.stream_gate = None
+        _BackendHandler.response_status = 200
         self.backend = ThreadingHTTPServer(("127.0.0.1", 0), _BackendHandler)
         self.backend_thread = Thread(target=self.backend.serve_forever, daemon=True)
         self.backend_thread.start()
@@ -127,10 +139,49 @@ class CliTests(unittest.TestCase):
         self.assertEqual(observed["payload"]["messages"][-1], payload["messages"][-1])
         self.assertLess(len(json.dumps(observed["payload"])), len(json.dumps(payload)))
 
+    def test_tool_turn_auth_and_upstream_error_are_forwarded(self):
+        _BackendHandler.response_status = 401
+        _BackendHandler.response_body = b'{"error":{"message":"unauthorized"}}'
+        self.proxy.api_key_env = "SIFT_TEST_API_KEY"
+        tool_call = {
+            "role": "assistant",
+            "tool_calls": [{"id": "call-1", "type": "function", "function": {"name": "lookup", "arguments": "{}"}}],
+        }
+        tool_result = {"role": "tool", "tool_call_id": "call-1", "content": "found it"}
+        payload = {
+            "model": "local",
+            "messages": [
+                {"role": "user", "content": "old log " * 2_000},
+                {"role": "user", "content": "Look up the result, then summarize it."},
+                tool_call,
+                tool_result,
+            ],
+        }
+        with patch.dict("os.environ", {"SIFT_TEST_API_KEY": "test-secret"}):
+            with self.assertRaises(HTTPError) as error:
+                self._send(payload)
+        self.assertEqual(error.exception.code, 401)
+        self.assertEqual(json.loads(error.exception.read()), {"error": {"message": "unauthorized"}})
+        self.assertEqual(error.exception.headers["x-sift-compacted"], "true")
+        error.exception.close()
+        observed = _BackendHandler.requests[-1]
+        self.assertEqual(observed["headers"]["Authorization"], "Bearer test-secret")
+        self.assertEqual(observed["payload"]["messages"][-3:], payload["messages"][-3:])
+
     def test_streaming_response_is_forwarded(self):
         payload = {"model": "local", "messages": [{"role": "user", "content": "hello"}], "stream": True}
         with self._send(payload) as response:
             self.assertEqual(response.headers["Content-Type"], "text/event-stream")
+            self.assertIn(b"data: [DONE]", response.read())
+
+    def test_streaming_forwards_available_events_before_upstream_finishes(self):
+        gate = Event()
+        _BackendHandler.stream_gate = gate
+        payload = {"model": "local", "messages": [{"role": "user", "content": "hello"}], "stream": True}
+        with self._send(payload) as response:
+            first_event = response.read1(128)
+            self.assertIn(b'data: {"choices":[]}', first_event)
+            gate.set()
             self.assertIn(b"data: [DONE]", response.read())
 
     def test_oversized_nonstream_upstream_response_is_rejected(self):

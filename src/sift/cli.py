@@ -235,7 +235,10 @@ class _SiftRequestHandler(BaseHTTPRequestHandler):
             self.send_header("Connection", "close")
             self.end_headers()
             try:
-                while chunk := upstream.read(65_536):
+                # HTTPResponse.read(size) may wait for the full size or EOF.
+                # read1 returns currently available bytes so short SSE events
+                # reach the client without waiting for a large buffer.
+                while chunk := upstream.read1(65_536):
                     self.wfile.write(f"{len(chunk):X}\r\n".encode("ascii") + chunk + b"\r\n")
                     self.wfile.flush()
                 self.wfile.write(b"0\r\n\r\n")
