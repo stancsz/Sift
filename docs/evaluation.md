@@ -4,7 +4,7 @@ Sift is still a preview. These checks show what it currently does on selected te
 
 ## Local verification
 
-The current source snapshot passed `python -m pytest tests -q` (356 passed, 17 dependency warnings) in a clean Python 3.14 environment with the project-declared `.[litellm,test]` extras. The pull-request smoke commands passed 29 core, 3 invariant, and 7 CLI tests. `python benchmarks/compare.py` passed 100/100 authored middle-fact placements. These are offline software checks. The revised workflow has not yet completed on GitHub.
+The current source snapshot passed `python -m pytest tests -q` (356 passed, 17 dependency warnings) in a clean Python 3.14 environment with the project-declared `.[litellm,test]` extras. The pull-request smoke commands passed 29 core, 3 invariant, and 7 CLI tests. `python benchmarks/compare.py` passed 100/100 authored middle-fact placements. These are offline software checks. On GitHub, the Python 3.12 pull-request core smoke passed; the full Python matrix was skipped for this PR and remains available on schedule or manual dispatch.
 
 ## LongBench v2
 
