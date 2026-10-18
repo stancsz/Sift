@@ -11,7 +11,7 @@
 [![MIT license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Release](https://img.shields.io/github/v/tag/stancsz/sift?label=release)](https://github.com/stancsz/sift/tags)
 
-The pull-request badge reports the Python 3.12 core, invariant, and CLI smoke checks. The full test suite and offline comparison run weekly and on manual dispatch; run them locally before a release with `python -m pytest tests -q` and `python benchmarks/compare.py`.
+Pull requests run a short Python 3.12 smoke over core behavior, invariants, the standalone CLI, and the local Ollama demo. The full test suite and offline comparison run weekly and on manual dispatch; run them locally before a release with `python -m pytest tests -q` and `python benchmarks/compare.py`.
 
 Sift is a deterministic, CPU-only context compressor for coding and research agents. It trims older chat and tool history to a configurable token budget while preserving the current request and active tool work exactly when they fit. If they do not fit, Sift fails closed. It makes no summarization call and adds no model dependency.
 
@@ -240,7 +240,7 @@ python -m pip install -e ".[litellm,test]"
 python -m pytest tests -q
 python benchmarks/compare.py
 ```
-The full offline suite runs locally with the commands above. Pull requests run a short core and invariant smoke check on Python 3.12; the full suite and offline comparison benchmark run across Python 3.11–3.14 weekly and on manual dispatch. The tests cover hard budgets, protocol preservation, active tool loops, append-only behavior inside fixed boundaries, diagnostic context, identifier joins, contradictory facts, unsupported inputs, and the LiteLLM callback.
+The full offline suite runs locally with the commands above. Pull requests run core, invariant, CLI, and Ollama-demo smoke checks on Python 3.12; the full suite and offline comparison benchmark run across Python 3.11–3.14 weekly and on manual dispatch. The tests cover hard budgets, protocol preservation, active tool loops, append-only behavior inside fixed boundaries, diagnostic context, identifier joins, contradictory facts, unsupported inputs, and the LiteLLM callback.
 
 The [native-agent guide](docs/native-agents.md) includes opt-in Claude Code and Codex runs, public development fixtures with separate gold checks, and an isolated LiteLLM comparison gateway. These source-checkout benchmarks are separate from the installed callback and make real model calls.
 
