@@ -26,6 +26,12 @@ A separate comparison on the public 503-question set has 446 matched scoreable a
 
 Receipt costs are provider-reported OpenRouter BYOK data, not invoice totals. Implicit caching was enabled. Request wall time excludes Sift preprocessing; it is not end-to-end agent speed. Treat both comparisons as descriptive development evidence only.
 
+### Prepared broader paired cohort (not run)
+
+A larger Full/Sift schedule is prepared for 344 questions selected by the historical modeled paired-fit screen from the same public 503-question set, with three repeats per arm (2,064 planned generations). These IDs and labels were exposed during development; a future run would broaden the exposed comparison, not create a holdout. The prepared schedule's historical-rate planning reserve is approximately $41.87, not a live quote or spending authorization. No inference for this schedule has been made. Before dispatch, reconcile the unresolved prior attempt and account exposure, refresh the exact MiniMax route and pricing, verify available credits, and obtain an explicit user-set cap sufficient for the refreshed reserve. Report exclusions and all failures alongside scoreable pairs.
+
+For new generalization evidence, use separately sourced held-out tasks with blinded answers and a frozen harness; LongBench v2's public set cannot serve as that holdout. See the [held-out quality and cost protocol](evals/quality-comparison-protocol-2026-10-16.md).
+
 ## Native-agent checks
 
 A single accepted research-audit task and several failed or inconclusive coding-agent tasks show why span retention alone is not enough. In the accepted task, compaction preserved the checked result, but the one warm/mixed-cache run had higher TTFT and whole-task time than Full. Other development runs found selector misses, context-limit errors, and increased request counts. These are task-specific observations, not an adoption study or a general Sift-caused outcome.
