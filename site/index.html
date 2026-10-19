@@ -16,29 +16,30 @@
     <section class="hero wrap" id="top" aria-labelledby="hero-title">
       <div class="hero-copy"><p class="eyebrow"><span class="live-dot"></span> Deterministic context filtering for coding agents</p>
         <h1 id="hero-title">A smaller prompt.<br><em>More room to work.</em></h1>
-        <p class="hero-lede">Sift ranks older history against the current request, keeping recent work exact when it fits. It can still drop useful context, so measure task quality on your workload. No extra model call.</p>
+        <p class="hero-lede">Give Sift an agent’s chat and its current task. It keeps recent turns exact when they fit, then selects older excerpts that match—so less history competes with the next step, without a summary-model call.</p>
+        <p class="hero-caveat">Selection can miss useful details. Measure task quality on your workload.</p>
         <div class="hero-actions"><a class="button button-dark" href="#start">Try it locally <span aria-hidden="true">↘</span></a><a class="text-link" href="https://github.com/stancsz/sift" target="_blank" rel="noreferrer">Read the source <span aria-hidden="true">↗</span></a></div>
         <ul class="trust-row" aria-label="Sift properties"><li><span aria-hidden="true">◈</span> Deterministic</li><li><span aria-hidden="true">⌁</span> No second model call</li><li><span aria-hidden="true">◉</span> Runs on your machine</li></ul>
       </div>
-      <div class="hero-art" aria-label="Illustrative diagram: a key-rotation request highlights an older matching conversation excerpt">
+      <div class="hero-art" aria-label="Illustrative, fictional example: Sift matches an older key-rotation decision to a current question and filters unrelated history">
         <div class="art-stamp">ILLUSTRATIVE · NOT MEASURED</div>
-        <div class="source-card"><div class="diagram-head"><span>INPUT / example-session</span><span>OLDER HISTORY</span></div>
+        <div class="source-card"><div class="diagram-head"><span>INPUT · LONG CHAT</span><span>OLDER HISTORY</span></div>
           <div class="source-query"><span>CURRENT TASK</span>Which key rotation did we decide?</div>
           <div class="source-lines" aria-hidden="true"><i></i><i></i></div>
-          <div class="source-match"><span class="match-dot"></span><span class="match-copy">“Rotate the key after export; keep the prior key active for one full reconciliation cycle.”</span></div>
-          <div class="source-noise" aria-hidden="true"><i></i><i></i></div>
+          <div class="source-match"><span class="match-dot"></span><span class="match-copy"><b>MATCHED · older billing note</b><br>“Rotate the key after export; keep the prior key active for one full reconciliation cycle.”</span></div>
+          <div class="source-noise"><span>FILTERED · routine build logs</span><span>FILTERED · unrelated status checks</span></div>
         </div>
         <div class="flow-arrow" aria-hidden="true"><span></span> sift <span></span></div>
-        <div class="kept-note"><div class="kept-top"><span class="kept-tag"><span></span> KEPT · VERBATIM</span><span>example excerpt</span></div><p>“Rotate the key after export; keep the prior key active for one full reconciliation cycle.”</p><div class="kept-foot"><span>fictional billing scenario</span><span>↗</span></div></div>
-        <div class="art-caption"><span class="caption-rule"></span> Match old evidence to the task at hand.</div>
+        <div class="kept-note"><div class="kept-top"><span class="kept-tag"><span></span> OUTPUT EXCERPT · KEPT VERBATIM</span><span>context for next step</span></div><p>“Rotate the key after export; keep the prior key active for one full reconciliation cycle.”</p><div class="kept-foot"><span>fictional older billing note</span><span>↗</span></div></div>
+        <div class="art-caption"><span class="caption-rule"></span> Relevant older evidence, carried forward.</div>
       </div><div class="vertical-note" aria-hidden="true">CONTEXT / CONTROL / CLARITY</div>
     </section>
     <section class="proof-band" id="proof" aria-labelledby="proof-title"><div class="wrap proof-grid">
       <div class="proof-intro"><p class="eyebrow">MEASURED · WITH THE CAVEATS INCLUDED</p><h2 id="proof-title">Less history in.<br>More room to work.</h2><p>In one matched LongBench v2 study, Sift cut provider-reported prompt tokens. The same run also showed a quality gap. Both belong in the headline.</p><a class="text-link" href="https://github.com/stancsz/sift/blob/main/docs/evals/longbench-v2-minimax-600-runner-2026-10-17.md">Read how it was measured <span aria-hidden="true">↗</span></a></div>
-      <div class="proof-number"><div class="big-number">65.8<span>%</span></div><p><strong>Prompt-token reduction</strong><br>in 600 matched responses</p><div class="mini-meter" aria-label="Full context 100 percent; Sift 34.2 percent"><div><span>FULL</span><i class="meter-full"></i></div><div><span>SIFT</span><i class="meter-sift"></i></div></div></div>
+      <div class="proof-number"><div class="big-number">65.8<span>%</span></div><p><strong>Prompt-token reduction</strong><br>600 responses · 300 per arm</p><div class="mini-meter" aria-label="Full context 100 percent; Sift 34.2 percent"><div><span>FULL</span><i class="meter-full"></i></div><div><span>SIFT</span><i class="meter-sift"></i></div></div></div>
       <div class="proof-caveat"><div class="caveat-label"><span class="caveat-mark">!</span> SAME RUN · QUALITY TRADEOFF</div><div class="gap-number">−4.36<span> pp</span></div><p><strong>Exact-choice accuracy gap</strong><br>vs full context in that run.</p><a href="https://github.com/stancsz/sift#longbench-v2-658-fewer-prompt-tokens">See the full table and limits <span aria-hidden="true">↗</span></a></div>
     </div><div class="wrap proof-footnote">100 previously exposed questions · 3 repeats per arm · not a blind holdout · structured-choice QA is not agent-loop success · <a href="https://github.com/stancsz/sift/blob/main/docs/evaluation.md">Full protocol &amp; limitations</a></div>
-      <div class="wrap proof-footnote">Separate broader run: 446 of 503 questions had matched scoreable answers; Sift was 1.1 percentage points lower and used 75.8% fewer provider prompt tokens. The one-repeat run is incomplete, uses the same publicly exposed dataset, and does not prove parity. <a href="https://github.com/stancsz/sift/blob/main/docs/results/longbench-v2-minimax-m3-fullsuite-progress-2026-10-17.md">See its status and limits</a>.</div></section>
+      <div class="wrap proof-footnote">Separate broader run: 446 of 503 questions had matched scoreable answers; Sift was 1.1 percentage points lower and used 75.8% fewer provider prompt tokens. For those pairs, a question-level bootstrap 95% interval was −6.1 to +3.6 pp for accuracy and 73.7% to 77.6% for token reduction; this does not establish parity. The one-repeat run is incomplete and uses the same publicly exposed dataset. <a href="https://github.com/stancsz/sift/blob/main/docs/results/longbench-v2-minimax-m3-fullsuite-progress-2026-10-17.md">See its status and limits</a>.</div></section>
     <section class="how-section wrap" id="how" aria-labelledby="how-title"><div class="section-head"><div><p class="eyebrow">THE MECHANISM</p><h2 id="how-title">A sieve, not a summary.</h2></div><p>No model decides what to remember. Sift ranks older evidence against the current task, carries nearby diagnostic lines and follows bounded links between identifiers.</p></div>
       <div class="steps-grid">
         <article class="step-card"><div class="step-index">01 / INTAKE</div><div class="step-glyph glyph-stack" aria-hidden="true"><i></i><i></i><i></i><i></i></div><h3>History gets heavy</h3><p>Tool output and routine chatter crowd out the one failure or decision that still matters.</p></article>
@@ -56,18 +57,24 @@ ollama pull qwen3.5:4b
 <span class="code-dim"># install from source (Python 3.11+)</span>
 git clone https://github.com/stancsz/sift.git
 cd sift
-python -m pip install -e .
+python -m venv .venv
 
-<span class="code-dim"># start Sift, then send the curl request shown below</span>
-sift serve \
+<span class="code-dim"># Windows PowerShell</span>
+.\.venv\Scripts\python.exe -m pip install -e .
+.\.venv\Scripts\python.exe -m sift.cli serve `
+  --base-url http://127.0.0.1:11434/v1 `
+  --target 4096 `
+  --tokenizer byte-estimate
+
+<span class="code-dim"># macOS / Linux</span>
+.venv/bin/python -m pip install -e .
+.venv/bin/python -m sift.cli serve \
   --base-url http://127.0.0.1:11434/v1 \
   --target 4096 \
   --tokenizer byte-estimate
 
-<span class="code-dim"># in another terminal: call through Sift</span>
-curl -i http://127.0.0.1:4011/v1/chat/completions \
-  -H 'Content-Type: application/json' \
-  -d '{"model":"qwen3.5:4b","messages":[{"role":"user","content":"Reply with the result of 1 + 1."}]}'</code></pre><div class="code-panel-foot"><span>Ollama must be running · Sift binds to localhost</span><span>NO LITELLM</span></div></div>
+<span class="code-dim"># second terminal: from the cloned repository root</span>
+python examples/ollama_compaction_demo.py --model qwen3.5:4b</code></pre><div class="code-panel-foot"><span>Confirms x-sift-compacted: true · synthetic demo</span><span>NO LITELLM</span></div></div>
       <div class="code-panel" id="panel-callback" role="tabpanel" aria-labelledby="tab-callback" hidden><div class="code-panel-head"><span class="terminal-dot"></span> PYTHON / LITELLM</div><pre><code><span class="code-dim"># install the tested release</span>
 python -m pip install \
   "sift-context[litellm] @ git+https://github.com/stancsz/sift.git@v0.10.0"

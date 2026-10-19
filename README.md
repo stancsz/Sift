@@ -11,7 +11,7 @@
 [![MIT license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Release](https://img.shields.io/github/v/tag/stancsz/sift?label=release)](https://github.com/stancsz/sift/tags)
 
-The pull-request badge reports the Python 3.12 core, invariant, and CLI smoke checks. The full test suite and offline comparison run weekly and on manual dispatch; run them locally before a release with `python -m pytest tests -q` and `python benchmarks/compare.py`.
+Pull requests run a short Python 3.12 smoke over core behavior, invariants, the standalone CLI, and the local Ollama demo. The full test suite and offline comparison run weekly and on manual dispatch; run them locally before a release with `python -m pytest tests -q` and `python benchmarks/compare.py`. To also check the standalone proxy with the OpenAI Python client (loopback fixtures only, no model request), install `python -m pip install -e ".[test,client-smoke]"` and run `python -m pytest tests/test_openai_sdk_compat.py -q`.
 
 Sift is a deterministic, CPU-only context compressor for coding and research agents. It trims older chat and tool history to a configurable token budget while preserving the current request and active tool work exactly when they fit. If they do not fit, Sift fails closed. It makes no summarization call and adds no model dependency.
 
@@ -20,41 +20,6 @@ Use Sift as a Python library, a **LiteLLM Proxy callback**, or the standalone `s
 [Open the project site](https://stancsz.github.io/sift/) · [Standalone CLI](#standalone-cli-no-litellm) · [LiteLLM quick start](#litellm-proxy) · [Measured LongBench results](#longbench-v2-658-fewer-prompt-tokens) · [How it works](docs/algorithm.md) · [Evaluation record](docs/evaluation.md)
 
 > **Preview release:** install the tested `v0.10.0` tag from GitHub today. It defaults to a 24,576-token target. The newer 32,768-token default is on unreleased `main` (`0.11.0.dev0`). Sift is not yet published to PyPI. See the [release roadmap](ROADMAP.md).
-
-### LongBench v2: 65.8% fewer prompt tokens
-
-Across 100 previously exposed LongBench v2 questions, three repeats per arm, Sift used **65.8% fewer provider-reported prompt tokens** and had **60.3% lower provider-reported upstream cost** than full context. This was a completed, matched MiniMax M3 study: 600 valid response receipts across Full and Sift.
-
-| Measure | Full context | With Sift | Difference |
-|---|---:|---:|---:|
-| Provider-reported prompt tokens | 24,245,610 | 8,281,452 | **65.8% fewer with Sift** |
-| Provider-reported upstream cost¹ | $3.2317 | $1.2842 | **60.3% lower with Sift** |
-| Exact-choice accuracy | 117/286 · 40.91% | 106/290 · 36.55% | −4.36 percentage points |
-| Equal-task-weighted accuracy | 39.83% | 36.67% | −3.16 percentage points |
-| Task majorities correct | 40/100 | 34/100 | 18 Full-only · 12 Sift-only |
-
-**The measured quality gap belongs with the token result.** This run does not establish quality parity, accepted-task quality, or performance on Claude Code or Codex agent workflows.
-
-**Scope:** 100 public development questions previously exposed during selector work, with three repeats clustered within each question—not a blind holdout or the full 503-question dataset. Five ambiguous original attempts were retried once; their token usage and costs are unknown and excluded, so both savings figures cover only the 600 responses with usage receipts. Five responses ended at the output limit and were unscorable. ¹The cost row sums OpenRouter's cache-inclusive `upstream_inference_cost` receipt field for BYOK requests; it is not a MiniMax invoice. Full context had 69.5% cached prompt tokens versus 60.4% for Sift, so the observed cost ratio depends on this run's cache behavior. No end-to-end speed claim is made.
-
-A separate, broader one-repeat run has 446 matched scoreable questions from the 503-question public dataset: Full scored 44.4%, Sift scored 43.3% (−1.1 percentage points), and Sift used 75.8% fewer provider-reported prompt tokens. That run is incomplete, and all questions were exposed during development; it does not demonstrate parity or generalization. See the [checkpoint and accounting](docs/results/longbench-v2-minimax-m3-fullsuite-progress-2026-10-17.md).
-
-[Protocol and complete-run status](docs/evals/longbench-v2-minimax-600-runner-2026-10-17.md) · [Aggregate result and hashes](docs/results/longbench-v2-minimax-600-2026-10-17.json) · [Earlier and ongoing evaluation work](docs/evaluation.md)
-
-### 32,768-token budget: premium-model rate examples
-
-This is a separate **rate-card illustration**, not the measured LongBench cost and not an Astra or Claude API run. It models one uncached request with the same 10,000 output tokens in both arms and a 32,768-token Sift forwarding target.
-
-| Model card | Full input | Full cost | With Sift | Modeled reduction |
-|---|---:|---:|---:|---:|
-| [GPT-6 Astra](https://developers.openai.com/api/docs/models/gpt-6-astra) | 500K | $10.75 | $0.83 | **92.3% · $9.92** |
-| [GPT-6 Astra](https://developers.openai.com/api/docs/models/gpt-6-astra) | 1M | $20.75 | $0.83 | **96.0% · $19.92** |
-| [Claude Opus 5.5](https://platform.claude.com/docs/en/models/opus-5-5/overview) | 500K | $2.20 | $0.33 | **85.0% · $1.87** |
-| [Claude Opus 5.5](https://platform.claude.com/docs/en/models/opus-5-5/overview) | 950K¹ | $4.00 | $0.33 | **91.7% · $3.67** |
-
-*Standard API rate arithmetic, equal task success and equal output, excluding cache, tools, retries, and hosting. GPT-6 Astra's long-context price applies to prompts above 272K; 950K leaves output room in Claude Opus 5.5's 1M context window. Rate cards checked 2026-10-18. These are modeled amounts, not measured savings or API bills; see [assumptions and calculations](docs/cost-comparison.md).*
-
-LongBench v2 measures structured-choice QA, not agent-loop completion. Other Qwen and MiniMax screens used different samples and had different outcomes; see the [evaluation record](docs/evaluation.md) rather than combining their scores.
 
 ## Quick start
 
@@ -66,19 +31,32 @@ The standalone Chat Completions proxy is on unreleased `main` (`0.11.0.dev0`). I
 ollama pull qwen3.5:4b
 git clone https://github.com/stancsz/sift.git
 cd sift
+python -m venv .venv
+```
+
+In **Windows PowerShell**, activate the environment and start Sift:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
 python -m pip install -e .
 sift serve --base-url http://127.0.0.1:11434/v1 --target 4096 --tokenizer byte-estimate
 ```
 
-In another terminal, send a request through Sift. The `x-sift-*` response headers show the estimated input size and whether Sift compacted this request:
+On **macOS/Linux**, use the matching activation command:
 
 ```sh
-curl -i http://127.0.0.1:4011/v1/chat/completions \
-  -H 'Content-Type: application/json' \
-  -d '{"model":"qwen3.5:4b","messages":[{"role":"user","content":"Reply with the result of 1 + 1."}]}'
+source .venv/bin/activate
+python -m pip install -e .
+sift serve --base-url http://127.0.0.1:11434/v1 --target 4096 --tokenizer byte-estimate
 ```
 
-This points Sift at Ollama's OpenAI-compatible endpoint. Configure another compatible client to use `http://127.0.0.1:4011/v1` and send the Ollama model name it already uses. For any other OpenAI-compatible backend, replace `--base-url`; provide a protected endpoint's key through `--api-key-env ENV_VAR`, with the secret stored in that environment variable.
+In a second terminal, go to the cloned repository root and run the demo. It sends an intentionally long deployment log, asks for a setting buried in the history, and prints the answer and Sift's estimated input/forwarded sizes:
+
+```sh
+python examples/ollama_compaction_demo.py --model qwen3.5:4b
+```
+
+The demo checks that `x-sift-compacted` is true; its generated rollout log puts the approved `initialDelaySeconds` value among routine polls. The scenario is synthetic and demonstrates request behavior, not answer quality. For your own client, use the OpenAI-compatible URL `http://127.0.0.1:4011/v1` and the model name your backend expects. For another compatible backend, replace `--base-url`; it must accept `POST /v1/chat/completions` and, when protected, standard Bearer authentication. Pass a protected endpoint's key through `--api-key-env ENV_VAR`, with the secret stored in that environment variable.
 
 `byte-estimate` is an explicit UTF-8 request-size estimate, **not the upstream model's tokenizer**. Sift enforces the target against this estimate, including message and tool-schema fields. Leave room for output and treat the target as estimate-relative; provider context fit is not guaranteed. Only OpenAI Chat Completions is supported by this standalone proxy. The existing LiteLLM callback remains the path for Anthropic Messages, Responses, and LiteLLM's provider-specific token counter.
 
@@ -137,6 +115,41 @@ curl http://127.0.0.1:4000/v1/chat/completions \
 The response should contain the backend's answer. This short request is below the Sift target and passes through unchanged. To confirm compaction, send a conversation whose estimated input exceeds the configured target and inspect `x-sift-compacted`, `x-sift-estimated-input-tokens`, and `x-sift-estimated-forwarded-tokens`. On Windows PowerShell, use `curl.exe`. Start with the target below your backend's input limit so there is room for output.
 
 The release install above is the fastest supported path. The unreleased `main` branch currently defaults to 32,768 estimated tokens (`0.11.0.dev0`); use it only if you intentionally want the development candidate. See the [full callback details](#litellm-callback-behavior-and-limits) and [direct library example](#use-the-library-directly).
+
+### LongBench v2: 65.8% fewer prompt tokens
+
+Across 100 previously exposed LongBench v2 questions, three repeats per arm, Sift used **65.8% fewer provider-reported prompt tokens** and had **60.3% lower provider-reported upstream cost** than full context. This was a completed, matched MiniMax M3 study: 600 valid response receipts across Full and Sift.
+
+| Measure | Full context | With Sift | Difference |
+|---|---:|---:|---:|
+| Provider-reported prompt tokens | 24,245,610 | 8,281,452 | **65.8% fewer with Sift** |
+| Provider-reported upstream cost¹ | $3.2317 | $1.2842 | **60.3% lower with Sift** |
+| Exact-choice accuracy | 117/286 · 40.91% | 106/290 · 36.55% | −4.36 percentage points |
+| Equal-task-weighted accuracy | 39.83% | 36.67% | −3.16 percentage points |
+| Task majorities correct | 40/100 | 34/100 | 18 Full-only · 12 Sift-only |
+
+**The measured quality gap belongs with the token result.** This run does not establish quality parity, accepted-task quality, or performance on Claude Code or Codex agent workflows.
+
+**Scope:** 100 public development questions previously exposed during selector work, with three repeats clustered within each question—not a blind holdout or the full 503-question dataset. Five ambiguous original attempts were retried once; their token usage and costs are unknown and excluded, so both savings figures cover only the 600 responses with usage receipts. Five responses ended at the output limit and were unscorable. ¹The cost row sums OpenRouter's cache-inclusive `upstream_inference_cost` receipt field for BYOK requests; it is not a MiniMax invoice. Full context had 69.5% cached prompt tokens versus 60.4% for Sift, so the observed cost ratio depends on this run's cache behavior. No end-to-end speed claim is made.
+
+A separate, broader one-repeat run has 446 matched scoreable questions from the 503-question public dataset: Full scored 44.4%, Sift scored 43.3% (−1.1 percentage points), and Sift used 75.8% fewer provider-reported prompt tokens. That run is incomplete, and all questions were exposed during development; it does not demonstrate parity or generalization. See the [checkpoint and accounting](docs/results/longbench-v2-minimax-m3-fullsuite-progress-2026-10-17.md).
+
+[Protocol and complete-run status](docs/evals/longbench-v2-minimax-600-runner-2026-10-17.md) · [Aggregate result and hashes](docs/results/longbench-v2-minimax-600-2026-10-17.json) · [Earlier and ongoing evaluation work](docs/evaluation.md)
+
+### 32,768-token budget: premium-model rate examples
+
+This is a separate **rate-card illustration**, not the measured LongBench cost and not an Astra or Claude API run. It models one uncached request with the same 10,000 output tokens in both arms and a 32,768-token Sift forwarding target.
+
+| Model card | Full input | Full cost | With Sift | Modeled reduction |
+|---|---:|---:|---:|---:|
+| [GPT-6 Astra](https://developers.openai.com/api/docs/models/gpt-6-astra) | 500K | $10.75 | $0.83 | **92.3% · $9.92** |
+| [GPT-6 Astra](https://developers.openai.com/api/docs/models/gpt-6-astra) | 1M | $20.75 | $0.83 | **96.0% · $19.92** |
+| [Claude Opus 5.5](https://platform.claude.com/docs/en/models/opus-5-5/overview) | 500K | $2.20 | $0.33 | **85.0% · $1.87** |
+| [Claude Opus 5.5](https://platform.claude.com/docs/en/models/opus-5-5/overview) | 950K¹ | $4.00 | $0.33 | **91.7% · $3.67** |
+
+*Standard API rate arithmetic, equal task success and equal output, excluding cache, tools, retries, and hosting. GPT-6 Astra's long-context price applies to prompts above 272K; 950K leaves output room in Claude Opus 5.5's 1M context window. Rate cards checked 2026-10-18. These are modeled amounts, not measured savings or API bills; see [assumptions and calculations](docs/cost-comparison.md).*
+
+LongBench v2 measures structured-choice QA, not agent-loop completion. Other Qwen and MiniMax screens used different samples and had different outcomes; see the [evaluation record](docs/evaluation.md) rather than combining their scores.
 
 ## The problem
 
@@ -202,15 +215,32 @@ Read [the algorithm and acceptance contract](docs/algorithm.md) for selection ru
 
 ## Reproduce and contribute
 
+Create a virtual environment before installing the test and LiteLLM extras to keep their dependencies isolated from other Python projects.
+
+Clone the repository:
 ```sh
 git clone https://github.com/stancsz/sift.git
 cd sift
+```
+
+**Windows PowerShell**
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 python -m pip install -e ".[litellm,test]"
 python -m pytest tests -q
 python benchmarks/compare.py
 ```
 
-The full offline suite runs locally with the commands above. Pull requests run a short core and invariant smoke check on Python 3.12; the full suite and offline comparison benchmark run across Python 3.11–3.14 weekly and on manual dispatch. The tests cover hard budgets, protocol preservation, active tool loops, append-only behavior inside fixed boundaries, diagnostic context, identifier joins, contradictory facts, unsupported inputs, and the LiteLLM callback.
+**macOS/Linux**
+```sh
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[litellm,test]"
+python -m pytest tests -q
+python benchmarks/compare.py
+```
+The full offline suite runs locally with the commands above. Pull requests run core, invariant, CLI, and Ollama-demo smoke checks on Python 3.12; the full suite and offline comparison benchmark run across Python 3.11–3.14 weekly and on manual dispatch. The tests cover hard budgets, protocol preservation, active tool loops, append-only behavior inside fixed boundaries, diagnostic context, identifier joins, contradictory facts, unsupported inputs, and the LiteLLM callback.
 
 The [native-agent guide](docs/native-agents.md) includes opt-in Claude Code and Codex runs, public development fixtures with separate gold checks, and an isolated LiteLLM comparison gateway. These source-checkout benchmarks are separate from the installed callback and make real model calls.
 
