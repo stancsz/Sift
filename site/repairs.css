@@ -73,4 +73,5 @@
   .estimate-note p{font-size:12px}
   .estimate-note>a{grid-column:2}
   .proof-caveat{padding-left:14px}
+  .code-panel pre{white-space:pre-wrap;overflow-wrap:anywhere}
 }
