@@ -35,6 +35,9 @@
 .estimate-note p{max-width:790px;color:#394238;font-size:12px;line-height:1.65}
 .estimate-note strong{color:#26382b}
 .estimate-note>a{padding-top:2px;white-space:nowrap}
+.kept-top{flex-direction:column;align-items:flex-start;gap:8px}
+.kept-top>span:last-child{font-size:10px;color:#d3d8ca}
+.proof-footnote{font:12px/1.65 var(--sans);color:#c1c9bb;letter-spacing:0}
 @media(max-width:900px){
   .hero{min-height:0;padding-block:58px 54px}
   .hero h1{font-size:clamp(49px,7.2vw,64px)}
@@ -60,6 +63,8 @@
   .kept-note{top:309px;right:1%;width:87%;padding:13px 15px 11px}
   .kept-note p{font-size:15px;margin:9px 0}
   .kept-top,.kept-foot{font-size:7px}
+  .kept-top{gap:6px}
+  .kept-top>span:last-child{font-size:8px}
   .art-stamp{font-size:7px}
   .art-caption{right:1%;bottom:0;font-size:7px}
   .gap-number{font-size:40px}
