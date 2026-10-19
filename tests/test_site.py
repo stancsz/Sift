@@ -72,6 +72,10 @@ class SiteSmokeTests(unittest.TestCase):
         self.assertIn("UTF-8/2 estimate", text)
         self.assertIn("not model tokens or answer-quality evidence", text)
 
+    def test_readme_links_directly_to_interactive_site_sample(self):
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("https://stancsz.github.io/sift/#try", readme)
+
 
 if __name__ == "__main__":
     unittest.main()
