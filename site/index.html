@@ -10,7 +10,7 @@
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
   <header class="topbar"><a class="brand" href="#top" aria-label="Sift home"><img src="assets/sift-logo.png" alt="" width="38" height="38"><span>sift<span class="brand-period">.</span></span></a>
-    <nav class="main-nav" aria-label="Main navigation"><a href="#how">How it works</a><a href="#proof">Evidence</a><a href="#start">Quick start</a><a class="nav-github" href="https://github.com/stancsz/sift" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a></nav>
+    <nav class="main-nav" aria-label="Main navigation"><a href="#how">How it works</a><a href="#proof">Evidence</a><a href="#try">Try a sample</a><a href="#start">Quick start</a><a class="nav-github" href="https://github.com/stancsz/sift" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a></nav>
   </header>
   <main id="main">
     <section class="hero wrap" id="top" aria-labelledby="hero-title">
@@ -40,6 +40,35 @@
       <div class="proof-caveat"><div class="caveat-label"><span class="caveat-mark">!</span> SAME RUN · QUALITY TRADEOFF</div><div class="gap-number">−4.36<span> pp</span></div><p><strong>Exact-choice accuracy gap</strong><br>vs full context in that run.</p><a href="https://github.com/stancsz/sift#longbench-v2-658-fewer-prompt-tokens">See the full table and limits <span aria-hidden="true">↗</span></a></div>
     </div><div class="wrap proof-footnote">100 previously exposed questions · 3 repeats per arm · not a blind holdout · structured-choice QA is not agent-loop success · <a href="https://github.com/stancsz/sift/blob/main/docs/evaluation.md">Full protocol &amp; limitations</a></div>
       <div class="wrap proof-footnote">Separate broader run: 446 of 503 questions had matched scoreable answers; Sift was 1.1 percentage points lower and used 75.8% fewer provider prompt tokens. For those pairs, a question-level bootstrap 95% interval was −6.1 to +3.6 pp for accuracy and 73.7% to 77.6% for token reduction; this does not establish parity. The one-repeat run is incomplete and uses the same publicly exposed dataset. <a href="https://github.com/stancsz/sift/blob/main/docs/results/longbench-v2-minimax-m3-fullsuite-progress-2026-10-17.md">See its status and limits</a>.</div></section>
+    <section class="try-section wrap" id="try" aria-labelledby="try-title">
+      <div class="try-intro"><p class="eyebrow">A REAL LOCAL COMPACTION · NO MODEL CALL</p><h2 id="try-title">Find the fix inside 120 routine polls.</h2><p>An agent asks about a rollout. Sift keeps the old setting change and its replacement available, while removing most of the repetitive log from the request.</p></div>
+      <div class="try-demo">
+        <div class="try-controls" role="group" aria-label="Choose the request view">
+          <button type="button" class="try-toggle" data-demo-view="full" aria-pressed="false">Full request <span>4,587 estimated units</span></button>
+          <button type="button" class="try-toggle" data-demo-view="sift" aria-pressed="true">With Sift <span>1,956 forwarded</span></button>
+        </div>
+        <div class="try-content" id="try-full" hidden>
+          <div class="try-content-head"><span>LONG ROLLOUT HISTORY</span><span>120 routine polls + 1 finding</span></div>
+          <div class="log-list" aria-label="Representative routine poll lines">
+            <code>kubelet poll #000: atlas-api pod ready · revision r1842</code>
+            <code>kubelet poll #001: atlas-api pod ready · no new events</code>
+            <code>kubelet poll #002: atlas-api pod ready · no new events</code>
+            <code class="log-muted">… 27 repetitive polls …</code>
+            <code class="log-key">09:31 rollout finding: prior initialDelaySeconds=5; operator-approved fix=25</code>
+            <code class="log-muted">… 89 repetitive polls …</code>
+          </div>
+          <p class="try-question"><span>CURRENT QUESTION · EXACT FIXTURE TEXT</span>What readiness-probe initialDelaySeconds value did the operator approve, and why?</p>
+        </div>
+        <div class="try-content" id="try-sift" aria-live="polite">
+          <div class="try-content-head"><span>COMPACTED REQUEST</span><span>57% fewer estimated units</span></div>
+          <p class="try-context">Current question stays exact: “What readiness-probe initialDelaySeconds value did the operator approve, and why?”</p>
+          <blockquote class="try-excerpt"><span>ONE OF 14 SELECTED EXCERPTS · VERBATIM</span><p>“readiness probe used initialDelaySeconds=5; operator-approved fix is initialDelaySeconds=25. Image and database checks passed.”</p></blockquote>
+          <p class="try-result"><span>AVAILABLE TO THE AGENT</span><strong>25 seconds approved · 5 seconds before</strong></p>
+        </div>
+        <div class="try-foot"><span>Actual compactor output · representative excerpt · synthetic fixture · offline</span><span>UTF-8/2 estimate, target 2,048; not model tokens or answer-quality evidence.</span></div>
+      </div>
+      <a class="text-link try-link" href="#start">Run the same example with Ollama <span aria-hidden="true">↘</span></a>
+    </section>
     <section class="how-section wrap" id="how" aria-labelledby="how-title"><div class="section-head"><div><p class="eyebrow">THE MECHANISM</p><h2 id="how-title">A sieve, not a summary.</h2></div><p>No model decides what to remember. Sift ranks older evidence against the current task, carries nearby diagnostic lines and follows bounded links between identifiers.</p></div>
       <div class="steps-grid">
         <article class="step-card"><div class="step-index">01 / INTAKE</div><div class="step-glyph glyph-stack" aria-hidden="true"><i></i><i></i><i></i><i></i></div><h3>History gets heavy</h3><p>Tool output and routine chatter crowd out the one failure or decision that still matters.</p></article>
