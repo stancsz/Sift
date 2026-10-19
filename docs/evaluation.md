@@ -38,7 +38,7 @@ A separate prepared schedule covers 344 questions selected by a historical model
 - [Prepared 344-question manifest](evals/longbench-v2-minimax-344-prepared-2026-10-18.json)
 - [Offline cost and route planning audit](evals/longbench-v2-minimax-fullsuite-offline-cost-audit-2026-10-18.json)
 
-For new generalization evidence, use separately sourced held-out tasks with blinded answers and a frozen harness; LongBench v2's public set cannot serve as that holdout. AppWorld `test_challenge` is under consideration as an aggregate-only agent-task validation source. It has not been run; its [source review and protocol](evals/agent-holdout-source-review-2026-10-18.md) requires an aggregate-only output rehearsal before any test access and rules out task-level error analysis.
+For new generalization evidence, use separately sourced held-out tasks with blinded answers and a frozen harness; LongBench v2's public set cannot serve as that holdout. AppWorld `test_challenge` is parked, not run: its official runner writes a task-ID keyed evaluator JSON map and per-task reports with assertion details, and the public data download is bundle-wide rather than split-scoped. The [source review and frozen protocol](evals/agent-holdout-source-review-2026-10-18.md) require an independently reviewed output quarantine rehearsal before any test access and rule out task-level error analysis. No bundle was downloaded; resume only if a verified test-free rehearsal path becomes available.
 
 ## Native-agent checks
 
