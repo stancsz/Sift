@@ -9,6 +9,7 @@ from urllib.request import Request, urlopen
 from unittest.mock import patch
 
 from sift.cli import _SiftHTTPServer, _compact_payload, _request_size_estimate, _upstream_url, build_parser, main
+from sift.core import _render
 
 
 class _BackendHandler(BaseHTTPRequestHandler):
@@ -145,6 +146,7 @@ class CliTests(unittest.TestCase):
         self.proxy.api_key_env = "SIFT_TEST_API_KEY"
         tool_call = {
             "role": "assistant",
+            "reasoning": "provider-specific opaque metadata " * 20,
             "tool_calls": [{"id": "call-1", "type": "function", "function": {"name": "lookup", "arguments": "{}"}}],
         }
         tool_result = {"role": "tool", "tool_call_id": "call-1", "content": "found it"}
@@ -155,6 +157,7 @@ class CliTests(unittest.TestCase):
                 {"role": "user", "content": "Look up the result, then summarize it."},
                 tool_call,
                 tool_result,
+                {"role": "user", "content": "What did the tool find?"},
             ],
         }
         with patch.dict("os.environ", {"SIFT_TEST_API_KEY": "test-secret"}):
@@ -163,10 +166,62 @@ class CliTests(unittest.TestCase):
         self.assertEqual(error.exception.code, 401)
         self.assertEqual(json.loads(error.exception.read()), {"error": {"message": "unauthorized"}})
         self.assertEqual(error.exception.headers["x-sift-compacted"], "true")
+        self.assertLessEqual(
+            int(error.exception.headers["x-sift-estimated-forwarded-tokens"]),
+            2_000,
+        )
         error.exception.close()
         observed = _BackendHandler.requests[-1]
         self.assertEqual(observed["headers"]["Authorization"], "Bearer test-secret")
-        self.assertEqual(observed["payload"]["messages"][-3:], payload["messages"][-3:])
+        self.assertEqual(observed["payload"]["messages"][-3]["reasoning"], tool_call["reasoning"])
+        self.assertEqual(observed["payload"]["messages"][-4:], payload["messages"][-4:])
+
+    def test_reasoning_extension_outside_protected_tool_cycle_is_rejected(self):
+        payload = {
+            "model": "local",
+            "messages": [
+                {"role": "assistant", "content": "Earlier note", "reasoning": "opaque"},
+                {"role": "user", "content": "old log " * 2_000},
+                {"role": "user", "content": "What happened?"},
+            ],
+        }
+        with self.assertRaises(HTTPError) as error:
+            self._send(payload)
+        self.assertEqual(error.exception.code, 413)
+        self.assertEqual(json.loads(error.exception.read()), {
+            "error": "unsupported_content",
+            "detail": "unsupported message fields in compacted request",
+        })
+        error.exception.close()
+        self.assertEqual(_BackendHandler.requests, [])
+
+    def test_reasoning_is_opaque_and_other_unknown_fields_stay_rejected(self):
+        tool_call = {
+            "role": "assistant",
+            "content": "",
+            "reasoning": "must not be rendered as evidence",
+            "tool_calls": [{"id": "call-1", "type": "function", "function": {
+                "name": "lookup", "arguments": "{}",
+            }}],
+        }
+        without_reasoning = {key: value for key, value in tool_call.items() if key != "reasoning"}
+        self.assertEqual(_render(tool_call, allow_active_reasoning=True), _render(without_reasoning))
+
+        payload = {
+            "model": "local",
+            "messages": [
+                {"role": "user", "content": "old log " * 2_000},
+                {"role": "user", "content": "Look up the result."},
+                {**tool_call, "vendor_extension": "unrecognized"},
+                {"role": "tool", "tool_call_id": "call-1", "content": "found it"},
+                {"role": "user", "content": "What did the tool find?"},
+            ],
+        }
+        with self.assertRaises(HTTPError) as error:
+            self._send(payload)
+        self.assertEqual(error.exception.code, 413)
+        error.exception.close()
+        self.assertEqual(_BackendHandler.requests, [])
 
     def test_streaming_response_is_forwarded(self):
         payload = {"model": "local", "messages": [{"role": "user", "content": "hello"}], "stream": True}

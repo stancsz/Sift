@@ -243,8 +243,9 @@ def _text(content: Any, *, allow_none: bool = False) -> str:
     return "\n".join(parts)
 
 
-def _render(message: dict[str, Any]) -> str:
-    if message.keys() - _MESSAGE_KEYS:
+def _render(message: dict[str, Any], *, allow_active_reasoning: bool = False) -> str:
+    allowed_keys = _MESSAGE_KEYS | ({"reasoning"} if allow_active_reasoning else set())
+    if message.keys() - allowed_keys:
         raise CompactionError("unsupported message fields in compacted request", code="unsupported_content")
     if message.get("role") not in {"system", "developer", "user", "assistant", "tool", "function"}:
         raise CompactionError("unsupported message role in compacted request", code="unsupported_content")
@@ -284,6 +285,62 @@ def _starts_tool_cycle(message: dict[str, Any], protocol: Protocol) -> bool:
         isinstance(block, dict) and block.get("type") == "tool_use"
         for block in content
     )
+
+
+def _protected_recent_tool_calls(
+    messages: list[dict[str, Any]], count_tokens: TokenCounter, *, target: int,
+    protocol: Protocol, instruction_end: int, latest_user: int,
+) -> set[int]:
+    """Return tool-call message indexes the default path retains verbatim."""
+    active = messages[:instruction_end] + messages[latest_user:]
+    active_count = _count(count_tokens, active)
+    if active_count >= target - 256:
+        cycle_starts = [index for index in range(latest_user + 1, len(messages))
+                        if _starts_tool_cycle(messages[index], protocol)]
+        if not cycle_starts:
+            return set()
+        tail_start = cycle_starts[-1]
+        essential = messages[:instruction_end] + [messages[latest_user]] + messages[tail_start:]
+        essential_count = _count(count_tokens, essential)
+        if essential_count >= target - 256:
+            return set()
+        recent_budget = min(8_192, (target - essential_count) // 2)
+        retained_cycles = 1
+        for index in reversed(cycle_starts[:-1]):
+            candidate_count = _count(
+                count_tokens,
+                messages[:instruction_end] + [messages[latest_user]] + messages[index:],
+            )
+            if candidate_count >= target - 256 or candidate_count - essential_count > recent_budget:
+                break
+            tail_start = index
+            retained_cycles += 1
+            if retained_cycles == 4:
+                break
+        barrier_index = ((len(cycle_starts) - 1) // 4) * 4
+        barrier_start = cycle_starts[barrier_index]
+        if _count(
+            count_tokens,
+            messages[:instruction_end] + [messages[latest_user]] + messages[barrier_start:],
+        ) < target - 256:
+            tail_start = barrier_start
+        return {index for index in cycle_starts if index >= tail_start}
+
+    recent_start = latest_user
+    recent_budget = min(8_192, (target - active_count) // 2)
+    retained_turns = 0
+    for index in range(latest_user - 1, instruction_end - 1, -1):
+        if not _real_user(messages[index], protocol):
+            continue
+        candidate_count = _count(count_tokens, messages[:instruction_end] + messages[index:])
+        if candidate_count >= target - 256 or candidate_count - active_count > recent_budget:
+            break
+        recent_start = index
+        retained_turns += 1
+        if retained_turns == 4:
+            break
+    return {index for index in range(recent_start, len(messages))
+            if _starts_tool_cycle(messages[index], protocol)}
 
 
 def _record_line(text: str) -> bool:
@@ -2325,8 +2382,6 @@ def compact_messages(
         })
     if protocol not in {"openai", "anthropic"}:
         raise CompactionError("unsupported protocol", code="unsupported_protocol")
-    for msg in messages:
-        _render(msg)
     instruction_end = 0
     while instruction_end < len(messages) and messages[instruction_end].get("role") in {"system", "developer"}:
         instruction_end += 1
@@ -2334,6 +2389,29 @@ def compact_messages(
                         if _real_user(messages[i], protocol)), -1)
     if latest_user < instruction_end:
         raise CompactionError("no active user turn", code="active_too_large")
+    has_late_instructions = any(
+        msg.get("role") in {"system", "developer"}
+        for msg in messages[instruction_end:latest_user]
+    )
+    custom_selection = (
+        research_relation_closure or complete_record_groups
+        or query_directed_labels or field_pruning
+    )
+    protected_reasoning_indices = (
+        _protected_recent_tool_calls(
+            messages, count_tokens, target=target, protocol=protocol,
+            instruction_end=instruction_end, latest_user=latest_user,
+        )
+        if not custom_selection and not has_late_instructions else set()
+    )
+    for index, msg in enumerate(messages):
+        allow_reasoning = (
+            index in protected_reasoning_indices
+            and msg.get("role") == "assistant"
+            and "reasoning" in msg
+            and _starts_tool_cycle(msg, protocol)
+        )
+        _render(msg, allow_active_reasoning=allow_reasoning)
     if query_directed_labels:
         if protocol != "openai":
             raise CompactionError(
@@ -2397,7 +2475,7 @@ def compact_messages(
             instruction_end=instruction_end, latest_user=latest_user, raw=raw,
             require_complete_groups=complete_record_groups,
         )
-    if any(msg.get("role") in {"system", "developer"} for msg in messages[instruction_end:latest_user]):
+    if has_late_instructions:
         return _compact_with_late_instruction_anchors(
             messages, count_tokens, target=target, protocol=protocol,
             instruction_end=instruction_end, latest_user=latest_user, raw=raw,
