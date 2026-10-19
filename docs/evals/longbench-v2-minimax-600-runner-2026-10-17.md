@@ -68,6 +68,17 @@ and answer differences do not reveal which evidence omission caused them.
 This run is not a blind holdout and does not establish quality parity, cost
 savings, or accepted-task quality in Claude Code or Codex.
 
+Collapsing each question's three repeats into one paired task-majority outcome
+gives Full 40/100 versus Sift 34/100 (−6 percentage points). A deterministic
+20,000-resample bootstrap over the 100 question-level majority pairs gives a
+95% percentile interval of **−17 to +5 percentage points**. The exact two-sided
+McNemar diagnostic is *p* = 0.361595 across the 30 discordant question pairs.
+This unit is the question-level majority, not an individual response. The
+interval reflects resampling variability within this exposed development
+cohort; it does not establish parity, non-inferiority, or generalization. The
+published four-cell aggregate is sufficient to reproduce this calculation;
+task-level rows are not retained.
+
 The raw report and frozen request bundle are retained outside this repository. The public aggregate-only result records the completed comparison without request bodies, response text, or provider identifiers.
 
 The receipt totals above are provider-reported study data, not an account statement. Any new paid evaluation requires a fresh numeric cap, reconciliation of unsettled exposure, and a current billing-headroom check.
@@ -82,3 +93,10 @@ Build the deterministic offline bundle (no API key read and no network call):
 ```
 
 The completed run can be audited offline from its aggregate-only result and frozen bundle. Raw request and response bodies are intentionally not included in this repository. Do not repeat a paid run without a new frozen schedule, current provider checks, and fresh explicit authorization.
+
+Reproduce the paired task-majority and matched-pair bootstrap summaries without
+provider calls:
+
+```powershell
+python benchmarks/bootstrap_longbench_v2_pairs.py
+```

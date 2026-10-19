@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import random
 from pathlib import Path
 from typing import Any
@@ -14,6 +15,7 @@ from typing import Any
 DEFAULT_INPUT = Path(
     "docs/results/longbench-v2-minimax-m3-fullsuite-paired-aggregate-2026-10-17.json"
 )
+DEFAULT_TASK_MAJORITY_INPUT = Path("docs/results/longbench-v2-minimax-600-2026-10-17.json")
 
 
 def percentile(sorted_values: list[float], probability: float) -> float:
@@ -116,14 +118,73 @@ def analyze(data: dict[str, Any], rows: list[dict[str, Any]], source_sha256: str
     }
 
 
+def analyze_task_majorities(data: dict[str, Any], source_sha256: str,
+                            replicates: int = 20_000, seed: int = 20261018) -> dict[str, Any]:
+    """Bootstrap paired task-majority cells, keeping the question as the unit."""
+    cells = data["scores"]["paired_task_majorities"]
+    labels = ("both_correct", "full_only", "sift_only", "neither_correct")
+    counts = [cells[label] for label in labels]
+    n = sum(counts)
+    expected_n = data["schedule"]["distinct_questions"]
+    if n != expected_n or n < 1:
+        raise ValueError("Task-majority cells must cover every scheduled question")
+    if data["scores"]["full_context"]["tasks_with_scorable_responses"] != n:
+        raise ValueError("Full task-majority denominator does not cover every question")
+    if data["scores"]["sift"]["tasks_with_scorable_responses"] != n:
+        raise ValueError("Sift task-majority denominator does not cover every question")
+    if replicates < 1:
+        raise ValueError("replicates must be positive")
+
+    full_only, sift_only = cells["full_only"], cells["sift_only"]
+    differences: list[float] = []
+    rng = random.Random(seed)
+    for _ in range(replicates):
+        sample = rng.choices(labels, weights=counts, k=n)
+        differences.append(100 * (sample.count("sift_only") - sample.count("full_only")) / n)
+    differences.sort()
+    discordant = full_only + sift_only
+    tail = sum(math.comb(discordant, i) for i in range(min(full_only, sift_only) + 1)) / (2**discordant)
+    exact_mcnemar_p = min(1.0, 2 * tail)
+    full_correct = cells["both_correct"] + full_only
+    sift_correct = cells["both_correct"] + sift_only
+    return {
+        "paired_questions": n,
+        "source_aggregate_sha256": source_sha256,
+        "bootstrap": {"method": "paired task-majority percentile bootstrap", "replicates": replicates, "seed": seed},
+        "full_task_majorities_correct": full_correct,
+        "sift_task_majorities_correct": sift_correct,
+        "task_majority_delta_sift_minus_full_percentage_points": round(100 * (sift_correct - full_correct) / n, 4),
+        "task_majority_delta_95_percentile_interval_percentage_points": [
+            round(percentile(differences, 0.025), 4),
+            round(percentile(differences, 0.975), 4),
+        ],
+        "exact_mcnemar_two_sided_p_descriptive": round(exact_mcnemar_p, 6),
+        "interpretation_limit": (
+            "One unit is a paired question-level majority, not a response. The exposed selected "
+            "cohort's interval describes task-sampling uncertainty and does not establish holdout "
+            "performance, parity, non-inferiority, or generalization."
+        ),
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("aggregate", nargs="?", type=Path, default=DEFAULT_INPUT)
+    parser.add_argument("--task-majority-aggregate", type=Path, default=DEFAULT_TASK_MAJORITY_INPUT)
     parser.add_argument("--replicates", type=int, default=20_000)
     parser.add_argument("--seed", type=int, default=20261018)
     args = parser.parse_args()
     data, rows, source_sha256 = load_rows(args.aggregate)
-    print(json.dumps(analyze(data, rows, source_sha256, args.replicates, args.seed), indent=2))
+    majority_raw = args.task_majority_aggregate.read_bytes()
+    majority_data = json.loads(majority_raw)
+    output = {
+        "schema_version": 1,
+        "matched_scoreable_pairs": analyze(data, rows, source_sha256, args.replicates, args.seed),
+        "three_repeat_task_majorities": analyze_task_majorities(
+            majority_data, hashlib.sha256(majority_raw).hexdigest(), args.replicates, args.seed
+        ),
+    }
+    print(json.dumps(output, indent=2))
     return 0
 
 

@@ -1,6 +1,6 @@
 import json
 
-from benchmarks.bootstrap_longbench_v2_pairs import analyze, load_rows
+from benchmarks.bootstrap_longbench_v2_pairs import analyze, analyze_task_majorities, load_rows
 
 
 def _aggregate():
@@ -53,3 +53,27 @@ def test_bootstrap_rejects_aggregate_mismatch(tmp_path):
         assert "correctness cells" in str(exc)
     else:
         raise AssertionError("Expected mismatched aggregate to fail validation")
+
+
+def test_task_majority_bootstrap_uses_question_level_cells():
+    data = {
+        "schedule": {"distinct_questions": 4},
+        "scores": {
+            "full_context": {"tasks_with_scorable_responses": 4},
+            "sift": {"tasks_with_scorable_responses": 4},
+            "paired_task_majorities": {
+                "both_correct": 1,
+                "full_only": 1,
+                "sift_only": 0,
+                "neither_correct": 2,
+            },
+        },
+    }
+
+    result = analyze_task_majorities(data, "synthetic", replicates=200, seed=7)
+
+    assert result["full_task_majorities_correct"] == 2
+    assert result["sift_task_majorities_correct"] == 1
+    assert result["task_majority_delta_sift_minus_full_percentage_points"] == -25
+    assert "paired response" not in result["interpretation_limit"]
+    assert result == analyze_task_majorities(data, "synthetic", replicates=200, seed=7)
