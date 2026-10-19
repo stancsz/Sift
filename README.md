@@ -17,7 +17,7 @@ Sift is a deterministic, CPU-only context compressor for coding and research age
 
 Use Sift as a Python library, a **LiteLLM Proxy callback**, or the standalone `sift` CLI with Ollama or another OpenAI-compatible endpoint. On supported backends, stable history between tool-cycle boundaries can also help prefix-cache reuse.
 
-[Open the project site](https://stancsz.github.io/sift/) · [Standalone CLI](#standalone-cli-no-litellm) · [LiteLLM quick start](#litellm-proxy) · [Measured LongBench results](#longbench-v2-658-fewer-prompt-tokens) · [How it works](docs/algorithm.md) · [Evaluation record](docs/evaluation.md)
+[Try the interactive compaction sample](https://stancsz.github.io/sift/#try) · [Project site](https://stancsz.github.io/sift/) · [Standalone CLI](#standalone-cli-no-litellm) · [LiteLLM quick start](#litellm-proxy) · [Measured LongBench results](#longbench-v2-658-fewer-prompt-tokens) · [How it works](docs/algorithm.md) · [Evaluation record](docs/evaluation.md)
 
 > **Preview release:** install the tested `v0.10.0` tag from GitHub today. It defaults to a 24,576-token target. The newer 32,768-token default is on unreleased `main` (`0.11.0.dev0`). Sift is not yet published to PyPI. See the [release roadmap](ROADMAP.md).
 
@@ -226,6 +226,7 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -e ".[litellm,test]"
 python -m pytest tests -q
+node tests/test_site_demo.js
 python benchmarks/compare.py
 ```
 
@@ -235,9 +236,10 @@ python -m venv .venv
 source .venv/bin/activate
 python -m pip install -e ".[litellm,test]"
 python -m pytest tests -q
+node tests/test_site_demo.js
 python benchmarks/compare.py
 ```
-The full offline suite runs locally with the commands above. Pull requests run core, invariant, CLI, and Ollama-demo smoke checks on Python 3.12; the full suite and offline comparison benchmark run across Python 3.11–3.14 weekly and on manual dispatch. The tests cover hard budgets, protocol preservation, active tool loops, append-only behavior inside fixed boundaries, diagnostic context, identifier joins, contradictory facts, unsupported inputs, and the LiteLLM callback.
+The full offline Python suite runs locally with the commands above. The standalone Node check exercises both GitHub Pages demo buttons and needs no npm packages. Pull requests run core, invariant, CLI, site, and Ollama-demo smoke checks on Python 3.12; the full suite and offline comparison benchmark run across Python 3.11–3.14 weekly and on manual dispatch. The tests cover hard budgets, protocol preservation, active tool loops, append-only behavior inside fixed boundaries, diagnostic context, identifier joins, contradictory facts, unsupported inputs, and the LiteLLM callback.
 
 The [native-agent guide](docs/native-agents.md) includes opt-in Claude Code and Codex runs, public development fixtures with separate gold checks, and an isolated LiteLLM comparison gateway. These source-checkout benchmarks are separate from the installed callback and make real model calls.
 

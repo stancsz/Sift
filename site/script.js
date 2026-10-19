@@ -21,4 +21,16 @@
       select(next, true);
     });
   });
+
+  const demoToggles = [...document.querySelectorAll('[data-demo-view]')];
+  demoToggles.forEach((toggle) => {
+    toggle.addEventListener('click', () => {
+      const showSift = toggle.dataset.demoView === 'sift';
+      document.getElementById('try-full').hidden = showSift;
+      document.getElementById('try-sift').hidden = !showSift;
+      demoToggles.forEach((button) => {
+        button.setAttribute('aria-pressed', String(button === toggle));
+      });
+    });
+  });
 })();
