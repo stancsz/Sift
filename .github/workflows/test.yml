@@ -37,6 +37,7 @@ jobs:
           "$RUNNER_TEMP/sift-wheel-venv/bin/python" -m pip install --no-deps "$RUNNER_TEMP"/sift-wheel/*.whl
           "$RUNNER_TEMP/sift-wheel-venv/bin/sift" serve --help
           "$RUNNER_TEMP/sift-wheel-venv/bin/python" -c "import importlib.util; assert importlib.util.find_spec('litellm') is None"
+          "$RUNNER_TEMP/sift-wheel-venv/bin/python" -m unittest discover -s tests -p test_cli.py -q
       - run: python -m unittest discover -s tests -p test_core.py -q
       - run: python -m unittest discover -s tests -p test_invariants.py -q
       - run: python -m unittest discover -s tests -p test_cli.py -q
