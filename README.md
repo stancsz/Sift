@@ -25,34 +25,31 @@ Use Sift as a Python library, a **LiteLLM Proxy callback**, or the standalone `s
 
 ### Standalone CLI (no LiteLLM)
 
-The standalone Chat Completions proxy is on unreleased `main` (`0.11.0.dev0`). It uses only Python's standard library, binds to `127.0.0.1`, preserves tools and streamed responses, and forwards requests only after a client sends them. Install [Ollama](https://ollama.com/) first and start `ollama serve` if its local service is not already running. Then pull a model and install Sift:
+The standalone Chat Completions proxy is on unreleased `main` (`0.11.0.dev0`). It uses only Python's standard library, binds to `127.0.0.1`, preserves tools and streamed responses, and forwards requests only after a client sends them. No LiteLLM install or manual repository checkout is needed to run the CLI. With Python 3.11+ and Git, install the development candidate into a virtual environment:
 
-```sh
-ollama pull qwen3.5:4b
-git clone https://github.com/stancsz/sift.git
-cd sift
-python -m venv .venv
-```
-
-In **Windows PowerShell**, activate the environment and start Sift:
+**Windows PowerShell:**
 
 ```powershell
-.\.venv\Scripts\Activate.ps1
-python -m pip install -e .
-sift serve --base-url http://127.0.0.1:11434/v1 --target 4096 --tokenizer byte-estimate
+py -m venv .venv
+.\.venv\Scripts\python.exe -m pip install "sift-context @ git+https://github.com/stancsz/sift.git@main"
+.\.venv\Scripts\python.exe -m sift.cli serve --base-url http://127.0.0.1:11434/v1 --target 4096 --tokenizer byte-estimate
 ```
 
-On **macOS/Linux**, use the matching activation command:
+**macOS/Linux:**
 
 ```sh
-source .venv/bin/activate
-python -m pip install -e .
-sift serve --base-url http://127.0.0.1:11434/v1 --target 4096 --tokenizer byte-estimate
+python3 -m venv .venv
+.venv/bin/python -m pip install "sift-context @ git+https://github.com/stancsz/sift.git@main"
+.venv/bin/sift serve --base-url http://127.0.0.1:11434/v1 --target 4096 --tokenizer byte-estimate
 ```
 
-In a second terminal, go to the cloned repository root and run the demo. It sends an intentionally long deployment log, asks for a setting buried in the history, and prints the answer and Sift's estimated input/forwarded sizes:
+Install [Ollama](https://ollama.com/), start `ollama serve` if its local service is not already running, and pull a model with `ollama pull qwen3.5:4b`. For another OpenAI-compatible backend, replace `--base-url`; use `--api-key-env ENV_VAR` to read a protected endpoint's key from an environment variable. Point your client at `http://127.0.0.1:4011/v1`.
+
+To run the bundled demonstration, open a second terminal and clone the repository. The script sends an intentionally long deployment log, asks for a setting buried in the history, and prints the answer and Sift's estimated input/forwarded sizes:
 
 ```sh
+git clone https://github.com/stancsz/sift.git
+cd sift
 python examples/ollama_compaction_demo.py --model qwen3.5:4b
 ```
 
