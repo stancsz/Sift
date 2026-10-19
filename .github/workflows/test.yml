@@ -32,6 +32,7 @@ jobs:
       - run: python -m unittest discover -s tests -p test_core.py -q
       - run: python -m unittest discover -s tests -p test_invariants.py -q
       - run: python -m unittest discover -s tests -p test_cli.py -q
+      - run: python -m unittest discover -s tests -p test_site.py -q
       - run: python -m pytest tests/test_ollama_compaction_demo.py -q
 
   full-suite:
