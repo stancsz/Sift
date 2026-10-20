@@ -6,7 +6,7 @@ The owner asked to continue the Sift adoption and release-readiness work through
 
 ## Current constraint
 
-The latest wider LongBench v2 experiment stopped safely at request 542/2,064 when a MiniMax request returned HTTP 529 without a provider usage/cost receipt. The runner now validates both exact unresolved reports, validates the complete stopped schedule against reconstructed prompts, and offers one single-use continuation of only the unattempted suffix. It reserves full possible route exposure, includes the 541 prior receipts, skips the failed request, and requires a no-additional-unknowns attestation under the user's $100 aggregate study cap.
+The latest wider LongBench v2 experiment stopped safely at request 542/2,064 when a MiniMax request returned HTTP 529 without a provider usage/cost receipt. A metadata-only audit across private MiniMax report histories found 13 distinct unreceipted attempts across the final 503-task report, final 600-task continuation, and current 344-task report. The continuation guard is being corrected to pin all three exact reports and reserve each attempt independently. It validates the complete stopped schedule against reconstructed prompts, offers one single-use continuation of only the unattempted suffix, includes the 541 prior receipts, skips the failed request, and requires an attestation that no additional unresolved attempts or active dispatches exist under the user's $100 aggregate study cap.
 
 ## Current evidence
 
@@ -22,7 +22,7 @@ The latest wider LongBench v2 experiment stopped safely at request 542/2,064 whe
 
 1. Land and independently review the pinned unknown-outcome reserve fix and focused regression tests.
 2. Run the complete local test suite on this exact worktree revision; retain short PR CI and run the full matrix at release readiness.
-3. Continue only the validated suffix using the fixed output and single-use claim; the current minimum projected exposure is about $35.22 (remaining estimate + prior receipts + five unknown reserves), below the approved $100 cap. Never retry the 529 job; keep each new unknown outcome explicit and stop at the aggregate cap.
+3. Continue only the validated suffix using the fixed output and single-use claim; the current minimum projected exposure at the dated route rates is about $36.48 (remaining estimate + prior receipts + 13 unreceipted-attempt reserves), below the approved $100 cap. Never retry the 529 job; keep each new unknown outcome explicit and stop at the aggregate cap.
 4. Complete the three local usability sessions if volunteers opt in; report observed comprehension and setup friction without treating completion as adoption.
 5. Keep the GitHub Pages site, README, and evaluation record consistent with verified evidence and a clear OpenAI-compatible/Ollama quick start.
 6. Complete independent quality and compatibility gates, full release CI, and PyPI Trusted Publisher setup before making a stable release.
