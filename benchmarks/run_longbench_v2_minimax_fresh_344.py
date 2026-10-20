@@ -29,6 +29,9 @@ CURRENT_MANIFEST_SHA256 = "eaddd0d337111c6ab3c36d3f4a68dae4f002c94964de39beec620
 CURRENT_ROUTE = ROOT / "docs/evals/longbench-v2-openrouter-minimax-m3-endpoints-2026-10-20T1651Z.json"
 CURRENT_ROUTE_SHA256 = "cd5993f3d533aaab1065dc6539a8a1a6dbb7ba43b3d62ef6fc7bd5599874bc26"
 MAX_USER_CAP_USD = 100.0
+TRACKED_HISTORICAL_UNKNOWN_RESERVE_USD = 2.0457216
+TRACKED_HISTORICAL_UNRECEIPTED_ATTEMPTS = 13
+TRACKED_HISTORICAL_RESERVE_AS_OF = "2026-10-20"
 FRESH_SCHEMA = "sift.longbench.minimax.fresh344.v1"
 FRESH_RUN_ID = "fresh344-minimax-20261020"
 FRESH_STATE_DIR = ROOT / ".runs/longbench-v2-minimax-fresh-344"
@@ -127,6 +130,20 @@ def validate_cap(cap: float) -> None:
         raise FreshRunError("Spend cap must be finite, positive, and no more than the authorized $100 USD")
 
 
+def validate_budget_coverage(cap: float, schedule_reserve: float, prior_reserve: float) -> float:
+    """Check the full plan reserve before claiming the single-use cohort."""
+    validate_cap(cap)
+    values = (schedule_reserve, prior_reserve)
+    if any(not math.isfinite(value) or value < 0 for value in values):
+        raise FreshRunError("Schedule and historical reserves must be finite and nonnegative")
+    required = schedule_reserve + prior_reserve
+    if cap < required:
+        raise FreshRunError(
+            f"Cap is below the fresh schedule estimate plus historical reserve ${required:.8f}"
+        )
+    return required
+
+
 def claim_fresh_run(*, output_path: Path, cap: float) -> None:
     """Create a durable exclusive claim; never remove/reuse after a run attempt."""
     claim_path = FRESH_COHORT_CLAIM
@@ -166,6 +183,51 @@ def _validate_dispatch_output(output: Path) -> None:
 def _validate_prepare_output(output: Path) -> None:
     if output.resolve() in {FRESH_DISPATCH_OUTPUT.resolve(), FRESH_COHORT_CLAIM.resolve()}:
         raise FreshRunError("Offline preparation must use a path separate from dispatch state")
+
+
+def resolve_prior_unknown_outcomes(report_paths: list[Path] | None,
+                                   *, assume_none_if_missing: bool) -> tuple[list[dict], float, dict]:
+    """Resolve exact reports or record the user's explicit missing-report assumption.
+
+    The assumption path does not erase tracked historical attempts: it keeps the
+    dated aggregate reserve and labels that reserve as unverified evidence.
+    """
+    paths = report_paths or []
+    if paths and assume_none_if_missing:
+        raise FreshRunError("Choose exact prior reports or the explicit missing-report assumption, not both")
+    if not paths and not assume_none_if_missing:
+        raise FreshRunError("Supply the three exact prior reports or explicitly select the user-authorized missing-report assumption")
+
+    if assume_none_if_missing:
+        return [], TRACKED_HISTORICAL_UNKNOWN_RESERVE_USD, {
+            "method": "user_assumption_with_tracked_historical_reserve",
+            "user_instruction": "Assume none if exact prior unknown-outcome reports cannot be found",
+            "exact_reports_supplied": False,
+            "actual_settlement_independently_verified": False,
+            "documented_unreceipted_attempts": TRACKED_HISTORICAL_UNRECEIPTED_ATTEMPTS,
+            "reserve_as_of": TRACKED_HISTORICAL_RESERVE_AS_OF,
+            "conservative_reserve_usd": TRACKED_HISTORICAL_UNKNOWN_RESERVE_USD,
+            "note": "The user assumption does not erase the tracked attempts or establish their settlement.",
+        }
+
+    if len(paths) != 3:
+        raise FreshRunError("Supply exactly the three pinned prior unknown-outcome reports")
+    unknown = [legacy.recorded_unknown_outcome_reserve(
+        path, _pinned_manifest_contract()["input_usd_per_million"],
+        _pinned_manifest_contract()["output_usd_per_million"])
+        for path in paths]
+    required = {legacy.UNKNOWN_503_REPORT_SHA256, legacy.UNKNOWN_600_REPORT_SHA256,
+                legacy.UNKNOWN_344_REPORT_SHA256}
+    hashes = {item["source_report_sha256"] for item in unknown}
+    if len(hashes) != 3 or hashes != required:
+        raise FreshRunError("Prior reports do not match the three pinned unknown-outcome artifacts")
+    return unknown, sum(item["total_reserve_usd"] for item in unknown), {
+        "method": "three_pinned_reports",
+        "exact_reports_supplied": True,
+        "source_report_sha256": sorted(hashes),
+        "conservative_reserve_usd": sum(item["total_reserve_usd"] for item in unknown),
+        "actual_settlement_independently_verified": False,
+    }
 
 
 def _load_base_and_jobs(fresh: dict[str, Any], dataset: Path, tokenizer: Path,
@@ -223,6 +285,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--dispatch", action="store_true", help="Explicitly send paid inference requests.")
     parser.add_argument("--spend-cap-usd", type=float)
     parser.add_argument("--confirm-no-unsettled-requests", action="store_true")
+    parser.add_argument("--assume-none-if-prior-reports-missing", action="store_true",
+                        help="Record the user's explicit assumption; retain the tracked historical reserve.")
     billing = parser.add_mutually_exclusive_group()
     billing.add_argument("--confirm-provider-billing-covers-cap", action="store_true")
     billing.add_argument("--authorize-unverified-provider-billing", action="store_true")
@@ -236,8 +300,8 @@ def main(argv: list[str] | None = None) -> int:
             raise FreshRunError("Attest that no additional unresolved requests exist and no dispatch is active")
         if args.confirm_provider_billing_covers_cap == args.authorize_unverified_provider_billing:
             raise FreshRunError("Choose exactly one provider-billing attestation")
-        if not args.prior_unknown_outcome_report or len(args.prior_unknown_outcome_report) != 3:
-            raise FreshRunError("Supply the three exact prior unknown-outcome reports for reserve accounting")
+        if bool(args.prior_unknown_outcome_report) == args.assume_none_if_prior_reports_missing:
+            raise FreshRunError("Supply three exact prior reports or use the explicit missing-report assumption")
     fresh = load_and_validate_fresh_manifest(args.manifest)
     if args.dispatch:
         _validate_dispatch_output(args.output)
@@ -260,24 +324,18 @@ def main(argv: list[str] | None = None) -> int:
     api_key = os.environ.get("OPENROUTER_API_KEY")
     if not api_key:
         raise FreshRunError("OPENROUTER_API_KEY is required only for explicit dispatch")
-    unknown = [legacy.recorded_unknown_outcome_reserve(path,
-                fresh["input_usd_per_million"], fresh["output_usd_per_million"])
-               for path in args.prior_unknown_outcome_report]
-    required = {legacy.UNKNOWN_503_REPORT_SHA256, legacy.UNKNOWN_600_REPORT_SHA256,
-                legacy.UNKNOWN_344_REPORT_SHA256}
-    hashes = {item["source_report_sha256"] for item in unknown}
-    if len(hashes) != 3 or hashes != required:
-        raise FreshRunError("Prior reports do not match the three pinned unknown-outcome artifacts")
-    unknown_reserve = sum(item["total_reserve_usd"] for item in unknown)
+    unknown, unknown_reserve, unknown_accounting = resolve_prior_unknown_outcomes(
+        args.prior_unknown_outcome_report,
+        assume_none_if_missing=args.assume_none_if_prior_reports_missing)
     estimate = report["budget_estimate"]["estimated_reserve_usd"]
-    if args.spend_cap_usd < estimate + unknown_reserve:
-        raise FreshRunError("Cap is below the fresh schedule estimate plus historical unknown-outcome reserve")
+    validate_budget_coverage(args.spend_cap_usd, estimate, unknown_reserve)
     live_route = legacy.live_account_route_preflight(
         api_key, base, args.spend_cap_usd, jobs, True,
         args.confirm_provider_billing_covers_cap,
         args.authorize_unverified_provider_billing, True, unknown_reserve)
     report["prior_unknown_outcome_evidence"] = unknown
     report["prior_unknown_outcome_reserve_usd"] = unknown_reserve
+    report["prior_unknown_outcome_accounting"] = unknown_accounting
     report["live_route_validation"] = live_route
     claim_fresh_run(output_path=args.output, cap=args.spend_cap_usd)
     if args.output.exists():
