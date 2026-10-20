@@ -7,7 +7,7 @@ usage or LiteLLM's per-request spend logs for the billable totals. Sift's
 estimated token counts are useful for its input limit, but are not a provider
 invoice.
 
-## A 950K-token Subroute usage probe
+## Synthetic retrieval probe: 950K-token archive
 
 We compacted one synthetic archive with Sift and sent the resulting request
 through isolated Subroute staging to GPT-6 Astra and Gemini 4 Argon. The raw
@@ -15,25 +15,37 @@ archive was estimated at 950,401 input tokens; Sift's forwarded estimate was
 32,698. Subroute recorded 32,502 input / 6 output tokens for Astra and 37,003
 input / 41 output tokens for Gemini.
 
-| Model | Full-context API-rate equivalent¹ | Sifted usage receipt | Sifted API-rate equivalent² | Modeled difference |
-|---|---:|---:|---:|---:|
-| GPT-6 Astra | $19.008470 | 32,502 input / 6 output | $0.325320 | 98.3% |
-| Gemini 4 Argon | $1.901212 | 37,003 input / 41 output | $0.074416 | 96.1% |
+**Observed Sifted requests**
+
+| Model | Input tokens (Subroute receipt) | Output tokens | Fixture result |
+|---|---:|---:|---|
+| GPT-6 Astra | 32,502 | 6 | `37 seconds` |
+| Gemini 4 Argon | 37,003 | 41 | `37 seconds` |
+
+Sift's 32,698 forwarded-token count is an estimate; the provider tokenizers and
+request framing differ.
+
+**Illustrative costs at public API rates (not billed amounts)**
+
+| Model | Full 950K input, modeled¹ | Sifted receipt, priced² |
+|---|---:|---:|
+| GPT-6 Astra | $19.0085 | $0.3253 |
+| Gemini 4 Argon | $1.9012 | $0.0744 |
 
 ¹The full-context subscription requests were rejected before inference: Astra's
 route rejected the context window and Gemini's bridge rejected the serialized
-body size. These are uncached API-rate equivalents for the 950,401-token Sift
-estimate plus the output length observed with Sift, not successful full-context
-cost measurements. ²Subscription billing was unavailable; the Sifted amounts
-apply public uncached API rates to Subroute's actual usage receipts. Neither
-amount is an invoice or subscription charge. Tokenizers and request framing
-differ, so Sift's estimate and provider usage do not match exactly.
+body size. These hypothetical costs apply uncached API rates to the 950,401-token
+Sift estimate plus the output length observed with Sift; they are not successful
+full-context cost measurements or bills. ²Subscription billing was unavailable;
+these amounts apply public uncached API rates to Subroute's actual Sifted usage
+receipts and are not subscription charges or invoices. Tokenizers and request
+framing differ, so Sift's estimate and provider usage do not match exactly.
 
 This one-fact, one-request-per-model probe does not establish task-quality
-parity, end-to-end savings, or a general cost reduction. The Astra estimate
-uses the long-context rate above 272K input tokens for the raw request and the
-standard rate for its Sifted request. Gemini's introductory rates are listed
-through November 30, 2026. See the [full method, route limits, and rate
+parity, agent-task results, measured savings, or a general cost reduction. The
+Astra estimate uses the long-context rate above 272K input tokens for the raw
+request and the standard rate for its Sifted request. Gemini's introductory
+rates are listed through November 30, 2026. See the [full method, route limits, and rate
 assumptions](evals/subroute-950k-token-cost-probe-2026-10-20.md), [GPT-6 Astra
 pricing](https://developers.openai.com/api/docs/models/gpt-6-astra), and
 [Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing).

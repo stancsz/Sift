@@ -172,20 +172,31 @@ The task-majority 95% question-cluster bootstrap interval for Sift minus Full is
 
 [Protocol, limits, and analysis method](docs/evaluation.md#broader-longbench-v2-cohort-344-questions-completed)
 
-### 950K-token context: measured Sifted usage, API-rate comparison
+### Synthetic retrieval probe: 950K-token archive
 
-We ran a synthetic archive estimated at **950,401 input tokens** through Sift, which forwarded an estimated 32,698 tokens. The compacted requests were sent through an isolated Subroute staging instance to GPT-6 Astra and Gemini 4 Argon, with usage recorded by the route.
+We compacted one synthetic archive estimated at **950,401 input tokens** to a Sift forwarding estimate of 32,698. One planted fact was queried through isolated Subroute staging; both Sifted requests returned it.
 
-| Model | Sifted usage receipt (input / output) | No-Sift API-rate equivalent¹ | With-Sift API-rate equivalent² | Modeled reduction |
-|---|---:|---:|---:|---:|
-| GPT-6 Astra | 32,502 / 6 | $19.008470 | $0.325320 | 98.3% |
-| Gemini 4 Argon | 37,003 / 41 | $1.901212 | $0.074416 | 96.1% |
+**Observed Sifted requests**
 
-**What these numbers mean:** Sift's 950,401 and 32,698 counts are LiteLLM estimates. The Sifted column uses actual Subroute usage receipts; tokenizer and request-framing differences explain why receipt input can exceed the 32,698 estimate.
+| Model | Input tokens (Subroute receipt) | Output tokens | Fixture result |
+|---|---:|---:|---|
+| GPT-6 Astra | 32,502 | 6 | `37 seconds` |
+| Gemini 4 Argon | 37,003 | 41 | `37 seconds` |
 
-¹The full-context subscription requests were rejected before inference, so no successful no-Sift usage receipt exists. These amounts apply public uncached API rates to 950,401 estimated input tokens plus the output length observed in the Sifted reply. They are not measured full-context costs.
+Sift's 32,698 forwarded-token count is an estimate; the provider tokenizers and request framing differ.
 
-²The subscription routes do not provide per-call dollar billing. These amounts apply public API rates to actual Sifted usage receipts; they are not subscription charges or invoices. Astra's long-context rate applies above 272K input tokens. Gemini 4 Argon's introductory rates run through November 30, 2026. No cache discount is included. This one-fact probe does not prove quality parity or general savings. See the [probe method and limitations](docs/evals/subroute-950k-token-cost-probe-2026-10-20.md), [GPT-6 Astra pricing](https://developers.openai.com/api/docs/models/gpt-6-astra), and [Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing).
+**Illustrative costs at public API rates (not billed amounts)**
+
+| Model | Full 950K input, modeled¹ | Sifted receipt, priced² |
+|---|---:|---:|
+| GPT-6 Astra | $19.0085 | $0.3253 |
+| Gemini 4 Argon | $1.9012 | $0.0744 |
+
+¹The full-context subscription requests were rejected before inference, so no no-Sift usage receipt exists. These hypothetical costs apply uncached public API rates to Sift's 950,401-token input estimate plus the output length observed in each Sifted reply. They are not measured full-context costs or bills.
+
+²These costs apply uncached public API rates to the actual Sifted usage receipts. The subscription routes do not provide per-call dollar billing, so these are not subscription charges or invoices. Astra's long-context rate applies above 272K input tokens; Gemini 4 Argon's introductory rates run through November 30, 2026.
+
+This one-fact probe does not establish task-quality parity, agent-task results, or measured savings. It compares observed usage for two Sifted requests with hypothetical API-rate arithmetic for a full-context input; it does not compare two successful model calls. See the [probe method, route limits, and pricing assumptions](docs/evals/subroute-950k-token-cost-probe-2026-10-20.md), [GPT-6 Astra pricing](https://developers.openai.com/api/docs/models/gpt-6-astra), and [Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing).
 
 LongBench v2 measures structured-choice QA, not agent-loop completion. Other Qwen and MiniMax screens used different samples and had different outcomes; see the [evaluation record](docs/evaluation.md) rather than combining their scores.
 
