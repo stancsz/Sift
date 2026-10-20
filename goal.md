@@ -1,36 +1,41 @@
-# Goal: make Sift useful and credible to adopt
+# Goal: make Sift useful, credible, and ready to adopt
 
 ## Status: active
 
-The owner asked to continue the Sift adoption and release-readiness work through completion. Keep the current product evidence honest, reduce routine CI cost, improve the first-use story, broaden evaluation, and make the no-LiteLLM CLI straightforward to try. Do not call the preview stable until the gates in [the roadmap](ROADMAP.md) are satisfied.
+Continue the user's full Sift improvement and release-readiness objective. The local testing and short-CI design, first-screen value, public Pages site, expanded LongBench report, and LiteLLM-free CLI are substantially implemented. Do not claim broad adoption, general agent quality, or stable readiness from those artifacts alone. Completion requires credible held-out quality evidence, usable first-run evidence, compatible clients, verified publishing controls, and a successful stable release.
 
 ## Current constraint
 
-The latest wider LongBench v2 experiment stopped safely at request 542/2,064 when a MiniMax request returned HTTP 529 without a provider usage/cost receipt. A metadata-only audit across private MiniMax report histories found 13 distinct unreceipted attempts across the final 503-task report, final 600-task continuation, and current 344-task report. The continuation guard is being corrected to pin all three exact reports and reserve each attempt independently. It validates the complete stopped schedule against reconstructed prompts, offers one single-use continuation of only the unattempted suffix, includes the 541 prior receipts, skips the failed request, and requires an attestation that no additional unresolved attempts or active dispatches exist under the user's $100 aggregate study cap.
+The product now demonstrates a measurable token/quality trade-off, but the quality evidence uses development-exposed LongBench questions and the first-run flow has no external users yet. The 344-question, three-repeat study showed 59.66% fewer provider prompt tokens while Sift scored 5.25 percentage points lower on task-majority exact choice; the task-cluster 95% interval was −10.20 to −0.29 pp. User trust and successful agent-task outcomes remain unproven. Do not spend on another MiniMax run under the prior cap: that authorization covered the completed 344-task study, and its unreceipted-attempt reserve remains in the study accounting.
 
-## Current evidence
+## Verified state at main `76f3baf` (2026-10-20)
 
-- The current run has 541 receipted responses and one unresolved 529 attempt. Provider-receipted spend is $3.58631898. These figures are private run accounting, not an invoice.
-- Ninety complete task clusters (270 responses per arm) have both three-repeat arms. Full exact choice: 110/270 (40.74%); Sift: 122/270 (45.19%), a +4.44 percentage-point observed difference. The approximate task-cluster 95% interval is −3.26 to +12.15 points.
-- On those 90 matched tasks, provider prompt tokens were 17,275,101 Full versus 7,041,707 Sift (−59.24%); receipt costs were $2.490294 versus $1.087784 (−56.32%). These are partial, cache-sensitive OpenRouter BYOK receipts, not invoice totals. Nine outputs ended at the length limit and strict-choice scoring counts invalid/truncated outputs as wrong.
-- The selected public LongBench questions were exposed during development. This is not a holdout or an agent-loop accepted-task benchmark. The partial observed accuracy difference does not establish improvement, parity, or non-inferiority.
-- The actual screenshot of the homepage at 1280×800 received an independent READY review for a 20-second comprehension session. Up to three inference-free local-Ollama first-run sessions are authorized; issue #13 is public and had no respondents at the last check.
-- The stopped checkpoint now reconstructs exactly against the frozen manifest: 541 receipted jobs sum to $3.58631898; the one failed 529 request is excluded from the 1,522-job suffix. A read-only OpenRouter refresh on 2026-10-20 confirmed the MiniMax route and the pinned $0.30/$1.20 per-million rates. MiniMax-side balance remains unverified by the API; user authorization allows that uncertainty under the client-side $100 cap.
-- GPT-6 Astra and Gemini 4 Argon Subroute examples use a synthetic 950,401-token archive and report observed Sifted-path usage plus explicit rate-card estimates. Both unsifted requests were rejected before model inference, so their costs are modeled, not measured.
+- **Local tests and CI:** `uv run --extra test --extra litellm python -m pytest tests -q` passed 392 tests on Python 3.13.11 in 137.89 seconds, with 17 dependency warnings. PR #19's Python 3.12 smoke passed in 46 seconds; the post-merge main smoke passed in 48 seconds. PR runs intentionally skip the four-version full matrix, which runs weekly or manually.
+- **First screen and Pages:** PR #19 updated the live homepage to “Long agent history. Less context to send.” It puts token savings and the negative quality result together with sample counts and limitations. Sol's image-backed review and independent mobile QA passed desktop 1280×800 and mobile 390×844. The live page at <https://stancsz.github.io/sift/> is deployed from `76f3baf`; mobile document width is 390 px with no horizontal overflow and the CTA/trust row inside the viewport.
+- **LongBench:** 344 exposed public questions, three repeats per arm, 2,063 valid usage receipts, one Full HTTP 529 without receipt that was not retried. There are 343 complete paired task clusters. Full/Sift exact-choice response scores were 42.18%/40.23%; task-majority scores were 42.27%/37.03%. Sift used 59.66% fewer provider prompt tokens and had 58.72% lower cache-sensitive receipt cost. These are scoped development-cohort results, not blind validation, invoices, parity, or agent-loop success.
+- **Standalone CLI:** `sift serve` is LiteLLM-free and accepts Ollama or another OpenAI Chat Completions-compatible base URL. The no-inference fixture checks actual request forwarding; one local OpenAI Python SDK→Sift→Ollama tool round-trip is recorded. Broader named-client compatibility remains unverified.
+- **Adoption:** Public opt-in issue [#13](https://github.com/stancsz/sift/issues/13) remains open with zero replies and no sessions. Up to three inference-free sessions are authorized; no direct participant outreach or inference is authorized by that session plan.
+- **Release:** The latest GitHub release is still the v0.10.0 pre-release; `sift-context` is not on PyPI. The manual Trusted Publishing workflow is checked in, but pending-publisher configuration and environment/tag protections need live verification. Quality, adoption, compatibility, and full release gates remain open.
+
+## Northstar council decision (2026-10-20)
+
+For the next priority, Gemini 4 Argon recommended deterministic compatibility coverage plus refreshing recruitment and release gates. GPT-6.1 Sol gave its own verdict: prioritize the first-run usability path first because no users have tried it; then verify multiple clients and release controls. Sol agreed with scoped compatibility and claims, but rejected compatibility-first sequencing because additional integrations do not reveal user friction. This is an accountable decision informed by two reviews, not a vote: update the public first-run task and feedback path now, then validate compatibility and publishing controls. Council usage: Gemini 3,347 prompt + 211 completion; Sol 821 prompt + 294 completion tokens.
 
 ## Acceptance and next actions
 
-1. Land and independently review the pinned unknown-outcome reserve fix and focused regression tests.
-2. Run the complete local test suite on this exact worktree revision; retain short PR CI and run the full matrix at release readiness.
-3. Continue only the validated suffix using the fixed output and single-use claim; the current minimum projected exposure at the dated route rates is about $36.48 (remaining estimate + prior receipts + 13 unreceipted-attempt reserves), below the approved $100 cap. Never retry the 529 job; keep each new unknown outcome explicit and stop at the aggregate cap.
-4. Complete the three local usability sessions if volunteers opt in; report observed comprehension and setup friction without treating completion as adoption.
-5. Keep the GitHub Pages site, README, and evaluation record consistent with verified evidence and a clear OpenAI-compatible/Ollama quick start.
-6. Complete independent quality and compatibility gates, full release CI, and PyPI Trusted Publisher setup before making a stable release.
+1. README and protocol now describe the checkout prerequisite, separate terminal commands, actual successful demo output, and public issue privacy boundary. Refresh issue #13 after merge to match these instructions and deployed `76f3baf`; do not imply the fixture tests answer quality.
+2. Run up to three sessions only if volunteers opt in. Record completion, comprehension, friction, and voluntary follow-through separately; no respondents means the adoption gate remains unresolved.
+3. Prepare independent held-out agent-task evidence with blinded answers and accepted-outcome scoring. Reuse AppWorld only after a test-free aggregate-output quarantine rehearsal is independently accepted; otherwise author synthetic, nonproprietary tasks. Do no paid inference until the user authorizes a new bounded study.
+4. Add deterministic compatibility evidence for at least two named supported clients, including OpenAI Python SDK and one independent client path, without broadening the advertised API contract silently.
+5. Verify PyPI pending Trusted Publisher setup, protected `pypi` environment/reviewer, `main` restriction, and `v*` tag controls. Run a non-publishing release rehearsal; publish a stable package/release only after the quality, compatibility, adoption disposition, and full release checks pass.
+6. Keep the goal, roadmap, evaluation record, README, Pages content, and recruitment issue consistent with current deployed evidence. Continue until the stable Sift release and required evidence are verified.
 
 ## Durable evidence
 
-- [Evaluation record](docs/evaluation.md)
 - [Current handoff](handoff.md)
-- [Roadmap](ROADMAP.md)
-- [LongBench v2 primary manifest](docs/evals/longbench-v2-minimax-344-manifest-current-main-2026-10-20.json)
-- The full run artifact and answer text remain private under `.runs`; never commit them.
+- [Adoption roadmap](ROADMAP.md)
+- [Evaluation record](docs/evaluation.md)
+- [Release instructions](docs/releasing.md)
+- [First-run usability protocol](docs/evals/first-run-usability-protocol-2026-10-18.md)
+- [First-run Advisor council summary](docs/evals/sift-advisor-council-first-run-2026-10-20.md)
+- [Merged first-screen change](https://github.com/stancsz/sift/pull/19)

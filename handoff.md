@@ -1,34 +1,39 @@
-# Sift readiness handoff — 2026-10-20
+# Sift Northstar handoff — 2026-10-20
 
-## Current state
+## Owner and current checkout
 
-The goal in [goal.md](goal.md) remains active. PR #14 was merged as `927c054cee2976484f00488f385609e722e8b64a`. This follow-up branch corrects attempt-level reserves before any continuation is run. The MiniMax 344-task × 3-repeat study stopped at 542/2,064 requests after one Full request returned HTTP 529 without a usage/cost receipt. Do not retry that request.
+The top-level goal remains active in [goal.md](goal.md). Current integration checkout: branch `codex/northstar-goals`, based on `origin/main` at `76f3baf8ad71a7259fd97c34ba0059ac2ce31a27`. This turn is reconciling stale operating records and advancing the first-run adoption path. Do not stage private `.runs`, credentials, responses, or participant data.
 
-The current partial run has 541 receipted responses and one unreceipted 529 attempt. Receipt spend is $3.58631898; the failed request's client reservation was $0.02571465. A metadata-only audit of the latest final MiniMax ledgers found 13 distinct unreceipted attempts: 7 in the final 503-task report, 5 in the completed 600-task continuation, and this 344-run 529. This includes three explicit HTTP 400s; without provider receipts we conservatively reserve them too. At the dated route maximum, each attempt reserves $0.1573632, totaling **$2.0457216**. The user's existing $100 maximum covers the experiment, but any continuation must refresh current route pricing and charge every prior attempt reserve against the same cap.
+## Verified delivery since the previous handoff
 
-Ninety fully matched task clusters provide preliminary exposed-development evidence: 110/270 correct Full versus 122/270 Sift; prompt tokens 17,275,101 versus 7,041,707; receipt cost $2.490294 versus $1.087784. The approximate task-cluster interval for the +4.44-point exact-choice difference is −3.26 to +12.15 points. Do not claim quality gain or parity. Nine outputs reached the length limit. This interim evidence is not held out and does not measure accepted coding-agent tasks.
+- PR #19, merged at `76f3baf`, revised the homepage first screen with a concrete coding/research context-crowding use case and an adjacent, qualified token/quality evidence card. Pages deployment run `39425862451` succeeded. The live page is <https://stancsz.github.io/sift/>.
+- Final Sol image review passed actual 1280×800 desktop and 390×844 mobile renders. It requested larger evidence labels/caveat text; those were enlarged and returned to the same Sol reviewer, who passed the revised views. Independent mobile reviewer marked READY. Live mobile DOM: `scrollWidth=390`, evidence card ends at y=601, CTA at y=616–664, trust row ends y=702.
+- Current full local suite: 392 passed on Python 3.13.11 in 137.89 seconds, 17 dependency warnings. PR #19's Python 3.12 smoke passed in 46 seconds; post-merge main smoke passed in 48 seconds. The CI full matrix is weekly/manual and was skipped for PR #19 by design.
+- PRs #17–19 are merged: strict LongBench analyzer, deterministic no-inference standalone CLI demo, and homepage value/evidence revision. `sift serve` does not require LiteLLM; Ollama and compatible base URLs are supported. Existing exact-client evidence remains limited to one OpenAI SDK→Sift→Ollama loop plus fixture tests.
 
-## Work in progress
+## Evaluation and limits
 
-- This follow-up corrects the paid runner to require and SHA-pin the final 503-task report (7 unreceipted attempts), final 600-task continuation (5), and current 344-task report (1). It validates exact row identities, reserves per attempt including HTTP 400 rows, reconstructs the 2,064-job schedule and all 541 valid prior receipts, excludes the failed 529 at index 541, and returns only the 1,522-job suffix. A fixed output path and exclusive claim file make this continuation single-use; preserve both files, because deleting the local claim could permit replay. The operator must attest that no additional unresolved requests exist outside these three ledgers and no dispatch is active. The dated-route minimum aggregate cap coverage is $36.476686: $30.844645 estimated remaining suffix + $3.586319 prior settled receipts + $2.045722 reserved for 13 unreceipted attempts.
-- Read-only OpenRouter preflight on 2026-10-20 confirmed MiniMax M3, the 524,288-token route limit, and unchanged $0.30/$1.20 per-million rates. MiniMax-side balance remains unverified. No inference requests were sent during this continuation work. The dated preflight must be refreshed immediately before any continuation dispatch.
-- The follow-up full local suite passed 384 tests in 114.51 seconds with 17 dependency warnings.
-- Do not stage `.runs` or any raw prompt, answer, response, credentials, or private account data.
-- Public recruitment issue [#13](https://github.com/stancsz/sift/issues/13) is authorized for up to three inference-free local-Ollama sessions; no respondents at last check. The independent first-screen 1280×800 review was READY for comprehension testing.
-- The Astra and Gemini Subroute 950,401-token rate comparison is documented in the README. It reports measured Sifted path usage and modeled unsifted rate costs because both full-context routes rejected before inference.
+The 344-question LongBench v2 study completed 2,063/2,064 requests with usage receipts; one Full request returned HTTP 529 without a receipt and was not retried. The frozen public questions were exposed during development. Of 343 complete paired task clusters, Full scored task-majority exact choice on 145/343 and Sift on 127/343: −5.25 pp, cluster-bootstrap 95% CI −10.20 to −0.29 pp. All 2,063 receipts show 59.66% fewer prompt tokens and 58.72% lower cache-sensitive BYOK receipt cost with Sift. Settled receipt cost was $12.633224; it is not an invoice. There are 13 conservatively reserved historical unreceipted attempts ($2.0457216 aggregate reserve) across the reviewed report family. The original $100 authorization applied to this completed study; do not send more MiniMax or other paid inference requests without a new user cap.
 
-## Next actions and gates
+Other documented checks include the earlier 600-response and incomplete 503-question studies, a four-task field-pruning pilot, one 950K-token Astra/Gemini Subroute probe, and native-agent pilots. They are separate exposed or task-specific samples and must not be pooled into generalized quality claims. AppWorld remains parked pending a test-free output-quarantine rehearsal.
 
-1. Independently review this reserve correction, run focused and full local tests, push the follow-up branch, and keep its PR draft until green.
-2. The continuation remains authorized under the existing $100 cap. It must use the fixed output, claim file, exact private source reports, and latest route check. The MiniMax balance is unverified; preserve the $100 client-side aggregate limit and stop on any unreceipted response. Never retry the 529 or replay the suffix.
-3. The sanitized matched-task counts and arithmetic were independently audited and verified against the private report; raw data stays ignored.
-4. Stable release remains gated on independent quality/compatibility evidence, three opt-in usability sessions or a documented recruitment outcome, full release checks, and PyPI Trusted Publisher configuration.
+## Adoption and release state
 
-## Key artifact identities
+- Issue [#13](https://github.com/stancsz/sift/issues/13) is open; it has zero comments/respondents and no sessions have occurred. Up to three inference-free first-run sessions are authorized. The issue already cites homepage revision `76f3baf` and the fixture task; after this docs PR merges, sync its exact commands and disclose that comments are public. Participants must use only the deterministic loopback fixture, never Ollama/model inference. Do not contact people directly.
+- The first-run usability protocol is in [docs/evals/first-run-usability-protocol-2026-10-18.md](docs/evals/first-run-usability-protocol-2026-10-18.md). Its frozen homepage revision matches deployed `76f3baf`; the README and protocol now make the checkout prerequisite, commands, and privacy handling explicit.
+- GitHub's latest release is the v0.10.0 pre-release. PyPI project `sift-context` does not exist yet; the release workflow is prepared, but PyPI pending publisher and live environment/tag protections are not verified. Stable release remains gated on held-out task quality, compatibility coverage, adoption disposition, and full release checks.
 
-- Current branch: `codex/minimax-attempt-accounting`
-- Merged baseline PR: [#14](https://github.com/stancsz/sift/pull/14)
-- Current study manifest: `eaddd0d337111c6ab3c36d3f4a68dae4f002c94964de39beec620280f9c657c2`
-- Private stopped report SHA-256: `20e1106b1f4c27c801f0411d433a06c7e1def9ed48be4b0b3df7431671e30356`
-- 529 job identity: `66f53892821e116aacb33225:full:2`
-- Main baseline: `63e4f4e8aa2ef39e8bec24c8910494d1607d86f1`
+## Northstar council and decision
+
+On 2026-10-20, Gemini 4 Argon recommended deterministic multi-client compatibility plus refreshing issue #13 and checking release gates. GPT-6.1 Sol independently assessed Gemini and prioritized usability first: there are no user observations, so more passing integrations alone will not expose onboarding friction. The current decision is to refresh the issue and publish the first-run task, then run the named-client compatibility work and non-publishing release-gate rehearsal. This preserves both reviews without turning them into a vote. Council usage: Gemini 3,347 prompt/211 completion; Sol 821 prompt/294 completion tokens.
+
+## Next actions
+
+1. Finish the corrected first-run README/protocol and durable, explicitly paraphrased council record; verify the docs diff and links.
+2. Refresh issue #13 after the docs PR merges, with the exact successful demo output, checkout prerequisite, privacy-safe feedback format, and notice that issue comments are public. Keep recruitment opt-in and capped at three.
+3. Merge the docs update after its short CI smoke passes; record the resulting commit. Pages is not expected to redeploy for docs-only changes.
+4. Then progress a second named client path, held-out agent-task protocol/harness, and release-control verification. Preserve aggregate-only outputs; no AppWorld test access and no paid requests without new authorization.
+
+## Learning
+
+The last website change showed that visual measurement should be repeated on the actual deployed stylesheet after a hard reload; a transient mobile emulation state initially lacked loaded CSS and produced misleading dimensions. Once stylesheets were confirmed loaded, the live page matched the accepted local layout and showed no overflow. Keep rendered evidence, loaded-resource checks, and DOM measurements distinct in future site acceptance.
