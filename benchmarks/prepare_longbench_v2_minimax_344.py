@@ -28,10 +28,14 @@ DATASET_SHA256 = "15d61c22d92c96900b3c4948b6aeea218d3214b676a65df48e7b8555604c7f
 TOKENIZER_SHA256 = "bb1f1626cf01448f1e3b6036d0a061ffc66c91d9046aada14ea23a5441b5ad6e"
 TEMPLATE_SHA256 = "11421244f67553498e5c8112dae02802025bcc4305ec45ad380af95c96f9fe64"
 ROUTE_SHA256 = "c46e271219d7e5890339adf79aafd4e0a58ecdae0908e365d691f4522b07db14"
+LIVE_ROUTE_SHA256 = "2985604149f14d6d6ca44c0221780d889058e42ac4f613588a85022eea81c78e"
+CURRENT_ROUTE_SHA256 = "440b9279c3300026e83e1bdcc3d20ac38df032328e0c7f87e1bcc4e75868bc7c"
 DEFAULT_DATASET = ROOT / ".runs" / "longbench-v2-data-pinned.json"
 DEFAULT_TOKENIZER = ROOT / "tmp" / "minimax-m3-tokenizer.json"
 DEFAULT_TEMPLATE = ROOT / "tmp" / "minimax-m3-chat-template.jinja"
 DEFAULT_ROUTE = ROOT / "docs/evals/longbench-v2-minimax-stage2-route-2026-10-17.json"
+LIVE_ROUTE = ROOT / "docs/evals/longbench-v2-openrouter-minimax-m3-endpoints-2026-10-17T1126Z.json"
+CURRENT_ROUTE = ROOT / "docs/evals/longbench-v2-openrouter-minimax-m3-endpoints-2026-10-20T0750Z.json"
 DEFAULT_OUTPUT = ROOT / "docs/evals/longbench-v2-minimax-344-manifest-2026-10-17.json"
 SPEC_PATH = ROOT / "docs/evals/longbench-v2-minimax-paired-study-spec-2026-10-17.md"
 PRIMARY_N = 344
@@ -273,7 +277,9 @@ def count_tokens(tokenizer: Tokenizer, messages: list[dict[str, str]]) -> int:
     return len(tokenizer.encode(render_minimax(messages), add_special_tokens=False).ids)
 
 
-def scan_and_select(dataset: Path, tokenizer_path: Path, template_path: Path) -> tuple[list[dict], dict]:
+def scan_and_select(dataset: Path, tokenizer_path: Path, template_path: Path,
+                    frozen_ids: set[str] | None = None,
+                    parent_summary: dict[str, Any] | None = None) -> tuple[list[dict], dict]:
     for p in (dataset, tokenizer_path, template_path, ROOT / "src/sift/core.py", ROOT / "benchmarks/prepare_longbench_v2.py",
               ROOT / "benchmarks/prepare_longbench_v2_minimax.py", ROOT / "benchmarks/run_longbench_v2_minimax.py",
               ROOT / "src/sift/__init__.py", SPEC_PATH):
@@ -287,7 +293,7 @@ def scan_and_select(dataset: Path, tokenizer_path: Path, template_path: Path) ->
     scanned: list[dict[str, Any]] = []
     seen: set[str] = set()
     failures: Counter[str] = Counter()
-    for row in iter_rows(dataset, PROMPT_FIELDS):
+    for row in iter_rows(dataset, PROMPT_FIELDS, frozen_ids):
         case_id = str(row.get("_id", ""))
         if not case_id or case_id in seen:
             raise ValueError("Missing or duplicate LongBench task ID")
@@ -327,19 +333,32 @@ def scan_and_select(dataset: Path, tokenizer_path: Path, template_path: Path) ->
             # Keep compacted messages out of the manifest; source row plus frozen hashes rebuild them.
             "_messages": messages, "_sift_messages": sift_messages,
         })
-    if len(scanned) != 503:
-        raise ValueError(f"Expected 503 rows, observed {len(scanned)}")
-    primary = [r for r in scanned if r["full_eligible"] and r["sift_local_tokens"] is not None]
-    if len(primary) != PRIMARY_N:
-        raise ValueError(f"Current implementation yields {len(primary)} primary cases, expected {PRIMARY_N}")
-    primary_ids = {r["id"] for r in primary}
-    outside = [r for r in scanned if r["id"] not in primary_ids]
-    ext = [r for r in outside if r["full_local_tokens"] > MAX_FULL_LOCAL and r["full_local_tokens"] <= PROVIDER_LIMIT and r["sift_local_tokens"] is not None]
-    full_excluded = [r for r in outside if r["full_local_tokens"] > PROVIDER_LIMIT]
-    if len(outside) != OUTSIDE_N or len(ext) != EXTENSION_N or len(full_excluded) != FULL_EXCLUSION_N:
-        raise ValueError(f"Historical split mismatch: outside={len(outside)}, extension={len(ext)}, full_excluded={len(full_excluded)}")
-    if sum(r["sift_fail_closed_code"] is not None for r in full_excluded) != FAIL_CLOSED_N:
-        raise ValueError("Fail-closed cases within full-prompt exclusions differ from the protocol")
+    if frozen_ids is None:
+        if len(scanned) != 503:
+            raise ValueError(f"Expected 503 rows, observed {len(scanned)}")
+        primary = [r for r in scanned if r["full_eligible"] and r["sift_local_tokens"] is not None]
+        if len(primary) != PRIMARY_N:
+            raise ValueError(f"Current implementation yields {len(primary)} primary cases, expected {PRIMARY_N}")
+        primary_ids = {r["id"] for r in primary}
+        outside = [r for r in scanned if r["id"] not in primary_ids]
+        ext = [r for r in outside if r["full_local_tokens"] > MAX_FULL_LOCAL and r["full_local_tokens"] <= PROVIDER_LIMIT and r["sift_local_tokens"] is not None]
+        full_excluded = [r for r in outside if r["full_local_tokens"] > PROVIDER_LIMIT]
+        if len(outside) != OUTSIDE_N or len(ext) != EXTENSION_N or len(full_excluded) != FULL_EXCLUSION_N:
+            raise ValueError(f"Historical split mismatch: outside={len(outside)}, extension={len(ext)}, full_excluded={len(full_excluded)}")
+        if sum(r["sift_fail_closed_code"] is not None for r in full_excluded) != FAIL_CLOSED_N:
+            raise ValueError("Fail-closed cases within full-prompt exclusions differ from the protocol")
+    else:
+        primary = [r for r in scanned if r["full_eligible"] and r["sift_local_tokens"] is not None]
+        primary_ids = {r["id"] for r in primary}
+        if (len(scanned) != PRIMARY_N or len(primary) != PRIMARY_N or primary_ids != frozen_ids
+                or parent_summary is None):
+            raise ValueError("Frozen primary IDs no longer satisfy current eligibility; prepare a newly reviewed cohort")
+        ext = [{"id": value} for value in parent_summary.get("extension_ids", [])]
+        failed_ids = set(parent_summary.get("fail_closed_ids_within_full_prompt_exclusions", []))
+        full_excluded = [{"id": value, "sift_fail_closed_code": "historical_exclusion" if value in failed_ids else None}
+                         for value in parent_summary.get("full_prompt_exclusion_ids", [])]
+        if len(ext) != EXTENSION_N or len(full_excluded) != FULL_EXCLUSION_N:
+            raise ValueError("Frozen parent cohort has incomplete exclusion metadata")
     # Eligibility has now been fixed without decoding any answer values.
     ids = {r["id"] for r in primary}
     answer_rows = list(iter_rows(dataset, ANSWER_FIELDS, ids))
@@ -370,15 +389,37 @@ def request_body(case: dict, arm: str, repeat: int) -> dict:
     }
 
 
-def build_manifest(dataset: Path, tokenizer: Path, template: Path, route: Path) -> dict:
-    if not route.is_file() or sha256_file(route) != ROUTE_SHA256:
-        raise ValueError("Pinned historical route snapshot is missing or has the wrong hash")
-    cases, scan = scan_and_select(dataset, tokenizer, template)
+def build_manifest(dataset: Path, tokenizer: Path, template: Path, route: Path,
+                   frozen_cohort_manifest: Path | None = None) -> dict:
+    dataset, tokenizer, template, route = (path.resolve() for path in (dataset, tokenizer, template, route))
+    if frozen_cohort_manifest is not None:
+        frozen_cohort_manifest = frozen_cohort_manifest.resolve()
+    expected_route_hashes = {
+        DEFAULT_ROUTE.resolve(): ROUTE_SHA256,
+        LIVE_ROUTE.resolve(): LIVE_ROUTE_SHA256,
+        CURRENT_ROUTE.resolve(): CURRENT_ROUTE_SHA256,
+    }
+    if not route.is_file() or expected_route_hashes.get(route) != sha256_file(route):
+        raise ValueError("Route snapshot must be one of the reviewed historical or live-route snapshots")
+    parent = None
+    frozen_ids = None
+    if frozen_cohort_manifest is not None:
+        if (frozen_cohort_manifest.resolve() != (ROOT / "docs/evals/longbench-v2-minimax-344-manifest-live-route-2026-10-17.json").resolve()
+                or sha256_file(frozen_cohort_manifest) != "a13822840ceeb3648be58496d9814703a02dca0f70227226a9883a34f0ed4665"):
+            raise ValueError("Frozen cohort refresh requires the reviewed 344-task live-route manifest")
+        parent = json.loads(frozen_cohort_manifest.read_text(encoding="utf-8"))
+        frozen_ids = {str(case.get("id", "")) for case in parent.get("cases", [])}
+        if len(frozen_ids) != PRIMARY_N or "" in frozen_ids:
+            raise ValueError("Frozen parent manifest does not contain exactly 344 distinct IDs")
+    cases, scan = scan_and_select(dataset, tokenizer, template, frozen_ids,
+                                  parent.get("cohort_summary") if parent else None)
     route_json = json.loads(route.read_text(encoding="utf-8"))
+    pricing = route_json.get("pricing_usd_per_token", route_json.get("pricing", {}))
+    prompt_rate = pricing.get("prompt")
+    completion_rate = pricing.get("completion")
     if (route_json.get("requested_model") != "minimax/minimax-m3" or
             route_json.get("max_prompt_tokens") != PROVIDER_LIMIT or
-            route_json.get("pricing_usd_per_token", {}).get("prompt") != "0.0000003" or
-            route_json.get("pricing_usd_per_token", {}).get("completion") != "0.0000012"):
+            prompt_rate != "0.0000003" or completion_rate != "0.0000012"):
         raise ValueError("Historical route snapshot does not match the frozen planning assumptions")
     source_paths = {
         "builder": Path(__file__).resolve(),
@@ -390,7 +431,6 @@ def build_manifest(dataset: Path, tokenizer: Path, template: Path, route: Path) 
         "sift_package_init": ROOT / "src/sift/__init__.py",
         "prompt_builder": ROOT / "benchmarks/prepare_longbench_v2.py",
         "renderer": ROOT / "benchmarks/prepare_longbench_v2_minimax.py",
-        "runner": ROOT / "benchmarks/run_longbench_v2_minimax.py",
         "route_snapshot": route,
     }
     source_hashes = {key: sha256_file(path) for key, path in source_paths.items()}
@@ -439,13 +479,16 @@ def build_manifest(dataset: Path, tokenizer: Path, template: Path, route: Path) 
         "snapshot_sha256": source_hashes["route_snapshot"],
         "checked_utc": route_json["checked_utc"],
         "requested_model": route_json["requested_model"],
-        "provider": route_json["provider"],
-        "endpoint_model_id": route_json["provider_endpoint"].split("|")[-1].strip(),
+        "provider": route_json.get("provider_name", route_json.get("provider")),
+        "endpoint_model_id": route_json.get("model_id") or route_json.get("endpoint_model_id") or route_json.get("provider_endpoint", "").split("|")[-1].strip(),
+        "route_tag": route_json.get("tag", route_json.get("endpoint_tag")),
         "max_prompt_tokens": PROVIDER_LIMIT,
         "max_completion_tokens": route_json["max_completion_tokens"],
         "input_usd_per_million": INPUT_RATE,
         "output_usd_per_million": OUTPUT_RATE,
-        "status": "dated_historical_planning_assumptions_only_not_live_validation; refresh route, account usage, and unsettled requests before dispatch",
+        "status": ("dated_live_route_metadata_snapshot_not_dispatch_authorization"
+                   if route in {LIVE_ROUTE.resolve(), CURRENT_ROUTE.resolve()}
+                   else "dated_historical_planning_assumptions_only_not_live_validation; refresh route, account usage, and unsettled requests before dispatch"),
         "authorizes_dispatch": False,
     }
     full_input_per_repeat = sum(c["full_local_prompt_tokens"] for c in cases_out)
@@ -454,7 +497,7 @@ def build_manifest(dataset: Path, tokenizer: Path, template: Path, route: Path) 
     total_output_cap = len(jobs) * OUTPUT_CAP
     reserve_input_usd = 1.5 * total_projected_input * INPUT_RATE / 1_000_000
     reserve_output_usd = total_output_cap * OUTPUT_RATE / 1_000_000
-    return {
+    manifest = {
         "schema_version": 1,
         "status": "prepared_only_no_dispatch",
         "dispatch_authorized": False,
@@ -519,6 +562,14 @@ def build_manifest(dataset: Path, tokenizer: Path, template: Path, route: Path) 
             "api_key_read": False, "network_imports": [],
         },
     }
+    if parent is not None:
+        manifest["cohort_refresh"] = {
+            "parent_manifest_path": frozen_cohort_manifest.relative_to(ROOT).as_posix(),
+            "parent_manifest_sha256": sha256_file(frozen_cohort_manifest),
+            "selection": "retained the previously reviewed 344 IDs; recomputed prompt hashes, token counts, and Sift compaction with the current source tree",
+            "answer_labels_read_after_id_set_frozen": True,
+        }
+    return manifest
 
 
 def main() -> None:
@@ -527,10 +578,13 @@ def main() -> None:
     parser.add_argument("--tokenizer", type=Path, default=DEFAULT_TOKENIZER)
     parser.add_argument("--template", type=Path, default=DEFAULT_TEMPLATE)
     parser.add_argument("--route-snapshot", type=Path, default=DEFAULT_ROUTE)
+    parser.add_argument("--frozen-cohort-manifest", type=Path,
+                        help="Refresh current prompts for IDs from the reviewed 344-task cohort without rescanning/compacting all 503 rows.")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--check", action="store_true", help="Rebuild offline and verify byte-identical existing manifest")
     args = parser.parse_args()
-    manifest = build_manifest(args.dataset, args.tokenizer, args.template, args.route_snapshot)
+    manifest = build_manifest(args.dataset, args.tokenizer, args.template, args.route_snapshot,
+                              args.frozen_cohort_manifest)
     encoded = json.dumps(manifest, indent=2, ensure_ascii=False) + "\n"
     if args.check:
         if not args.output.is_file():

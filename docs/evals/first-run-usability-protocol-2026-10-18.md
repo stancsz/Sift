@@ -1,6 +1,6 @@
 # First-run usability protocol
 
-**Status: prepared, but not yet cleared for sessions; no participants recruited and no sessions run.** First-screen testing requires an independently reviewed preview of the exact page revision, and participant contact still requires owner authorization.
+**Status: cleared for up to three sessions; no sessions have run.** The owner authorized recruitment on 2026-10-20. The homepage first screen was reviewed at the required viewport and is frozen to the deployed revision recorded below. The public opt-in invitation is issue #13.
 
 This small, qualitative pilot checks whether developers with existing long-context work can understand Sift's benefit and complete its standalone Ollama quick start without coaching. It does not measure product-market fit, agent quality, production readiness, or adoption.
 
@@ -10,15 +10,15 @@ Where do first-time developers get stuck or misunderstand what Sift does, and wh
 
 ## Participants and authority
 
-- Start with three developers who already work with long agent histories or another long-context workflow. Three sessions are a usability screen, not a representative sample or statistical estimate.
-- Recruit only after the project owner authorizes participant contact. Do not send invitations or collect participant information before then.
+- Start with up to three developers who already work with long agent histories or another long-context workflow. Three sessions are a usability screen, not a representative sample or statistical estimate.
+- The project owner authorized recruitment for up to three sessions on 2026-10-20. Do not exceed that limit without renewed authorization.
 - Ask participants to use synthetic or non-sensitive history. Do not record API keys, account details, proprietary prompts, or personal data. Collect anonymized task observations only.
 - Use Ollama only at a loopback address (normally `http://127.0.0.1:11434/v1`). Do not configure a hosted `--base-url`, external proxy, or API key. The requested `openrouter/minimax-m3` evaluation model is not used in this usability pilot; make no paid or remote provider calls.
 
 ## Materials and setup
 
-- Freeze the tested PR commit and the exact README/site instructions shown to participants. Record the commit SHA, operating system, Python version, install time, Ollama version, model and whether that model was already downloaded.
-- For the comprehension prompt, show the opening viewport of the homepage rendered from a reviewable preview at the frozen commit, at 1280×800 CSS pixels; record its URL, commit and viewport. Do not run first-screen comprehension testing against the unrendered draft. If no reviewed preview is available, defer this measure rather than substitute the older production page.
+- Freeze the tested source commit used for the standalone CLI (use an immutable Git SHA, not a moving `main` reference) and the exact README/site instructions shown to participants. Record the commit SHA, operating system, Python version, install time, Ollama version, model and whether that model was already downloaded.
+- **Reviewed homepage screen:** `https://stancsz.github.io/sift/`, deployed Pages source commit `557702a0643b6370cf1098d20a75ff2fd80abd16`, rendered at 1280×800 CSS pixels on 2026-10-20. The site files are unchanged through current `main` commit `63e4f4e8aa2ef39e8bec24c8910494d1607d86f1`. An independent reviewer judged the first screen clear enough for a 20-second comprehension task: it explains deterministic selection, exact recent turns, relevant older excerpts and the no-summary-model-call property; the illustration is marked fictional and the quality caveat is visible. This screen is frozen for the comprehension task. If any page file changes before a session, review the new rendered revision before showing it.
 - Use the documented LiteLLM-free command and `examples/ollama_compaction_demo.py`. The demo is synthetic and checks whether a buried deployment setting survives compaction; it is a behavior demonstration, not evidence of general answer quality.
 - Reset to a clean local environment for each session where practical. Record setup failures separately from Sift behavior and do not silently help one participant through a blocker that others must solve alone.
 - Obtain consent to take notes. Do not audio/video record unless separately agreed.
@@ -61,4 +61,4 @@ Prepare an anonymized summary with the commit, aggregate sample description, tas
 - **Method:** Observe a small number of target developers completing the real first-run path; separate observed task behavior from stated intent and adoption.
 - **Trigger:** Use before broader distribution when the code path works locally but value comprehension and onboarding friction remain unverified.
 - **Limits:** Local friends or volunteers can be biased; three sessions cannot establish broad demand or quality. Account for setup variability and keep session notes non-sensitive.
-- **Current disposition:** Prepared only. No outreach or sessions have occurred. Participant-contact authority and a reviewed rendered preview are still needed before sessions.
+- **Current disposition:** Up to three sessions are authorized and the reviewed first-screen revision is recorded above. Issue #13 is open for volunteers; as of this protocol update, no participants have replied and no sessions have occurred.

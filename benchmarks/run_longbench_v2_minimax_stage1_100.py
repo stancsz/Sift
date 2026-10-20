@@ -37,6 +37,7 @@ from sift import CompactionError, compact_messages  # noqa: E402
 MANIFEST = ROOT / "docs/evals/longbench-v2-minimax-stage1-100-manifest-2026-10-18.json"
 MANIFEST_344 = ROOT / "docs/evals/longbench-v2-minimax-344-manifest-2026-10-17.json"
 MANIFEST_344_LIVE_ROUTE = ROOT / "docs/evals/longbench-v2-minimax-344-manifest-live-route-2026-10-17.json"
+MANIFEST_344_CURRENT = ROOT / "docs/evals/longbench-v2-minimax-344-manifest-current-main-2026-10-20.json"
 PARENT = ROOT / "docs/evals/longbench-v2-minimax-344-manifest-2026-10-17.json"
 HISTORICAL = ROOT / "docs/evals/longbench-v2-minimax-m3-100-manifest-2026-10-16.json"
 DATASET_DEFAULT = ROOT / ".runs/longbench-v2-data-pinned.json"
@@ -59,8 +60,17 @@ PROVIDER_LIMIT = 524_288
 MANIFEST_SHA256_STAGE1 = "52a7515d9bec715ccc17c85295b2e111d97cb2bffc00bd71fc9ed933cb22fce2"
 MANIFEST_SHA256_344 = "6364b4a21e5775fb4cd574e501286db64320cd4cde2b083250b07ec13ea6abc0"
 MANIFEST_SHA256_344_LIVE_ROUTE = "a13822840ceeb3648be58496d9814703a02dca0f70227226a9883a34f0ed4665"
+MANIFEST_SHA256_344_CURRENT = "eaddd0d337111c6ab3c36d3f4a68dae4f002c94964de39beec620280f9c657c2"
+UNKNOWN_503_REPORT_SHA256 = "d0b964b1a44e9f7b42edea7bc7f7761586dbd9e9b616f11fd13a3d9d624ed14a"
+UNKNOWN_503_JOB_IDS = {
+    "6725db8bbb02136c067d84eb:full:1",
+    "66f5605a821e116aacb3381f:full:1",
+    "67191791bb02136c067d406c:full:1",
+    "66ed23ce821e116aacb1ee84:full:1",
+}
 ROUTE_SNAPSHOT_HISTORICAL = ROOT / "docs/evals/longbench-v2-minimax-stage2-route-2026-10-17.json"
 ROUTE_SNAPSHOT_LIVE = ROOT / "docs/evals/longbench-v2-openrouter-minimax-m3-endpoints-2026-10-17T1126Z.json"
+ROUTE_SNAPSHOT_CURRENT = ROOT / "docs/evals/longbench-v2-openrouter-minimax-m3-endpoints-2026-10-20T0750Z.json"
 
 
 class StageError(RuntimeError):
@@ -96,6 +106,7 @@ def verify_provenance(manifest: dict, manifest_path: Path, dataset: Path,
         MANIFEST.resolve(): MANIFEST_SHA256_STAGE1,
         MANIFEST_344.resolve(): MANIFEST_SHA256_344,
         MANIFEST_344_LIVE_ROUTE.resolve(): MANIFEST_SHA256_344_LIVE_ROUTE,
+        MANIFEST_344_CURRENT.resolve(): MANIFEST_SHA256_344_CURRENT,
     }
     expected_manifest_hash = accepted_manifests.get(resolved_manifest)
     if expected_manifest_hash is None:
@@ -137,13 +148,24 @@ def verify_provenance(manifest: dict, manifest_path: Path, dataset: Path,
         if set(by_id) != set(ids):
             raise StageError("Stage case metadata does not match selected ID set")
     else:
-        if manifest_path.resolve() not in {MANIFEST_344.resolve(), MANIFEST_344_LIVE_ROUTE.resolve()}:
+        if manifest_path.resolve() not in {MANIFEST_344.resolve(), MANIFEST_344_LIVE_ROUTE.resolve(), MANIFEST_344_CURRENT.resolve()}:
             raise StageError("The 344-task mode accepts only a reviewed frozen primary manifest")
         ids = [case.get("id") for case in manifest.get("cases", [])]
         if len(ids) != 344 or len(set(ids)) != 344:
             raise StageError("Primary manifest must contain exactly 344 distinct cases")
         if len(manifest.get("jobs", [])) != 2064:
             raise StageError("Primary manifest must contain exactly 2,064 frozen jobs")
+        if manifest_path.resolve() == MANIFEST_344_CURRENT.resolve():
+            refresh = manifest.get("cohort_refresh", {})
+            parent_path = safe_repo_path(refresh.get("parent_manifest_path", ""))
+            parent = json.loads(parent_path.read_text(encoding="utf-8"))
+            parent_ids = {case.get("id") for case in parent.get("cases", [])}
+            if (parent_path.resolve() != MANIFEST_344_LIVE_ROUTE.resolve()
+                    or file_sha256(parent_path) != MANIFEST_SHA256_344_LIVE_ROUTE
+                    or refresh.get("parent_manifest_sha256") != MANIFEST_SHA256_344_LIVE_ROUTE
+                    or set(ids) != parent_ids
+                    or refresh.get("answer_labels_read_after_id_set_frozen") is not True):
+                raise StageError("Current-source refresh does not preserve the reviewed answer-blind parent cohort")
     if manifest.get("dataset", {}).get("revision") != DATASET_REVISION:
         raise StageError("Dataset revision mismatch")
     dataset_digest = manifest["dataset"].get("sha256") or manifest["dataset"].get("data_file_sha256")
@@ -175,7 +197,11 @@ def verify_provenance(manifest: dict, manifest_path: Path, dataset: Path,
         raise StageError("Dataset source hash mismatch")
     route = manifest.get("route_assumptions", {})
     route_path = safe_repo_path(route.get("snapshot_path", ""))
-    expected_route_path = ROUTE_SNAPSHOT_LIVE if resolved_manifest == MANIFEST_344_LIVE_ROUTE.resolve() else ROUTE_SNAPSHOT_HISTORICAL
+    expected_route_path = (
+        ROUTE_SNAPSHOT_CURRENT if resolved_manifest == MANIFEST_344_CURRENT.resolve()
+        else ROUTE_SNAPSHOT_LIVE if resolved_manifest == MANIFEST_344_LIVE_ROUTE.resolve()
+        else ROUTE_SNAPSHOT_HISTORICAL
+    )
     if (route_path.resolve() != expected_route_path.resolve()
             or file_sha256(route_path) != route.get("snapshot_sha256")):
         raise StageError("Dated route snapshot provenance mismatch")
@@ -386,6 +412,45 @@ def cost_receipt(usage: Any) -> tuple[float | None, str]:
     return max(nums), "upstream_and_openrouter" if direct is not None else "upstream"
 
 
+def recorded_unknown_outcome_reserve(report_path: Path, input_price: float = INPUT_PRICE,
+                                     output_price: float = OUTPUT_PRICE) -> dict:
+    """Bind a prior-outcome reserve to the exact private 503-run artifact."""
+    if not report_path.is_file() or file_sha256(report_path) != UNKNOWN_503_REPORT_SHA256:
+        raise StageError("Unknown outcomes require the exact recorded 503-run artifact and pinned SHA-256")
+    try:
+        prior = json.loads(report_path.read_text(encoding="utf-8"))
+    except Exception as error:
+        raise StageError(f"Recorded unknown-outcome artifact is unreadable: {error}") from error
+    unknown_ids = prior.get("unknown_outcome_job_ids")
+    if (prior.get("status") != "prefix_incomplete" or not isinstance(unknown_ids, list)
+            or set(unknown_ids) != UNKNOWN_503_JOB_IDS or len(unknown_ids) != len(UNKNOWN_503_JOB_IDS)):
+        raise StageError("Recorded unknown-outcome artifact differs from the reviewed 503-run ledger")
+    schedule_rows = {row.get("job_id"): row for row in prior.get("schedule", [])
+                     if isinstance(row, dict) and isinstance(row.get("job_id"), str)}
+    samples = [row for row in prior.get("samples", []) if isinstance(row, dict)]
+    reserves = {}
+    for job_id in UNKNOWN_503_JOB_IDS:
+        frozen = schedule_rows.get(job_id)
+        if (not isinstance(frozen, dict) or frozen.get("arm") != "full"
+                or type(frozen.get("local_prompt_tokens")) is not int
+                or frozen["local_prompt_tokens"] <= 0):
+            raise StageError(f"Unknown outcome is missing its frozen request record: {job_id}")
+        attempts = [row for row in samples if row.get("job_id") == job_id]
+        if not any(row.get("usage") is None and row.get("failure") for row in attempts):
+            raise StageError(f"Unknown outcome lacks an unreceipted attempt record: {job_id}")
+        # Provider prompt usage is unavailable for the ambiguous attempt.
+        # Reserve the current route's full per-request prompt limit and output cap.
+        reserves[job_id] = (PROVIDER_LIMIT * input_price + OUTPUT_CAP * output_price) / 1_000_000
+    return {
+        "source_report_path": str(report_path.resolve()),
+        "source_report_sha256": UNKNOWN_503_REPORT_SHA256,
+        "source_unknown_job_ids": sorted(UNKNOWN_503_JOB_IDS),
+        "reserve_method": "one full current-provider prompt limit plus 64 output tokens per unreceipted request",
+        "per_job_reserves_usd": reserves,
+        "total_reserve_usd": sum(reserves.values()),
+    }
+
+
 def atomic_write(path: Path, value: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temp = path.with_name(path.name + ".tmp")
@@ -397,7 +462,8 @@ def live_account_route_preflight(api_key: str, manifest: dict, cap: float,
                                  jobs: list[dict], no_unsettled_attested: bool,
                                  provider_billing_attested: bool,
                                  provider_billing_authorized_unverified: bool = False,
-                                 prior_unknown_outcome_explicitly_accepted: bool = False) -> dict:
+                                 prior_unknown_outcome_explicitly_accepted: bool = False,
+                                 prior_unknown_outcome_reserve_usd: float = 0.0) -> dict:
     """Refresh MiniMax route metadata and require operator-settlement attestations.
 
     OpenRouter credits are diagnostics only for BYOK inference, which is billed
@@ -406,6 +472,10 @@ def live_account_route_preflight(api_key: str, manifest: dict, cap: float,
     """
     if not no_unsettled_attested and not prior_unknown_outcome_explicitly_accepted:
         raise StageError("Before dispatch, reconcile prior/in-flight requests or explicitly accept the recorded unknown outcome")
+    if (not math.isfinite(prior_unknown_outcome_reserve_usd)
+            or prior_unknown_outcome_reserve_usd < 0
+            or (not prior_unknown_outcome_explicitly_accepted and prior_unknown_outcome_reserve_usd != 0)):
+        raise StageError("Unknown prior outcome reserves must be finite, nonnegative, and only supplied when the outcome is explicitly accepted")
     if not provider_billing_attested and not provider_billing_authorized_unverified:
         raise StageError("Confirm MiniMax-side billing headroom, or explicitly record user-authorized spend with provider balance unverified")
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
@@ -488,6 +558,7 @@ def live_account_route_preflight(api_key: str, manifest: dict, cap: float,
             "provider_billing_status": ("headroom_attested" if provider_billing_attested
                                         else "user_authorized_balance_unverified"),
             "approved_run_cap_usd": cap,
+            "prior_unknown_outcome_reserve_usd": prior_unknown_outcome_reserve_usd,
             "prior_in_flight_reconciliation": (
                 "explicit operator attestation; API does not prove all upstream settlements"
                 if no_unsettled_attested else
@@ -538,6 +609,7 @@ def prepare_report(manifest_path: Path, manifest: dict, mode: str, jobs: list[di
 
 def dispatch(jobs: list[dict], cases: dict, report: dict, output: Path,
              cap: float, api_key: str, live_route: dict,
+             prior_unknown_outcome_reserve_usd: float = 0.0,
              process_started_perf: float | None = None,
              process_started_utc: str | None = None) -> dict:
     input_price = live_route["input_usd_per_million"]
@@ -545,12 +617,14 @@ def dispatch(jobs: list[dict], cases: dict, report: dict, output: Path,
     if input_price != INPUT_PRICE or output_price != OUTPUT_PRICE:
         raise StageError("Live price differs from frozen reserve rates; prepare a refreshed reviewed plan before dispatch")
     estimate = report["budget_estimate"]["estimated_reserve_usd"]
-    if not math.isfinite(cap) or cap <= 0 or cap < estimate:
-        raise StageError(f"Approved cap must be finite, positive, and at least the refreshed estimate ${estimate:.6f}")
+    minimum_cap = estimate + prior_unknown_outcome_reserve_usd
+    if not math.isfinite(cap) or cap <= 0 or cap < minimum_cap:
+        raise StageError(f"Approved cap must be finite, positive, and at least the refreshed estimate plus prior reserve ${minimum_cap:.6f}")
     # No automatic retry/resume: an ambiguous request is written as in-flight and blocks later runs.
     report["status"] = "dispatching"
     report["actual_dispatch_started"] = True
     report["dispatch_spend_cap_usd"] = cap
+    report["prior_unknown_outcome_reserve_usd"] = prior_unknown_outcome_reserve_usd
     report["dispatch_started_utc"] = datetime.now(timezone.utc).isoformat()
     report["samples"] = []
     report["in_flight"] = None
@@ -559,7 +633,7 @@ def dispatch(jobs: list[dict], cases: dict, report: dict, output: Path,
     started = time.perf_counter()
     for index, job in enumerate(jobs):
         reserve = (job["local_prompt_tokens"] * INPUT_FACTOR * input_price + OUTPUT_CAP * output_price) / 1_000_000
-        if settled + reserve > cap:
+        if prior_unknown_outcome_reserve_usd + settled + reserve > cap:
             report["status"] = "budget_guard_stopped_before_request"
             report["stop_reason"] = "next_request_reservation_exceeds_approved_cap"
             break
@@ -673,7 +747,7 @@ def dispatch(jobs: list[dict], cases: dict, report: dict, output: Path,
             elif actual > reserve:
                 report["status"] = "budget_guard_overrun"
                 report["stop_reason"] = "actual_request_cost_exceeded_its_reservation"
-            elif settled > cap:
+            elif prior_unknown_outcome_reserve_usd + settled > cap:
                 report["status"] = "budget_guard_overrun"
                 report["stop_reason"] = "actual_reported_cost_exceeded_cap"
             elif failure is not None or finish_reason not in {"stop", "length"}:
@@ -715,6 +789,12 @@ def main() -> int:
                         help="Attest that prior and in-flight requests from earlier runs have been reconciled before dispatch.")
     parser.add_argument("--confirm-provider-billing-covers-cap", action="store_true",
                         help="Attest that MiniMax-side billing headroom covers the full approved BYOK spend cap.")
+    parser.add_argument("--authorize-unverified-provider-billing", action="store_true",
+                        help="Proceed under the explicit user spend cap when MiniMax-side balance is not observable; the cap remains client-side.")
+    parser.add_argument("--accept-recorded-unknown-outcomes", action="store_true",
+                        help="Explicitly accept previously recorded outcomes whose upstream usage cannot be reconciled.")
+    parser.add_argument("--prior-unknown-outcome-report", type=Path,
+                        help="Exact private 503-run artifact with the previously recorded unreceipted requests.")
     args = parser.parse_args()
     if args.dispatch != (args.spend_cap_usd is not None):
         raise StageError("Use --dispatch and --spend-cap-usd together; otherwise run offline")
@@ -722,12 +802,20 @@ def main() -> int:
         raise StageError("--confirm-no-unsettled-requests is valid only with --dispatch")
     if args.confirm_provider_billing_covers_cap and not args.dispatch:
         raise StageError("--confirm-provider-billing-covers-cap is valid only with --dispatch")
+    if args.authorize_unverified_provider_billing and not args.dispatch:
+        raise StageError("--authorize-unverified-provider-billing is valid only with --dispatch")
+    if args.accept_recorded_unknown_outcomes and not args.dispatch:
+        raise StageError("--accept-recorded-unknown-outcomes is valid only with --dispatch")
+    if args.prior_unknown_outcome_report and not args.dispatch:
+        raise StageError("--prior-unknown-outcome-report is valid only with --dispatch")
     api_key = None
     if args.dispatch:
-        if not args.confirm_no_unsettled_requests:
-            raise StageError("Before dispatch, reconcile prior/in-flight spend and pass --confirm-no-unsettled-requests")
-        if not args.confirm_provider_billing_covers_cap:
-            raise StageError("Before dispatch, attest MiniMax-side billing headroom with --confirm-provider-billing-covers-cap")
+        if args.confirm_no_unsettled_requests == args.accept_recorded_unknown_outcomes:
+            raise StageError("Choose exactly one: --confirm-no-unsettled-requests or --accept-recorded-unknown-outcomes")
+        if args.confirm_provider_billing_covers_cap == args.authorize_unverified_provider_billing:
+            raise StageError("Choose exactly one provider-billing attestation or explicit unverified-balance authorization")
+        if args.accept_recorded_unknown_outcomes != (args.prior_unknown_outcome_report is not None):
+            raise StageError("Accepting prior unknown outcomes requires their exact recorded report; do not pass it otherwise")
         if not math.isfinite(args.spend_cap_usd) or args.spend_cap_usd <= 0:
             raise StageError("--spend-cap-usd must be finite and positive")
         api_key = os.environ.get("OPENROUTER_API_KEY")
@@ -768,17 +856,28 @@ def main() -> int:
                           "output": str(args.output)}, indent=2))
         return 0
     estimate = report["budget_estimate"]["estimated_reserve_usd"]
-    if args.spend_cap_usd < estimate:
+    unknown_evidence = None
+    prior_unknown_reserve = 0.0
+    if args.accept_recorded_unknown_outcomes:
+        unknown_evidence = recorded_unknown_outcome_reserve(args.prior_unknown_outcome_report)
+        prior_unknown_reserve = unknown_evidence["total_reserve_usd"]
+        report["prior_unknown_outcome_evidence"] = unknown_evidence
+    report["prior_unknown_outcome_reserve_usd"] = prior_unknown_reserve
+    if args.spend_cap_usd < estimate + prior_unknown_reserve:
         report["status"] = "not_started_estimated_budget_exceeded"
-        report["stop_reason"] = "cap_below_preflight_estimate"
+        report["stop_reason"] = "cap_below_estimate_plus_prior_unknown_reserve"
         atomic_write(args.output, report)
-        raise StageError(f"No requests sent: cap ${args.spend_cap_usd:.6f} < estimate ${estimate:.6f}")
+        raise StageError(f"No requests sent: cap ${args.spend_cap_usd:.6f} < estimated run plus prior unknown reserve ${estimate + prior_unknown_reserve:.6f}")
     live_route = live_account_route_preflight(api_key, manifest, args.spend_cap_usd,
                                               jobs, args.confirm_no_unsettled_requests,
-                                              args.confirm_provider_billing_covers_cap)
+                                              args.confirm_provider_billing_covers_cap,
+                                              args.authorize_unverified_provider_billing,
+                                              args.accept_recorded_unknown_outcomes,
+                                              prior_unknown_reserve)
     # Live route metadata must match the dated reserve before any paid request.
     report["live_route_validation"] = live_route
     result = dispatch(jobs, cases, report, args.output, args.spend_cap_usd, api_key, live_route,
+                      prior_unknown_reserve,
                       process_started_perf, process_started_utc)
     print(json.dumps({"status": result["status"], "completed_jobs": result["completed_jobs"],
                       "actual_cost_usd": result.get("settled_actual_cost_usd"), "output": str(args.output)}, indent=2))
