@@ -14,6 +14,10 @@ The official README also makes the stock output boundary unsuitable without a wr
 
 An isolated inspection of the public PyPI release `appworld==0.1.3.post1` found its documented `download data` CLI has no split selector; the command downloads and unpacks one data bundle. The official README's standard setup downloads that data before selecting task IDs by split. We did not download the bundle because a split-scoped, test-free rehearsal path has not been verified. AppWorld is therefore parked: do not proceed to a rehearsal unless the benchmark provides a non-test-only data path or a synthetic-task route can be demonstrated without loading its test split.
 
+### Public metadata recheck — 2026-10-20
+
+An independent read-only review of the current official README and downloader confirmed the same gate. The documented `appworld download data` path installs one shared `data/` tree containing split ID lists and task materials; split selection occurs later when task IDs are loaded. The downloader accepts `version` and `mode`, but no split selector, and its bundle can include protected test materials. The official rules allow test splits for aggregate evaluation and prohibit inspecting test tasks and task-level reports. No task data or archive payload was downloaded or inspected for this recheck. This is an absence-of-public-evidence finding: it does not prove no private or undocumented selective-data route exists. **Disposition remains no-go:** do not use AppWorld for a rehearsal unless a documented test-free route and independently enforced operator/reviewer boundary are established first.
+
 The protected benchmark data is encrypted, and its license places conditions on public redistribution of plaintext protected material and derivatives.
 
 This makes AppWorld a useful operational holdout candidate if the evaluation is run under its exact rules. It does not establish that model weights have never seen related tasks, nor does it create a privately authored benchmark.
@@ -22,6 +26,7 @@ Primary sources:
 
 - [AppWorld paper (ACL 2024)](https://aclanthology.org/2024.acl-long.850/)
 - [Official AppWorld repository, output layout, evaluator reports, and benchmark rules](https://github.com/StonyBrookNLP/appworld/blob/main/README.md)
+- [Official current AppWorld data downloader](https://github.com/StonyBrookNLP/appworld/blob/main/src/appworld/download.py)
 - [AppWorld v0.1.3.post1 data download implementation](https://github.com/StonyBrookNLP/appworld/blob/v0.1.3.post1/src/appworld/download.py)
 
 ## Frozen protocol before any test access or provider call
