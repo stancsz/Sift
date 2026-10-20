@@ -11,7 +11,7 @@
 [![MIT license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Release](https://img.shields.io/github/v/tag/stancsz/sift?label=release)](https://github.com/stancsz/sift/tags)
 
-Pull requests run a short Python 3.12 smoke over core behavior, invariants, the standalone CLI, and the local Ollama demo. The full test suite and offline comparison run weekly and on manual dispatch; run them locally before a release with `python -m pytest tests -q` and `python benchmarks/compare.py`. To also check the standalone proxy with the OpenAI Python client (loopback fixtures only, no model request), install `python -m pip install -e ".[test,client-smoke]"` and run `python -m pytest tests/test_openai_sdk_compat.py -q`.
+Pull requests run a short Python 3.12 smoke over core behavior, invariants, the standalone CLI, and local Ollama and no-inference fixtures. The full test suite and offline comparison run weekly and on manual dispatch; run them locally before a release with `python -m pytest tests -q` and `python benchmarks/compare.py`. To also check the standalone proxy with the OpenAI Python client (loopback fixtures only, no model request), install `python -m pip install -e ".[test,client-smoke]"` and run `python -m pytest tests/test_openai_sdk_compat.py -q`.
 
 Sift is a deterministic, CPU-only context compressor for coding and research agents. It trims older chat and tool history to a configurable token budget while preserving the current request and active tool work exactly when they fit. If they do not fit, Sift fails closed. It makes no summarization call and adds no model dependency.
 
@@ -54,6 +54,20 @@ python examples/ollama_compaction_demo.py --model qwen3.5:4b
 ```
 
 The demo checks that `x-sift-compacted` is true; its generated rollout log puts the approved `initialDelaySeconds` value among routine polls. The scenario is synthetic and demonstrates request behavior, not answer quality. For your own client, use the OpenAI-compatible URL `http://127.0.0.1:4011/v1` and the model name your backend expects. For another compatible backend, replace `--base-url`; it must accept `POST /v1/chat/completions` and, when protected, standard Bearer authentication. Pass a protected endpoint's key through `--api-key-env ENV_VAR`, with the secret stored in that environment variable.
+
+To try the standalone proxy without installing or calling a model, use the local deterministic fixture. In one terminal, start Sift with the fixture's loopback address:
+
+```sh
+python -m sift.cli serve --base-url http://127.0.0.1:4020/v1 --target 2048 --tokenizer byte-estimate
+```
+
+In a second terminal from the source checkout, run:
+
+```sh
+python examples/no_inference_compaction_demo.py
+```
+
+The script binds a stub backend to `127.0.0.1:4020`, checks whether Sift forwarded the buried rollout setting, and returns a fixed response. It makes no model call and requires no Ollama install. This verifies local request compaction only; it does not test an inference backend or answer quality.
 
 `byte-estimate` is an explicit UTF-8 request-size estimate, **not the upstream model's tokenizer**. Sift enforces the target against this estimate, including message and tool-schema fields. Leave room for output and treat the target as estimate-relative; provider context fit is not guaranteed. Only OpenAI Chat Completions is supported by this standalone proxy. The existing LiteLLM callback remains the path for Anthropic Messages, Responses, and LiteLLM's provider-specific token counter.
 
@@ -257,7 +271,7 @@ python -m pytest tests -q
 node tests/test_site_demo.js
 python benchmarks/compare.py
 ```
-The full offline Python suite runs locally with the commands above. The standalone Node check exercises both GitHub Pages demo buttons and needs no npm packages. Pull requests run core, invariant, CLI, site, and Ollama-demo smoke checks on Python 3.12; the full suite and offline comparison benchmark run across Python 3.11–3.14 weekly and on manual dispatch. The tests cover hard budgets, protocol preservation, active tool loops, append-only behavior inside fixed boundaries, diagnostic context, identifier joins, contradictory facts, unsupported inputs, and the LiteLLM callback.
+The full offline Python suite runs locally with the commands above. The standalone Node check exercises both GitHub Pages demo buttons and needs no npm packages. Pull requests run core, invariant, CLI, site, Ollama-demo, and no-inference-fixture smoke checks on Python 3.12; the full suite and offline comparison benchmark run across Python 3.11–3.14 weekly and on manual dispatch. The tests cover hard budgets, protocol preservation, active tool loops, append-only behavior inside fixed boundaries, diagnostic context, identifier joins, contradictory facts, unsupported inputs, and the LiteLLM callback.
 
 The [native-agent guide](docs/native-agents.md) includes opt-in Claude Code and Codex runs, public development fixtures with separate gold checks, and an isolated LiteLLM comparison gateway. These source-checkout benchmarks are separate from the installed callback and make real model calls.
 
