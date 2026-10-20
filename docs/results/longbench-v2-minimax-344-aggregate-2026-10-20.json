@@ -75,6 +75,6 @@
     "LongBench structured-choice accuracy is not accepted coding-agent task quality.",
     "Historical unreceipted requests are accounted for in the user-authorized cap but excluded from settled receipt totals.",
     "The raw reports are private; source report hashes are provided for integrity checks.",
-    "The checked-in strict full-run analyzer is pinned to the parent manifest and expects one complete report; these aggregates were recomputed from the split reports using the same strict choice-scoring and task-cluster bootstrap rules, but the analyzer does not yet ingest this refreshed manifest and split-report layout directly."
+    "The checked-in strict analyzer validates the refreshed manifest and prefix/continuation ledgers directly. Private run reports remain unavailable for external recomputation."
   ]
 }

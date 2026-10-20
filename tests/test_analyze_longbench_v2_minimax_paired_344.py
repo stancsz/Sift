@@ -97,6 +97,44 @@ def _fixture():
     return prepared, run, manifest, manifest_sha
 
 
+def _split_fixture():
+    prepared, run, manifest, manifest_sha = _fixture()
+    prefix = copy.deepcopy(run)
+    prefix.update({"status": "safety_guard_stopped", "cohort": "primary_344", "planned_jobs": 2064,
+                   "completed_jobs": 542, "protocol": {"temperature": 0},
+                   "frozen_source_runner_sha256": "f" * 64,
+                   "runner_hash_semantics": "fixture"})
+    prefix["samples"] = prefix["samples"][:542]
+    failed = prefix["samples"][-1]
+    failed.update({"http_status": 529, "usage": None, "provider_reported_cost_usd": None,
+                   "choice": None, "failure": "fixture transport failure", "raw_sse_events": []})
+    prefix["settled_actual_cost_usd"] = sum(
+        row["provider_reported_cost_usd"] or 0 for row in prefix["samples"])
+
+    continuation = copy.deepcopy(run)
+    continuation.update({"cohort": "primary_344", "planned_jobs": 1522, "completed_jobs": 1522,
+                         "continuation_schedule_start_index": 542,
+                         "protocol": {"temperature": 0},
+                         "frozen_source_runner_sha256": "f" * 64,
+                         "runner_hash_semantics": "fixture"})
+    continuation["schedule"] = [dict(row, index=index)
+                                 for index, row in enumerate(run["schedule"][542:])]
+    continuation["schedule_sha256"] = analyzer.canonical_hash(continuation["schedule"])
+    continuation["samples"] = run["samples"][542:]
+    prefix_sha = analyzer.sha256_bytes(json.dumps(
+        prefix, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8"))
+    continuation["continuation_source_evidence"] = {
+        "source_report_sha256": prefix_sha,
+        "prior_sample_count": 542,
+        "remaining_frozen_jobs": 1522,
+        "previously_settled_cost_usd": prefix["settled_actual_cost_usd"],
+        "skipped_unknown_job_id": failed["job_id"],
+    }
+    continuation["settled_actual_cost_usd"] = prefix["settled_actual_cost_usd"] + sum(
+        row["provider_reported_cost_usd"] for row in continuation["samples"])
+    return prefix, continuation, manifest, manifest_sha, prefix_sha
+
+
 class Paired344AnalyzerTests(unittest.TestCase):
     def test_synthetic_complete_run_scores_aggregate_only_and_marks_missing_timing_unavailable(self):
         prepared, run, manifest, manifest_sha = _fixture()
@@ -141,9 +179,13 @@ class Paired344AnalyzerTests(unittest.TestCase):
             analyzer.analyze({**prepared, "schedule": prepared["schedule"][:-1]}, run, manifest,
                              manifest_sha, bootstrap_samples=200)
         prepared, run, manifest, manifest_sha = _fixture()
-        with self.assertRaisesRegex(analyzer.AnalysisError, "exactly 2064 response"):
+        with self.assertRaisesRegex(analyzer.AnalysisError, "response count"):
             analyzer.analyze(prepared, {**run, "samples": run["samples"][:-1]}, manifest,
                              manifest_sha, bootstrap_samples=200)
+        with self.assertRaises(TypeError):
+            analyzer.analyze(prepared, {**run, "samples": run["samples"][:-1]}, manifest,
+                             manifest_sha, bootstrap_samples=200,
+                             allowed_missing_job_ids={run["samples"][-1]["job_id"]})
 
     def test_rejects_hash_or_cost_mismatch(self):
         prepared, run, manifest, manifest_sha = _fixture()
@@ -250,6 +292,65 @@ class Paired344AnalyzerTests(unittest.TestCase):
                                          "--manifest", str(manifest_path), "--output", "unused"]):
                 with self.assertRaisesRegex(analyzer.AnalysisError, "reviewed frozen"):
                     analyzer.main()
+
+    def test_split_reports_reconcile_and_exclude_only_unreceipted_task_from_quality(self):
+        prefix, continuation, manifest, manifest_sha, prefix_sha = _split_fixture()
+        with mock.patch.object(analyzer, "SPLIT_344_MANIFEST_SHA256", manifest_sha):
+            result = analyzer.analyze_segments(prefix, continuation, manifest, manifest_sha,
+                                               prefix_sha, bootstrap_samples=200)
+        self.assertEqual(result["scope"]["tasks"], 343)
+        self.assertEqual(result["scope"]["responses_per_arm"], 1029)
+        self.assertEqual(result["scope"]["total_responses"], 2058)
+        self.assertEqual(result["scope"]["usage_receipts_total"], 2063)
+        self.assertEqual(result["scope"]["planned_jobs"], 2064)
+        self.assertEqual(result["scope"]["excluded_unreceipted_jobs"], 1)
+        self.assertEqual(result["run_status"]["dispatched_jobs"], 2064)
+        self.assertEqual(result["run_status"]["usage_receipts"], 2063)
+        self.assertEqual(result["quality"]["arms"]["full"]["exact_responses"], 1029)
+        self.assertEqual(result["quality"]["arms"]["sift"]["exact_responses"], 1029)
+        self.assertAlmostEqual(result["run_status"]["settled_actual_cost_usd"], 2063 * 0.0002)
+        self.assertEqual(len(result["provenance"]["execution_runner_sha256s"]), 2)
+        rendered = json.dumps(result)
+        for secret in ("PROMPT_SENTINEL", "RESPONSE_SENTINEL", "ANSWER_SENTINEL",
+                       "fixture transport failure", "task-090"):
+            self.assertNotIn(secret, rendered)
+
+    def test_split_reports_reject_segment_or_cost_tampering(self):
+        prefix, continuation, manifest, manifest_sha, prefix_sha = _split_fixture()
+        broken = copy.deepcopy(continuation)
+        broken["schedule"][-1]["body_sha256"] = "0" * 64
+        broken["schedule_sha256"] = analyzer.canonical_hash(broken["schedule"])
+        with mock.patch.object(analyzer, "SPLIT_344_MANIFEST_SHA256", manifest_sha):
+            with self.assertRaisesRegex(analyzer.AnalysisError, "exact frozen suffix"):
+                analyzer.analyze_segments(prefix, broken, manifest, manifest_sha,
+                                          prefix_sha, bootstrap_samples=200)
+
+            broken = copy.deepcopy(continuation)
+            broken["settled_actual_cost_usd"] += 1
+            with self.assertRaisesRegex(analyzer.AnalysisError, "Final settled cost"):
+                analyzer.analyze_segments(prefix, broken, manifest, manifest_sha,
+                                          prefix_sha, bootstrap_samples=200)
+
+    def test_split_reports_reject_multiple_or_wrong_missing_jobs(self):
+        prefix, continuation, manifest, manifest_sha, prefix_sha = _split_fixture()
+        broken_prefix = copy.deepcopy(prefix)
+        broken_prefix["samples"][10].update({"usage": None, "provider_reported_cost_usd": None})
+        broken_prefix_sha = analyzer.sha256_bytes(json.dumps(
+            broken_prefix, sort_keys=True, separators=(",", ":"),
+            ensure_ascii=False).encode("utf-8"))
+        broken_continuation = copy.deepcopy(continuation)
+        broken_continuation["continuation_source_evidence"]["source_report_sha256"] = broken_prefix_sha
+        with mock.patch.object(analyzer, "SPLIT_344_MANIFEST_SHA256", manifest_sha):
+            with self.assertRaisesRegex(analyzer.AnalysisError, "Only the explicitly skipped"):
+                analyzer.analyze_segments(broken_prefix, broken_continuation, manifest,
+                                          manifest_sha, broken_prefix_sha, bootstrap_samples=200)
+
+            broken_continuation = copy.deepcopy(continuation)
+            broken_continuation["continuation_source_evidence"]["skipped_unknown_job_id"] = \
+                f"{continuation['schedule'][0]['case_id']}:{continuation['schedule'][0]['arm']}:{continuation['schedule'][0]['repeat']}"
+            with self.assertRaisesRegex(analyzer.AnalysisError, "Only the explicitly skipped"):
+                analyzer.analyze_segments(prefix, broken_continuation, manifest,
+                                          manifest_sha, prefix_sha, bootstrap_samples=200)
 
 
 if __name__ == "__main__":
