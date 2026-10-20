@@ -76,6 +76,17 @@ class SiteSmokeTests(unittest.TestCase):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         self.assertIn("https://stancsz.github.io/sift/#try", readme)
 
+    def test_evidence_section_reports_quality_tradeoff_and_subroute_cost_limits(self):
+        text = " ".join(self.parser.text)
+        self.assertIn("59.7%", text.replace(" ", ""))
+        self.assertIn("−5.25", text)
+        self.assertIn("950,401", text)
+        self.assertIn("32,502 input / 6 output", text)
+        self.assertIn("37,003 input / 41 output", text)
+        self.assertIn("rejected before inference", text)
+        self.assertIn("API-rate estimates", text)
+        self.assertNotIn("Opus", text)
+
 
 if __name__ == "__main__":
     unittest.main()

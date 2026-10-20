@@ -17,7 +17,7 @@ Sift is a deterministic, CPU-only context compressor for coding and research age
 
 Use Sift as a Python library, a **LiteLLM Proxy callback**, or the standalone `sift` CLI with Ollama or another OpenAI-compatible endpoint. On supported backends, stable history between tool-cycle boundaries can also help prefix-cache reuse.
 
-[See an offline compaction example](https://stancsz.github.io/sift/#try) · [Project site](https://stancsz.github.io/sift/) · [Standalone CLI](#standalone-cli-no-litellm) · [LiteLLM quick start](#litellm-proxy) · [Measured LongBench results](#longbench-v2-658-fewer-prompt-tokens) · [How it works](docs/algorithm.md) · [Evaluation record](docs/evaluation.md) · [Release process](docs/releasing.md)
+[See an offline compaction example](https://stancsz.github.io/sift/#try) · [Project site](https://stancsz.github.io/sift/) · [Standalone CLI](#standalone-cli-no-litellm) · [LiteLLM quick start](#litellm-proxy) · [Measured LongBench results](#broader-longbench-v2-cohort-344-questions-three-repeats-per-arm) · [How it works](docs/algorithm.md) · [Evaluation record](docs/evaluation.md) · [Release process](docs/releasing.md)
 
 > **Preview release:** install the tested `v0.10.0` tag from GitHub today. It defaults to a 24,576-token target. The newer 32,768-token default is on unreleased `main` (`0.11.0.dev0`). Sift is not yet published to PyPI. See the [release roadmap](ROADMAP.md).
 
@@ -129,24 +129,39 @@ Across 100 previously exposed LongBench v2 questions, three repeats per arm, Sif
 
 **Scope:** 100 public development questions previously exposed during selector work, with three repeats clustered within each question—not a blind holdout or the full 503-question dataset. Five ambiguous original attempts were retried once; their token usage and costs are unknown and excluded, so both savings figures cover only the 600 responses with usage receipts. Five responses ended at the output limit and were unscorable. ¹The cost row sums OpenRouter's cache-inclusive `upstream_inference_cost` receipt field for BYOK requests; it is not a MiniMax invoice. Full context had 69.5% cached prompt tokens versus 60.4% for Sift, so the observed cost ratio depends on this run's cache behavior. No end-to-end speed claim is made.
 
-A separate, broader one-repeat run has 446 matched scoreable questions from the 503-question public dataset: Full scored 44.4%, Sift scored 43.3% (−1.1 percentage points), and Sift used 75.8% fewer provider-reported prompt tokens. That run is incomplete, and all questions were exposed during development; it does not demonstrate parity or generalization. See the [checkpoint and accounting](docs/results/longbench-v2-minimax-m3-fullsuite-progress-2026-10-17.md).
+A separate, broader 344-question run below tests three repeats per arm. It is more recent and has a larger repeated cohort, but it also shows a lower Sift task-majority score. Keep both findings visible rather than reading token reduction as a quality result.
 
 [Protocol and complete-run status](docs/evals/longbench-v2-minimax-600-runner-2026-10-17.md) · [Aggregate result and hashes](docs/results/longbench-v2-minimax-600-2026-10-17.json) · [Earlier and ongoing evaluation work](docs/evaluation.md)
 
-### What a 950K-token context costs with Sift
+### Broader LongBench v2 cohort: 344 questions, three repeats per arm
 
-We ran a synthetic 950,401-token archive through Sift, then sent the compacted request to GPT-6 Astra and Gemini 4 Argon through Subroute. Sift estimated 32,698 forwarded tokens. Both models returned the requested value, `37 seconds`.
+The exposed-development MiniMax M3 study completed **2,063 of 2,064 requests with valid usage receipts**. One Full-context request returned HTTP 529 without a receipt and was not retried. For the 343 task clusters with three receipted responses in both arms:
 
-| Model | Raw context (estimated tokens) | Sift forwarding estimate | Actual Sifted usage (input / output tokens) | No-Sift API-equivalent | With-Sift API-equivalent |
-|---|---:|---:|---:|---:|---:|
-| GPT-6 Astra | 950,401 | 32,698 | 32,502 / 6 | $19.0085 | $0.3253 |
-| Gemini 4 Argon | 950,401 | 32,698 | 37,003 / 41 | $1.9012 | $0.0744 |
+| Measure | Full context | With Sift | Difference |
+|---|---:|---:|---:|
+| Exact answers | 434/1,029 · 42.18% | 414/1,029 · 40.23% | −1.94 pp |
+| Task majorities | 145/343 · 42.27% | 127/343 · 37.03% | **−5.25 pp** |
+| Provider-reported prompt tokens¹ | 66,007,295 | 26,628,470 | **59.7% fewer** |
+| Provider-reported upstream cost¹ | $8.942262 | $3.690962 | **58.7% lower** |
 
-**Token counts:** Raw and forwarded counts are Sift's LiteLLM estimates. Subroute's usage receipt reports the input tokens each model actually received; tokenizers and request framing differ. The observed input reduction was 96.6% for Astra and 96.1% for Gemini.
+The task-majority 95% question-cluster bootstrap interval for Sift minus Full is **−10.20 to −0.29 percentage points** (20,000 resamples, fixed seed). The paired task table is 100 both-correct, 45 Full-only, 27 Sift-only, and 171 neither. This is a descriptive result on public questions and labels previously exposed during development, not held-out evidence or an agent-task benchmark. Receipt costs are cache-sensitive OpenRouter BYOK fields, not an invoice. The one cluster with the unreceipted Full request is excluded from paired quality scoring. ¹Token and cost totals include every valid receipt, including the unpaired responses.
 
-**No-Sift estimates:** The full 950,401-token requests were rejected by the current subscription routes before inference: Astra's Codex route rejected the context, and Gemini's bridge rejected the request body at its 1,000,000-byte limit. These are API-rate equivalents, not measured full-context calls. They apply public uncached input rates to Sift's raw estimate and assume the same output length observed in each Sifted reply.
+[Protocol, limits, and analysis method](docs/evaluation.md#broader-longbench-v2-cohort-344-questions-completed)
 
-**With-Sift estimates:** The subscription routes do not provide per-call dollar billing. These figures apply public API rates to Subroute's actual Sifted token receipts; no cache discount is included. Astra's long-context rate applies above 272K input tokens. Gemini 4 Argon's introductory rates apply through November 30, 2026. See the [probe method and receipts](docs/evals/subroute-950k-token-cost-probe-2026-10-20.md), [GPT-6 Astra pricing](https://developers.openai.com/api/docs/models/gpt-6-astra), and [Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing).
+### 950K-token context: measured Sifted usage, API-rate comparison
+
+We ran a synthetic archive estimated at **950,401 input tokens** through Sift, which forwarded an estimated 32,698 tokens. The compacted requests were sent through an isolated Subroute staging instance to GPT-6 Astra and Gemini 4 Argon, with usage recorded by the route.
+
+| Model | Sifted usage receipt (input / output) | No-Sift API-rate equivalent¹ | With-Sift API-rate equivalent² | Modeled reduction |
+|---|---:|---:|---:|---:|
+| GPT-6 Astra | 32,502 / 6 | $19.008470 | $0.325320 | 98.3% |
+| Gemini 4 Argon | 37,003 / 41 | $1.901212 | $0.074416 | 96.1% |
+
+**What these numbers mean:** Sift's 950,401 and 32,698 counts are LiteLLM estimates. The Sifted column uses actual Subroute usage receipts; tokenizer and request-framing differences explain why receipt input can exceed the 32,698 estimate.
+
+¹The full-context subscription requests were rejected before inference, so no successful no-Sift usage receipt exists. These amounts apply public uncached API rates to 950,401 estimated input tokens plus the output length observed in the Sifted reply. They are not measured full-context costs.
+
+²The subscription routes do not provide per-call dollar billing. These amounts apply public API rates to actual Sifted usage receipts; they are not subscription charges or invoices. Astra's long-context rate applies above 272K input tokens. Gemini 4 Argon's introductory rates run through November 30, 2026. No cache discount is included. This one-fact probe does not prove quality parity or general savings. See the [probe method and limitations](docs/evals/subroute-950k-token-cost-probe-2026-10-20.md), [GPT-6 Astra pricing](https://developers.openai.com/api/docs/models/gpt-6-astra), and [Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing).
 
 LongBench v2 measures structured-choice QA, not agent-loop completion. Other Qwen and MiniMax screens used different samples and had different outcomes; see the [evaluation record](docs/evaluation.md) rather than combining their scores.
 

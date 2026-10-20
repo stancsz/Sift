@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-20",
+  "dataset": {
+    "id": "zai-org/LongBench-v2",
+    "revision": "2b48e494f2c7a2f0af81aae178e05c7e1dde0fe9",
+    "cohort_size": 344,
+    "development_data_exposed": true,
+    "blind_holdout": false
+  },
+  "protocol": {
+    "model": "minimax/minimax-m3",
+    "provider": "minimax",
+    "repeats_per_arm": 3,
+    "planned_jobs": 2064,
+    "receipt_jobs": 2063,
+    "unreceipted_jobs": 1,
+    "unreceipted_outcome": "Full arm HTTP 529; not retried",
+    "raw_prompts_and_answers_included": false
+  },
+  "quality": {
+    "paired_receipted_task_clusters": 343,
+    "responses_per_arm_in_paired_quality": 1029,
+    "exact_correct_responses": {
+      "full": 434,
+      "sift": 414
+    },
+    "task_majorities_correct": {
+      "full": 145,
+      "sift": 127
+    },
+    "task_majority_accuracy_percent": {
+      "full": 42.2741,
+      "sift": 37.0262
+    },
+    "sift_minus_full_task_majority_percentage_points": -5.2478,
+    "paired_task_outcomes": {
+      "both_correct": 100,
+      "full_only": 45,
+      "sift_only": 27,
+      "neither": 171
+    },
+    "task_cluster_percentile_bootstrap_95_ci_percentage_points": {
+      "low": -10.2041,
+      "high": -0.2915,
+      "samples": 20000,
+      "seed": 20261018
+    }
+  },
+  "usage_receipts_all_successful_requests": {
+    "full": {
+      "count": 1031,
+      "prompt_tokens": 66007295,
+      "upstream_byok_cost_usd": 8.9422617
+    },
+    "sift": {
+      "count": 1032,
+      "prompt_tokens": 26628470,
+      "upstream_byok_cost_usd": 3.69096228
+    },
+    "prompt_token_reduction_percent": 59.6583,
+    "receipt_cost_reduction_percent": 58.7245,
+    "settled_study_receipt_cost_usd": 12.63322398,
+    "cost_semantics": "OpenRouter BYOK upstream usage receipts; cache-sensitive; not an invoice"
+  },
+  "input_artifact_sha256": {
+    "manifest": "eaddd0d337111c6ab3c36d3f4a68dae4f002c94964de39beec620280f9c657c2",
+    "manifest_parent": "a13822840ceeb3648be58496d9814703a02dca0f70227226a9883a34f0ed4665",
+    "prefix_report_private": "20e1106b1f4c27c801f0411d433a06c7e1def9ed48be4b0b3df7431671e30356",
+    "continuation_report_private": "c9640523af7b5f61919a11e41c6b3b2218b539f76f49b58bca1f23798021701e"
+  },
+  "limitations": [
+    "The 344 cases and labels were public and exposed during development; this is not blind validation.",
+    "One task cluster is excluded from paired quality because its Full response has no valid usage receipt; all other successful receipts remain in usage and cost totals.",
+    "LongBench structured-choice accuracy is not accepted coding-agent task quality.",
+    "Historical unreceipted requests are accounted for in the user-authorized cap but excluded from settled receipt totals.",
+    "The raw reports are private; source report hashes are provided for integrity checks.",
+    "The checked-in strict full-run analyzer is pinned to the parent manifest and expects one complete report; these aggregates were recomputed from the split reports using the same strict choice-scoring and task-cluster bootstrap rules, but the analyzer does not yet ingest this refreshed manifest and split-report layout directly."
+  ]
+}

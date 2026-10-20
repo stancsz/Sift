@@ -7,73 +7,36 @@ usage or LiteLLM's per-request spend logs for the billable totals. Sift's
 estimated token counts are useful for its input limit, but are not a provider
 invoice.
 
-## A simple price example
+## A 950K-token Subroute usage probe
 
-For scale, suppose one uncached request would otherwise send 500,000 or
-1,000,000 input tokens to GPT-6 Astra, or 500,000 or 950,000 to Claude Opus 5.5,
-and Sift instead has a **32,768-token estimated forwarding target**. Assume both
-runs generate the same 10,000 output tokens,
-and that the provider bills exactly the estimated forwarded count. These
-examples use standard global API rates checked on 2026-10-18.
+We compacted one synthetic archive with Sift and sent the resulting request
+through isolated Subroute staging to GPT-6 Astra and Gemini 4 Argon. The raw
+archive was estimated at 950,401 input tokens; Sift's forwarded estimate was
+32,698. Subroute recorded 32,502 input / 6 output tokens for Astra and 37,003
+input / 41 output tokens for Gemini.
 
-| Provider and input | Without Sift | With Sift | Modeled reduction |
-|---|---:|---:|---:|
-| GPT-6 Astra, 500K | $10.7500 | $0.8277 | 92.3% |
-| GPT-6 Astra, 1M | $20.7500 | $0.8277 | 96.0% |
-| Claude Opus 5.5, 500K | $2.2000 | $0.3311 | 85.0% |
-| Claude Opus 5.5, 950K | $4.0000 | $0.3311 | 91.7% |
+| Model | Full-context API-rate equivalent¹ | Sifted usage receipt | Sifted API-rate equivalent² | Modeled difference |
+|---|---:|---:|---:|---:|
+| GPT-6 Astra | $19.008470 | 32,502 input / 6 output | $0.325320 | 98.3% |
+| Gemini 4 Argon | $1.901212 | 37,003 input / 41 output | $0.074416 | 96.1% |
 
-Astra uses its long-context rates for the entire request above 272,000 input
-tokens: $20 per million input and $75 per million output. The 32,768-token
-Sift request is below that threshold: $10 per million input and $50 per
-million output. Claude Opus 5.5 standard global rates are $4 per million
-input and $20 per million output across its 1M context window. For example,
-the 1M Astra baseline is $20 input + $0.75 output; the 32,768-token estimate
-is $0.3277 input + $0.50 output. The 950K Opus 5.5 baseline is $3.80 input +
-$0.20 output; the shortened estimate is $0.1311 input + $0.20 output. The 950K
-example leaves room for the 10,000-token output within Opus 5.5's 1M context
-window.
+¹The full-context subscription requests were rejected before inference: Astra's
+route rejected the context window and Gemini's bridge rejected the serialized
+body size. These are uncached API-rate equivalents for the 950,401-token Sift
+estimate plus the output length observed with Sift, not successful full-context
+cost measurements. ²Subscription billing was unavailable; the Sifted amounts
+apply public uncached API rates to Subroute's actual usage receipts. Neither
+amount is an invoice or subscription charge. Tokenizers and request framing
+differ, so Sift's estimate and provider usage do not match exactly.
 
-This is arithmetic for one request, not a measured 500K–1M multi-turn task.
-It does not establish preserved task quality, whole-conversation savings, or
-faster completion. A real conversation bills each turn and can include cache
-reads/writes, reasoning or auxiliary tokens, tools, retries, and output. If
-Sift changes the accepted-task rate, the cost per accepted task can move in a
-different direction from the per-request example. The project has not run the
-matched 500K–1M Astra/Opus task comparison yet.
-
-Current model cards: [GPT-6 Astra](https://developers.openai.com/api/docs/models/gpt-6-astra)
-and [Claude Opus 5.5](https://platform.claude.com/docs/en/models/opus-5-5/overview).
-Rates checked 2026-10-18 against [OpenAI pricing](https://developers.openai.com/api/docs/pricing)
-and [Anthropic pricing](https://platform.claude.com/docs/en/about-claude/pricing).
-
-### Warm-prefix sensitivity
-
-The cold-cache table is not the only useful comparison. For one follow-up
-request, assume the 1,000,000-token full prompt is already cached for 95% of
-its input, while the 32,768-token Sift prompt has either the same 95% cache
-share or no cache hit. This excludes the earlier cache-write bill and keeps
-the same 10,000 output tokens.
-
-| One warm follow-up request | Input charge | Output charge | Total |
-|---|---:|---:|---:|
-| Without Sift, 95% cached | $2.9000 | $0.7500 | $3.6500 |
-| With Sift, 95% cached | $0.0475 | $0.5000 | $0.5475 |
-| With Sift, no cache hit | $0.3277 | $0.5000 | $0.8277 |
-
-Under these Astra assumptions Sift is $3.10 (85.0%) cheaper with a matching 95%
-cache share, or $2.82 (77.3%) cheaper if its shortened prompt gets no cache
-hit. These are price sensitivities, not measured cache rates or task savings.
-Sift's effect on prefix reuse must be measured from provider usage; include the
-initial cache-write cost when calculating a whole conversation or task.
-
-The tables are arithmetic for stated token counts, not measured Sift task
-results. They assume provider-counted input equals the example counts, no
-cache hits or writes for the cold table, equal task success, and equal output
-token counts; retries and tool charges are excluded. The 32,768 Sift target is
-an estimate; the actual request can count differently. The 1M input example is not a claim that
-every request, including its tools and output reserve, fits a 1.05M context
-window. Use provider invoices and usage for actual totals.
+This one-fact, one-request-per-model probe does not establish task-quality
+parity, end-to-end savings, or a general cost reduction. The Astra estimate
+uses the long-context rate above 272K input tokens for the raw request and the
+standard rate for its Sifted request. Gemini's introductory rates are listed
+through November 30, 2026. See the [full method, route limits, and rate
+assumptions](evals/subroute-950k-token-cost-probe-2026-10-20.md), [GPT-6 Astra
+pricing](https://developers.openai.com/api/docs/models/gpt-6-astra), and
+[Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing).
 
 GPT-6 Astra's short-context rates are $10.00 per million uncached input tokens,
 $1.00 per million cached input tokens, $12.50 per million cache-write tokens,
@@ -144,9 +107,10 @@ Sift reduced mean local Qwen input from 26,822 to 19,347 tokens (27.9%), but
 scored 15/48 repeated answers versus 20/48 for full context. This does not
 support claiming equal-quality savings. Applying Astra's price to Qwen token
 counts would be a rough illustration only; provider tokenization, caching,
-and billed usage must be measured on Astra. The 500K/1M-to-32,768 examples
-above remain price arithmetic under an equal-success assumption, not a result
-we have demonstrated for current Sift. See the [evaluation record](evaluation.md).
+and billed usage must be measured on Astra. The Subroute probe below measures
+usage for the Sifted path and uses rate-card arithmetic for rejected full-context
+requests; it does not show equal-quality or end-to-end savings. See the
+[evaluation record](evaluation.md).
 
 A fresh six-case public LongBench v2 Table QA screen used MiniMax M3 through
 OpenRouter. Sift reduced provider-reported input by 82.9% to 93.4% and the
