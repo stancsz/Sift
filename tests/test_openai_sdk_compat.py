@@ -118,7 +118,7 @@ def test_litellm_python_client_compaction_through_standalone_proxy(monkeypatch):
     from sift.cli import _SiftHTTPServer
 
     # Keep this compatibility smoke strictly local, including any SDK telemetry.
-    litellm.telemetry = False
+    monkeypatch.setattr(litellm, "telemetry", False)
     blocked_hosts = []
     real_connect = socket.socket.connect
 

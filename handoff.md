@@ -13,7 +13,7 @@ The top-level goal remains active in [goal.md](goal.md). Current integration che
 - PR #20 merged as `70012d4`. The README first-run task and protocol now include the checkout prerequisite, exact terminal commands and actual success output. The council decision is preserved as an attributed session summary; the raw answers were not retained. Issue #13 was refreshed with those commands, Windows variants, current evidence, and a clear public-comments warning. It still has zero replies and no sessions.
 - PR #21 merged as `9a24717`, recording verified release-control gaps and their limits. No repository settings were changed and no PyPI upload was attempted.
 - Candidate `600ef9a` adds a LiteLLM Python client loopback smoke. The focused client file passed 2 tests in 8.78 seconds; the full local suite passed 393 tests in 137.80 seconds on Python 3.13.11 with 18 dependency warnings. The new test made no provider or model request.
-- A follow-on change explicitly disables LiteLLM telemetry and blocks non-loopback socket connections during that smoke; the focused file passed again (2 tests, 7.09 seconds).
+- A follow-on change explicitly disables LiteLLM telemetry, restores its prior value after the smoke, and blocks non-loopback socket connections; the focused file passed again (2 tests, 8.49 seconds).
 
 ## Evaluation and limits
 
