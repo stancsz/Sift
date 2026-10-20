@@ -10,7 +10,7 @@
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
   <header class="topbar"><a class="brand" href="#top" aria-label="Sift home"><img src="assets/sift-logo.png" alt="" width="38" height="38"><span>sift<span class="brand-period">.</span></span></a>
-    <nav class="main-nav" aria-label="Main navigation"><a href="#how">How it works</a><a href="#proof">Evidence</a><a href="#try">Try a sample</a><a href="#start">Quick start</a><a class="nav-github" href="https://github.com/stancsz/sift" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a></nav>
+    <nav class="main-nav" aria-label="Main navigation"><a href="#how">How it works</a><a href="#proof">Evidence</a><a href="#try">Offline example</a><a href="#start">Quick start</a><a class="nav-github" href="https://github.com/stancsz/sift" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a></nav>
   </header>
   <main id="main">
     <section class="hero wrap" id="top" aria-labelledby="hero-title">
@@ -41,7 +41,7 @@
     </div><div class="wrap proof-footnote">100 previously exposed questions · 3 repeats per arm · not a blind holdout · structured-choice QA is not agent-loop success · <a href="https://github.com/stancsz/sift/blob/main/docs/evaluation.md">Full protocol &amp; limitations</a></div>
       <div class="wrap proof-footnote">Separate broader run: 446 of 503 questions had matched scoreable answers; Sift was 1.1 percentage points lower and used 75.8% fewer provider prompt tokens. For those pairs, a question-level bootstrap 95% interval was −6.1 to +3.6 pp for accuracy and 73.7% to 77.6% for token reduction; this does not establish parity. The one-repeat run is incomplete and uses the same publicly exposed dataset. <a href="https://github.com/stancsz/sift/blob/main/docs/results/longbench-v2-minimax-m3-fullsuite-progress-2026-10-17.md">See its status and limits</a>.</div></section>
     <section class="try-section wrap" id="try" aria-labelledby="try-title">
-      <div class="try-intro"><p class="eyebrow">A REAL LOCAL COMPACTION · NO MODEL CALL</p><h2 id="try-title">Find the fix inside 120 routine polls.</h2><p>An agent asks about a rollout. Sift keeps the old setting change and its replacement available, while removing most of the repetitive log from the request.</p></div>
+      <div class="try-intro"><p class="eyebrow">SAVED OUTPUT · ACTUAL SIFT COMPACTION</p><h2 id="try-title">Keep the rollout fix. Trim routine polls.</h2><p>This offline sample uses a synthetic rollout log. It shows actual Sift output: the old and approved probe settings remain available while repetitive polls are dropped.</p></div>
       <div class="try-demo">
         <div class="try-controls" role="group" aria-label="Choose the request view">
           <button type="button" class="try-toggle" data-demo-view="full" aria-pressed="false">Full request <span>4,587 estimated units</span></button>
@@ -76,12 +76,12 @@
         <article class="step-card"><div class="step-index">03 / CONTINUE</div><div class="step-glyph glyph-path" aria-hidden="true"><i></i><i></i><i></i></div><h3>The agent keeps moving</h3><p>A smaller working context leaves more room for the next tool cycle. If critical current work cannot fit, Sift refuses safely.</p></article>
       </div><div class="mechanism-strip"><span>01</span> Extractive; no generated memory <b>·</b> <span>02</span> CPU-only; no added model dependency <b>·</b> <span>03</span> Fails closed when exact active work cannot fit</div>
     </section>
-    <section class="start-section" id="start" aria-labelledby="start-title"><div class="wrap start-wrap"><div class="start-copy"><p class="eyebrow">START SMALL · STAY LOCAL</p><h2 id="start-title">Try it without<br>changing your stack.</h2><p>Install the standalone CLI from GitHub main with Python 3.11+ and Git—no manual clone or LiteLLM. Point an OpenAI client at <code>127.0.0.1:4011/v1</code>, then use Ollama or any compatible base URL. Protected endpoints can use <code>--api-key-env</code>. Already use LiteLLM? Try the callback instead.</p>
+    <section class="start-section" id="start" aria-labelledby="start-title"><div class="wrap start-wrap"><div class="start-copy"><p class="eyebrow">START SMALL · STAY LOCAL</p><h2 id="start-title">Try it without<br>changing your stack.</h2><p>Preview the standalone CLI from GitHub main with Python 3.11+ and Git—no manual clone or LiteLLM. Point an OpenAI client at <code>127.0.0.1:4011/v1</code>, then use Ollama or any compatible base URL. Protected endpoints can use <code>--api-key-env</code>. Already use LiteLLM? Try the callback instead.</p>
       <div class="start-tabs" role="tablist" aria-label="Choose an install path"><button type="button" role="tab" id="tab-ollama" aria-selected="true" aria-controls="panel-ollama">Ollama / any base URL</button><button type="button" role="tab" id="tab-callback" aria-selected="false" aria-controls="panel-callback" tabindex="-1">LiteLLM callback</button></div></div>
       <div class="code-panel" id="panel-ollama" role="tabpanel" aria-labelledby="tab-ollama"><div class="code-panel-head"><span class="terminal-dot"></span> TERMINAL / LOCAL</div><pre><code><span class="code-dim"># Ollama installed; run `ollama serve` first if needed</span>
 ollama pull qwen3.5:4b
 
-<span class="code-dim"># install from GitHub main (Python 3.11+ and Git)</span>
+<span class="code-dim"># install the CLI preview from GitHub main (Python 3.11+ and Git)</span>
 <span class="code-dim"># Windows PowerShell</span>
 py -m venv .venv
 .\.venv\Scripts\python.exe -m pip install `
