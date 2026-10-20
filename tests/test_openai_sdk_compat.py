@@ -109,3 +109,71 @@ def test_openai_python_client_streamed_tool_turn_through_standalone_proxy():
         backend.shutdown()
         backend.server_close()
         backend_thread.join(timeout=2)
+
+
+def test_litellm_python_client_compaction_through_standalone_proxy():
+    litellm = pytest.importorskip("litellm", reason="install the litellm extra")
+    from sift.cli import _SiftHTTPServer
+
+    observed = []
+
+    class BackendHandler(BaseHTTPRequestHandler):
+        def do_POST(self):
+            payload = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+            observed.append(payload)
+            body = json.dumps({
+                "id": "chatcmpl-litellm-smoke",
+                "object": "chat.completion",
+                "created": int(time()),
+                "model": "local-fixture",
+                "choices": [{
+                    "index": 0,
+                    "message": {"role": "assistant", "content": "Buried setting preserved."},
+                    "finish_reason": "stop",
+                }],
+                "usage": {"prompt_tokens": 12, "completion_tokens": 4, "total_tokens": 16},
+            }).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *_args):
+            pass
+
+    backend = ThreadingHTTPServer(("127.0.0.1", 0), BackendHandler)
+    backend_thread = Thread(target=backend.serve_forever, daemon=True)
+    backend_thread.start()
+    proxy = _SiftHTTPServer(
+        ("127.0.0.1", 0), base_url=f"http://127.0.0.1:{backend.server_port}/v1",
+        target=2_000, raw_limit=100_000, api_key_env=None, timeout=3,
+    )
+    proxy_thread = Thread(target=proxy.serve_forever, daemon=True)
+    proxy_thread.start()
+    messages = []
+    for index in range(8):
+        messages.append({"role": "user", "content": f"Old status {index}: " + ("routine deployment poll. " * 30)})
+        messages.append({"role": "assistant", "content": f"Poll {index} completed without a change."})
+    messages.append({"role": "user", "content": "What was the approved readiness delay?"})
+    try:
+        response = litellm.completion(
+            model="openai/local-fixture",
+            api_base=f"http://127.0.0.1:{proxy.server_port}/v1",
+            api_key="loopback-smoke",
+            messages=messages,
+            timeout=3,
+            num_retries=0,
+        )
+
+        assert response.choices[0].message.content == "Buried setting preserved."
+        assert len(observed) == 1
+        assert len(observed[0]["messages"]) < len(messages)
+        assert observed[0]["messages"][-1]["content"] == "What was the approved readiness delay?"
+    finally:
+        proxy.shutdown()
+        proxy.server_close()
+        proxy_thread.join(timeout=2)
+        backend.shutdown()
+        backend.server_close()
+        backend_thread.join(timeout=2)
