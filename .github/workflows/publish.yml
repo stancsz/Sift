@@ -21,6 +21,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: refs/tags/${{ inputs.tag }}
+          fetch-depth: 0
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
@@ -44,6 +45,16 @@ jobs:
           if tag != f"v{version}":
               sys.exit(f"release tag {tag} does not match project version {version}")
           PY
+      - name: Check release tag belongs to main
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          tag_commit="$(git rev-parse "refs/tags/${RELEASE_TAG}^{commit}")"
+          main_commit="$(git rev-parse refs/remotes/origin/main)"
+          if ! git merge-base --is-ancestor "$tag_commit" "$main_commit"; then
+            echo "::error::release tag must point to a commit reachable from main"
+            exit 1
+          fi
       - run: python -m pip install -e ".[litellm,test]" build twine
       - run: python -m pytest tests -q
       - run: python benchmarks/compare.py

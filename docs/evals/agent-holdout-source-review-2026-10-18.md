@@ -26,6 +26,14 @@ The official leaderboard accepts a complete test prediction file for 301 task ID
 
 This can support an externally scored aggregate result if both arms can be run and the maintainers' conditions are met. It is not a direct test of long-context retention or multi-turn task completion: the leaderboard receives final answers, not task trajectories or state changes. The next gate is to confirm a compliant paired route, permitted handling of test prompts, and a way to obtain independently reviewed paired aggregate evidence. Do not log in, download the dataset, run inference, submit results, contact maintainers, or describe GAIA as holdout evidence until those gates are satisfied. **Disposition: needs further gate.**
 
+## Alternative source screen: LongMemEval-V2 — 2026-10-20
+
+LongMemEval-V2 is the strongest fit found so far for a **local matched comparison on public data**, not a blind holdout or a paired submission route provided by the official leaderboard. Its official repository describes 451 questions over long multimodal web-agent histories, evaluates answer accuracy and query latency, and provides a memory backend interface with `insert(trajectory)` and `query(question)`. The official site describes a fixed-reader flow (`Insert(h)`, `Query(q) → context`, `Reader(q, context) → answer`) and five memory abilities. This is close to Sift's context retrieval role, but it measures downstream question answering rather than full task execution. [Official repository](https://github.com/xiaowu0162/LongMemEval-V2) · [Benchmark site](https://xiaowu0162.github.io/longmemeval-v2/)
+
+The data card publicly lists normalized questions, trajectories, haystack mappings and screenshot files, with a documented download-and-prepare path; it reports 1,870 trajectories. No hidden, untouched split or independent evaluator-held set is documented. The harness keeps labels and gold answers away from the backend during each query, which protects against per-query label leakage, but does not make the publicly released benchmark blind to experimenters. The leaderboard package includes per-question JSONL, runtime inputs and operating-point details; its public result tables currently say entries are coming soon. [Dataset card](https://huggingface.co/datasets/xiaowu0162/longmemeval-v2) · [Leaderboard package specification](https://github.com/xiaowu0162/LongMemEval-V2/blob/main/leaderboard/README.md) · [Current public leaderboard](https://xiaowu0162.github.io/longmemeval-v2/)
+
+The official leaderboard builder currently validates a Qwen3.5-9B reader and GPT-5.2 judge. A paired MiniMax-M3 run could be a local public-benchmark reproduction if later authorized, but would not satisfy that official submission validator as documented. A no-inference synthetic adapter rehearsal is a reasonable next engineering step; do not download data, run inference, or submit until the adapter and a prospective protocol are reviewed and any new spend is authorized. We did not access task data, run inference, submit, or contact maintainers. **Disposition: candidate for public development comparison; not a blind holdout or independent custody.**
+
 The protected benchmark data is encrypted, and its license places conditions on public redistribution of plaintext protected material and derivatives.
 
 This makes AppWorld a useful operational holdout candidate if the evaluation is run under its exact rules. It does not establish that model weights have never seen related tasks, nor does it create a privately authored benchmark.
@@ -39,6 +47,10 @@ Primary sources:
 - [GAIA official dataset card and access terms](https://huggingface.co/datasets/gaia-benchmark/GAIA/blob/main/README.md)
 - [GAIA official leaderboard scoring app](https://huggingface.co/spaces/gaia-benchmark/leaderboard/blob/main/app.py)
 - [GAIA official leaderboard submission instructions](https://huggingface.co/spaces/gaia-benchmark/leaderboard/blob/main/content.py)
+- [LongMemEval-V2 official repository and backend contract](https://github.com/xiaowu0162/LongMemEval-V2)
+- [LongMemEval-V2 public dataset card](https://huggingface.co/datasets/xiaowu0162/longmemeval-v2)
+- [LongMemEval-V2 leaderboard package specification](https://github.com/xiaowu0162/LongMemEval-V2/blob/main/leaderboard/README.md)
+- [LongMemEval-V2 public benchmark and leaderboard site](https://xiaowu0162.github.io/longmemeval-v2/)
 
 ## Frozen protocol before any test access or provider call
 
