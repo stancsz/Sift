@@ -1,0 +1,91 @@
+name: Publish to PyPI
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing stable vX.Y.Z tag to verify and publish
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: ${{ github.ref == 'refs/heads/main' }}
+    name: Verify release and build distributions
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Check release tag matches package version
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          python - <<'PY'
+          import os
+          import re
+          import sys
+          import tomllib
+          from pathlib import Path
+
+          version = tomllib.loads(Path("pyproject.toml").read_text("utf-8"))["project"]["version"]
+          tag = os.environ["RELEASE_TAG"]
+          if re.fullmatch(r"v(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)", tag) is None:
+              sys.exit(f"expected a stable vX.Y.Z tag, got {tag!r}")
+          if tag != f"v{version}":
+              sys.exit(f"release tag {tag} does not match project version {version}")
+          PY
+      - run: python -m pip install -e ".[litellm,test]" build twine
+      - run: python -m pytest tests -q
+      - run: python benchmarks/compare.py
+      - run: python -m build --sdist --wheel
+      - run: python -m twine check --strict dist/*
+      - name: Smoke-test wheel and source distribution without optional dependencies
+        run: |
+          for archive in dist/*.whl dist/*.tar.gz; do
+            python -m venv "$RUNNER_TEMP/sift-release-$(basename "$archive")"
+            venv="$RUNNER_TEMP/sift-release-$(basename "$archive")"
+            "$venv/bin/python" -m pip install --no-deps "$archive"
+            "$venv/bin/sift" serve --help
+            "$venv/bin/python" -c "import importlib.util; assert importlib.util.find_spec('litellm') is None"
+          done
+      - name: Create distribution checksums
+        run: sha256sum dist/*.whl dist/*.tar.gz > SHA256SUMS
+      - uses: actions/upload-artifact@v6
+        with:
+          name: python-distributions
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+      - uses: actions/upload-artifact@v6
+        with:
+          name: distribution-checksums
+          path: SHA256SUMS
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    if: ${{ github.ref == 'refs/heads/main' }}
+    name: Publish distributions
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/sift-context
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v6
+        with:
+          name: python-distributions
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1

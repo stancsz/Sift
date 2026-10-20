@@ -17,7 +17,7 @@ Sift is a deterministic, CPU-only context compressor for coding and research age
 
 Use Sift as a Python library, a **LiteLLM Proxy callback**, or the standalone `sift` CLI with Ollama or another OpenAI-compatible endpoint. On supported backends, stable history between tool-cycle boundaries can also help prefix-cache reuse.
 
-[See an offline compaction example](https://stancsz.github.io/sift/#try) · [Project site](https://stancsz.github.io/sift/) · [Standalone CLI](#standalone-cli-no-litellm) · [LiteLLM quick start](#litellm-proxy) · [Measured LongBench results](#longbench-v2-658-fewer-prompt-tokens) · [How it works](docs/algorithm.md) · [Evaluation record](docs/evaluation.md)
+[See an offline compaction example](https://stancsz.github.io/sift/#try) · [Project site](https://stancsz.github.io/sift/) · [Standalone CLI](#standalone-cli-no-litellm) · [LiteLLM quick start](#litellm-proxy) · [Measured LongBench results](#longbench-v2-658-fewer-prompt-tokens) · [How it works](docs/algorithm.md) · [Evaluation record](docs/evaluation.md) · [Release process](docs/releasing.md)
 
 > **Preview release:** install the tested `v0.10.0` tag from GitHub today. It defaults to a 24,576-token target. The newer 32,768-token default is on unreleased `main` (`0.11.0.dev0`). Sift is not yet published to PyPI. See the [release roadmap](ROADMAP.md).
 
