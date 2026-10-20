@@ -19,15 +19,16 @@ input / 41 output tokens for Gemini.
 
 | Model | Input tokens (Subroute receipt) | Output tokens | Fixture result |
 |---|---:|---:|---|
-| GPT-6 Astra | 32,502 | 6 | `37 seconds` |
-| Gemini 4 Argon | 37,003 | 41 | `37 seconds` |
+| GPT-6 Astra | 32,502 | 6 | Recorded fixture match* |
+| Gemini 4 Argon | 37,003 | 41 | Recorded fixture match* |
 
 Sift's 32,698 forwarded-token count is an estimate; the provider tokenizers and
 request framing differ.
+*The run record says both replies matched the planted fact, but the raw response text was not retained in the published result, so readers cannot independently verify the answer.
 
 **Illustrative costs at public API rates (not billed amounts)**
 
-| Model | Full 950K input, modeled¹ | Sifted receipt, priced² |
+| Model | Full-context API-rate scenario¹ | Sifted receipt, priced² |
 |---|---:|---:|
 | GPT-6 Astra | $19.0085 | $0.3253 |
 | Gemini 4 Argon | $1.9012 | $0.0744 |

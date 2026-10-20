@@ -174,16 +174,17 @@ The task-majority 95% question-cluster bootstrap interval for Sift minus Full is
 
 ### Synthetic retrieval probe: 950K-token archive
 
-We compacted one synthetic archive estimated at **950,401 input tokens** to a Sift forwarding estimate of 32,698. One planted fact was queried through isolated Subroute staging; both Sifted requests returned it.
+We compacted one synthetic archive estimated at **950,401 input tokens** to a Sift forwarding estimate of 32,698. The run record reports that both Sifted requests matched one planted fact. The public result omits raw replies, so readers cannot independently verify that answer.
 
 **Observed Sifted requests**
 
 | Model | Input tokens (Subroute receipt) | Output tokens | Fixture result |
 |---|---:|---:|---|
-| GPT-6 Astra | 32,502 | 6 | `37 seconds` |
-| Gemini 4 Argon | 37,003 | 41 | `37 seconds` |
+| GPT-6 Astra | 32,502 | 6 | Recorded fixture match* |
+| Gemini 4 Argon | 37,003 | 41 | Recorded fixture match* |
 
 Sift's 32,698 forwarded-token count is an estimate; the provider tokenizers and request framing differ.
+*The run record says both replies matched the planted fact, but the raw response text was not retained in the published result, so readers cannot independently verify the answer.
 
 **Illustrative costs at public API rates (not billed amounts)**
 
@@ -192,7 +193,7 @@ Sift's 32,698 forwarded-token count is an estimate; the provider tokenizers and 
 | GPT-6 Astra | $19.0085 | $0.3253 |
 | Gemini 4 Argon | $1.9012 | $0.0744 |
 
-¹The full-context subscription requests were rejected before inference, so no no-Sift usage receipt exists. These hypothetical costs apply uncached public API rates to Sift's 950,401-token input estimate plus the output length observed in each Sifted reply. They are not measured full-context costs or bills.
+¹The full-context subscription requests were rejected before inference, so no no-Sift usage receipt exists. These hypothetical amounts apply uncached public API rates to Sift's 950,401-token input estimate plus the output length observed in each Sifted reply. They are not measured full-context costs or bills.
 
 ²These costs apply uncached public API rates to the actual Sifted usage receipts. The subscription routes do not provide per-call dollar billing, so these are not subscription charges or invoices. Astra's long-context rate applies above 272K input tokens; Gemini 4 Argon's introductory rates run through November 30, 2026.
 

@@ -16,16 +16,18 @@ One synthetic archive was compacted by Sift and sent once each to GPT-6 Astra an
 
 The full-context subscription requests were rejected before inference: Astra's route rejected the context window, and Gemini's bridge rejected the serialized request body above its 1,000,000-byte limit. There is no successful no-Sift usage receipt.
 
-The no-Sift amounts are public, uncached API rate arithmetic over Sift's 950,401-token input estimate plus the output length observed in the corresponding Sifted request. The Sift amounts apply the same public API rates to actual Subroute usage receipts. These are API-rate equivalents, not subscription charges, provider bills, or measured full-context costs.
+The no-Sift amounts are public, uncached API rate arithmetic over Sift's 950,401-token input estimate plus the output length observed in the corresponding Sifted request. The Sift amounts apply the same public API rates to actual Subroute usage receipts. These are API-rate equivalents, not subscription charges, provider bills, or measured full-context costs. The run record reports that both models returned the planted fact, but the raw replies were not retained in the published result, so that answer-level claim cannot be independently checked from this artifact.
 
-| Model | No-Sift rate equivalent | Sifted usage | With-Sift rate equivalent | Modeled reduction |
-|---|---:|---:|---:|---:|
-| GPT-6 Astra | $19.008470 | 32,502 input / 6 output | $0.325320 | 98.3% |
-| Gemini 4 Argon | $1.901212 | 37,003 input / 41 output | $0.074416 | 96.1% |
+| Model | Full-context API-rate scenario¹ | Observed Sifted usage | Sifted API-rate equivalent² |
+|---|---:|---:|---:|
+| GPT-6 Astra | $19.008470 | 32,502 input / 6 output | $0.325320 |
+| Gemini 4 Argon | $1.901212 | 37,003 input / 41 output | $0.074416 |
+
+¹The full-context requests were rejected before inference; these amounts are hypothetical rate calculations, not observed costs. ²These amounts price actual Sifted usage receipts at public API rates and are not subscription bills. Neither column establishes a general percentage saving.
 
 Rates used:
 
 - GPT-6 Astra: $10/M input and $50/M output up to 272K input; long-context requests use $20/M input and $75/M output. The full-context estimate uses the long-context rate; the Sifted request uses the standard rate. [Official model pricing](https://developers.openai.com/api/docs/models/gpt-6-astra).
 - Gemini 4 Argon: $2/M input and $10/M output at the introductory paid rate through November 30, 2026. [Official Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing).
 
-Input counts differ between LiteLLM estimates and Subroute receipts because model tokenizers and request framing differ. The calculation omits caching, retries, tools, hardware, and hosting. It does not show a successful 950K no-Sift call, task-quality parity, or end-to-end agent savings.
+Input counts differ between LiteLLM estimates and Subroute receipts because model tokenizers and request framing differ. The calculation omits caching, retries, tools, hardware, and hosting. It does not show a successful 950K no-Sift call, independently verifiable answer text, task-quality parity, or end-to-end agent savings.
