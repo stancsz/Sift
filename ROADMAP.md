@@ -33,7 +33,7 @@ The 2026-10-20 councils are preserved in the goal/handoff. They prioritized firs
 
 ## 2026-10-20 LongMemEval-V2 feasibility update
 
-A synthetic-only adapter prototype passed 9 focused tests and `py_compile`; independent read-only review marked the pinned interface mapping READY. It tests required screenshot paths, selected text/image association, query preservation, and legacy `content` fallback. No benchmark data or official harness was used, and no inference was run. This does not establish real compatibility, benchmark quality, latency, or blind evidence. See the [prototype record](docs/evals/longmemeval-v2-sift-adapter-2026-10-20.md). Any real public-benchmark reproduction still needs accurate reader token counting, image-path execution, rights review, a frozen run protocol, and newly authorized spend; the former $100 MiniMax cap is exhausted.
+A synthetic-only adapter prototype passed 9 focused tests and `py_compile`; independent read-only review marked the pinned interface mapping READY. PR #42 merged as `f6b9bd5`; PR and post-merge Core smoke passed in 46 and 43 seconds, with the full matrix skipped by design. It tests required screenshot paths, selected text/image association, query preservation, and legacy `content` fallback. No benchmark data or official harness was used, and no inference was run. This does not establish real compatibility, benchmark quality, latency, or blind evidence. See the [prototype record](docs/evals/longmemeval-v2-sift-adapter-2026-10-20.md). Any real public-benchmark reproduction still needs accurate reader token counting, image-path execution, rights review, a frozen run protocol, and newly authorized spend; the former $100 MiniMax cap is exhausted.
 
 ## Evidence and limits
 
