@@ -74,13 +74,19 @@ def main() -> int:
             # per-task reports, stdout, and stderr live in a private tmpfs.
             mount_source = str(export.resolve())
             mount = f"type=bind,source={mount_source},target=/export"
-            run = docker([
+            run_args = [
                 "run", "--rm", "--network", "none", "--read-only",
                 "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
                 "--pids-limit", "32", "--memory", "128m", "--cpus", "1",
                 "--tmpfs", "/private:rw,noexec,nosuid,nodev,size=16m",
-                "--mount", mount, tag,
-            ], timeout=30)
+                "--mount", mount,
+            ]
+            # Hosted Linux runners use a real bind-mount permission model; run
+            # as that host user so the one allowlisted export mount is writable.
+            if hasattr(os, "getuid") and hasattr(os, "getgid"):
+                run_args.extend(["--user", f"{os.getuid()}:{os.getgid()}"])
+            run_args.append(tag)
+            run = docker(run_args, timeout=30)
             stdout, stderr = run.stdout, run.stderr
             if run.returncode != 0:
                 print(json.dumps({"passed": False, "reason": "container_run_failed",
