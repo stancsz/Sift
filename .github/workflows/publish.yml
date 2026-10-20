@@ -7,6 +7,11 @@ on:
         description: Existing stable vX.Y.Z tag to verify and publish
         required: true
         type: string
+      dry_run:
+        description: Build and verify without uploading to PyPI
+        required: true
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -83,9 +88,13 @@ jobs:
           path: SHA256SUMS
           if-no-files-found: error
           retention-days: 7
+      - name: Report non-publishing rehearsal
+        if: ${{ inputs.dry_run }}
+        run: |
+          echo "Dry run complete: distributions verified; nothing was uploaded to PyPI." >> "$GITHUB_STEP_SUMMARY"
 
   publish:
-    if: ${{ github.ref == 'refs/heads/main' }}
+    if: ${{ github.ref == 'refs/heads/main' && inputs.dry_run == false }}
     name: Publish distributions
     needs: build
     runs-on: ubuntu-latest
