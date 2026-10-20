@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 from copy import deepcopy
+import ipaddress
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
@@ -18,7 +19,7 @@ from threading import Thread
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit, urlunsplit
-from urllib.request import HTTPRedirectHandler, Request, build_opener
+from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 
 from .core import (
     DEFAULT_MAX_INPUT_CHARACTERS,
@@ -45,6 +46,20 @@ class _NoRedirect(HTTPRedirectHandler):
 
 
 _UPSTREAM = build_opener(_NoRedirect())
+_LOOPBACK_UPSTREAM = build_opener(ProxyHandler({}), _NoRedirect())
+
+
+def _upstream_opener(url: str):
+    """Keep loopback traffic local even when the shell has proxy variables set."""
+    host = urlsplit(url).hostname
+    if host == "localhost":
+        return _LOOPBACK_UPSTREAM
+    try:
+        if host is not None and ipaddress.ip_address(host).is_loopback:
+            return _LOOPBACK_UPSTREAM
+    except ValueError:
+        pass
+    return _UPSTREAM
 
 
 def _request_size_estimate(value: Any) -> int:
@@ -200,7 +215,8 @@ class _SiftRequestHandler(BaseHTTPRequestHandler):
             headers["Authorization"] = f"Bearer {api_key}"
         request = Request(upstream_url, data=body, headers=headers, method="POST")
         try:
-            with _UPSTREAM.open(request, timeout=self.server.upstream_timeout) as response:
+            opener = _upstream_opener(upstream_url)
+            with opener.open(request, timeout=self.server.upstream_timeout) as response:
                 self._relay(response.status, response.headers, response, audit, stream=streaming)
         except HTTPError as response:
             with response:
