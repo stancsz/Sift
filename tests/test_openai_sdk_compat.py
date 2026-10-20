@@ -5,11 +5,37 @@ from __future__ import annotations
 import json
 import ipaddress
 import socket
+from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import Thread
 from time import time
 
 import pytest
+
+
+@contextmanager
+def _serve_local_servers(*server_factories):
+    """Construct and start local fixtures, closing sockets after partial setup too."""
+    servers = []
+    threads = {}
+    try:
+        for factory in server_factories:
+            server = factory(*servers)
+            servers.append(server)
+            thread = Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            threads[server] = thread
+        yield tuple(servers)
+    finally:
+        for server in reversed(servers):
+            thread = threads.get(server)
+            try:
+                if thread is not None and thread.is_alive():
+                    server.shutdown()
+            finally:
+                server.server_close()
+                if thread is not None and thread.ident is not None:
+                    thread.join(timeout=2)
 
 
 def test_openai_python_client_streamed_tool_turn_through_standalone_proxy():
@@ -60,16 +86,13 @@ def test_openai_python_client_streamed_tool_turn_through_standalone_proxy():
         def log_message(self, *_args):
             pass
 
-    backend = ThreadingHTTPServer(("127.0.0.1", 0), BackendHandler)
-    backend_thread = Thread(target=backend.serve_forever, daemon=True)
-    backend_thread.start()
-    proxy = _SiftHTTPServer(
-        ("127.0.0.1", 0), base_url=f"http://127.0.0.1:{backend.server_port}/v1",
-        target=2_000, raw_limit=100_000, api_key_env=None, timeout=3,
-    )
-    proxy_thread = Thread(target=proxy.serve_forever, daemon=True)
-    proxy_thread.start()
-    try:
+    with _serve_local_servers(
+        lambda: ThreadingHTTPServer(("127.0.0.1", 0), BackendHandler),
+        lambda backend: _SiftHTTPServer(
+            ("127.0.0.1", 0), base_url=f"http://127.0.0.1:{backend.server_port}/v1",
+            target=2_000, raw_limit=100_000, api_key_env=None, timeout=3,
+        ),
+    ) as (backend, proxy):
         client = openai.OpenAI(base_url=f"http://127.0.0.1:{proxy.server_port}/v1",
                                api_key="loopback-smoke")
         tools = [{"type": "function", "function": {
@@ -104,13 +127,6 @@ def test_openai_python_client_streamed_tool_turn_through_standalone_proxy():
         assert observed[0]["tools"] == tools
         assert observed[1]["messages"][-2]["tool_calls"][0]["id"] == "call_smoke"
         assert observed[1]["messages"][-1]["tool_call_id"] == "call_smoke"
-    finally:
-        proxy.shutdown()
-        proxy.server_close()
-        proxy_thread.join(timeout=2)
-        backend.shutdown()
-        backend.server_close()
-        backend_thread.join(timeout=2)
 
 
 def test_litellm_python_client_compaction_through_standalone_proxy(monkeypatch):
@@ -147,7 +163,7 @@ def test_litellm_python_client_compaction_through_standalone_proxy(monkeypatch):
                 "model": "local-fixture",
                 "choices": [{
                     "index": 0,
-                    "message": {"role": "assistant", "content": "Buried setting preserved."},
+                    "message": {"role": "assistant", "content": "Local fixture response."},
                     "finish_reason": "stop",
                 }],
                 "usage": {"prompt_tokens": 12, "completion_tokens": 4, "total_tokens": 16},
@@ -161,21 +177,22 @@ def test_litellm_python_client_compaction_through_standalone_proxy(monkeypatch):
         def log_message(self, *_args):
             pass
 
-    backend = ThreadingHTTPServer(("127.0.0.1", 0), BackendHandler)
-    backend_thread = Thread(target=backend.serve_forever, daemon=True)
-    backend_thread.start()
-    proxy = _SiftHTTPServer(
-        ("127.0.0.1", 0), base_url=f"http://127.0.0.1:{backend.server_port}/v1",
-        target=2_000, raw_limit=100_000, api_key_env=None, timeout=3,
-    )
-    proxy_thread = Thread(target=proxy.serve_forever, daemon=True)
-    proxy_thread.start()
     messages = []
+    messages.append({
+        "role": "user",
+        "content": "Operator note: approved readiness delay is 25 seconds; initialDelaySeconds=25.",
+    })
     for index in range(8):
         messages.append({"role": "user", "content": f"Old status {index}: " + ("routine deployment poll. " * 30)})
         messages.append({"role": "assistant", "content": f"Poll {index} completed without a change."})
     messages.append({"role": "user", "content": "What was the approved readiness delay?"})
-    try:
+    with _serve_local_servers(
+        lambda: ThreadingHTTPServer(("127.0.0.1", 0), BackendHandler),
+        lambda backend: _SiftHTTPServer(
+            ("127.0.0.1", 0), base_url=f"http://127.0.0.1:{backend.server_port}/v1",
+            target=2_000, raw_limit=100_000, api_key_env=None, timeout=3,
+        ),
+    ) as (backend, proxy):
         response = litellm.completion(
             model="openai/local-fixture",
             api_base=f"http://127.0.0.1:{proxy.server_port}/v1",
@@ -185,15 +202,9 @@ def test_litellm_python_client_compaction_through_standalone_proxy(monkeypatch):
             num_retries=0,
         )
 
-        assert response.choices[0].message.content == "Buried setting preserved."
+        assert response.choices[0].message.content == "Local fixture response."
         assert len(observed) == 1
         assert len(observed[0]["messages"]) < len(messages)
+        assert "initialDelaySeconds=25" in json.dumps(observed[0]["messages"])
         assert observed[0]["messages"][-1]["content"] == "What was the approved readiness delay?"
         assert blocked_hosts == []
-    finally:
-        proxy.shutdown()
-        proxy.server_close()
-        proxy_thread.join(timeout=2)
-        backend.shutdown()
-        backend.server_close()
-        backend_thread.join(timeout=2)
