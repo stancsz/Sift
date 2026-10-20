@@ -28,7 +28,7 @@ Where do first-time developers get stuck or misunderstand what Sift does, and wh
 
 1. Before showing the page, ask: “When an agent's conversation gets long, what do you currently do?” Then show the frozen homepage first screen for 20 seconds and ask the participant to explain in their own words what Sift does, what changes in the request, and who answers the task.
 2. Ask the participant to follow the no-inference README setup without coaching. Start timing when they begin. Give them up to 10 minutes to get one request with `x-sift-compacted=true` and the fixture's buried-setting confirmation. This checks Sift's own compaction and routing path, not a model answer. If blocked, record the step and their attempted recovery; then offer help so the session remains useful. Do not start or call Ollama.
-3. Ask them to describe what history they expect Sift to keep and remove, what the deterministic fixture confirms, what it does not prove, and when they would consider trying Sift with an inference backend on their own work.
+3. Ask the participant: “What stayed exact, what older content was selected, and what condition makes Sift refuse? What did the deterministic fixture not prove?” Then ask when they would consider trying Sift with an inference backend on their own work.
 4. If they have an appropriate synthetic or non-sensitive example, ask how the demo maps to their workflow. Do not send their content to an external model or store it in the report.
 5. Close by asking what felt valuable, unclear, risky, or burdensome. Do not ask for a recommendation, star, testimonial, or commitment to adopt.
 

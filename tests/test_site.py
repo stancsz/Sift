@@ -76,6 +76,11 @@ class SiteSmokeTests(unittest.TestCase):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         self.assertIn("https://stancsz.github.io/sift/#try", readme)
 
+    def test_quick_start_uses_the_verified_ollama_demo_model(self):
+        self.assertIn("ollama pull qwen3.5:9b", self.html)
+        self.assertIn("ollama_compaction_demo.py --model qwen3.5:9b", self.html)
+        self.assertNotIn("qwen3.5:4b", self.html)
+
     def test_evidence_section_reports_quality_tradeoff_and_subroute_cost_limits(self):
         text = " ".join(self.parser.text)
         self.assertIn("59.7%", text.replace(" ", ""))
