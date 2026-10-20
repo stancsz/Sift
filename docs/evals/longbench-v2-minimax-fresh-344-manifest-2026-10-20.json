@@ -1,0 +1,26 @@
+{
+  "schema": "sift.longbench.minimax.fresh344.v1",
+  "run_id": "fresh344-minimax-20261020",
+  "status": "prepared_only_no_dispatch",
+  "dispatch_authorized": false,
+  "base_manifest_path": "docs/evals/longbench-v2-minimax-344-manifest-current-main-2026-10-20.json",
+  "base_manifest_sha256": "eaddd0d337111c6ab3c36d3f4a68dae4f002c94964de39beec620280f9c657c2",
+  "route_snapshot_path": "docs/evals/longbench-v2-openrouter-minimax-m3-endpoints-2026-10-20T1651Z.json",
+  "route_snapshot_sha256": "cd5993f3d533aaab1065dc6539a8a1a6dbb7ba43b3d62ef6fc7bd5599874bc26",
+  "cohort_size": 344,
+  "repeats_per_arm": 3,
+  "arms": [
+    "full",
+    "sift"
+  ],
+  "planned_jobs": 2064,
+  "requested_model": "minimax/minimax-m3",
+  "provider": "minimax",
+  "route_tag": "minimax/fp8",
+  "input_usd_per_million": 0.3,
+  "output_usd_per_million": 1.2,
+  "max_prompt_tokens": 524288,
+  "max_completion_tokens": 512000,
+  "schedule_sha256": "52814e20912f272da4d0fd3b1b8668d25b120f4e3800f29cff500bb491239f1f",
+  "estimated_reserve_usd": 41.86563525
+}
