@@ -11,7 +11,7 @@ from examples import ollama_compaction_demo as demo
 def test_demo_requires_approved_and_previous_probe_values_with_reason():
     answer = (
         "The operator approved initialDelaySeconds=25 after the readiness probe "
-        "was configured with initialDelaySeconds=5."
+        "was configured with initialDelaySeconds=5, which did not allow sufficient time."
     )
 
     assert demo.answers_buried_setting(answer)
@@ -21,9 +21,19 @@ def test_demo_rejects_a_partial_answer_even_if_it_names_approved_value():
     assert not demo.answers_buried_setting("initialDelaySeconds=25")
 
 
+def test_demo_rejects_both_values_with_an_incorrect_reason():
+    answer = (
+        "The readiness probe changed from initialDelaySeconds=5 to 25 because "
+        "image and database checks had already passed."
+    )
+
+    assert not demo.answers_buried_setting(answer)
+
+
 def test_demo_main_rejects_uncompacted_or_incorrect_responses():
     valid_result = {"choices": [{"message": {"content":
-        "The readiness probe changed from initialDelaySeconds=5 to initialDelaySeconds=25."}}]}
+        "The readiness probe changed from initialDelaySeconds=5 to initialDelaySeconds=25 "
+        "because 5 seconds did not allow sufficient time."}}]}
     for compacted, result in (
         ("false", valid_result),
         ("true", {"choices": [{"message": {"content": "initialDelaySeconds=5"}}]}),

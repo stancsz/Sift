@@ -16,8 +16,9 @@ def build_messages() -> list[dict[str, str]]:
     ]
     log_lines.insert(
         31,
-        "2026-10-18T09:31:00Z rollout finding: readiness probe used initialDelaySeconds=5; "
-        "operator-approved fix is initialDelaySeconds=25. Image and database checks passed.",
+        "2026-10-18T09:31:00Z rollout finding: readiness probe used initialDelaySeconds=5, "
+        "which did not allow sufficient time for image and database initialization; "
+        "operator-approved fix is initialDelaySeconds=25.",
     )
     log_lines.extend(
         f"kubelet poll #{minute + 60:03d}: atlas-api pod ready, revision r1842, no new events"
@@ -46,13 +47,24 @@ def answers_buried_setting(answer: str) -> bool:
         r"\binitialDelaySeconds\s*[:=]\s*5\b", answer, re.IGNORECASE
     )
     has_readiness_reason = "readiness" in answer.casefold() and "probe" in answer.casefold()
-    return bool(has_approved_value and has_previous_value and has_readiness_reason)
+    has_insufficient_time_reason = re.search(
+        r"(?:did not|didn't|does not|doesn't) allow (?:enough|sufficient) time"
+        r"|insufficient time|too (?:short|brief) (?:a )?time|not enough time",
+        answer,
+        re.IGNORECASE,
+    )
+    return bool(
+        has_approved_value
+        and has_previous_value
+        and has_readiness_reason
+        and has_insufficient_time_reason
+    )
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--url", default="http://127.0.0.1:4011/v1/chat/completions")
-    parser.add_argument("--model", default="qwen3.5:4b")
+    parser.add_argument("--model", default="qwen3.5:9b")
     parser.add_argument("--timeout", type=float, default=120)
     args = parser.parse_args()
 

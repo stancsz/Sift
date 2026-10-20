@@ -6,6 +6,9 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
+# Fresh Windows imports of LiteLLM's proxy modules can take over 30 seconds.
+# These tests intentionally launch clean processes to verify import-time config.
+PROCESS_TIMEOUT = 60
 
 
 class NativeMiniMaxProfileTests(unittest.TestCase):
@@ -70,7 +73,7 @@ class NativeMiniMaxProfileTests(unittest.TestCase):
                     "assert c.qwen_instruction_prefix({'model': c.MODEL, 'messages': []}, 'anthropic_messages')['messages'] == []"
                 )
                 result = subprocess.run([sys.executable, "-c", script], cwd=ROOT, env=env,
-                                        text=True, capture_output=True, timeout=30)
+                                        text=True, capture_output=True, timeout=PROCESS_TIMEOUT)
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertIn("selector=full", result.stderr)
                 self.assertIn("input_tokens=500001 forwarded_tokens=500001", result.stderr)
@@ -102,7 +105,7 @@ class NativeMiniMaxProfileTests(unittest.TestCase):
             "    raise AssertionError('sub-floor request was not rejected')",
         ))
         result = subprocess.run([sys.executable, "-c", script], cwd=ROOT, env=env,
-                                text=True, capture_output=True, timeout=30)
+                                text=True, capture_output=True, timeout=PROCESS_TIMEOUT)
         self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_full_arm_rejects_sub_floor_request_before_provider_routing(self):
@@ -129,7 +132,7 @@ class NativeMiniMaxProfileTests(unittest.TestCase):
             "    raise AssertionError('sub-floor request was not rejected')",
         ))
         result = subprocess.run([sys.executable, "-c", script], cwd=ROOT, env=env,
-                                text=True, capture_output=True, timeout=30)
+                                text=True, capture_output=True, timeout=PROCESS_TIMEOUT)
         self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_preflight_only_fingerprints_identical_client_model_aliases(self):
@@ -156,7 +159,7 @@ class NativeMiniMaxProfileTests(unittest.TestCase):
             "assert c._request_fingerprint(full) != c._request_fingerprint(changed)",
         ))
         result = subprocess.run([sys.executable, "-c", script], cwd=ROOT, env=env,
-                                text=True, capture_output=True, timeout=30)
+                                text=True, capture_output=True, timeout=PROCESS_TIMEOUT)
         self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_fixed_full_arm_can_use_the_same_client_model_alias_as_sift(self):
@@ -188,7 +191,7 @@ class NativeMiniMaxProfileTests(unittest.TestCase):
             "assert asyncio.run(c.benchmark_hook.async_pre_call_hook(None, None, {'model': c.MODEL, 'messages': [{'role': 'user', 'content': 'task'}]}, 'acompletion')) is None",
         ))
         result = subprocess.run([sys.executable, "-c", script], cwd=ROOT, env=env,
-                                text=True, capture_output=True, timeout=30)
+                                text=True, capture_output=True, timeout=PROCESS_TIMEOUT)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("selector=full", result.stderr)
         self.assertIn("input_tokens=550000 forwarded_tokens=550000", result.stderr)
@@ -221,7 +224,7 @@ class NativeMiniMaxProfileTests(unittest.TestCase):
             "    raise AssertionError('preflight-only request was not blocked')",
         ))
         result = subprocess.run([sys.executable, "-c", script], cwd=ROOT, env=env,
-                                text=True, capture_output=True, timeout=30)
+                                text=True, capture_output=True, timeout=PROCESS_TIMEOUT)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("sift_benchmark_preflight run_id=pair-20261016", result.stderr)
         self.assertIn("arm=sift", result.stderr)
@@ -242,7 +245,7 @@ class NativeMiniMaxProfileTests(unittest.TestCase):
             "SIFT_BENCH_TARGET": "65536",
         })
         result = subprocess.run([sys.executable, "-c", "import native_callback"], cwd=ROOT,
-                                env=env, text=True, capture_output=True, timeout=30)
+                                env=env, text=True, capture_output=True, timeout=PROCESS_TIMEOUT)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("SIFT_BENCH_TARGET must be between 1 and 28672", result.stderr)
 
