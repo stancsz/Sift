@@ -2,15 +2,18 @@
 
 ## Owner and current checkout
 
-The top-level goal remains active in [goal.md](goal.md). Current integration checkout: branch `codex/release-control-audit`, based on `origin/main` at `70012d4e7f8ed799aa96570efa7a553251c230aa`. This turn synced the first-run adoption task and audited release controls. Do not stage private `.runs`, credentials, responses, or participant data.
+The top-level goal remains active in [goal.md](goal.md). Current integration checkout: branch `codex/litellm-client-compat`, based on `origin/main` at `9a24717280bafa662f8de4ed5bdd26e5c88bd631`. This turn added a local LiteLLM client smoke and updated compatibility evidence. Do not stage private `.runs`, credentials, responses, or participant data.
 
 ## Verified delivery since the previous handoff
 
 - PR #19, merged at `76f3baf`, revised the homepage first screen with a concrete coding/research context-crowding use case and an adjacent, qualified token/quality evidence card. Pages deployment run `39425862451` succeeded. The live page is <https://stancsz.github.io/sift/>.
 - Final Sol image review passed actual 1280×800 desktop and 390×844 mobile renders. It requested larger evidence labels/caveat text; those were enlarged and returned to the same Sol reviewer, who passed the revised views. Independent mobile reviewer marked READY. Live mobile DOM: `scrollWidth=390`, evidence card ends at y=601, CTA at y=616–664, trust row ends y=702.
 - Current full local suite: 392 passed on Python 3.13.11 in 137.89 seconds, 17 dependency warnings. PR #19's Python 3.12 smoke passed in 46 seconds; post-merge main smoke passed in 48 seconds. The CI full matrix is weekly/manual and was skipped for PR #19 by design.
-- PRs #17–19 are merged: strict LongBench analyzer, deterministic no-inference standalone CLI demo, and homepage value/evidence revision. `sift serve` does not require LiteLLM; Ollama and compatible base URLs are supported. Existing exact-client evidence remains limited to one OpenAI SDK→Sift→Ollama loop plus fixture tests.
+- PRs #17–19 are merged: strict LongBench analyzer, deterministic no-inference standalone CLI demo, and homepage value/evidence revision. `sift serve` does not require LiteLLM; Ollama and compatible base URLs are supported. An OpenAI SDK→Sift→Ollama tool loop is recorded. This branch adds a local LiteLLM Python client→Sift→loopback-fixture compaction smoke; it makes no model call.
 - PR #20 merged as `70012d4`. The README first-run task and protocol now include the checkout prerequisite, exact terminal commands and actual success output. The council decision is preserved as an attributed session summary; the raw answers were not retained. Issue #13 was refreshed with those commands, Windows variants, current evidence, and a clear public-comments warning. It still has zero replies and no sessions.
+- PR #21 merged as `9a24717`, recording verified release-control gaps and their limits. No repository settings were changed and no PyPI upload was attempted.
+- Candidate `600ef9a` adds a LiteLLM Python client loopback smoke. The focused client file passed 2 tests in 8.78 seconds; the full local suite passed 393 tests in 137.80 seconds on Python 3.13.11 with 18 dependency warnings. The new test made no provider or model request.
+- A follow-on change explicitly disables LiteLLM telemetry and blocks non-loopback socket connections during that smoke; the focused file passed again (2 tests, 7.09 seconds).
 
 ## Evaluation and limits
 

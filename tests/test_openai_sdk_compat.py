@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import ipaddress
+import socket
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import Thread
 from time import time
@@ -111,10 +113,27 @@ def test_openai_python_client_streamed_tool_turn_through_standalone_proxy():
         backend_thread.join(timeout=2)
 
 
-def test_litellm_python_client_compaction_through_standalone_proxy():
+def test_litellm_python_client_compaction_through_standalone_proxy(monkeypatch):
     litellm = pytest.importorskip("litellm", reason="install the litellm extra")
     from sift.cli import _SiftHTTPServer
 
+    # Keep this compatibility smoke strictly local, including any SDK telemetry.
+    litellm.telemetry = False
+    blocked_hosts = []
+    real_connect = socket.socket.connect
+
+    def loopback_connect(sock, address):
+        host = address[0] if isinstance(address, tuple) else address
+        try:
+            is_loopback = ipaddress.ip_address(host).is_loopback
+        except ValueError:
+            is_loopback = host == "localhost"
+        if not is_loopback:
+            blocked_hosts.append(host)
+            raise OSError(f"non-loopback network is disabled in this smoke: {host}")
+        return real_connect(sock, address)
+
+    monkeypatch.setattr(socket.socket, "connect", loopback_connect)
     observed = []
 
     class BackendHandler(BaseHTTPRequestHandler):
@@ -170,6 +189,7 @@ def test_litellm_python_client_compaction_through_standalone_proxy():
         assert len(observed) == 1
         assert len(observed[0]["messages"]) < len(messages)
         assert observed[0]["messages"][-1]["content"] == "What was the approved readiness delay?"
+        assert blocked_hosts == []
     finally:
         proxy.shutdown()
         proxy.server_close()
