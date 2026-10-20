@@ -69,6 +69,16 @@ python examples/no_inference_compaction_demo.py
 
 The script binds a stub backend to `127.0.0.1:4020`, checks whether Sift forwarded the buried rollout setting, and returns a fixed response. It makes no model call and requires no Ollama install. This verifies local request compaction only; it does not test an inference backend or answer quality.
 
+#### 10-minute first-run task (no model)
+
+1. Open the [Sift homepage](https://stancsz.github.io/sift/) and read the first screen for 20 seconds. Then explain in your own words what Sift keeps, what it filters, and what the published result does not prove.
+2. From the repository root, use the no-inference setup above. If you do not have a checkout yet, first run `git clone https://github.com/stancsz/sift.git` and `cd sift`. Then use two terminals:
+   - Terminal 1, start Sift: `python -m sift.cli serve --base-url http://127.0.0.1:4020/v1 --target 2048 --tokenizer byte-estimate` (Windows: `py -3 -m sift.cli serve --base-url http://127.0.0.1:4020/v1 --target 2048 --tokenizer byte-estimate`).
+   - Terminal 2, run the demo: `python examples/no_inference_compaction_demo.py` (Windows: `py -3 examples/no_inference_compaction_demo.py`).
+3. Confirm the demo exits successfully and prints “Sift compacted the request” and “The loopback fixture found the buried setting.” No model is started or called.
+
+This task uses synthetic history and a local deterministic stub only; it needs no Ollama install, API key, model request, or hosted inference. For the optional task feedback and up to three observed inference-free sessions, see [issue #13](https://github.com/stancsz/sift/issues/13). Issue comments are public under your GitHub account. If you share feedback there, report only `complete`, `blocked`, or `not started`, a broad workflow category, and the step that was unclear. Do not post prompts, logs, identifying details, or API keys.
+
 `byte-estimate` is an explicit UTF-8 request-size estimate, **not the upstream model's tokenizer**. Sift enforces the target against this estimate, including message and tool-schema fields. Leave room for output and treat the target as estimate-relative; provider context fit is not guaranteed. Only OpenAI Chat Completions is supported by this standalone proxy. The existing LiteLLM callback remains the path for Anthropic Messages, Responses, and LiteLLM's provider-specific token counter.
 
 To inspect a conversation without starting a proxy or making a network request, pass JSON to `sift compact` with the same explicit `--tokenizer` and `--target` options.
