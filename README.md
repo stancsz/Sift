@@ -4,20 +4,18 @@
 
 # Sift
 
-**Keep your agent’s working memory lean. Keep the evidence it needs.**
+**When tool history grows, keep relevant evidence in your coding agent’s next request.**
 
 [![Tests](https://github.com/stancsz/sift/actions/workflows/test.yml/badge.svg)](https://github.com/stancsz/sift/actions/workflows/test.yml)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](pyproject.toml)
 [![MIT license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Release](https://img.shields.io/github/v/tag/stancsz/sift?label=release)](https://github.com/stancsz/sift/tags)
 
-Pull requests run a short Python 3.12 smoke over core behavior, invariants, the standalone CLI, and local Ollama and no-inference fixtures. The full test suite and offline comparison run weekly and on manual dispatch; run them locally before a release with `python -m pytest tests -q` and `python benchmarks/compare.py`. To check the standalone proxy with both the OpenAI and LiteLLM Python clients (loopback fixtures only, no model request), install `python -m pip install -e ".[test,litellm,client-smoke]"` and run `python -m pytest tests/test_openai_sdk_compat.py -q`.
+For coding-agent builders with long tool histories, Sift preserves the active request and tool work exactly when they fit, deterministically selects older task-related excerpts, and fails closed if current work cannot fit. It does this without a summary-model call.
 
-Sift is a deterministic, CPU-only context compressor for coding and research agents. It trims older chat and tool history to a configurable token budget while preserving the current request and active tool work exactly when they fit. If they do not fit, Sift fails closed. It makes no summarization call and adds no model dependency.
+**Measured trade-off:** on an exposed 344-question LongBench cohort, Sift used 59.66% fewer provider prompt tokens while its task-majority score was 5.25 percentage points lower than full context. This is not blind evidence or coding-agent success evidence.
 
-Use Sift as a Python library, a **LiteLLM Proxy callback**, or the standalone `sift` CLI with Ollama or another OpenAI-compatible endpoint. On supported backends, stable history between tool-cycle boundaries can also help prefix-cache reuse.
-
-[See an offline compaction example](https://stancsz.github.io/sift/#try) · [Project site](https://stancsz.github.io/sift/) · [Standalone CLI](#standalone-cli-no-litellm) · [LiteLLM quick start](#litellm-proxy) · [Measured LongBench results](#broader-longbench-v2-cohort-344-questions-three-repeats-per-arm) · [How it works](docs/algorithm.md) · [Evaluation record](docs/evaluation.md) · [Release process](docs/releasing.md)
+**[Run the offline trace demo — no model required](https://stancsz.github.io/sift/#try)**
 
 > **Preview release:** install the tested `v0.10.0` tag from GitHub today. It defaults to a 24,576-token target. The newer 32,768-token default is on unreleased `main` (`0.11.0.dev0`). Sift is not yet published to PyPI. See the [release roadmap](ROADMAP.md).
 
@@ -71,11 +69,13 @@ The script binds a stub backend to `127.0.0.1:4020`, checks whether Sift forward
 
 #### 10-minute first-run task (no model)
 
-1. Open the [Sift homepage](https://stancsz.github.io/sift/) and read the first screen for 20 seconds. Then explain in your own words what Sift keeps, what it filters, and what the published result does not prove.
+1. Open the [Sift homepage](https://stancsz.github.io/sift/) and read the first screen for 20 seconds. Then explain in your own words what Sift keeps exact, what it may select from older history, when it refuses, and what the published result does not prove.
 2. From the repository root, use the no-inference setup above. If you do not have a checkout yet, first run `git clone https://github.com/stancsz/sift.git` and `cd sift`. Then use two terminals:
    - Terminal 1, start Sift: `python -m sift.cli serve --base-url http://127.0.0.1:4020/v1 --target 2048 --tokenizer byte-estimate` (Windows: `py -3 -m sift.cli serve --base-url http://127.0.0.1:4020/v1 --target 2048 --tokenizer byte-estimate`).
    - Terminal 2, run the demo: `python examples/no_inference_compaction_demo.py` (Windows: `py -3 examples/no_inference_compaction_demo.py`).
 3. Confirm the demo exits successfully and prints “Sift compacted the request” and “The loopback fixture found the buried setting.” No model is started or called.
+
+After the demo, try this optional comprehension check privately: what stayed exact, what older content was selected, and what condition makes Sift refuse? What did the deterministic fixture not prove? Do not post your answers in the public issue.
 
 This task uses synthetic history and a local deterministic stub only; it needs no Ollama install, API key, model request, or hosted inference. For the optional task feedback and up to three observed inference-free sessions, see [issue #13](https://github.com/stancsz/sift/issues/13). Issue comments are public under your GitHub account. If you share feedback there, report only `complete`, `blocked`, or `not started`, a broad workflow category, and the step that was unclear. Do not post prompts, logs, identifying details, or API keys.
 
