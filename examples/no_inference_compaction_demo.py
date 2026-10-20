@@ -16,7 +16,7 @@ from examples.ollama_compaction_demo import answers_buried_setting, build_messag
 
 _EXPECTED_ANSWER = (
     "The readiness probe changed from initialDelaySeconds=5 to the "
-    "operator-approved initialDelaySeconds=25."
+    "operator-approved initialDelaySeconds=25 because the old delay did not allow sufficient time."
 )
 _MISSING_ANSWER = "The compacted request did not include the buried readiness-probe setting."
 

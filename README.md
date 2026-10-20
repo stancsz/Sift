@@ -43,17 +43,17 @@ python3 -m venv .venv
 .venv/bin/sift serve --base-url http://127.0.0.1:11434/v1 --target 4096 --tokenizer byte-estimate
 ```
 
-Install [Ollama](https://ollama.com/), start `ollama serve` if its local service is not already running, and pull a model with `ollama pull qwen3.5:4b`. For another OpenAI-compatible backend, replace `--base-url`; use `--api-key-env ENV_VAR` to read a protected endpoint's key from an environment variable. Point your client at `http://127.0.0.1:4011/v1`.
+Install [Ollama](https://ollama.com/), start `ollama serve` if its local service is not already running, and pull a model with `ollama pull qwen3.5:9b`. For another OpenAI-compatible backend, replace `--base-url`; use `--api-key-env ENV_VAR` to read a protected endpoint's key from an environment variable. Point your client at `http://127.0.0.1:4011/v1`.
 
 To run the bundled demonstration, open a second terminal and clone the repository. The script sends an intentionally long deployment log, asks for a setting buried in the history, and prints the answer and Sift's estimated input/forwarded sizes:
 
 ```sh
 git clone https://github.com/stancsz/sift.git
 cd sift
-python examples/ollama_compaction_demo.py --model qwen3.5:4b
+python examples/ollama_compaction_demo.py --model qwen3.5:9b
 ```
 
-The demo checks that `x-sift-compacted` is true; its generated rollout log puts the approved `initialDelaySeconds` value among routine polls. The scenario is synthetic and demonstrates request behavior, not answer quality. For your own client, use the OpenAI-compatible URL `http://127.0.0.1:4011/v1` and the model name your backend expects. For another compatible backend, replace `--base-url`; it must accept `POST /v1/chat/completions` and, when protected, standard Bearer authentication. Pass a protected endpoint's key through `--api-key-env ENV_VAR`, with the secret stored in that environment variable.
+The demo checks that `x-sift-compacted` is true and that the answer includes both `initialDelaySeconds` values, identifies the readiness probe, and says the old delay did not allow enough time. In one local run, `qwen3.5:9b` returned an answer that passed those checks; `qwen3.5:4b` omitted the previous value and gave the wrong reason. This synthetic check illustrates model-dependent behavior, not general answer quality. For your own client, use the OpenAI-compatible URL `http://127.0.0.1:4011/v1` and the model name your backend expects. For another compatible backend, replace `--base-url`; it must accept `POST /v1/chat/completions` and, when protected, standard Bearer authentication. Pass a protected endpoint's key through `--api-key-env ENV_VAR`, with the secret stored in that environment variable.
 
 To try the standalone proxy without installing or calling a model, use the local deterministic fixture. In one terminal, start Sift with the fixture's loopback address:
 
