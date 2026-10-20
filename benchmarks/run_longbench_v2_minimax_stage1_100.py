@@ -70,6 +70,23 @@ UNKNOWN_503_JOB_IDS = {
     "67191791bb02136c067d406c:full:1",
     "66ed23ce821e116aacb1ee84:full:1",
 }
+UNKNOWN_503_UNRECEIPTED_ATTEMPTS = {
+    ("66f954a5bb02136c067c511a:full:1", 1, 400),
+    ("6725db8bbb02136c067d84eb:full:1", 1, None),
+    ("66f3a311821e116aacb2de19:full:1", 1, 400),
+    ("66f5605a821e116aacb3381f:full:1", 1, None),
+    ("67191791bb02136c067d406c:full:1", 1, None),
+    ("66ed24c5821e116aacb1eee6:full:1", 1, 400),
+    ("66ed23ce821e116aacb1ee84:full:1", 2, None),
+}
+UNKNOWN_600_REPORT_SHA256 = "fb42c2232e003a95465fb225eca98fd55816af82c40904225cee4fbad9f9e72b"
+UNKNOWN_600_UNRECEIPTED_ATTEMPTS = {
+    ("6725db46bb02136c067d84b4:sift:2", 1, None),
+    ("672494e5bb02136c067d7697:full:2", 1, None),
+    ("67286036bb02136c067d9092:full:1", 1, None),
+    ("67189156bb02136c067d3b8d:sift:0", 1, None),
+    ("66ebdadd5a08c7b9b35e0e5b:full:1", 1, None),
+}
 UNKNOWN_344_REPORT_SHA256 = "20e1106b1f4c27c801f0411d433a06c7e1def9ed48be4b0b3df7431671e30356"
 UNKNOWN_344_MANIFEST_SHA256 = MANIFEST_SHA256_344_CURRENT
 UNKNOWN_344_JOB_IDS = {"66f53892821e116aacb33225:full:2"}
@@ -419,11 +436,12 @@ def cost_receipt(usage: Any) -> tuple[float | None, str]:
 
 def recorded_unknown_outcome_reserve(report_path: Path, input_price: float = INPUT_PRICE,
                                      output_price: float = OUTPUT_PRICE) -> dict:
-    """Bind reserves to one of the exact private reports with unresolved outcomes."""
+    """Reserve one full-route maximum for every exact unreceipted attempt row."""
     if not report_path.is_file():
         raise StageError("Unknown outcomes require the exact recorded private run artifact")
     digest = file_sha256(report_path)
-    if digest not in {UNKNOWN_503_REPORT_SHA256, UNKNOWN_344_REPORT_SHA256}:
+    if digest not in {UNKNOWN_503_REPORT_SHA256, UNKNOWN_600_REPORT_SHA256,
+                      UNKNOWN_344_REPORT_SHA256}:
         raise StageError("Unknown outcomes require a pinned report SHA-256")
     try:
         prior = json.loads(report_path.read_text(encoding="utf-8"))
@@ -446,6 +464,16 @@ def recorded_unknown_outcome_reserve(report_path: Path, input_price: float = INP
                     or frozen["local_prompt_tokens"] <= 0
                     or not any(row.get("usage") is None and row.get("failure") for row in attempts)):
                 raise StageError(f"503 unknown outcome lacks its frozen unreceipted request record: {job_id}")
+        expected_attempts = UNKNOWN_503_UNRECEIPTED_ATTEMPTS
+    elif digest == UNKNOWN_600_REPORT_SHA256:
+        if (prior.get("status") != "complete" or prior.get("full_schedule_complete") is not True
+                or prior.get("full_schedule_jobs") != 600
+                or prior.get("dispatch_prefix_count") != 600
+                or prior.get("attempted_jobs") != 605 or prior.get("completed_jobs") != 600
+                or prior.get("in_flight") is not None):
+            raise StageError("Recorded unknown-outcome artifact differs from the reviewed 600-run ledger")
+        samples = [row for row in prior.get("samples", []) if isinstance(row, dict)]
+        expected_attempts = UNKNOWN_600_UNRECEIPTED_ATTEMPTS
     else:
         expected_ids = UNKNOWN_344_JOB_IDS
         in_flight = prior.get("in_flight")
@@ -465,20 +493,36 @@ def recorded_unknown_outcome_reserve(report_path: Path, input_price: float = INP
                 or sample.get("provider_reported_cost_usd") is not None
                 or sample.get("failure") != "http_status_not_200"):
             raise StageError("Recorded 344-run artifact differs from the reviewed unreceipted 529 outcome")
-        schedule_rows = {}
         samples = [sample]
-    reserves = {}
-    for job_id in expected_ids:
-        # Provider prompt usage is unavailable for the ambiguous attempt.
-        # Reserve the current route's full per-request prompt limit and output cap.
-        reserves[job_id] = (PROVIDER_LIMIT * input_price + OUTPUT_CAP * output_price) / 1_000_000
+        expected_attempts = {(job_id, None, 529)}
+    actual_attempt_rows = []
+    for row in samples:
+        # A response without both a provider response ID and usage receipt cannot
+        # settle the upstream charge. Preserve even explicit 4xx attempts.
+        if not row.get("response_id") or row.get("usage") is None:
+            actual_attempt_rows.append((row.get("job_id"), row.get("attempt_number"), row.get("http_status")))
+    actual_attempts = set(actual_attempt_rows)
+    if len(actual_attempt_rows) != len(expected_attempts) or actual_attempts != expected_attempts:
+        raise StageError("Pinned report unreceipted attempt rows differ from the reviewed ledger")
+    per_attempt = {}
+    per_attempt_reserve = (PROVIDER_LIMIT * input_price + OUTPUT_CAP * output_price) / 1_000_000
+    for job_id, attempt_number, http_status in sorted(expected_attempts, key=str):
+        key = f"{job_id}#attempt={attempt_number if attempt_number is not None else 'unknown'}"
+        if key in per_attempt:
+            raise StageError("Pinned report contains duplicate unreceipted attempt identities")
+        per_attempt[key] = per_attempt_reserve
+    source_jobs = sorted({row[0] for row in expected_attempts})
     return {
         "source_report_path": str(report_path.resolve()),
         "source_report_sha256": digest,
-        "source_unknown_job_ids": sorted(expected_ids),
-        "reserve_method": "one full current-provider prompt limit plus 64 output tokens per unreceipted request",
-        "per_job_reserves_usd": reserves,
-        "total_reserve_usd": sum(reserves.values()),
+        "source_unknown_job_ids": source_jobs,
+        "source_unreceipted_attempts": [
+            {"job_id": job_id, "attempt_number": attempt_number, "http_status": http_status}
+            for job_id, attempt_number, http_status in sorted(expected_attempts, key=str)
+        ],
+        "reserve_method": "one full current-provider prompt limit plus 64 output tokens per unreceipted attempt",
+        "per_attempt_reserves_usd": per_attempt,
+        "total_reserve_usd": sum(per_attempt.values()),
     }
 
 
@@ -610,7 +654,7 @@ def live_account_route_preflight(api_key: str, manifest: dict, cap: float,
     actual balance or impose a provider-side hard spend cap.
     """
     if not no_unsettled_attested:
-        raise StageError("Explicitly attest that no additional unresolved requests exist outside the pinned reports")
+        raise StageError("Explicitly attest that no additional unresolved requests exist outside the three pinned reports and no dispatch is active")
     if not prior_unknown_outcome_explicitly_accepted:
         raise StageError("This study has known unresolved provider outcomes; accept and reserve their exact recorded reports")
     if (not math.isfinite(prior_unknown_outcome_reserve_usd)
@@ -935,7 +979,7 @@ def main() -> int:
     parser.add_argument("--dispatch", action="store_true", help="Explicitly send paid MiniMax requests.")
     parser.add_argument("--spend-cap-usd", type=float, help="User-approved aggregate cap for this run; required with --dispatch.")
     parser.add_argument("--confirm-no-unsettled-requests", action="store_true",
-                        help="Attest that no additional unresolved requests exist outside the two pinned reports; does not replace their required reserves.")
+                        help="Attest that no additional unresolved requests exist outside the three pinned reports and no dispatch is active; their reserves still apply.")
     parser.add_argument("--confirm-provider-billing-covers-cap", action="store_true",
                         help="Attest that MiniMax-side billing headroom covers the full approved BYOK spend cap.")
     parser.add_argument("--authorize-unverified-provider-billing", action="store_true",
@@ -943,7 +987,7 @@ def main() -> int:
     parser.add_argument("--accept-recorded-unknown-outcomes", action="store_true",
                         help="Explicitly accept previously recorded outcomes whose upstream usage cannot be reconciled.")
     parser.add_argument("--prior-unknown-outcome-report", type=Path, action="append",
-                        help="Exact private report for a known unreceipted run (repeat once for each pinned report).")
+                        help="Exact private report for a known unreceipted run (repeat once for each of the three pinned reports).")
     parser.add_argument("--continue-after-known-unknown-report", type=Path,
                         help="Continue only the unattempted suffix after validating the exact stopped 344-run report; the failed request is skipped permanently.")
     args = parser.parse_args()
@@ -972,9 +1016,9 @@ def main() -> int:
             raise StageError("Choose exactly one provider-billing attestation or explicit unverified-balance authorization")
         if (not args.confirm_no_unsettled_requests or not args.accept_recorded_unknown_outcomes
                 or not args.prior_unknown_outcome_report):
-            raise StageError("This study requires a no-additional-unknowns attestation and acceptance of both exact reports")
-        if len(args.prior_unknown_outcome_report) != 2:
-            raise StageError("This study requires both exact reports for its known unknown outcomes")
+            raise StageError("This study requires a no-additional-unknowns attestation and acceptance of all three exact reports")
+        if len(args.prior_unknown_outcome_report) != 3:
+            raise StageError("This study requires all three exact reports for its known unreceipted attempts")
         if not math.isfinite(args.spend_cap_usd) or args.spend_cap_usd <= 0:
             raise StageError("--spend-cap-usd must be finite and positive")
         api_key = os.environ.get("OPENROUTER_API_KEY")
@@ -1042,9 +1086,10 @@ def main() -> int:
     if args.accept_recorded_unknown_outcomes:
         unknown_evidence = [recorded_unknown_outcome_reserve(path) for path in args.prior_unknown_outcome_report]
         accepted_hashes = {entry["source_report_sha256"] for entry in unknown_evidence}
-        required_hashes = {UNKNOWN_503_REPORT_SHA256, UNKNOWN_344_REPORT_SHA256}
+        required_hashes = {UNKNOWN_503_REPORT_SHA256, UNKNOWN_600_REPORT_SHA256,
+                           UNKNOWN_344_REPORT_SHA256}
         if len(accepted_hashes) != len(unknown_evidence) or accepted_hashes != required_hashes:
-            raise StageError("Supply each exact pinned unknown-outcome report once; no report may be omitted or duplicated")
+            raise StageError("Supply each of the three exact pinned unreceipted-attempt reports once; no report may be omitted or duplicated")
         prior_unknown_reserve = sum(entry["total_reserve_usd"] for entry in unknown_evidence)
         report["prior_unknown_outcome_evidence"] = unknown_evidence
     report["prior_unknown_outcome_reserve_usd"] = prior_unknown_reserve

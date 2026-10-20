@@ -37,6 +37,7 @@ class RecordedUnknownOutcomeTests(unittest.TestCase):
                     + stage.OUTPUT_CAP * stage.OUTPUT_PRICE) / 1_000_000
         self.assertAlmostEqual(evidence["total_reserve_usd"], expected)
         self.assertEqual(evidence["source_unknown_job_ids"], [job_id])
+        self.assertEqual(len(evidence["per_attempt_reserves_usd"]), 1)
 
         report["samples"][0]["http_status"] = 200
         path.write_text(json.dumps(report), encoding="utf-8")
@@ -44,21 +45,46 @@ class RecordedUnknownOutcomeTests(unittest.TestCase):
             with self.assertRaises(stage.StageError):
                 stage.recorded_unknown_outcome_reserve(path)
 
-    def test_503_report_requires_all_four_pinned_unreceipted_jobs(self):
+    def test_503_report_reserves_every_unreceipted_attempt_including_400s(self):
         ids = sorted(stage.UNKNOWN_503_JOB_IDS)
+        attempts = sorted(stage.UNKNOWN_503_UNRECEIPTED_ATTEMPTS, key=str)
         report = {
             "status": "prefix_incomplete",
             "unknown_outcome_job_ids": ids,
             "schedule": [{"job_id": job_id, "arm": "full", "local_prompt_tokens": 100}
-                         for job_id in ids],
-            "samples": [{"job_id": job_id, "usage": None,
-                         "failure": "request_exception:SSLError"} for job_id in ids],
+                         for job_id, _, _ in attempts],
+            "samples": [{"job_id": job_id, "attempt_number": attempt,
+                         "http_status": status, "response_id": None, "usage": None,
+                         "failure": "request_exception:SSLError"}
+                        for job_id, attempt, status in attempts],
         }
         path = self._write_report(report)
         with patch.object(stage, "file_sha256", return_value=stage.UNKNOWN_503_REPORT_SHA256):
             evidence = stage.recorded_unknown_outcome_reserve(path)
-        self.assertEqual(set(evidence["source_unknown_job_ids"]), stage.UNKNOWN_503_JOB_IDS)
-        self.assertEqual(len(evidence["per_job_reserves_usd"]), 4)
+        self.assertEqual(len(evidence["source_unreceipted_attempts"]), 7)
+        self.assertEqual(len(evidence["per_attempt_reserves_usd"]), 7)
+        expected = 7 * (stage.PROVIDER_LIMIT * stage.INPUT_PRICE
+                        + stage.OUTPUT_CAP * stage.OUTPUT_PRICE) / 1_000_000
+        self.assertAlmostEqual(evidence["total_reserve_usd"], expected)
+
+    def test_600_completed_report_still_reserves_five_unreceipted_attempts(self):
+        samples = [{"job_id": job_id, "attempt_number": attempt, "http_status": status,
+                    "response_id": None, "usage": None, "failure": "request_exception:timeout"}
+                   for job_id, attempt, status in sorted(stage.UNKNOWN_600_UNRECEIPTED_ATTEMPTS, key=str)]
+        report = {"status": "complete", "full_schedule_complete": True,
+                  "full_schedule_jobs": 600, "dispatch_prefix_count": 600,
+                  "attempted_jobs": 605, "completed_jobs": 600, "in_flight": None,
+                  "samples": samples}
+        path = self._write_report(report)
+        with patch.object(stage, "file_sha256", return_value=stage.UNKNOWN_600_REPORT_SHA256):
+            evidence = stage.recorded_unknown_outcome_reserve(path)
+        self.assertEqual(len(evidence["source_unreceipted_attempts"]), 5)
+        self.assertEqual(len(evidence["per_attempt_reserves_usd"]), 5)
+        report["samples"].append(dict(samples[0]))
+        path.write_text(json.dumps(report), encoding="utf-8")
+        with patch.object(stage, "file_sha256", return_value=stage.UNKNOWN_600_REPORT_SHA256):
+            with self.assertRaisesRegex(stage.StageError, "attempt rows"):
+                stage.recorded_unknown_outcome_reserve(path)
 
     def test_continuation_validates_prefix_and_skips_529_without_resending(self):
         case_ids = [f"case-{case:03d}" for case in range(344)]
@@ -166,10 +192,11 @@ class RecordedUnknownOutcomeTests(unittest.TestCase):
                 prior_unknown_outcome_explicitly_accepted=True,
                 prior_unknown_outcome_reserve_usd=1.0)
 
-    def test_cli_rejects_dispatch_with_only_one_known_unknown_report(self):
+    def test_cli_requires_all_three_known_unknown_reports(self):
         for no_additional, accepted, paths in (
                 (True, False, None), (True, True, [Path("only-one.json")]),
-                (False, True, [Path("one.json"), Path("two.json")])):
+                (False, True, [Path("one.json"), Path("two.json")]),
+                (True, True, [Path("one.json"), Path("two.json")])):
             with patch.object(stage.argparse.ArgumentParser, "parse_args", return_value=type(
                     "Args", (), {
                         "dispatch": True, "spend_cap_usd": 100.0,
