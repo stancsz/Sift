@@ -89,7 +89,7 @@
     <section class="start-section" id="start" aria-labelledby="start-title"><div class="wrap start-wrap"><div class="start-copy"><p class="eyebrow">START SMALL · STAY LOCAL</p><h2 id="start-title">Try it without<br>changing your stack.</h2><p>Preview the standalone CLI from GitHub main with Python 3.11+ and Git—no manual clone or LiteLLM. Point an OpenAI client at <code>127.0.0.1:4011/v1</code>, then use Ollama or any compatible base URL. Protected endpoints can use <code>--api-key-env</code>. Already use LiteLLM? Try the callback instead.</p>
       <div class="start-tabs" role="tablist" aria-label="Choose an install path"><button type="button" role="tab" id="tab-ollama" aria-selected="true" aria-controls="panel-ollama">Ollama / any base URL</button><button type="button" role="tab" id="tab-callback" aria-selected="false" aria-controls="panel-callback" tabindex="-1">LiteLLM callback</button></div></div>
       <div class="code-panel" id="panel-ollama" role="tabpanel" aria-labelledby="tab-ollama"><div class="code-panel-head"><span class="terminal-dot"></span> TERMINAL / LOCAL</div><pre><code><span class="code-dim"># Ollama installed; run `ollama serve` first if needed</span>
-ollama pull qwen3.5:4b
+ollama pull qwen3.5:9b
 
 <span class="code-dim"># install the CLI preview from GitHub main (Python 3.11+ and Git)</span>
 <span class="code-dim"># Windows PowerShell</span>
@@ -113,7 +113,7 @@ python3 -m venv .venv
 <span class="code-dim"># in a second terminal, clone only to run the optional demo</span>
 git clone https://github.com/stancsz/sift.git
 cd sift
-python examples/ollama_compaction_demo.py --model qwen3.5:4b</code></pre><div class="code-panel-foot"><span>Confirms x-sift-compacted: true · synthetic demo</span><span>NO LITELLM</span></div></div>
+python examples/ollama_compaction_demo.py --model qwen3.5:9b</code></pre><div class="code-panel-foot"><span>Confirms x-sift-compacted: true · synthetic demo</span><span>NO LITELLM</span></div></div>
       <div class="code-panel" id="panel-callback" role="tabpanel" aria-labelledby="tab-callback" hidden><div class="code-panel-head"><span class="terminal-dot"></span> PYTHON / LITELLM</div><pre><code><span class="code-dim"># install the tested release</span>
 python -m pip install \
   "sift-context[litellm] @ git+https://github.com/stancsz/sift.git@v0.10.0"
