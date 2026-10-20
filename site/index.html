@@ -15,9 +15,18 @@
   <main id="main">
     <section class="hero wrap" id="top" aria-labelledby="hero-title">
       <div class="hero-copy"><p class="eyebrow"><span class="live-dot"></span> Deterministic context filtering for coding agents</p>
-        <h1 id="hero-title">A smaller prompt.<br><em>More room to work.</em></h1>
-        <p class="hero-lede">Give Sift an agent’s chat and its current task. It keeps recent turns exact when they fit, then selects older excerpts that match—so less history competes with the next step, without a summary-model call.</p>
-        <p class="hero-caveat">Selection can miss useful details. Measure task quality on your workload.</p>
+        <h1 id="hero-title">Long agent history.<br><em>Less context to send.</em></h1>
+        <p class="hero-lede">When accumulated chat crowds the next coding or research request, Sift keeps recent turns exact when they fit and selects older excerpts that match the current task—without a summary-model call.</p>
+        <p class="hero-caveat">Selection can miss useful details. Test task quality on your workload.</p>
+        <div class="hero-evidence" role="group" aria-label="Measured LongBench results and limitations">
+          <p class="hero-evidence-label">MEASURED TRADE-OFF · EXPOSED LONGBENCH V2</p>
+          <div class="hero-evidence-grid">
+            <div class="hero-evidence-stat"><strong>59.66% fewer</strong><span>provider prompt tokens · 2,063 receipts</span></div>
+            <div class="hero-evidence-stat"><strong>−5.25 pp</strong><span>task-majority score vs Full · 343 paired clusters</span></div>
+          </div>
+          <p class="hero-evidence-note">95% task-cluster bootstrap CI for score difference: −10.20 to −0.29 pp. Public questions exposed during development; not a blind or coding-agent success test.</p>
+          <a href="#proof">Full result and limits <span aria-hidden="true">↘</span></a>
+        </div>
         <div class="hero-actions"><a class="button button-dark" href="#start">Try it locally <span aria-hidden="true">↘</span></a><a class="text-link" href="https://github.com/stancsz/sift" target="_blank" rel="noreferrer">Read the source <span aria-hidden="true">↗</span></a></div>
         <ul class="trust-row" aria-label="Sift properties"><li><span aria-hidden="true">◈</span> Deterministic</li><li><span aria-hidden="true">⌁</span> No second model call</li><li><span aria-hidden="true">◉</span> Runs on your machine</li></ul>
       </div>
