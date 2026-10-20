@@ -15,6 +15,8 @@ PyPI supports pending publishers for projects created by a first Trusted Publish
 
 In GitHub repository settings, protect the `pypi` environment with a required reviewer and restrict its allowed deployment branch to `main`. Protect `v*` tags so only the release owner can create or update them. The workflow can only run from `main`; the environment approval occurs after verification and before the OIDC publish job starts. See [GitHub deployment environments](https://docs.github.com/en/actions/concepts/workflows-and-actions/deployment-environments).
 
+**Configuration audit (2026-10-20):** The `pypi` environment exists and restricts deployments to `main`. It has `stancsz` as its sole required reviewer, but self-review is permitted and administrators can bypass the environment. An active `v*` ruleset restricts tag creation, update, and deletion, with an always-available owner bypass. The repository's `main` branch has no branch-protection rule. PyPI's public `sift-context` endpoint returns 404; this does not expose pending-publisher setup, which still needs an authenticated owner-side check. See the [release-control audit](evals/release-control-audit-2026-10-20.md). Do not call this an independent approval gate until the self-review and bypass settings are resolved.
+
 ## Release procedure
 
 1. Resolve the release gates in [the roadmap](../ROADMAP.md), and reconcile the version, README install instructions, release notes, and changelog (if present).
