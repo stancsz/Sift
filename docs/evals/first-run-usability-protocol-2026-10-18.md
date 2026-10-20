@@ -1,6 +1,6 @@
 # First-run usability protocol
 
-**Status: owner-authorized for up to three sessions; no sessions have run.** The homepage first screen was independently reviewed at the required viewport and is frozen to the deployed revision recorded below. The public opt-in invitation is issue #13. The deterministic fixture and proxy/redirect guards passed independent security review at source commit `4ac6231aaed3cb93a7653c043f00b106ff5bf2fa`; hold sessions until PR #18 has passed CI and merged.
+**Status: recruitment authorized for up to three sessions; no sessions have run.** The owner authorized recruitment on 2026-10-20. The homepage first screen was independently reviewed at the required viewport and is frozen to the deployed revision recorded below. The public opt-in invitation is issue #13. The deterministic fixture and proxy/redirect guards passed independent security review at source commit `4ac6231aaed3cb93a7653c043f00b106ff5bf2fa`. Begin sessions after PR #18 has passed CI and merged.
 
 This small, qualitative pilot checks whether developers with existing long-context work can understand Sift's benefit and complete a standalone CLI compaction request without coaching. The request goes through a deterministic loopback stub: no model is started or called, including Ollama. This pilot does not measure Ollama setup success, model answer quality, product-market fit, production readiness, or adoption.
 

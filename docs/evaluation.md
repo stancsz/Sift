@@ -4,7 +4,7 @@ Sift is still a preview. These checks show what it currently does on selected te
 
 ## Local verification
 
-The full local suite passed **384 tests on Python 3.14 in 114.51 seconds**, with 17 dependency warnings, using the worktree's `.venv-local-qa` environment. Run it with `python -m pytest tests -q`; install `.[litellm,test]` first in a clean environment. This run includes focused regression tests for the MiniMax per-attempt unknown-outcome guard and single-use continuation. An isolated Ubuntu/Python 3.12 container at code-bearing PR head `6b317c8` previously passed all 370 tests in 83.59 seconds; its offline authored comparison returned 100/100 Sift hits and 0/100 head/tail hits. Earlier full suites passed on Python 3.11.14, 3.12, 3.13, and 3.14. The current CI design runs a short Python 3.12 core smoke on every push and pull request; its [exact-head run for PR #7](https://github.com/stancsz/sift/actions/runs/39272382994) passed in 29 seconds. The full multiversion suite and offline comparison remain weekly/manual to limit routine PR CI time. These are software checks, not model-quality evidence. The earlier [failure #39077270041](https://github.com/stancsz/sift/actions/runs/39077270041) came from a workflow that omitted the pytest extra and a test that opened an untracked LongBench result file; the current workflow installs both `litellm` and `test` extras.
+The full local suite passed **388 tests on Python 3.14 in 110.62 seconds**, with 17 dependency warnings, using the worktree's `.venv-local-qa` environment. Run it with `python -m pytest tests -q`; install `.[litellm,test]` first in a clean environment. This run includes focused regression tests for the MiniMax per-attempt unknown-outcome guard, single-use continuation, and split-report LongBench analyzer. An isolated Ubuntu/Python 3.12 container at code-bearing PR head `6b317c8` previously passed all 370 tests in 83.59 seconds; its offline authored comparison returned 100/100 Sift hits and 0/100 head/tail hits. Earlier full suites passed on Python 3.11.14, 3.12, 3.13, and 3.14. The current CI design runs a short Python 3.12 core smoke on every push and pull request; PR #17's [core smoke](https://github.com/stancsz/sift/actions/runs/39416951490) passed in 42 seconds, while its full-suite job was skipped by design. The full multiversion suite and offline comparison remain weekly/manual to limit routine PR CI time. These are software checks, not model-quality evidence. The earlier [failure #39077270041](https://github.com/stancsz/sift/actions/runs/39077270041) came from a workflow that omitted the pytest extra and a test that opened an untracked LongBench result file; the current workflow installs both `litellm` and `test` extras.
 
 ## LongBench v2
 
@@ -41,7 +41,19 @@ Across all receipted requests, provider-reported prompt usage was 66,007,295 tok
 
 The raw report and model responses remain private under `.runs`. The paid continuation skipped the HTTP 529, used a fixed single-use output and claim, and completed the remaining 1,522 requests. The dated $100 cap covered prior settled spend and all 13 unknown-attempt reserves; the MiniMax account balance itself was not observable in the BYOK preflight.
 
-Analysis tooling caveat: the checked-in strict full-run analyzer is still pinned to the parent manifest and expects one complete report. These aggregates were recomputed from the private 542-response prefix and 1,522-response continuation with the same strict choice-scoring and task-cluster bootstrap rules; the current analyzer cannot yet ingest this refreshed manifest and split-report layout directly. The result file records the manifest and private input hashes.
+The checked-in strict analyzer validates the refreshed manifest, stopped prefix, and continuation directly. It reconciles all 2,063 successful receipts and total settled cost, excludes the unreceipted 529 from quality, and pairs the remaining 343 complete task clusters. The result file records the manifest and private input hashes.
+
+To reproduce locally, retain the two private reports under `.runs` and run:
+
+```sh
+python benchmarks/analyze_longbench_v2_minimax_paired_344.py \
+  --prefix .runs/longbench-v2-minimax-344-stage-run-prepared-20261020.json \
+  --continuation .runs/longbench-v2-minimax-344-continuation-2026-10-20.json \
+  --manifest docs/evals/longbench-v2-minimax-344-manifest-current-main-2026-10-20.json \
+  --output .runs/longbench-v2-minimax-344-analysis.json
+```
+
+This analysis is offline and makes no model requests. It emits aggregate statistics only; keep the source reports and generated output under `.runs` rather than publishing them.
 
 - [Frozen 344-question manifest](evals/longbench-v2-minimax-344-manifest-current-main-2026-10-20.json)
 - [Current route snapshot](evals/longbench-v2-openrouter-minimax-m3-endpoints-2026-10-20T0750Z.json)

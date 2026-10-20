@@ -27,9 +27,10 @@ BOOTSTRAP_SEED = 20261018
 BOOTSTRAP_SAMPLES = 20_000
 MODEL = "minimax/minimax-m3"
 PROVIDER = "minimax"
-# This analyzer is bound to the reviewed live-route manifest. Update only when
-# a new manifest has been deliberately reviewed and frozen.
+# Preserve the reviewed parent-manifest pin for legacy complete-run reports.
 PRIMARY_344_MANIFEST_SHA256 = "a13822840ceeb3648be58496d9814703a02dca0f70227226a9883a34f0ed4665"
+# The refreshed prefix/continuation study has its own reviewed frozen manifest.
+SPLIT_344_MANIFEST_SHA256 = "eaddd0d337111c6ab3c36d3f4a68dae4f002c94964de39beec620280f9c657c2"
 
 
 class AnalysisError(RuntimeError):
@@ -82,6 +83,11 @@ def require(condition: bool, message: str) -> None:
 def require_pinned_manifest(manifest_sha: str) -> None:
     require(manifest_sha == PRIMARY_344_MANIFEST_SHA256,
             "Manifest is not the reviewed frozen primary 344 artifact")
+
+
+def require_pinned_split_manifest(manifest_sha: str) -> None:
+    require(manifest_sha == SPLIT_344_MANIFEST_SHA256,
+            "Manifest is not the reviewed frozen split 344 artifact")
 
 
 def _index_schedule(prepared: dict[str, Any], manifest: dict[str, Any], manifest_sha: str
@@ -256,6 +262,14 @@ def _timing(values: list[float], supplied: int, expected: int, unit: str = "ms")
 
 def analyze(prepared: dict[str, Any], run: dict[str, Any], manifest: dict[str, Any],
             manifest_sha: str, bootstrap_samples: int = BOOTSTRAP_SAMPLES) -> dict[str, Any]:
+    """Analyze a complete run; missing scheduled responses are never allowed."""
+    return _analyze(prepared, run, manifest, manifest_sha,
+                    bootstrap_samples=bootstrap_samples, allowed_missing_job_ids=set())
+
+
+def _analyze(prepared: dict[str, Any], run: dict[str, Any], manifest: dict[str, Any],
+             manifest_sha: str, bootstrap_samples: int,
+             allowed_missing_job_ids: set[str], split_run: bool = False) -> dict[str, Any]:
     require(type(bootstrap_samples) is int and bootstrap_samples >= 200,
             "Bootstrap sample count must be an integer >= 200")
     schedule_by_id, frozen_cases = _index_schedule(prepared, manifest, manifest_sha)
@@ -269,8 +283,8 @@ def analyze(prepared: dict[str, Any], run: dict[str, Any], manifest: dict[str, A
     require(run.get("execution_runner_sha256") == prepared.get("execution_runner_sha256"),
             "Run used a different runner than the frozen prepare report")
     samples = run.get("samples")
-    require(isinstance(samples, list) and len(samples) == EXPECTED_JOBS,
-            f"Run must contain exactly {EXPECTED_JOBS} response records")
+    require(isinstance(samples, list) and len(samples) == EXPECTED_JOBS - len(allowed_missing_job_ids),
+            "Run response count does not match the explicitly allowed exclusions")
     seen: set[str] = set()
     indexed: dict[tuple[str, int], dict[str, dict[str, Any]]] = {}
     arm_rows: dict[str, list[dict[str, Any]]] = {arm: [] for arm in EXPECTED_ARMS}
@@ -351,25 +365,39 @@ def analyze(prepared: dict[str, Any], run: dict[str, Any], manifest: dict[str, A
         # Recheck all identities independently of the dispatcher's stored score.
         choices[job_id] = parsed is not None and parsed == expected
 
-    require(seen == set(schedule_by_id), "Run job identities do not exactly cover the frozen schedule")
-    require(run.get("completed_jobs") == EXPECTED_JOBS,
-            "Run completion count does not match the frozen 2,064-job schedule")
+    require(allowed_missing_job_ids <= set(schedule_by_id), "Allowed exclusion is outside the frozen schedule")
+    require(seen == set(schedule_by_id) - allowed_missing_job_ids,
+            "Run job identities do not exactly cover the frozen schedule minus explicit exclusions")
+    require(run.get("completed_jobs") == len(samples),
+            "Run completion count does not match its response records")
     require(number(run.get("settled_actual_cost_usd")) is not None
             and math.isclose(float(run["settled_actual_cost_usd"]),
                              sum(totals[arm]["reported_cost"] for arm in EXPECTED_ARMS),
                              rel_tol=1e-6, abs_tol=1e-8),
             "Top-level settled cost does not reconcile with per-request receipts")
-    require(len(indexed) == EXPECTED_CASES * len(EXPECTED_REPEATS), "Run has incomplete task-repeat pairs")
     case_ids = set(frozen_cases)
-    require({case_id for case_id, _ in indexed} == case_ids, "Run does not cover every frozen task")
+    quality_case_ids = {
+        case_id for case_id in case_ids
+        if all(f"{case_id}:{arm}:{repeat}" in seen
+               for arm in EXPECTED_ARMS for repeat in EXPECTED_REPEATS)
+    }
+    excluded_case_ids = case_ids - quality_case_ids
+    require(len(excluded_case_ids) <= len(allowed_missing_job_ids),
+            "Run has incomplete task-repeat pairs beyond explicit exclusions")
     for key, pair in indexed.items():
-        require(set(pair) == set(EXPECTED_ARMS), f"Incomplete paired arms for task/repeat {key[0]}:{key[1]}")
+        if key[0] in quality_case_ids:
+            require(set(pair) == set(EXPECTED_ARMS),
+                    f"Incomplete paired arms for task/repeat {key[0]}:{key[1]}")
 
     tasks: dict[str, dict[str, bool]] = {}
     per_arm: dict[str, dict[str, Any]] = {}
     differences: list[int] = []
     both = full_only = sift_only = neither = 0
-    for case_id in sorted(case_ids):
+    # Keep established complete-run output stable. The refreshed split-ledger
+    # aggregate used manifest order for its original deterministic bootstrap.
+    case_order = ([str(row["id"]) for row in manifest["cases"]]
+                  if split_run else sorted(case_ids))
+    for case_id in (case_id for case_id in case_order if case_id in quality_case_ids):
         tasks[case_id] = {}
         for arm in EXPECTED_ARMS:
             wins = sum(choices[f"{case_id}:{arm}:{repeat}"] for repeat in EXPECTED_REPEATS)
@@ -387,19 +415,21 @@ def analyze(prepared: dict[str, Any], run: dict[str, Any], manifest: dict[str, A
 
     for arm in EXPECTED_ARMS:
         rows, counts = arm_rows[arm], totals[arm]
-        correct = sum(choices[row["job_id"]] for row in rows)
-        valid = sum(_choice(row) is not None for row in rows)
-        majority = sum(tasks[case_id][arm] for case_id in case_ids)
+        quality_rows = [row for row in rows if row["case_id"] in quality_case_ids]
+        correct = sum(choices[row["job_id"]] for row in quality_rows)
+        valid = sum(_choice(row) is not None for row in quality_rows)
+        majority = sum(tasks[case_id][arm] for case_id in quality_case_ids)
         per_arm[arm] = {
-            "requests": len(rows),
+            "requests": len(quality_rows),
+            "usage_receipt_requests": len(rows),
             "exact_correct": correct,
-            "exact_responses": len(rows),
-            "exact_accuracy": correct / len(rows),
+            "exact_responses": len(quality_rows),
+            "exact_accuracy": correct / len(quality_rows) if quality_rows else None,
             "valid_choices": valid,
-            "invalid_or_incomplete_choices": len(rows) - valid,
+            "invalid_or_incomplete_choices": len(quality_rows) - valid,
             "task_majorities_correct": majority,
-            "tasks": EXPECTED_CASES,
-            "task_majority_accuracy": majority / EXPECTED_CASES,
+            "tasks": len(quality_case_ids),
+            "task_majority_accuracy": majority / len(quality_case_ids) if quality_case_ids else None,
             "prompt_tokens": {"total": counts["prompt"]},
             "completion_tokens": {"total": counts["completion"]},
             "cached_prompt_tokens": {"total": counts["cached"],
@@ -428,10 +458,10 @@ def analyze(prepared: dict[str, Any], run: dict[str, Any], manifest: dict[str, A
     grouped: dict[str, Any] = {}
     for dimension, field in (("domain", "domain"), ("sub_domain", "sub_domain"),
                              ("difficulty", "difficulty"), ("length", "length")):
-        keys = sorted({str(frozen_cases[case_id].get(field, "unknown")) for case_id in case_ids})
+        keys = sorted({str(frozen_cases[case_id].get(field, "unknown")) for case_id in quality_case_ids})
         grouped[dimension] = {}
         for value in keys:
-            ids = [case_id for case_id in case_ids
+            ids = [case_id for case_id in quality_case_ids
                    if str(frozen_cases[case_id].get(field, "unknown")) == value]
             grouped[dimension][value] = {arm: {
                 "task_majorities_correct": sum(tasks[case_id][arm] for case_id in ids),
@@ -462,22 +492,32 @@ def analyze(prepared: dict[str, Any], run: dict[str, Any], manifest: dict[str, A
         vals = [x for x in vals if x is not None and x >= 0]
         return _timing(vals, len(vals), arms_expected)
 
-    # The runner measures Sift once per task and copies that same measurement
-    # onto its three repeat records. Count it once per task in summaries.
-    sift_preprocessing_by_task: dict[str, list[float]] = {}
-    for row in arm_rows["sift"]:
-        value = number(row.get("sift_preprocessing_ms"))
-        if value is not None and value >= 0:
-            sift_preprocessing_by_task.setdefault(row["case_id"], []).append(value)
-    sift_preprocessing_values: list[float] = []
-    for case_id, values in sift_preprocessing_by_task.items():
-        require(all(math.isclose(value, values[0], rel_tol=1e-9, abs_tol=1e-6)
-                    for value in values),
-                f"Sift preprocessing time differs across repeats for {case_id}")
-        sift_preprocessing_values.append(values[0])
-    sift_preprocessing_timing = _timing(sift_preprocessing_values,
-                                        len(sift_preprocessing_values), EXPECTED_CASES)
-    sift_preprocessing_timing["counting_semantics"] = "one measurement per task; repeat copies counted once"
+    if split_run:
+        # The adapted split runner records an independent preprocessing time
+        # for each Sift request; retain each measurement without collapsing.
+        sift_preprocessing_values = [number(row.get("sift_preprocessing_ms")) for row in arm_rows["sift"]]
+        sift_preprocessing_values = [value for value in sift_preprocessing_values
+                                     if value is not None and value >= 0]
+        sift_preprocessing_timing = _timing(sift_preprocessing_values,
+                                            len(sift_preprocessing_values), len(arm_rows["sift"]))
+        sift_preprocessing_timing["counting_semantics"] = "one measurement per Sift request"
+    else:
+        # Earlier full-run reports copied the task-level Sift measurement to
+        # each repeat. Preserve that analyzer's prior output semantics.
+        sift_preprocessing_by_task: dict[str, list[float]] = {}
+        for row in arm_rows["sift"]:
+            value = number(row.get("sift_preprocessing_ms"))
+            if value is not None and value >= 0:
+                sift_preprocessing_by_task.setdefault(row["case_id"], []).append(value)
+        sift_preprocessing_values: list[float] = []
+        for case_id, values in sift_preprocessing_by_task.items():
+            require(all(math.isclose(value, values[0], rel_tol=1e-9, abs_tol=1e-6)
+                        for value in values),
+                    f"Sift preprocessing time differs across repeats for {case_id}")
+            sift_preprocessing_values.append(values[0])
+        sift_preprocessing_timing = _timing(sift_preprocessing_values,
+                                            len(sift_preprocessing_values), EXPECTED_CASES)
+        sift_preprocessing_timing["counting_semantics"] = "one measurement per task; repeat copies counted once"
 
     timing = {
         "ttft_ms": {arm: timing_field(arm_rows[arm], "ttft_ms", len(arm_rows[arm])) for arm in EXPECTED_ARMS},
@@ -507,9 +547,13 @@ def analyze(prepared: dict[str, Any], run: dict[str, Any], manifest: dict[str, A
     return {
         "schema_version": 1,
         "status": "complete_aggregate_analysis",
-        "scope": {"cohort": "primary_344", "tasks": EXPECTED_CASES,
-                  "repeats_per_arm": len(EXPECTED_REPEATS), "responses_per_arm": EXPECTED_CASES * len(EXPECTED_REPEATS),
-                  "total_responses": EXPECTED_JOBS, "arms": list(EXPECTED_ARMS),
+        "scope": {"cohort": "primary_344", "tasks": len(quality_case_ids),
+                  "repeats_per_arm": len(EXPECTED_REPEATS), "responses_per_arm": len(quality_case_ids) * len(EXPECTED_REPEATS),
+                  "total_responses": len(quality_case_ids) * len(EXPECTED_ARMS) * len(EXPECTED_REPEATS),
+                  "planned_jobs": EXPECTED_JOBS,
+                  "usage_receipts_total": len(samples),
+                  "excluded_unreceipted_jobs": len(allowed_missing_job_ids),
+                  "arms": list(EXPECTED_ARMS),
                   "evidence_class": "post_census_development_evidence_not_blind_holdout",
                   "limitations": [
                       "All LongBench v2 task IDs were exposed by prior prompt/label census work; this is not blind validation.",
@@ -519,6 +563,7 @@ def analyze(prepared: dict[str, Any], run: dict[str, Any], manifest: dict[str, A
         "provenance": {"manifest_sha256": manifest_sha,
                        "prepare_schedule_sha256": prepared["schedule_sha256"],
                        "execution_runner_sha256": prepared.get("execution_runner_sha256"),
+                       "execution_runner_sha256s": run.get("execution_runner_sha256s"),
                        "analyzer_sha256": sha256_bytes(Path(__file__).read_bytes()),
                        "bootstrap_seed": BOOTSTRAP_SEED,
                        "bootstrap_samples": bootstrap_samples},
@@ -530,9 +575,146 @@ def analyze(prepared: dict[str, Any], run: dict[str, Any], manifest: dict[str, A
             "max_completion_tokens", "checked_utc")} if isinstance(live_route, dict) else
             {"status": "unavailable"}),
         "timing": timing,
-        "run_status": {"status": run.get("status"), "completed_jobs": run.get("completed_jobs"),
+        "run_status": {"status": run.get("status"),
+                        "dispatched_jobs": len(schedule_by_id),
+                        "completed_jobs": run.get("completed_jobs"),
+                        "usage_receipts": len(samples),
+                        "excluded_unreceipted_jobs": len(allowed_missing_job_ids),
                         "settled_actual_cost_usd": run.get("settled_actual_cost_usd")},
     }
+
+
+def analyze_segments(prepared_prefix: dict[str, Any], continuation: dict[str, Any],
+                     manifest: dict[str, Any], manifest_sha: str, prefix_report_sha: str,
+                     bootstrap_samples: int = BOOTSTRAP_SAMPLES) -> dict[str, Any]:
+    """Validate and analyze the authorized stopped-prefix plus suffix reports."""
+    require_pinned_split_manifest(manifest_sha)
+    require(prepared_prefix.get("status") == "safety_guard_stopped"
+            and prepared_prefix.get("actual_dispatch_started") is True,
+            "Prefix must be the dispatch report stopped by its safety guard")
+    require(continuation.get("status") == "complete"
+            and continuation.get("actual_dispatch_started") is True,
+            "Continuation must be a completed dispatched report")
+    require(prepared_prefix.get("cohort") == continuation.get("cohort") == "primary_344",
+            "Split reports do not identify the frozen primary_344 cohort")
+    require(prepared_prefix.get("manifest_sha256") == manifest_sha
+            and continuation.get("manifest_sha256") == manifest_sha,
+            "Split report manifest hashes differ from the reviewed frozen manifest")
+    prefix_schedule = prepared_prefix.get("schedule")
+    continuation_schedule = continuation.get("schedule")
+    require(isinstance(prefix_schedule, list) and len(prefix_schedule) == EXPECTED_JOBS
+            and prepared_prefix.get("schedule_sha256") == canonical_hash(prefix_schedule),
+            "Prefix does not contain the hash-verified full frozen schedule")
+    require(isinstance(continuation_schedule, list)
+            and len(continuation_schedule) == EXPECTED_JOBS - 542
+            and continuation.get("schedule_sha256") == canonical_hash(continuation_schedule),
+            "Continuation schedule is missing, incomplete, or has a bad hash")
+    reindexed_continuation = [dict(row, index=index + 542)
+                              for index, row in enumerate(continuation_schedule)]
+    require(continuation.get("continuation_schedule_start_index") == 542
+            and reindexed_continuation == prefix_schedule[542:],
+            "Continuation schedule is not the exact frozen suffix")
+    require(prepared_prefix.get("planned_jobs") == EXPECTED_JOBS
+            and prepared_prefix.get("completed_jobs") == 542
+            and continuation.get("planned_jobs") == EXPECTED_JOBS - 542
+            and continuation.get("completed_jobs") == EXPECTED_JOBS - 542,
+            "Split report planned/completed counts do not match the frozen 542 + 1,522 partition")
+    require(prepared_prefix.get("protocol") == continuation.get("protocol"),
+            "Prefix and continuation protocols differ")
+    require(prepared_prefix.get("frozen_source_runner_sha256")
+            == continuation.get("frozen_source_runner_sha256")
+            and prepared_prefix.get("runner_hash_semantics") == continuation.get("runner_hash_semantics"),
+            "Prefix and continuation frozen runner provenance differs")
+    prefix_route = prepared_prefix.get("live_route_validation")
+    continuation_route = continuation.get("live_route_validation")
+    route_fields = ("endpoint_model_id", "provider", "route_tag", "input_usd_per_million",
+                    "output_usd_per_million", "cache_read_usd_per_million", "max_prompt_tokens",
+                    "max_completion_tokens")
+    require(isinstance(prefix_route, dict) and isinstance(continuation_route, dict)
+            and all(prefix_route.get(key) == continuation_route.get(key) for key in route_fields),
+            "Prefix and continuation live route identities or prices differ")
+
+    prefix_samples = prepared_prefix.get("samples")
+    continuation_samples = continuation.get("samples")
+    require(isinstance(prefix_samples, list) and len(prefix_samples) == 542
+            and isinstance(continuation_samples, list) and len(continuation_samples) == EXPECTED_JOBS - 542,
+            "Split response counts do not match the frozen 542 + 1,522 partition")
+    prefix_ids = [row.get("job_id") for row in prefix_samples if isinstance(row, dict)]
+    continuation_ids = [row.get("job_id") for row in continuation_samples if isinstance(row, dict)]
+    prefix_expected_ids = [f"{row['case_id']}:{row['arm']}:{row['repeat']}" for row in prefix_schedule[:542]]
+    continuation_expected_ids = [f"{row['case_id']}:{row['arm']}:{row['repeat']}" for row in continuation_schedule]
+    require(prefix_ids == prefix_expected_ids and continuation_ids == continuation_expected_ids,
+            "Segment response identities do not match their frozen schedule ranges")
+
+    evidence = continuation.get("continuation_source_evidence")
+    require(isinstance(evidence, dict)
+            and evidence.get("source_report_sha256") == prefix_report_sha
+            and evidence.get("prior_sample_count") == 542
+            and evidence.get("remaining_frozen_jobs") == EXPECTED_JOBS - 542,
+            "Continuation does not bind to the exact prefix report and suffix")
+    skipped_job_id = evidence.get("skipped_unknown_job_id")
+    unreceipted = [row for row in prefix_samples if not isinstance(row.get("usage"), dict)]
+    require(len(unreceipted) == 1 and unreceipted[0].get("job_id") == skipped_job_id
+            and unreceipted[0].get("http_status") == 529
+            and unreceipted[0].get("provider_reported_cost_usd") is None
+            and unreceipted[0].get("choice") is None and _choice(unreceipted[0]) is None
+            and bool(unreceipted[0].get("failure")),
+            "Only the explicitly skipped, unreceipted HTTP 529 may be excluded")
+
+    def receipt_sum(rows: list[dict[str, Any]]) -> float:
+        result = 0.0
+        for row in rows:
+            if isinstance(row.get("usage"), dict):
+                cost = number(row.get("provider_reported_cost_usd"))
+                require(cost is not None and cost > 0, "A receipted split response has invalid cost")
+                result += cost
+        return result
+
+    prefix_cost = receipt_sum(prefix_samples)
+    suffix_cost = receipt_sum(continuation_samples)
+    prefix_settled = number(prepared_prefix.get("settled_actual_cost_usd"))
+    continuation_settled = number(continuation.get("settled_actual_cost_usd"))
+    prior_settled = number(evidence.get("previously_settled_cost_usd"))
+    require(prefix_settled is not None and prior_settled is not None
+            and math.isclose(prefix_cost, prefix_settled, rel_tol=1e-6, abs_tol=1e-8)
+            and math.isclose(prior_settled, prefix_settled, rel_tol=1e-6, abs_tol=1e-8),
+            "Prefix settled cost does not reconcile with its receipts and continuation checkpoint")
+    require(continuation_settled is not None
+            and math.isclose(prefix_settled + suffix_cost, continuation_settled,
+                             rel_tol=1e-6, abs_tol=1e-8),
+            "Final settled cost does not reconcile with prefix plus continuation receipts")
+
+    # This in-memory context is derived from the dispatched prefix schedule;
+    # it is never serialized as a prepare report.
+    prepared_context = {
+        "status": "prepared_only_no_dispatch", "actual_dispatch_started": False,
+        "dispatch_authorized_by_manifest": False, "cohort": "primary_344",
+        "planned_jobs": EXPECTED_JOBS, "manifest_sha256": manifest_sha,
+        "execution_runner_sha256": prepared_prefix.get("execution_runner_sha256"),
+        "schedule": prefix_schedule, "schedule_sha256": prepared_prefix["schedule_sha256"],
+    }
+    samples = [row for row in prefix_samples if row is not unreceipted[0]] + continuation_samples
+    execution_hashes = [prepared_prefix.get("execution_runner_sha256"),
+                        continuation.get("execution_runner_sha256")]
+    require(all(isinstance(value, str) and len(value) == 64 for value in execution_hashes),
+            "Split report execution runner hashes are missing or malformed")
+    normalized_run = {
+        "status": "complete", "actual_dispatch_started": True,
+        "manifest_sha256": manifest_sha, "schedule_sha256": prepared_prefix["schedule_sha256"],
+        "schedule": prefix_schedule,
+        "execution_runner_sha256": execution_hashes[0],
+        "execution_runner_sha256s": execution_hashes,
+        "samples": samples, "completed_jobs": len(samples),
+        "elapsed_wall_seconds": sum(value for value in (
+            number(prepared_prefix.get("elapsed_wall_seconds")),
+            number(continuation.get("elapsed_wall_seconds"))) if value is not None),
+        "process_wall_seconds": None,
+        "settled_actual_cost_usd": continuation_settled,
+        "live_route_validation": prefix_route,
+    }
+    return _analyze(prepared_context, normalized_run, manifest, manifest_sha,
+                    bootstrap_samples=bootstrap_samples,
+                    allowed_missing_job_ids={skipped_job_id}, split_run=True)
 
 
 def _read_json(path: Path) -> Any:
@@ -544,17 +726,35 @@ def _read_json(path: Path) -> Any:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--prepared", type=Path, required=True, help="Frozen 344 prepare-only report")
-    parser.add_argument("--run", type=Path, required=True, help="Completed dispatch report")
+    parser.add_argument("--prepared", type=Path, help="Frozen 344 prepare-only report (single-run mode)")
+    parser.add_argument("--run", type=Path, help="Completed dispatch report (single-run mode)")
+    parser.add_argument("--prefix", type=Path, help="Stopped 344 dispatch prefix report (split-run mode)")
+    parser.add_argument("--continuation", type=Path, help="Completed suffix report (split-run mode)")
     parser.add_argument("--manifest", type=Path, required=True, help="Frozen 344 manifest used by the run")
     parser.add_argument("--output", type=Path, required=True, help="Aggregate-only JSON output")
     args = parser.parse_args()
     manifest_bytes = args.manifest.read_bytes()
     manifest_sha = sha256_bytes(manifest_bytes)
-    require_pinned_manifest(manifest_sha)
+    single_run = args.prepared is not None and args.run is not None and args.prefix is None and args.continuation is None
+    split_run = args.prefix is not None and args.continuation is not None and args.prepared is None and args.run is None
+    require(single_run or split_run,
+            "Provide exactly --prepared and --run, or exactly --prefix and --continuation")
+    if single_run:
+        require_pinned_manifest(manifest_sha)
+    else:
+        require_pinned_split_manifest(manifest_sha)
     manifest = json.loads(manifest_bytes.decode("utf-8"))
-    summary = analyze(_read_json(args.prepared), _read_json(args.run), manifest,
-                      manifest_sha)
+    if single_run:
+        summary = analyze(_read_json(args.prepared), _read_json(args.run), manifest, manifest_sha)
+    else:
+        prefix_bytes = args.prefix.read_bytes()
+        prefix_sha = sha256_bytes(prefix_bytes)
+        try:
+            prefix = json.loads(prefix_bytes.decode("utf-8"))
+        except json.JSONDecodeError as error:
+            raise AnalysisError(f"Cannot read JSON input {args.prefix}: {error}") from error
+        summary = analyze_segments(prefix, _read_json(args.continuation), manifest,
+                                   manifest_sha, prefix_sha)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(json.dumps({"status": summary["status"], "tasks": summary["scope"]["tasks"],
