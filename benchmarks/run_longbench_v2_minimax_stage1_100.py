@@ -44,6 +44,8 @@ DATASET_DEFAULT = ROOT / ".runs/longbench-v2-data-pinned.json"
 TOKENIZER_DEFAULT = ROOT / "tmp/minimax-m3-tokenizer.json"
 TEMPLATE_DEFAULT = ROOT / "tmp/minimax-m3-chat-template.jinja"
 OUTPUT_DEFAULT = ROOT / ".runs/longbench-v2-minimax-stage1-100-run.json"
+CONTINUATION_OUTPUT = ROOT / ".runs/longbench-v2-minimax-344-continuation-2026-10-20.json"
+CONTINUATION_CLAIM = ROOT / ".runs/longbench-v2-minimax-344-continuation-claimed-2026-10-20.json"
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 MODEL = "minimax/minimax-m3"
 TARGET = 32_768
@@ -480,6 +482,114 @@ def recorded_unknown_outcome_reserve(report_path: Path, input_price: float = INP
     }
 
 
+def validate_stopped_344_continuation(report_path: Path, jobs: list[dict]) -> tuple[list[dict], float]:
+    """Return only unattempted frozen jobs from the exact stopped 344 report.
+
+    The 529 request is deliberately excluded and preserved as an unknown outcome.
+    The function validates the complete schedule and every already-attempted row
+    before permitting an offline continuation plan to be built.
+    """
+    if not report_path.is_file() or file_sha256(report_path) != UNKNOWN_344_REPORT_SHA256:
+        raise StageError("Continuation requires the exact pinned private 344-run report")
+    try:
+        prior = json.loads(report_path.read_text(encoding="utf-8"))
+    except Exception as error:
+        raise StageError(f"Stopped 344-run report is unreadable: {error}") from error
+    expected_unknown_id = next(iter(UNKNOWN_344_JOB_IDS))
+    schedule = prior.get("schedule")
+    samples = prior.get("samples")
+    in_flight = prior.get("in_flight")
+    if (prior.get("status") != "safety_guard_stopped"
+            or prior.get("manifest_sha256") != UNKNOWN_344_MANIFEST_SHA256
+            or prior.get("stop_reason") != "missing_or_invalid_cost_receipt:missing_or_non_byok_usage"
+            or prior.get("completed_jobs") != 542
+            or prior.get("planned_jobs") != 2064
+            or not isinstance(schedule, list) or len(schedule) != 2064
+            or prior.get("schedule_sha256") != canonical_hash(schedule)
+            or not isinstance(samples, list) or len(samples) != 542
+            or not isinstance(in_flight, dict)
+            or in_flight.get("index") != 541
+            or in_flight.get("job_id") != expected_unknown_id
+            or in_flight.get("state") != "unknown_outcome_requires_external_reconciliation"):
+        raise StageError("Stopped report is not the expected intact 344-task checkpoint")
+    if len(jobs) != 2064:
+        raise StageError("Reconstructed frozen schedule does not contain all 2,064 jobs")
+    expected_by_key = {
+        (job["case_id"], job["arm"], job["repeat"]): job for job in jobs
+    }
+    if len(expected_by_key) != 2064:
+        raise StageError("Reconstructed schedule has duplicate job identities")
+    for index, row in enumerate(schedule):
+        if not isinstance(row, dict) or row.get("index") != index:
+            raise StageError("Stopped report schedule index/order is invalid")
+        key = (row.get("case_id"), row.get("arm"), row.get("repeat"))
+        job = expected_by_key.get(key)
+        ordered_job = jobs[index]
+        ordered_key = (ordered_job["case_id"], ordered_job["arm"], ordered_job["repeat"])
+        if (job is None or key != ordered_key or row.get("body_sha256") != job["body_sha256"]
+                or row.get("prompt_sha256") != job["prompt_sha256"]
+                or row.get("seed") != job["seed"]
+                or row.get("local_prompt_tokens") != job["local_prompt_tokens"]):
+            raise StageError(f"Stopped report schedule differs from reconstructed frozen job {index}")
+    receipt_total = 0.0
+    seen = set()
+    for index, sample in enumerate(samples):
+        row = schedule[index]
+        job_id = f'{row["case_id"]}:{row["arm"]}:{row["repeat"]}'
+        if (not isinstance(sample, dict) or sample.get("job_id") != job_id
+                or sample.get("request_body_sha256") != row["body_sha256"]
+                or job_id in seen):
+            raise StageError(f"Stopped report sample does not match frozen schedule position {index}")
+        seen.add(job_id)
+        if index == 541:
+            if (job_id != expected_unknown_id or sample.get("http_status") != 529
+                    or sample.get("usage") is not None
+                    or sample.get("provider_reported_cost_usd") is not None):
+                raise StageError("The final attempted 344 job is not the pinned unreceipted 529")
+            continue
+        if index > 541:
+            raise StageError("Stopped report contains samples beyond its 542-request prefix")
+        actual, _ = cost_receipt(sample.get("usage"))
+        recorded = sample.get("provider_reported_cost_usd")
+        if (sample.get("http_status") != 200 or actual is None
+                or sample.get("returned_model") != MODEL
+                or str(sample.get("provider", "")).casefold() != "minimax"
+                or sample.get("sse_done_received") is not True
+                or sample.get("failure") is not None
+                or not isinstance(recorded, (int, float)) or isinstance(recorded, bool)
+                or not math.isclose(actual, float(recorded), rel_tol=0, abs_tol=1e-12)):
+            raise StageError(f"Prior response lacks a valid provider receipt at schedule position {index}")
+        receipt_total += actual
+    if not math.isclose(receipt_total, float(prior.get("settled_actual_cost_usd", -1)),
+                        rel_tol=0, abs_tol=1e-8):
+        raise StageError("Prior settled-cost total differs from its provider receipts")
+    return jobs[542:], receipt_total
+
+
+def claim_single_use_continuation(source_path: Path, output_path: Path, spend_cap_usd: float,
+                                  claim_path: Path = CONTINUATION_CLAIM) -> None:
+    """Atomically consume the one allowed continuation of the pinned checkpoint."""
+    if output_path.resolve() != CONTINUATION_OUTPUT.resolve():
+        raise StageError(f"Continuation output must use the single-use path: {CONTINUATION_OUTPUT}")
+    claim_path.parent.mkdir(parents=True, exist_ok=True)
+    claim = {
+        "source_report_sha256": UNKNOWN_344_REPORT_SHA256,
+        "source_report_path": str(source_path.resolve()),
+        "output_path": str(output_path.resolve()),
+        "spend_cap_usd": spend_cap_usd,
+        "claimed_utc": datetime.now(timezone.utc).isoformat(),
+        "semantics": "single-use; never delete or reuse after any dispatch attempt",
+    }
+    try:
+        with claim_path.open("x", encoding="utf-8") as handle:
+            json.dump(claim, handle, indent=2)
+            handle.write("\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+    except FileExistsError as error:
+        raise StageError("The one allowed continuation has already been claimed; do not replay the suffix") from error
+
+
 def atomic_write(path: Path, value: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temp = path.with_name(path.name + ".tmp")
@@ -601,6 +711,7 @@ def live_account_route_preflight(api_key: str, manifest: dict, cap: float,
 def prepare_report(manifest_path: Path, manifest: dict, mode: str, jobs: list[dict], output: Path) -> dict:
     input_tokens = sum(job["local_prompt_tokens"] for job in jobs)
     estimated = (input_tokens * INPUT_FACTOR * INPUT_PRICE + len(jobs) * OUTPUT_CAP * OUTPUT_PRICE) / 1_000_000
+    arm_counts = Counter(job["arm"] for job in jobs)
     schedule = [{"index": index, "case_id": job["case_id"], "arm": job["arm"], "repeat": job["repeat"],
                  "seed": job["seed"], "prompt_sha256": job["prompt_sha256"],
                  "body_sha256": job["body_sha256"],
@@ -623,7 +734,7 @@ def prepare_report(manifest_path: Path, manifest: dict, mode: str, jobs: list[di
         "runner_hash_semantics": "frozen_source_runner_sha256 records the legacy runner used when the parent cohort was prepared; execution_runner_sha256 records this adapter. They are not interchangeable.",
         "prepared_utc": datetime.now(timezone.utc).isoformat(),
         "cohort": mode, "planned_jobs": len(jobs),
-        "arm_counts": {"full": len(jobs) // 2, "sift": len(jobs) // 2},
+        "arm_counts": dict(arm_counts),
         "source_hashes": source_hashes,
         "protocol": manifest["protocol"], "schedule": schedule,
         "schedule_sha256": canonical_hash(schedule),
@@ -641,14 +752,19 @@ def prepare_report(manifest_path: Path, manifest: dict, mode: str, jobs: list[di
 def dispatch(jobs: list[dict], cases: dict, report: dict, output: Path,
              cap: float, api_key: str, live_route: dict,
              prior_unknown_outcome_reserve_usd: float = 0.0,
+             prior_settled_cost_usd: float = 0.0,
              process_started_perf: float | None = None,
              process_started_utc: str | None = None) -> dict:
     input_price = live_route["input_usd_per_million"]
     output_price = live_route["output_usd_per_million"]
     if input_price != INPUT_PRICE or output_price != OUTPUT_PRICE:
         raise StageError("Live price differs from frozen reserve rates; prepare a refreshed reviewed plan before dispatch")
+    if (not math.isfinite(prior_settled_cost_usd) or prior_settled_cost_usd < 0
+            or not math.isfinite(prior_unknown_outcome_reserve_usd)
+            or prior_unknown_outcome_reserve_usd < 0):
+        raise StageError("Prior settled cost and unknown-outcome reserve must be finite and nonnegative")
     estimate = report["budget_estimate"]["estimated_reserve_usd"]
-    minimum_cap = estimate + prior_unknown_outcome_reserve_usd
+    minimum_cap = estimate + prior_unknown_outcome_reserve_usd + prior_settled_cost_usd
     if not math.isfinite(cap) or cap <= 0 or cap < minimum_cap:
         raise StageError(f"Approved cap must be finite, positive, and at least the refreshed estimate plus prior reserve ${minimum_cap:.6f}")
     # No automatic retry/resume: an ambiguous request is written as in-flight and blocks later runs.
@@ -656,6 +772,7 @@ def dispatch(jobs: list[dict], cases: dict, report: dict, output: Path,
     report["actual_dispatch_started"] = True
     report["dispatch_spend_cap_usd"] = cap
     report["prior_unknown_outcome_reserve_usd"] = prior_unknown_outcome_reserve_usd
+    report["prior_settled_cost_usd"] = prior_settled_cost_usd
     report["dispatch_started_utc"] = datetime.now(timezone.utc).isoformat()
     report["samples"] = []
     report["in_flight"] = None
@@ -664,7 +781,7 @@ def dispatch(jobs: list[dict], cases: dict, report: dict, output: Path,
     started = time.perf_counter()
     for index, job in enumerate(jobs):
         reserve = (job["local_prompt_tokens"] * INPUT_FACTOR * input_price + OUTPUT_CAP * output_price) / 1_000_000
-        if prior_unknown_outcome_reserve_usd + settled + reserve > cap:
+        if prior_unknown_outcome_reserve_usd + prior_settled_cost_usd + settled + reserve > cap:
             report["status"] = "budget_guard_stopped_before_request"
             report["stop_reason"] = "next_request_reservation_exceeds_approved_cap"
             break
@@ -761,7 +878,8 @@ def dispatch(jobs: list[dict], cases: dict, report: dict, output: Path,
             }
         else:
             settled += actual
-            report["settled_actual_cost_usd"] = settled
+            report["segment_settled_actual_cost_usd"] = settled
+            report["settled_actual_cost_usd"] = prior_settled_cost_usd + settled
             valid_route = status == 200 and returned_model == MODEL and isinstance(provider, str) and provider.casefold() == "minimax"
             if not valid_route:
                 report["status"] = "safety_guard_stopped"
@@ -778,7 +896,7 @@ def dispatch(jobs: list[dict], cases: dict, report: dict, output: Path,
             elif actual > reserve:
                 report["status"] = "budget_guard_overrun"
                 report["stop_reason"] = "actual_request_cost_exceeded_its_reservation"
-            elif prior_unknown_outcome_reserve_usd + settled > cap:
+            elif prior_unknown_outcome_reserve_usd + prior_settled_cost_usd + settled > cap:
                 report["status"] = "budget_guard_overrun"
                 report["stop_reason"] = "actual_reported_cost_exceeded_cap"
             elif failure is not None or finish_reason not in {"stop", "length"}:
@@ -826,6 +944,8 @@ def main() -> int:
                         help="Explicitly accept previously recorded outcomes whose upstream usage cannot be reconciled.")
     parser.add_argument("--prior-unknown-outcome-report", type=Path, action="append",
                         help="Exact private report for a known unreceipted run (repeat once for each pinned report).")
+    parser.add_argument("--continue-after-known-unknown-report", type=Path,
+                        help="Continue only the unattempted suffix after validating the exact stopped 344-run report; the failed request is skipped permanently.")
     args = parser.parse_args()
     if args.dispatch != (args.spend_cap_usd is not None):
         raise StageError("Use --dispatch and --spend-cap-usd together; otherwise run offline")
@@ -839,6 +959,13 @@ def main() -> int:
         raise StageError("--accept-recorded-unknown-outcomes is valid only with --dispatch")
     if args.prior_unknown_outcome_report and not args.dispatch:
         raise StageError("--prior-unknown-outcome-report is valid only with --dispatch")
+    if args.continue_after_known_unknown_report and not args.dispatch:
+        raise StageError("--continue-after-known-unknown-report is valid only with --dispatch")
+    if args.continue_after_known_unknown_report:
+        if args.output.resolve() != CONTINUATION_OUTPUT.resolve():
+            raise StageError(f"Continuation output must use the single-use path: {CONTINUATION_OUTPUT}")
+        if CONTINUATION_CLAIM.exists():
+            raise StageError("The one allowed continuation has already been claimed; do not replay the suffix")
     api_key = None
     if args.dispatch:
         if args.confirm_provider_billing_covers_cap == args.authorize_unverified_provider_billing:
@@ -866,8 +993,30 @@ def main() -> int:
             raise StageError(f"Refusing to continue or overwrite an existing dispatch; reconcile in-flight requests first: {args.output}")
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
     mode, _ = verify_provenance(manifest, args.manifest, args.dataset, args.tokenizer, args.template)
+    if args.dispatch and mode == "primary_344" and not args.continue_after_known_unknown_report:
+        raise StageError("The 344-task cohort already has a stopped dispatch; only its validated unattempted suffix may be continued")
     jobs, cases = build_jobs(manifest, mode, args.dataset, args.tokenizer)
+    continuation_prior_settled = 0.0
+    continuation_evidence = None
+    if args.continue_after_known_unknown_report:
+        if mode != "primary_344" or args.manifest.resolve() != MANIFEST_344_CURRENT.resolve():
+            raise StageError("Continuation is allowed only for the current frozen 344-task manifest")
+        if args.output.resolve() == args.continue_after_known_unknown_report.resolve():
+            raise StageError("Continuation output must be a new artifact; the stopped source report is immutable")
+        jobs, continuation_prior_settled = validate_stopped_344_continuation(
+            args.continue_after_known_unknown_report, jobs)
+        continuation_evidence = {
+            "source_report_path": str(args.continue_after_known_unknown_report.resolve()),
+            "source_report_sha256": UNKNOWN_344_REPORT_SHA256,
+            "previously_settled_cost_usd": continuation_prior_settled,
+            "prior_sample_count": 542,
+            "skipped_unknown_job_id": next(iter(UNKNOWN_344_JOB_IDS)),
+            "remaining_frozen_jobs": len(jobs),
+        }
     report = prepare_report(args.manifest, manifest, mode, jobs, args.output)
+    if continuation_evidence is not None:
+        report["continuation_source_evidence"] = continuation_evidence
+        report["continuation_schedule_start_index"] = 542
     report["prompt_build_wall_seconds"] = time.perf_counter() - process_started_perf
     report["process_started_utc"] = process_started_utc
     report["timing_semantics"] = {
@@ -899,22 +1048,29 @@ def main() -> int:
         prior_unknown_reserve = sum(entry["total_reserve_usd"] for entry in unknown_evidence)
         report["prior_unknown_outcome_evidence"] = unknown_evidence
     report["prior_unknown_outcome_reserve_usd"] = prior_unknown_reserve
-    if args.spend_cap_usd < estimate + prior_unknown_reserve:
+    report["previously_settled_cost_usd"] = continuation_prior_settled
+    if args.spend_cap_usd < estimate + prior_unknown_reserve + continuation_prior_settled:
         report["status"] = "not_started_estimated_budget_exceeded"
         report["stop_reason"] = "cap_below_estimate_plus_prior_unknown_reserve"
         atomic_write(args.output, report)
-        raise StageError(f"No requests sent: cap ${args.spend_cap_usd:.6f} < estimated run plus prior unknown reserve ${estimate + prior_unknown_reserve:.6f}")
+        minimum = estimate + prior_unknown_reserve + continuation_prior_settled
+        raise StageError(f"No requests sent: cap ${args.spend_cap_usd:.6f} < remaining estimate plus unknown reserve and prior settled spend ${minimum:.6f}")
     live_route = live_account_route_preflight(api_key, manifest, args.spend_cap_usd,
                                               jobs, args.confirm_no_unsettled_requests,
                                               args.confirm_provider_billing_covers_cap,
                                               args.authorize_unverified_provider_billing,
                                               args.accept_recorded_unknown_outcomes,
                                               prior_unknown_reserve)
+    if continuation_evidence is not None:
+        claim_single_use_continuation(args.continue_after_known_unknown_report,
+                                      args.output, args.spend_cap_usd)
     # Live route metadata must match the dated reserve before any paid request.
     report["live_route_validation"] = live_route
     result = dispatch(jobs, cases, report, args.output, args.spend_cap_usd, api_key, live_route,
-                      prior_unknown_reserve,
-                      process_started_perf, process_started_utc)
+                      prior_unknown_outcome_reserve_usd=prior_unknown_reserve,
+                      prior_settled_cost_usd=continuation_prior_settled,
+                      process_started_perf=process_started_perf,
+                      process_started_utc=process_started_utc)
     print(json.dumps({"status": result["status"], "completed_jobs": result["completed_jobs"],
                       "actual_cost_usd": result.get("settled_actual_cost_usd"), "output": str(args.output)}, indent=2))
     return 0 if result["status"] == "complete" else 2

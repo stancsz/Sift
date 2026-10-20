@@ -60,6 +60,94 @@ class RecordedUnknownOutcomeTests(unittest.TestCase):
         self.assertEqual(set(evidence["source_unknown_job_ids"]), stage.UNKNOWN_503_JOB_IDS)
         self.assertEqual(len(evidence["per_job_reserves_usd"]), 4)
 
+    def test_continuation_validates_prefix_and_skips_529_without_resending(self):
+        case_ids = [f"case-{case:03d}" for case in range(344)]
+        unknown = ("66f53892821e116aacb33225", "full", 2)
+        case_ids[170] = unknown[0]
+        keys = [(case_id, arm, repeat)
+                for case_id in case_ids for arm in ("full", "sift") for repeat in range(3)]
+        keys.remove(unknown)
+        keys.insert(541, unknown)
+        jobs = []
+        for index, (case_id, arm, repeat) in enumerate(keys):
+            body = {"case_id": case_id, "arm": arm, "repeat": repeat}
+            jobs.append({"case_id": case_id, "arm": arm, "repeat": repeat,
+                         "seed": repeat, "prompt_sha256": stage.canonical_hash(body),
+                         "body_sha256": stage.canonical_hash({"request": body}),
+                         "local_prompt_tokens": 100, "local_cost_estimate_usd": 0.001,
+                         "projected_provider_prompt_tokens": 150,
+                         "domain": "fixture", "sub_domain": "fixture"})
+        manifest = {"source_hashes": {}, "protocol": {}, "evidence_class": "fixture"}
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "prepared.json"
+            manifest_path = root / "manifest.json"
+            manifest_path.write_text("{}", encoding="utf-8")
+            prepared = stage.prepare_report(manifest_path, manifest,
+                                            "primary_344", jobs, source)
+            samples = []
+            for index, row in enumerate(prepared["schedule"][:542]):
+                job_id = f'{row["case_id"]}:{row["arm"]}:{row["repeat"]}'
+                if index == 541:
+                    samples.append({"job_id": job_id, "request_body_sha256": row["body_sha256"],
+                                    "http_status": 529, "usage": None,
+                                    "provider_reported_cost_usd": None})
+                else:
+                    samples.append({"job_id": job_id, "request_body_sha256": row["body_sha256"],
+                                    "http_status": 200,
+                                    "returned_model": stage.MODEL,
+                                    "provider": "Minimax",
+                                    "sse_done_received": True,
+                                    "failure": None,
+                                    "usage": {"is_byok": True, "cost": 0.001,
+                                              "cost_details": {"upstream_inference_cost": 0.001}},
+                                    "provider_reported_cost_usd": 0.001})
+            prepared.update({"status": "safety_guard_stopped",
+                             "stop_reason": "missing_or_invalid_cost_receipt:missing_or_non_byok_usage",
+                             "manifest_sha256": stage.UNKNOWN_344_MANIFEST_SHA256,
+                             "completed_jobs": 542,
+                             "settled_actual_cost_usd": 541 * 0.001,
+                             "samples": samples,
+                             "in_flight": {"index": 541,
+                                           "job_id": f"{unknown[0]}:{unknown[1]}:{unknown[2]}",
+                                           "state": "unknown_outcome_requires_external_reconciliation"}})
+            source.write_text(json.dumps(prepared), encoding="utf-8")
+            with patch.object(stage, "file_sha256", return_value=stage.UNKNOWN_344_REPORT_SHA256):
+                remaining, settled = stage.validate_stopped_344_continuation(source, jobs)
+            self.assertEqual(len(remaining), 1522)
+            self.assertAlmostEqual(settled, 0.541)
+            remaining_ids = {f'{job["case_id"]}:{job["arm"]}:{job["repeat"]}'
+                             for job in remaining}
+            self.assertNotIn(f"{unknown[0]}:{unknown[1]}:{unknown[2]}", remaining_ids)
+            self.assertEqual(remaining[0]["case_id"], keys[542][0])
+
+    def test_dispatch_minimum_cap_includes_previous_settled_and_unknown_costs(self):
+        report = {"budget_estimate": {"estimated_reserve_usd": 1.0}}
+        live_route = {"input_usd_per_million": stage.INPUT_PRICE,
+                      "output_usd_per_million": stage.OUTPUT_PRICE}
+        with tempfile.TemporaryDirectory() as temporary, self.assertRaisesRegex(
+                stage.StageError, "at least the refreshed estimate"):
+            stage.dispatch([], {}, report, Path(temporary) / "out.json", 1.4,
+                           "synthetic-key", live_route,
+                           prior_unknown_outcome_reserve_usd=0.2,
+                           prior_settled_cost_usd=0.3)
+
+    def test_single_use_claim_prevents_replaying_the_same_suffix(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            output = root / "continuation.json"
+            claim = root / "continuation-claimed.json"
+            with patch.object(stage, "CONTINUATION_OUTPUT", output):
+                stage.claim_single_use_continuation(
+                    root / "stopped.json", output, 100.0, claim_path=claim)
+                with self.assertRaisesRegex(stage.StageError, "already been claimed"):
+                    stage.claim_single_use_continuation(
+                        root / "stopped.json", output, 100.0, claim_path=claim)
+                with self.assertRaisesRegex(stage.StageError, "single-use path"):
+                    stage.claim_single_use_continuation(
+                        root / "stopped.json", root / "alternate.json", 100.0,
+                        claim_path=claim)
+
     def test_preflight_cannot_bypass_known_unknown_reserve_with_clean_attestation(self):
         with self.assertRaisesRegex(stage.StageError, "known unresolved"):
             stage.live_account_route_preflight(
@@ -90,6 +178,7 @@ class RecordedUnknownOutcomeTests(unittest.TestCase):
                         "authorize_unverified_provider_billing": True,
                         "accept_recorded_unknown_outcomes": accepted,
                         "prior_unknown_outcome_report": paths,
+                        "continue_after_known_unknown_report": None,
                     })()):
                 with self.assertRaises(stage.StageError):
                     stage.main()
