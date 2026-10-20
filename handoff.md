@@ -1,30 +1,34 @@
-# LongBench v2 handoff
+# Sift readiness handoff — 2026-10-20
 
 ## Current state
 
-The one-repeat MiniMax M3 Full-context/Sift run is paused at the user's request. It is a deterministic schedule over the public 503-question LongBench v2 dataset, but it is incomplete and post-census development evidence.
+The goal in [goal.md](goal.md) remains active. PR #14 is a draft; remote head `5b27c5ec7bcf6194dd6669a7f4f0cc97a08cb93f` contains the reserve fix, and the local working tree now also contains a single-use continuation path that has not been pushed yet. The MiniMax 344-task × 3-repeat study stopped at 542/2,064 requests after one Full request returned HTTP 529 without a usage/cost receipt. Do not retry that request.
 
-The strongest current comparison is 446 valid matched questions. Full scored 198/446 (44.4%); Sift scored 193/446 (43.3%), a -1.1-point observed difference. On those same pairs, Sift used 75.8% fewer provider prompt tokens and had 76.8% lower provider-reported upstream cost. Implicit caching was enabled; costs are OpenRouter BYOK receipt fields, not invoice-verified. This does not establish parity, general savings, or multi-turn coding-agent quality. See [the detailed report](docs/results/longbench-v2-minimax-m3-fullsuite-progress-2026-10-17.md).
+The partial run has 541 receipted responses and one unknown outcome. Receipt spend is $3.58631898; the unknown request's submitted reservation was $0.02571465. For future cap accounting, reserve each of the five unresolved requests at the entire dated route prompt limit plus the output cap, totaling **$0.786816** (four earlier unknown requests plus this 529). The user's existing $100 maximum covers the experiment, but any continuation must refresh current route pricing and charge every prior unknown reserve against the same cap.
 
-The checkpoint reports 923 completed scheduled jobs, 956 attempts, three runtime Full context-limit rejections, and no in-flight call. One Full job remains unresolved after a first HTTP 200 response with cost but no scorable completion and a retry that failed with SSL/unknown usage. The four unknown-usage attempts include three earlier attempts whose retries later succeeded; retain all attempt-level accounting. Do not issue another retry without renewed user direction.
+Ninety fully matched task clusters provide preliminary exposed-development evidence: 110/270 correct Full versus 122/270 Sift; prompt tokens 17,275,101 versus 7,041,707; receipt cost $2.490294 versus $1.087784. The approximate task-cluster interval for the +4.44-point exact-choice difference is −3.26 to +12.15 points. Do not claim quality gain or parity. Nine outputs reached the length limit. This interim evidence is not held out and does not measure accepted coding-agent tasks.
 
-## Resume artifacts
+## Work in progress
 
-- Frozen manifest: `.runs/longbench-v2-minimax-fullsuite-one-repeat-v1.json.gz`
-- Latest checkpoint: `.runs/longbench-v2-minimax-fullsuite-run-all-retry9.json`
-- Manifest SHA-256: `72f502946ce2b3269b52fed3c0bb9433f5c96a9d3e5ff143a7e80f9aca6fdc7e`
-- Schedule SHA-256: `f8d21e02f8a96f8d0b690d7c16b5c299a0faae868987af8ce5a03b203eb24b4c`
-- Checkpoint SHA-256: `d0b964b1a44e9f7b42edea7bc7f7761586dbd9e9b616f11fd13a3d9d624ed14a`
-- Runner: `benchmarks/prepare_longbench_v2_minimax_fullsuite.py`, `benchmarks/dispatch_longbench_v2_minimax_fullsuite.py`
+- PR #14 changes the paid runner so the exact older 503 report and the exact current 344 report are both required, pinned and separately reserved. It reconstructs the 2,064-job schedule and all 541 valid prior receipts, then excludes the failed 529 at index 541 and returns only the 1,522-job suffix. A fixed output path and exclusive claim file make this continuation single-use; preserve both files, because deleting the local claim could permit replay. The operator must also attest that no additional unresolved requests exist. Independent review ACCEPTED the guard and single-use logic; focused tests pass (19 combined across the new tests and prior runner tests).
+- Read-only OpenRouter preflight on 2026-10-20 confirmed MiniMax M3, the 524,288-token route limit, and unchanged $0.30/$1.20 per-million rates. MiniMax-side balance remains unverified. No inference requests were sent during this continuation work. Current minimum aggregate cap coverage is $35.217780: $30.844645 estimated remaining suffix + $3.586319 prior settled receipts + $0.786816 reserved for five unknown outcomes.
+- The final full local suite passed 383 tests in 114.90 seconds with 17 dependency warnings.
+- Do not stage `.runs` or any raw prompt, answer, response, credentials, or private account data.
+- Public recruitment issue [#13](https://github.com/stancsz/sift/issues/13) is authorized for up to three inference-free local-Ollama sessions; no respondents at last check. The independent first-screen 1280×800 review was READY for comprehension testing.
+- The Astra and Gemini Subroute 950,401-token rate comparison is documented in the README. It reports measured Sifted path usage and modeled unsifted rate costs because both full-context routes rejected before inference.
 
-## Next work
+## Next actions and gates
 
-1. First do offline engineering: implement a content-addressed preflight cache keyed by all frozen source and configuration hashes; verify reconstructed request-body hashes exactly.
-2. Independently review that change and run offline equivalence checks. No provider requests in this phase.
-3. If the user resumes the run, first reconcile the unresolved attempt and refresh route/pricing/account/in-flight checks. Preserve the frozen schedule, explicit exclusions, and existing retry/stop rules.
-4. Complete or explicitly classify every eligible slot, then publish a final paired report with coverage, quality, tokens, receipts/costs, preprocessing, request latency, total wall time, and unresolved usage.
-5. Obtain an independent receipt and analysis audit before broadening README claims. Keep this dataset labeled post-census development evidence.
+1. Push the single-use continuation changes and updated records; run CI on that head and keep PR #14 draft until green.
+2. The continuation remains authorized under the existing $100 cap. It must use the fixed output, claim file, exact private source reports, and latest route check. The MiniMax balance is unverified; preserve the $100 client-side aggregate limit and stop on any unreceipted response. Never retry the 529 or replay the suffix.
+3. The sanitized matched-task counts and arithmetic were independently audited and verified against the private report; raw data stays ignored.
+4. Stable release remains gated on independent quality/compatibility evidence, three opt-in usability sessions or a documented recruitment outcome, full release checks, and PyPI Trusted Publisher configuration.
 
-## Qwen 27B resource cleanup
+## Key artifact identities
 
-The `subroute-qwen-local-1` container is stopped and exited (code 137); no Qwen/vLLM process or running Qwen container was present at wrap-up. Windows reported approximately 8.1 GiB available RAM. GPU use was 8.7/16.3 GiB, with desktop applications active; the stopped Qwen model is no longer running.
+- Current branch: `codex/minimax-revalidation`
+- Draft PR: [#14](https://github.com/stancsz/sift/pull/14)
+- Current study manifest: `eaddd0d337111c6ab3c36d3f4a68dae4f002c94964de39beec620280f9c657c2`
+- Private stopped report SHA-256: `20e1106b1f4c27c801f0411d433a06c7e1def9ed48be4b0b3df7431671e30356`
+- 529 job identity: `66f53892821e116aacb33225:full:2`
+- Main baseline: `63e4f4e8aa2ef39e8bec24c8910494d1607d86f1`
