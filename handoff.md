@@ -2,7 +2,7 @@
 
 ## Owner and current integration state
 
-The full outcome remains active in [goal.md](goal.md): make Sift useful and credible to adopt, then publish a stable release only after the evidence and release gates pass. The latest code-bearing main change is PR #35 (`d1e5db8`), which added a default-on release rehearsal that skips the PyPI job. Its PR Core smoke passed in 48 seconds and post-merge main smoke in 47 seconds. No live rehearsal has run: the workflow requires an existing stable tag matching `pyproject.toml`, while main remains `0.11.0.dev0`. `src/`, `tests/`, and `pyproject.toml` still match tested source `29457b9`. PRs #23–28 added the synthetic-only output-boundary component with local, hosted, and type-validation coverage. Do not stage `.runs`, raw prompts/responses, credentials, or participant data.
+The full outcome remains active in [goal.md](goal.md): make Sift useful and credible to adopt, then publish a stable release only after the evidence and release gates pass. The latest main is `25d6873` after PR #36's record sync; PR #35 added a default-on release rehearsal that skips the PyPI job. Core smoke passed on PR #35 in 48 seconds and after merge in 47 seconds; PR #36 passed in 48 and 51 seconds. No live rehearsal has run: the workflow requires an existing stable tag matching `pyproject.toml`, while main remains `0.11.0.dev0`. `src/`, `tests/`, and `pyproject.toml` still match tested source `29457b9`. PRs #23–28 added the synthetic-only output-boundary component with local, hosted, and type-validation coverage. Do not stage `.runs`, raw prompts/responses, credentials, or participant data.
 
 The stale `codex/split-report-analyzer` worktree must not be merged wholesale: it is based on `d4d9265`, and its net diff would delete/revert PRs #18–22. Its strict split-run analyzer, tests, and aggregate are already byte-for-byte present on current `main`. Independent review reproduced the private prefix/continuation accounting without inference and confirmed the reported hashes and aggregates; focused analyzer tests passed 10/10. Reuse the valid evidence, not the stale branch.
 
@@ -44,6 +44,12 @@ On 2026-10-20, `main` branch protection was enabled: pull requests are required,
 PR #31 merged documentation-only GAIA and state updates as `ee9a126`. Its required Core smoke passed in 48 seconds and the post-merge main smoke in 43 seconds. A fresh Python 3.14.0 full local run against that source passed 397 tests in 211.28 seconds with 18 dependency warnings; `src/`, `tests/`, and `pyproject.toml` exactly match `29457b9`. The offline comparison gave 100/100 Sift hits and 0/100 head-tail hits in 0.461 CPU seconds. PR #32 merged the release-tag ancestry guard as `05dc830`; its PR Core smoke passed in 44 seconds and post-merge main smoke passed in 49 seconds.
 
 PR #35 merged a default-on non-publishing release rehearsal as `d1e5db8`; its PR Core smoke passed in 48 seconds and post-merge main smoke passed in 47 seconds. `actionlint` passed. No live rehearsal was possible because no stable tag matching the current package version (`0.11.0.dev0`) exists.
+
+## 2026-10-20 synthetic cost-probe presentation
+
+README and `docs/cost-comparison.md` already report one synthetic 950,401-token archive compacted to a 32,698-token estimate and the Sifted Subroute usage receipts: Astra 32,502 input / 6 output; Gemini 37,003 / 41. The full-context subscription requests were rejected before inference. Official-rate amounts are hypothetical for the raw prompt and rate-equivalents for the Sifted receipts; neither side is a subscription bill. A single exact fact does not establish quality parity or general savings.
+
+A Gemini 4 Argon → GPT-6.1 Sol council reviewed the current evidence and presentation. Gemini advised removing any implication of observed full-context cost; Sol agreed, rejected “adapter unblock” causation as unproven, and recommended separate observed-usage and hypothetical-cost sections without a modeled savings percentage. Council usage: Gemini 3,351 total tokens; Sol 893 total tokens. Decision: revise the README and cost guide accordingly, retaining all numerical claims with explicit evidence labels. Do not make additional paid API calls; the authorized MiniMax study budget is spent.
 
 ## Synthetic quarantine component
 
