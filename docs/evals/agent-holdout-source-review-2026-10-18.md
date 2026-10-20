@@ -18,6 +18,14 @@ An isolated inspection of the public PyPI release `appworld==0.1.3.post1` found 
 
 An independent read-only review of the current official README and downloader confirmed the same gate. The documented `appworld download data` path installs one shared `data/` tree containing split ID lists and task materials; split selection occurs later when task IDs are loaded. The downloader accepts `version` and `mode`, but no split selector, and its bundle can include protected test materials. The official rules allow test splits for aggregate evaluation and prohibit inspecting test tasks and task-level reports. No task data or archive payload was downloaded or inspected for this recheck. This is an absence-of-public-evidence finding: it does not prove no private or undocumented selective-data route exists. **Disposition remains no-go:** do not use AppWorld for a rehearsal unless a documented test-free route and independently enforced operator/reviewer boundary are established first.
 
+## Alternative source screen: GAIA — 2026-10-20
+
+GAIA is a possible **complementary** external evaluator, not a cleared replacement for an agent-task holdout. Its official dataset card describes a public validation split for development and a test split with private answers and metadata. Dataset files are gated, and access terms prohibit resharing outside a gated/private Hugging Face repository. The README's documented sample downloads the repository snapshot before selecting a split; the public files page lists both `test` and `validation`. We did not log in or access gated files. The official leaderboard's validation submission route is disabled; this does not establish that authorized local validation rehearsal is impossible, only that the documented leaderboard path cannot score a validation rehearsal. [Dataset card](https://huggingface.co/datasets/gaia-benchmark/GAIA/blob/main/README.md) · [Gated dataset files page](https://huggingface.co/datasets/gaia-benchmark/GAIA/tree/main)
+
+The official leaderboard accepts a complete test prediction file for 301 task IDs, computes quasi-exact final-answer scores, stores raw and per-task scored submissions in its internal dataset, and publishes aggregate overall and per-level scores. Its current code requires OAuth, a Hugging Face account at least 60 days old, and limits each username to one submission per day. The validation submission route is disabled in the current app. No same-account same-day paired Full/Sift workflow or independent paired-result export is documented; the rate limit does not rule out other arrangements such as submissions on separate days. [Leaderboard app](https://huggingface.co/spaces/gaia-benchmark/leaderboard/blob/main/app.py) · [Submission and scoring instructions](https://huggingface.co/spaces/gaia-benchmark/leaderboard/blob/main/content.py)
+
+This can support an externally scored aggregate result if both arms can be run and the maintainers' conditions are met. It is not a direct test of long-context retention or multi-turn task completion: the leaderboard receives final answers, not task trajectories or state changes. The next gate is to confirm a compliant paired route, permitted handling of test prompts, and a way to obtain independently reviewed paired aggregate evidence. Do not log in, download the dataset, run inference, submit results, contact maintainers, or describe GAIA as holdout evidence until those gates are satisfied. **Disposition: needs further gate.**
+
 The protected benchmark data is encrypted, and its license places conditions on public redistribution of plaintext protected material and derivatives.
 
 This makes AppWorld a useful operational holdout candidate if the evaluation is run under its exact rules. It does not establish that model weights have never seen related tasks, nor does it create a privately authored benchmark.
@@ -28,6 +36,9 @@ Primary sources:
 - [Official AppWorld repository, output layout, evaluator reports, and benchmark rules](https://github.com/StonyBrookNLP/appworld/blob/main/README.md)
 - [Official current AppWorld data downloader](https://github.com/StonyBrookNLP/appworld/blob/main/src/appworld/download.py)
 - [AppWorld v0.1.3.post1 data download implementation](https://github.com/StonyBrookNLP/appworld/blob/v0.1.3.post1/src/appworld/download.py)
+- [GAIA official dataset card and access terms](https://huggingface.co/datasets/gaia-benchmark/GAIA/blob/main/README.md)
+- [GAIA official leaderboard scoring app](https://huggingface.co/spaces/gaia-benchmark/leaderboard/blob/main/app.py)
+- [GAIA official leaderboard submission instructions](https://huggingface.co/spaces/gaia-benchmark/leaderboard/blob/main/content.py)
 
 ## Frozen protocol before any test access or provider call
 
