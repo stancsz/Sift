@@ -1,6 +1,6 @@
 # Roadmap to adoption and release
 
-Current documentation state: `main` is `17fde91` (2026-10-20). PR #37 corrected the synthetic Subroute cost presentation and passed the required Core smoke; it changed docs only. The published probe omits raw replies, so its reported fixture match cannot be independently verified. No new MiniMax inference is authorized under the exhausted $100 cap.
+Current documentation state: `main` is `4cc824d` (2026-10-20). PR #37 corrected the synthetic Subroute cost presentation and passed the required Core smoke; the published probe omits raw replies, so its reported fixture match cannot be independently verified. PR #38 improves the Ollama demo's checked model and response predicate and fixes slow clean-process test timeouts; its PR Core smoke passed in 52 seconds and post-merge main smoke in 45 seconds. The full Python 3.14 suite passed locally with 398 tests and 18 dependency warnings. No new MiniMax inference is authorized under the exhausted $100 cap.
 
 Sift deterministically filters repeated agent history. Current evidence shows a real reduction in provider prompt tokens with a measurable quality cost on an exposed LongBench cohort. It does not yet show reliable held-out agent-task outcomes, user adoption, or broad client compatibility. Sift remains a preview; do not market the current evidence as parity or general quality improvement.
 
