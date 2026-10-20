@@ -6,9 +6,10 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-# Fresh Windows imports of LiteLLM's proxy modules can take over 30 seconds.
-# These tests intentionally launch clean processes to verify import-time config.
-PROCESS_TIMEOUT = 60
+# Fresh Windows imports of LiteLLM's proxy modules can take over 30 seconds, and
+# can exceed 60 seconds when the full Python 3.14 suite is under load. These tests
+# intentionally launch clean processes to verify import-time configuration.
+PROCESS_TIMEOUT = 120
 
 
 class NativeMiniMaxProfileTests(unittest.TestCase):
