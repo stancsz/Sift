@@ -43,3 +43,9 @@ Primary sources:
 ## Remaining limitations
 
 The aggregate-only policy prevents diagnosis of why Sift helps or harms individual tasks. It also prevents a paired non-inferiority analysis. The benchmark is public and encrypted test data is operationally protected, but this cannot rule out pretraining exposure. A later, separately authored, privately held task set could complement AppWorld if its creators, scoring rules, and access controls are established before evaluation.
+
+## Synthetic output-boundary rehearsal — 2026-10-20
+
+`python benchmarks/quarantine_rehearsal.py` completed on Windows with Docker Engine 29.1.2 and host Python 3.14.0. It builds a temporary image from the pinned Python 3.12 slim digest, generates two synthetic task records inside the container, and runs with no network, a read-only root filesystem, private ephemeral `/private` tmpfs, and one writable host mount at `/export`. The generated task IDs, answer-key marker, raw report, task workspace, and stdout/stderr sentinels were absent from host-visible logs and the sole exported `aggregate.json`. The output had exactly the allowlisted keys and expected aggregate values; the temporary image was removed. The type-strict aggregate validator also passed four local regression checks, including rejecting JSON booleans where integers are required.
+
+This verifies the synthetic container's file/output boundary without loading AppWorld data, any real benchmark tasks, or calling a model. It does **not** complete the AppWorld quarantine gate: no independent OS identity or reviewer role was exercised, and the local Docker-daemon owner can inspect a running container. AppWorld remains parked until a test-free route and a separately controlled operator/reviewer boundary are independently demonstrated. Do not describe this component rehearsal as held-out quality evidence.

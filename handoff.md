@@ -32,4 +32,10 @@ The stale `codex/split-report-analyzer` worktree must not be merged wholesale: i
 
 ## Current verification for this record update
 
-This documentation-only update passed `git diff --check` and an independent factual review against current `main`, PR/check state, live Pages, issue #13, and release settings. The reviewer found and prompted correction of one stale focused-test duration and the CI-extra description. No product code or settings changed.
+PR #23's documentation update passed its Python 3.12 core smoke in 53 seconds and merged as `fb296a4`; the full suite was skipped by design. The following synthetic aggregate-boundary component is being prepared on `codex/aggregate-quarantine-rehearsal`. It uses no model or task source, and must not be described as AppWorld or held-out validation. The prior documentation refresh passed `git diff --check` and independent factual review against current `main`, PR/check state, Pages, issue #13, and release settings; the reviewer prompted correction of one stale focused-test duration and CI-extra description.
+
+## Synthetic quarantine component
+
+`python benchmarks/quarantine_rehearsal.py` ran with a pinned Python 3.12 slim image on Docker Engine 29.1.2. It generated synthetic task IDs, task-level records, answer key and log sentinels only inside a network-disabled container. The host received exactly one `aggregate.json`, with no private markers in export or captured logs; temporary image/container cleanup was independently checked. Four focused strict JSON validation checks passed on Python 3.14.0. An independent acceptance reviewer initially found the Python `True == 1` schema-type edge case; recursive type-strict comparison and regression checks now close it, and the reviewer rechecked the fix as READY.
+
+This is only a component rehearsal. The local Docker-daemon owner can inspect a running container, so this does not prove independent operator/reviewer role isolation and does not unlock AppWorld or any held-out source. See [the source review and rehearsal record](docs/evals/agent-holdout-source-review-2026-10-18.md).
