@@ -1,0 +1,22 @@
+name: Synthetic quarantine rehearsal
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  aggregate-boundary:
+    name: Synthetic aggregate-only boundary
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Check strict aggregate schema
+        run: python -m unittest discover -s tests -p test_quarantine_rehearsal.py -q
+      - name: Run network-disabled synthetic container rehearsal
+        run: python benchmarks/quarantine_rehearsal.py
