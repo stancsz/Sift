@@ -1,30 +1,35 @@
-# LongBench v2 MiniMax M3 evaluation
+# Goal: make Sift useful and credible to adopt
 
-## Status: paused for handoff
+## Status: active
 
-The user asked to stop this run gracefully. Do not resume or send additional provider requests until the user asks to continue and the unresolved attempt/accounting state is reviewed.
+The owner asked to continue the Sift adoption and release-readiness work through completion. Keep the current product evidence honest, reduce routine CI cost, improve the first-use story, broaden evaluation, and make the no-LiteLLM CLI straightforward to try. Do not call the preview stable until the gates in [the roadmap](ROADMAP.md) are satisfied.
 
-## Objective
+## Current constraint
 
-Complete a reproducible Full-context versus default-Sift LongBench v2 comparison through OpenRouter MiniMax M3. The frozen schedule is one repeat over the public 503-question dataset. It is post-census development evidence, not a blind holdout, multi-turn agent benchmark, or proof of quality parity. Use the frozen prompt, route, scoring, retry, and stop rules; preserve receipts and report coverage, paired quality, token/cost, preprocessing, latency, and run time where measured.
+The latest wider LongBench v2 experiment stopped safely at request 542/2,064 when a MiniMax request returned HTTP 529 without a provider usage/cost receipt. Before any continuation, the runner must require exact evidence for both unresolved reports and reserve their full possible route exposure under the user's existing $100 study cap. Do not retry the failed request. Keep the user's cap as the aggregate ceiling including prior unknown exposure.
 
 ## Current evidence
 
-See [the wrap-up report](docs/results/longbench-v2-minimax-m3-fullsuite-progress-2026-10-17.md) and [handoff.md](handoff.md).
+- The current run has 541 receipted responses and one unresolved 529 attempt. Provider-receipted spend is $3.58631898. These figures are private run accounting, not an invoice.
+- Ninety complete task clusters (270 responses per arm) have both three-repeat arms. Full exact choice: 110/270 (40.74%); Sift: 122/270 (45.19%), a +4.44 percentage-point observed difference. The approximate task-cluster 95% interval is −3.26 to +12.15 points.
+- On those 90 matched tasks, provider prompt tokens were 17,275,101 Full versus 7,041,707 Sift (−59.24%); receipt costs were $2.490294 versus $1.087784 (−56.32%). These are partial, cache-sensitive OpenRouter BYOK receipts, not invoice totals. Nine outputs ended at the length limit and strict-choice scoring counts invalid/truncated outputs as wrong.
+- The selected public LongBench questions were exposed during development. This is not a holdout or an agent-loop accepted-task benchmark. The partial observed accuracy difference does not establish improvement, parity, or non-inferiority.
+- The actual screenshot of the homepage at 1280×800 received an independent READY review for a 20-second comprehension session. Up to three inference-free local-Ollama first-run sessions are authorized; issue #13 is public and had no respondents at the last check.
+- GPT-6 Astra and Gemini 4 Argon Subroute examples use a synthetic 950,401-token archive and report observed Sifted-path usage plus explicit rate-card estimates. Both unsifted requests were rejected before model inference, so their costs are modeled, not measured.
 
-- 446 scoreable paired questions: Full 198/446 (44.4%); Sift 193/446 (43.3%), a -1.1 percentage-point observed difference.
-- On those same pairs, Sift used 75.8% fewer provider prompt tokens and had 76.8% lower provider-reported upstream inference cost. BYOK receipts are not invoice verification; caching was enabled.
-- Latest checkpoint: 923 completed scheduled jobs; 3 additional Full requests rejected by the provider limit; 1 job remains unresolved. The run is incomplete.
-- LongBench does not measure end-to-end coding-agent task completion or Sift preprocessing-inclusive speed in this run.
+## Acceptance and next actions
 
-## Remaining tasks
+1. Land and independently review the pinned unknown-outcome reserve fix and focused regression tests.
+2. Run the complete local test suite on this exact worktree revision; retain short PR CI and run the full matrix at release readiness.
+3. Reconcile the two exact private unresolved reports, refresh MiniMax route/pricing, account for full worst-case reserves, and continue only within the existing $100 cap without retrying the 529 job. Keep incomplete jobs explicit in the final report.
+4. Complete the three local usability sessions if volunteers opt in; report observed comprehension and setup friction without treating completion as adoption.
+5. Keep the GitHub Pages site, README, and evaluation record consistent with verified evidence and a clear OpenAI-compatible/Ollama quick start.
+6. Complete independent quality and compatibility gates, full release CI, and PyPI Trusted Publisher setup before making a stable release.
 
-1. Keep the current checkpoint immutable and reconcile the unresolved Full job: the first attempt returned HTTP 200 with a cost receipt but no completed scoreable answer; its retry failed with SSL and has unknown usage. Do not retry until the user explicitly resumes the goal and the duplicate-charge risk is acknowledged.
-2. Reduce resume preflight cost with a content-addressed prepared-input cache keyed by every frozen manifest, schedule, source, tokenizer, renderer, and Sift hash. Reconstruct and compare exact request-body hashes before trusting cached entries.
-3. Independently review the cache and run offline equivalence checks. Do not make paid requests during this work.
-4. On an explicitly authorized resume, refresh route/pricing and reconcile account/in-flight exposure. Continue only the frozen schedule with unchanged model, prompt, scoring, and stop rules. Preserve the 79 local-fit exclusions, three runtime rejections, and all attempts visibly.
-5. Produce a final aggregate covering matched and unpaired outcomes, paired/task-level quality, provider usage/cost receipts, unknown usage, preprocessing, latency, total wall time, and exact coverage. Obtain an independent raw-receipt and analysis review before making broader public claims.
+## Durable evidence
 
-## Resource state
-
-The `subroute-qwen-local-1` Qwen 27B container is stopped (Docker state `exited`, exit code 137); no Qwen/vLLM process or running Qwen container was found. At wrap-up, Windows reported about 8.1 GiB available system RAM. The GPU showed 8.7 GiB used of 16.3 GiB, with desktop applications visible and no Qwen process; do not attribute all current GPU use to this run.
+- [Evaluation record](docs/evaluation.md)
+- [Current handoff](handoff.md)
+- [Roadmap](ROADMAP.md)
+- [LongBench v2 primary manifest](docs/evals/longbench-v2-minimax-344-manifest-current-main-2026-10-20.json)
+- The full run artifact and answer text remain private under `.runs`; never commit them.

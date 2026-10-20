@@ -1,30 +1,35 @@
-# LongBench v2 handoff
+# Sift readiness handoff — 2026-10-20
 
 ## Current state
 
-The one-repeat MiniMax M3 Full-context/Sift run is paused at the user's request. It is a deterministic schedule over the public 503-question LongBench v2 dataset, but it is incomplete and post-census development evidence.
+The goal in [goal.md](goal.md) remains active. PR #14 is a draft; its current remote head is `d06b8fd178d5a171a45d6bef79775fc00fd14fd9`. The local working tree contains the reviewed safety repair and updated records, not yet pushed. The MiniMax 344-task × 3-repeat study stopped at 542/2,064 requests after one Full request returned HTTP 529 without a usage/cost receipt. Do not retry that request.
 
-The strongest current comparison is 446 valid matched questions. Full scored 198/446 (44.4%); Sift scored 193/446 (43.3%), a -1.1-point observed difference. On those same pairs, Sift used 75.8% fewer provider prompt tokens and had 76.8% lower provider-reported upstream cost. Implicit caching was enabled; costs are OpenRouter BYOK receipt fields, not invoice-verified. This does not establish parity, general savings, or multi-turn coding-agent quality. See [the detailed report](docs/results/longbench-v2-minimax-m3-fullsuite-progress-2026-10-17.md).
+The partial run has 541 receipted responses and one unknown outcome. Receipt spend is $3.58631898; the unknown request's submitted reservation was $0.02571465. For future cap accounting, reserve each of the five unresolved requests at the entire dated route prompt limit plus the output cap, totaling **$0.786816** (four earlier unknown requests plus this 529). The user's existing $100 maximum covers the experiment, but any continuation must refresh current route pricing and charge every prior unknown reserve against the same cap.
 
-The checkpoint reports 923 completed scheduled jobs, 956 attempts, three runtime Full context-limit rejections, and no in-flight call. One Full job remains unresolved after a first HTTP 200 response with cost but no scorable completion and a retry that failed with SSL/unknown usage. The four unknown-usage attempts include three earlier attempts whose retries later succeeded; retain all attempt-level accounting. Do not issue another retry without renewed user direction.
+Ninety fully matched task clusters provide preliminary exposed-development evidence: 110/270 correct Full versus 122/270 Sift; prompt tokens 17,275,101 versus 7,041,707; receipt cost $2.490294 versus $1.087784. The approximate task-cluster interval for the +4.44-point exact-choice difference is −3.26 to +12.15 points. Do not claim quality gain or parity. Nine outputs reached the length limit. This interim evidence is not held out and does not measure accepted coding-agent tasks.
 
-## Resume artifacts
+## Work in progress
 
-- Frozen manifest: `.runs/longbench-v2-minimax-fullsuite-one-repeat-v1.json.gz`
-- Latest checkpoint: `.runs/longbench-v2-minimax-fullsuite-run-all-retry9.json`
-- Manifest SHA-256: `72f502946ce2b3269b52fed3c0bb9433f5c96a9d3e5ff143a7e80f9aca6fdc7e`
-- Schedule SHA-256: `f8d21e02f8a96f8d0b690d7c16b5c299a0faae868987af8ce5a03b203eb24b4c`
-- Checkpoint SHA-256: `d0b964b1a44e9f7b42edea7bc7f7761586dbd9e9b616f11fd13a3d9d624ed14a`
-- Runner: `benchmarks/prepare_longbench_v2_minimax_fullsuite.py`, `benchmarks/dispatch_longbench_v2_minimax_fullsuite.py`
+- PR #14 changes the paid runner so the exact older 503 report and the exact current 344 report are both required, pinned and separately reserved. A clean-state attestation cannot bypass them, and the operator must attest there are no additional unresolved requests. Focused tests pass (16 total); the final full local suite passed 380 tests in 105.86 seconds with 17 warnings.
+- Independent release-readiness review identified the gap that led to this fix; the reviewer has been asked to recheck the updated working tree.
+- Do not stage `.runs` or any raw prompt, answer, response, credentials, or private account data.
+- Public recruitment issue [#13](https://github.com/stancsz/sift/issues/13) is authorized for up to three inference-free local-Ollama sessions; no respondents at last check. The independent first-screen 1280×800 review was READY for comprehension testing.
+- The Astra and Gemini Subroute 950,401-token rate comparison is documented in the README. It reports measured Sifted path usage and modeled unsifted rate costs because both full-context routes rejected before inference.
 
-## Next work
+## Next actions and gates
 
-1. First do offline engineering: implement a content-addressed preflight cache keyed by all frozen source and configuration hashes; verify reconstructed request-body hashes exactly.
-2. Independently review that change and run offline equivalence checks. No provider requests in this phase.
-3. If the user resumes the run, first reconcile the unresolved attempt and refresh route/pricing/account/in-flight checks. Preserve the frozen schedule, explicit exclusions, and existing retry/stop rules.
-4. Complete or explicitly classify every eligible slot, then publish a final paired report with coverage, quality, tokens, receipts/costs, preprocessing, request latency, total wall time, and unresolved usage.
-5. Obtain an independent receipt and analysis audit before broadening README claims. Keep this dataset labeled post-census development evidence.
+1. Complete the full local suite using `.venv-local-qa\Scripts\python.exe`; the global Python 3.14 failure was an environment import issue, not a valid suite result.
+2. Obtain independent re-review of the focused guard/tests. Run full CI at release readiness; keep the normal PR workflow short.
+3. Refresh provider route/pricing and operator usage/reserve before any further paid call. If continuing, skip the exact 529 job permanently, never retry it, preserve its unknown state, and stop at the same aggregate $100 ceiling. No new provider request has been made after the stopped run.
+4. Publish the sanitized partial 344 result and limitations only after verifying aggregate calculations against the private raw report; keep raw data ignored.
+5. Reconcile `docs/evaluation.md` and `ROADMAP.md` with the experiment and stable-release gates.
+6. Stable release remains gated on independent quality/compatibility evidence, three opt-in usability sessions or a documented recruitment outcome, full release checks, and PyPI Trusted Publisher configuration.
 
-## Qwen 27B resource cleanup
+## Key artifact identities
 
-The `subroute-qwen-local-1` container is stopped and exited (code 137); no Qwen/vLLM process or running Qwen container was present at wrap-up. Windows reported approximately 8.1 GiB available RAM. GPU use was 8.7/16.3 GiB, with desktop applications active; the stopped Qwen model is no longer running.
+- Current branch: `codex/minimax-revalidation`
+- Draft PR: [#14](https://github.com/stancsz/sift/pull/14)
+- Current study manifest: `eaddd0d337111c6ab3c36d3f4a68dae4f002c94964de39beec620280f9c657c2`
+- Private stopped report SHA-256: `20e1106b1f4c27c801f0411d433a06c7e1def9ed48be4b0b3df7431671e30356`
+- 529 job identity: `66f53892821e116aacb33225:full:2`
+- Main baseline: `63e4f4e8aa2ef39e8bec24c8910494d1607d86f1`
