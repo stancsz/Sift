@@ -14,6 +14,27 @@ Session `18111` subsequently terminated (exit 1) before creating its continuatio
 
 On continuation at `2026-10-21T22:54Z`, the `22574` handle was unavailable and an authoritative process check found no matching runner. Both fixed continuation claim/output paths remained absent, so it had not reached dispatch. The unchanged reviewed runner was launched as a hidden detached process, **PID `25244`**, with durable numeric progress/error logs in `tmp/longbench-v2-fresh/persistent-20261021T225405Z/`. The launching shell exited successfully and a subsequent process check confirmed that exact Python command line alive. Observe that process and the fixed report; never infer liveness from a stale PID/log file, and never start another copy merely because observation times out. No extra inference cost arose from the interrupted preparation.
 
+## Final reporting without account reconciliation
+
+`benchmarks/analyze_longbench_v2_minimax_fresh_344.py` analyzes the frozen fresh
+manifest, its base schedule, the exact stopped prefix and a terminal continuation.
+It rejects partial/in-flight reports, schedule overlap or order changes, request
+hash mismatches and inconsistent token/rate arithmetic. Run it only after the
+current continuation is terminal; it makes no inference or account request.
+
+The aggregate reports our uncached calculation (`input × $0.30/M + output ×
+$1.20/M`), optional recorded provider costs and unknown-outcome reserves
+separately. It includes quality for all scheduled attempts, counting unknowns
+incorrect, plus the subset of tasks with all six responses observed. The
+confidence intervals resample tasks using the existing paired analyzer.
+
+The prefix's completed streams can be reparsed against its fixed byte hash.
+The continuation retains compact scored choices and numeric usage rather than
+raw streams/receipts; those fields remain runner-recorded evidence. Its final
+content hash identifies the analyzed snapshot without authenticating the
+provider. No final result is claimed while dispatch is running, and neither
+this tool nor the fresh public cohort establishes blind quality or parity.
+
 ## Authorization and requested scope
 
 The user separately authorized up to **$100 USD** for a fresh LongBench-v2 cohort of 344 questions, three repeats in each of two arms (2,064 requests). This cap applies to the new run; historical spend and unknown-attempt reserves from the completed study remain separately recorded. The user also authorized up to three inference-free opt-in first-run sessions. No participant contact has occurred.
