@@ -52,18 +52,61 @@ python -m pytest tests/test_longmemeval_v2_minimax_request_policy.py -q
 
 This closes request construction only. The helper creates no SDK/HTTP client and does not validate endpoint acceptance, live token limits, returned usage, budget or authorization. Actual transport/receipt enforcement and remaining full harness/file/scoring integration are still required before freezing a public-run protocol. This does not establish full harness compatibility, official leaderboard compatibility, real endpoint acceptance, or quality.
 
+### Generated main, file and deterministic-scoring flows (2026-10-21)
+
+`benchmarks/longmemeval_v2_synthetic_main_smoke.py` exercises the pinned
+upstream `harness.main()` with generated question, trajectory, haystack and
+memory-config files plus tiny generated images. It verifies the source
+dependency closure against SHA-256 pins, imports the unchanged real memory
+registry and adds Sift through its registry interface. Actual trajectory
+normalization, prompt construction, output-file writing and `mc_choice_match`
+scoring run for both shared-haystack and per-question-haystack paths.
+
+Each path has two generated questions and an in-memory reader returning the
+same generated choice, deliberately producing one correct and one incorrect
+score. Four fake reader calls in total check request policy, image handoff,
+synthetic usage aggregation and client cleanup. The processor is the same
+pinned local Qwen metadata snapshot. These fixtures are plumbing checks, not
+accuracy results, provider usage or spend.
+
+The registry eagerly imports the Agents SDK even for Sift. An isolated
+`tmp/longmemeval-synthetic-main/.venv` with system site packages uses
+`openai-agents==0.24.0` and `openai==3.36.0`; the global runtime and live
+LongBench environment are unchanged. The optional environment inherits
+unrelated dependency conflicts, including LiteLLM's OpenAI version constraint;
+those packages are not exercised, and this is not a generally validated
+environment. The smoke removes the script-directory import shadow caused by
+the repository's unrelated `benchmarks/agents.py`. Missing registry dependencies
+produce a blocked result instead of successful stubs.
+
+With the pinned upstream sources and processor metadata already present:
+
+```powershell
+tmp/longmemeval-synthetic-main/.venv/Scripts/python.exe benchmarks/longmemeval_v2_synthetic_main_smoke.py
+```
+
+Independent execution passed both main paths and four focused
+prerequisite/import-shadowing/hash regressions. The network guard observed zero
+external attempts and two Windows asyncio loopback connections. Global Python
+truthfully returned the missing-Agents-SDK diagnostic with exit 2.
+
+No source/data/package download or inference occurs in this command. External
+connections are blocked by the probe. This closes these generated sequential
+file/main/scoring paths only; parallel mode, save/load, LLM judges, real data,
+provider transport and endpoint usage enforcement remain unverified.
+
 ## Known gaps and next gate
 
 - **Access-rights screen (2026-10-20):** The official GitHub repository carries an Apache-2.0 license, and the official Hugging Face dataset card declares the data Apache-2.0. This records the maintainers' published license and supports planning only; it does not authorize data access/use or establish rights in embedded third-party web screenshots. No data has been downloaded. [Repository license](https://github.com/xiaowu0162/LongMemEval-V2/blob/main/LICENSE) · [Dataset card](https://huggingface.co/datasets/xiaowu0162/longmemeval-v2)
 - The pinned trajectory preparer requires a non-empty screenshot path for every state. The smoke confirms image decoding and prompt handoff for synthetic fixtures only; it does not validate real dataset paths or image-dependent answer coverage. The benchmark publishes its questions and trajectories, so any eventual run is a public-benchmark reproduction, not evidence of generalization to a blind set.
 - The upstream trajectories contain screenshot paths. This prototype associates images with selected text-bearing states, but Sift ranks text only and may miss image-only evidence. A future full-data trial must fail or report unsupported image-dependent cases explicitly; it must not silently drop them.
-- The adapter uses an approximate size counter, not the reader tokenizer. The prompt-building helper now uses the real reader processor for its downstream context count; the full official harness, real-data truncation behavior, actual transport/receipt enforcement, real dataset normalization, official scoring, latency, cost, and task accuracy remain unverified.
+- The adapter uses an approximate size counter, not the reader tokenizer. The prompt-building helper and generated main flows now use the real reader processor downstream. Real-data truncation/normalization, parallel mode, LLM judging, actual transport/receipt enforcement, latency, cost and task accuracy remain unverified; generated deterministic scoring does not establish those capabilities.
 - LongMemEval-V2's leaderboard validator requires its documented Qwen reader and GPT judge. A MiniMax-M3 run would be a local reproduction and requires a separate numeric spend cap; the current $100 authorization covers fresh LongBench, not LongMemEval.
 - AppWorld and GAIA remain uncleared for a paired, independently controlled held-out run. A credible agent-task holdout still needs a prospectively fixed task set and an independent custodian/evaluator boundary.
 
 The 2026-10-20 Gemini 4 Argon → GPT-6.1 Sol council recommended this bounded synthetic prototype while also freezing a separately held-out protocol and clearance checklist. Gemini judged the adapter the smallest free technical step; Sol agreed, but noted protocol definition is also actionable. Sol's stop condition is reached if faithful coverage requires silently dropping essential images or exceeds Sift's bounds. Usage: Gemini 3,129 prompt + 197 completion; Sol 701 prompt + 251 completion tokens. This is advice, not independent QA.
 
-Before any real-data access or model call, an independent reviewer must accept the adapter and protocol; the remaining full harness flow must be exercised using only synthetic fixtures; and a public-run protocol must be frozen. The downstream real reader-counting probe is complete for the generated under-budget and pressure fixtures only; full harness/scoring remains unverified. The declared dataset license has now been checked, but image provenance remains unreviewed; this check alone does not authorize data access/use. Any model run also needs a fresh route/usage reserve and explicit numeric spend cap. Stop this benchmark path if its screenshot requirements or scale cannot fit Sift without unsupported lossy behavior.
+Before any real-data access or model call, an independent reviewer must accept the adapter and protocol, and a public-run protocol must be frozen. Generated sequential main/file/deterministic-scoring paths now run with the real reader processor; parallel mode, LLM judges and provider transport remain unverified. The declared dataset license has now been checked, but image provenance remains unreviewed; this check alone does not authorize data access/use. Any model run also needs a fresh route/usage reserve and explicit numeric spend cap. Stop this benchmark path if its screenshot requirements or scale cannot fit Sift without unsupported lossy behavior.
 
 ## Synthetic prompt-build smoke (2026-10-20)
 
