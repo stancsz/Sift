@@ -9,6 +9,7 @@ benchmark data, and never calls a model.
 from __future__ import annotations
 
 import argparse
+import asyncio
 import base64
 import hashlib
 import importlib.util
@@ -19,6 +20,7 @@ import sys
 import tempfile
 import types
 import zlib
+from types import SimpleNamespace
 
 PINNED_HARNESS_GIT_BLOB = "6a7182440a2cdd3ace6286dd966f7953fc383e8e"
 READER_MODEL = "Qwen/Qwen3.5-9B"
@@ -128,6 +130,148 @@ def _verify_reader_metadata(path: pathlib.Path) -> None:
         raise SystemExit("Reader snapshot unexpectedly contains model weights")
 
 
+class _SyntheticContextMemory:
+    def __init__(self, items: list[dict[str, str]]) -> None:
+        self.items = items
+        self.last_query_image: str | None = None
+        self.lifecycle: list[str] = []
+
+    def set_query_context(self, *, query_invocation_id: str) -> None:
+        assert query_invocation_id == "synthetic-pressure-query"
+        self.lifecycle.append("set")
+
+    def query(self, _query: str, query_image: str | None = None) -> list[dict[str, str]]:
+        self.last_query_image = query_image
+        self.lifecycle.append("query")
+        return [dict(item) for item in self.items]
+
+    def post_query_hook(self, *, query: str, query_image: str | None,
+                        memory_context: list[dict[str, str]]) -> dict[str, str]:
+        assert query == "Which fixture fact should be retained?"
+        assert query_image == self.last_query_image
+        self.lifecycle.append("post")
+        return {"context_items": str(len(memory_context))}
+
+    def clear_query_context(self) -> None:
+        self.lifecycle.append("clear")
+
+
+def _exercise_context_pressure(harness, state_image: pathlib.Path,
+                               question_image: pathlib.Path) -> tuple[dict, dict, int, int]:
+    items = [
+        {"type": "text", "value": "Synthetic prefix marker: BLUE LANTERN."},
+        {"type": "image", "value": str(state_image)},
+        {"type": "text", "value": ("Synthetic tail that should be dropped under token pressure. " * 900)},
+        {"type": "image", "value": str(question_image)},
+    ]
+    loaded = harness.load_memory_context_images(items)
+    prefix_two_tokens = harness.count_memory_context_tokens(items[:2], loaded[:2])
+    prefix_three_tokens = harness.count_memory_context_tokens(items[:3], loaded[:3])
+    full_tokens = harness.count_memory_context_tokens(items, loaded)
+    assert prefix_two_tokens > 1
+    assert prefix_three_tokens > prefix_two_tokens
+    assert full_tokens >= prefix_three_tokens
+
+    question = {
+        "question_id": "synthetic-pressure",
+        "query_invocation_id": "synthetic-pressure-query",
+        "question_text": "Which fixture fact should be retained?",
+        "question_image": str(question_image),
+        "eval_name": "exact_match",
+    }
+    memory = _SyntheticContextMemory(items)
+    kept = harness.build_prompt_row(
+        question, haystack_ids=["synthetic-trajectory"], memory=memory,
+        system_prompt="Synthetic token pressure only.",
+        memory_context_max_tokens=prefix_two_tokens,
+    )
+    assert kept["memory_context"] == items[:2]
+    assert kept["memory_context_original_token_count"] == full_tokens
+    assert kept["memory_context_token_count"] == prefix_two_tokens
+    assert kept["memory_context_token_count"] <= prefix_two_tokens
+    assert kept["memory_context_was_truncated"] is True
+    assert memory.lifecycle == ["set", "query", "post", "clear"]
+    assert memory.last_query_image == str(question_image)
+    kept_image_paths = [part["image_path"] for part in kept["prompt_messages"][1]["content"]
+                        if part.get("type") == "image_path"]
+    assert kept_image_paths == [str(state_image), str(question_image)]
+
+    repeated_memory = _SyntheticContextMemory(items)
+    repeated = harness.build_prompt_row(
+        question, haystack_ids=["synthetic-trajectory"], memory=repeated_memory,
+        system_prompt="Synthetic token pressure only.",
+        memory_context_max_tokens=prefix_two_tokens,
+    )
+    assert repeated["memory_context"] == kept["memory_context"]
+    assert repeated["memory_context_token_count"] == kept["memory_context_token_count"]
+    repeated_image_paths = [part["image_path"] for part in repeated["prompt_messages"][1]["content"]
+                            if part.get("type") == "image_path"]
+    assert repeated_image_paths == kept_image_paths
+
+    empty_memory = _SyntheticContextMemory(items)
+    empty = harness.build_prompt_row(
+        question, haystack_ids=["synthetic-trajectory"], memory=empty_memory,
+        system_prompt="Synthetic empty-context case.", memory_context_max_tokens=1,
+    )
+    assert empty["memory_context"] == []
+    assert empty["memory_context_original_token_count"] == full_tokens
+    assert empty["memory_context_token_count"] == 0
+    assert empty["memory_context_token_count"] <= 1
+    assert empty["memory_context_was_truncated"] is True
+    assert empty_memory.last_query_image == str(question_image)
+    empty_log = empty["prompt_messages"][1]["content"]
+    assert any(part.get("type") == "text" and "(empty)" in part.get("text", "") for part in empty_log)
+    empty_image_paths = [part["image_path"] for part in empty_log if part.get("type") == "image_path"]
+    assert empty_image_paths == [str(question_image)]
+    return kept, empty, full_tokens, prefix_two_tokens
+
+
+def _exercise_fake_minimax_reader(harness, messages: list[dict]) -> None:
+    args = argparse.Namespace(
+        model="minimax/minimax-m3",
+        base_url="http://minimax.synthetic.invalid/v1",
+        timeout_seconds=37.0,
+        max_completion_tokens=64,
+        reasoning_effort=None,
+        temperature=0.0,
+        top_p=1.0,
+        presence_penalty=0.0,
+        top_k=40,
+        repetition_penalty=1.05,
+        reader_enable_thinking=False,
+    )
+    expected_request = harness.build_reader_request(args, messages)
+    assert expected_request == {
+        "model": "minimax/minimax-m3",
+        "messages": messages,
+        "timeout": 37.0,
+        "max_tokens": 64,
+        "temperature": 0.0,
+        "top_p": 1.0,
+        "presence_penalty": 0.0,
+        "extra_body": {"top_k": 40, "repetition_penalty": 1.05},
+    }
+    assert "max_completion_tokens" not in expected_request
+
+    class FakeCompletions:
+        def __init__(self) -> None:
+            self.calls: list[dict] = []
+
+        async def create(self, **kwargs):
+            self.calls.append(kwargs)
+            return SimpleNamespace(
+                choices=[SimpleNamespace(message=SimpleNamespace(content="Synthetic MiniMax answer."))],
+                usage=SimpleNamespace(prompt_tokens=321, completion_tokens=7, total_tokens=328),
+            )
+
+    completions = FakeCompletions()
+    client = SimpleNamespace(chat=SimpleNamespace(completions=completions))
+    answer, usage = asyncio.run(harness.call_reader_model_async(client, args, messages))
+    assert answer == "Synthetic MiniMax answer."
+    assert usage == {"prompt_tokens": 321, "completion_tokens": 7, "total_tokens": 328}
+    assert completions.calls == [expected_request]
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("harness", type=pathlib.Path, help="path to pinned evaluation/harness.py")
@@ -212,6 +356,10 @@ def main() -> None:
             row["memory_context"],
             harness.load_memory_context_images(row["memory_context"]),
         )
+        pressure_kept, pressure_empty, pressure_original, pressure_limit = (
+            _exercise_context_pressure(harness, state_image, question_image)
+        )
+        _exercise_fake_minimax_reader(harness, pressure_kept["messages"])
 
     assert row["memory_context"]
     assert row["memory_context_token_count"] == actual_count
@@ -230,6 +378,17 @@ def main() -> None:
     print("pinned_official_harness_prompt_build=PASS")
     print(f"reader_processor={READER_MODEL}@{READER_REVISION}; processor_class={type(processor).__name__}")
     print(f"reader_context_tokens={actual_count}; synthetic_images=2; model_weights=0; model_calls=0; benchmark_data=0")
+    empty_question_images = [
+        part for part in pressure_empty["prompt_messages"][1]["content"]
+        if part.get("type") == "image_path"
+    ]
+    print(
+        "context_pressure=PASS; kept_items=2/4; dropped_tail_text=1; dropped_tail_image=1; "
+        f"empty_context_items={len(pressure_empty['memory_context'])}; "
+        f"question_image_preserved={len(empty_question_images) == 1}; "
+        f"original_tokens={pressure_original}; kept_tokens={pressure_limit}"
+    )
+    print("fake_minimax_reader_plumbing=PASS; request_is_not_provider_dispatch_ready=no_minimax_route_injection; provider_requests=0")
 
 
 if __name__ == "__main__":
