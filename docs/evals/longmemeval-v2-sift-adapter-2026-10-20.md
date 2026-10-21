@@ -137,6 +137,10 @@ authorization or real endpoint acceptance check. The factory creates no
 automatic dispatch entrypoint. A prospective public run still requires a
 frozen protocol, live route/rate review and separately authorized numeric cap.
 
+## Prospective public protocol (2026-10-21)
+
+The [proposed comparison specification](longmemeval-v2-public-protocol-2026-10-21.md) now records Full/Sift fairness, selection/scheduling, scoring, failures, costs and latency before data use. It does not freeze an executable run or resolve the gaps below. In particular, the upstream empty `no_retrieval` baseline is not Full; implement a true all-state reference renderer and replace the adapter's approximate counter with a reviewed counting contract before activation. Numeric settings, immutable data pins/rights, trial-wide controls and separate spend authority remain unresolved.
+
 ## Known gaps and next gate
 
 - **Access-rights screen (2026-10-20):** The official GitHub repository carries an Apache-2.0 license, and the official Hugging Face dataset card declares the data Apache-2.0. This records the maintainers' published license and supports planning only; it does not authorize data access/use or establish rights in embedded third-party web screenshots. No data has been downloaded. [Repository license](https://github.com/xiaowu0162/LongMemEval-V2/blob/main/LICENSE) · [Dataset card](https://huggingface.co/datasets/xiaowu0162/longmemeval-v2)
