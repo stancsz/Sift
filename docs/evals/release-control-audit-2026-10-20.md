@@ -19,6 +19,11 @@ pending Trusted Publisher check remain required. Quality, compatibility and
 adoption disposition remain open. Older unresolved-control wording below is
 historical and superseded by this decision; the factual bypass caveats remain.
 
+An October 21 read-only recheck in the available Chrome profile opened
+`https://pypi.org/manage/account/publishing/` and visibly redirected to PyPI's
+login form. Pending Trusted Publisher configuration remains unverified. No
+credentials were entered and no account settings or package uploads changed.
+
 ## Initial findings
 
 | Control | Result | Evidence |

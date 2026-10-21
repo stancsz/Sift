@@ -227,6 +227,8 @@ def _exercise_context_pressure(harness, state_image: pathlib.Path,
 
 
 def _exercise_fake_minimax_reader(harness, messages: list[dict]) -> None:
+    from benchmarks.longmemeval_v2_minimax_request_policy import wrap_minimax_reader_request_builder
+
     args = argparse.Namespace(
         model="minimax/minimax-m3",
         base_url="http://minimax.synthetic.invalid/v1",
@@ -235,41 +237,48 @@ def _exercise_fake_minimax_reader(harness, messages: list[dict]) -> None:
         reasoning_effort=None,
         temperature=0.0,
         top_p=1.0,
-        presence_penalty=0.0,
-        top_k=40,
-        repetition_penalty=1.05,
+        presence_penalty=None,
+        top_k=None,
+        repetition_penalty=None,
         reader_enable_thinking=False,
     )
-    expected_request = harness.build_reader_request(args, messages)
-    assert expected_request == {
-        "model": "minimax/minimax-m3",
-        "messages": messages,
-        "timeout": 37.0,
-        "max_tokens": 64,
-        "temperature": 0.0,
-        "top_p": 1.0,
-        "presence_penalty": 0.0,
-        "extra_body": {"top_k": 40, "repetition_penalty": 1.05},
-    }
-    assert "max_completion_tokens" not in expected_request
+    original_builder = harness.build_reader_request
+    harness.build_reader_request = wrap_minimax_reader_request_builder(original_builder)
+    try:
+        expected_request = harness.build_reader_request(args, messages)
+        assert expected_request == {
+            "model": "minimax/minimax-m3",
+            "messages": messages,
+            "timeout": 37.0,
+            "max_tokens": 64,
+            "temperature": 0.0,
+            "top_p": 1.0,
+            "extra_body": {"provider": {
+                "only": ["minimax"], "allow_fallbacks": False, "require_parameters": True,
+            }},
+        }
+        assert "max_completion_tokens" not in expected_request
 
-    class FakeCompletions:
-        def __init__(self) -> None:
-            self.calls: list[dict] = []
+        class FakeCompletions:
+            def __init__(self) -> None:
+                self.calls: list[dict] = []
 
-        async def create(self, **kwargs):
-            self.calls.append(kwargs)
-            return SimpleNamespace(
-                choices=[SimpleNamespace(message=SimpleNamespace(content="Synthetic MiniMax answer."))],
-                usage=SimpleNamespace(prompt_tokens=321, completion_tokens=7, total_tokens=328),
-            )
+            async def create(self, **kwargs):
+                self.calls.append(kwargs)
+                return SimpleNamespace(
+                    choices=[SimpleNamespace(message=SimpleNamespace(content="Synthetic MiniMax answer."))],
+                    usage=SimpleNamespace(prompt_tokens=321, completion_tokens=7, total_tokens=328),
+                )
 
-    completions = FakeCompletions()
-    client = SimpleNamespace(chat=SimpleNamespace(completions=completions))
-    answer, usage = asyncio.run(harness.call_reader_model_async(client, args, messages))
-    assert answer == "Synthetic MiniMax answer."
-    assert usage == {"prompt_tokens": 321, "completion_tokens": 7, "total_tokens": 328}
-    assert completions.calls == [expected_request]
+        completions = FakeCompletions()
+        client = SimpleNamespace(chat=SimpleNamespace(completions=completions))
+        answer, usage = asyncio.run(harness.call_reader_model_async(client, args, messages))
+        assert answer == "Synthetic MiniMax answer."
+        assert usage == {"prompt_tokens": 321, "completion_tokens": 7, "total_tokens": 328}
+        assert completions.calls == [expected_request]
+    finally:
+        harness.build_reader_request = original_builder
+    assert harness.build_reader_request is original_builder
 
 
 def main() -> None:
@@ -388,7 +397,7 @@ def main() -> None:
         f"question_image_preserved={len(empty_question_images) == 1}; "
         f"original_tokens={pressure_original}; kept_tokens={pressure_limit}"
     )
-    print("fake_minimax_reader_plumbing=PASS; request_is_not_provider_dispatch_ready=no_minimax_route_injection; provider_requests=0")
+    print("fake_minimax_reader_plumbing=PASS; request_provider_policy=PINNED; provider_requests=0; dispatch_authorized=false")
 
 
 if __name__ == "__main__":
