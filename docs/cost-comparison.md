@@ -48,6 +48,13 @@ that reserve is not counted as money spent. The newly authorized 344 × 3 × 2
 run has a $41.87 conservative schedule estimate and a $100 client cap. Account
 balances and invoice reconciliation are not needed for these calculations.
 
+On October 21 the fresh run attempted 23 requests before a connection error.
+The 22 requests with usage records cost **$0.17** by receipts; our uncached
+input/output calculation is **$0.35** (`1,164,672 × $0.30/M + 107 × $1.20/M`).
+The unanswered request retains a **$0.0617** reservation. These are additional
+to the six-study subtotal above; recorded costs including this prefix total
+**$36.13**. See the [sanitized prefix summary](results/longbench-v2-minimax-fresh-344-prefix-2026-10-21.json).
+
 ## Synthetic retrieval probe: 950K-token archive
 
 We compacted one synthetic archive with Sift and sent the resulting request

@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-21",
+  "model": "minimax/minimax-m3",
+  "source_sha256": "c3669172ba0a29062fc3d217ebbd49946e82f19ff4d9ba353a9151364244fdc7",
+  "status": "safety_guard_stopped",
+  "stop_reason": "connection_error_without_usage",
+  "planned_attempts": 2064,
+  "attempted": 23,
+  "remaining_unattempted": 2041,
+  "arms": {
+    "full": {
+      "attempts": 12,
+      "usage_records": 11,
+      "prompt_tokens": 853376,
+      "completion_tokens": 85,
+      "recorded_request_cost_usd": 0.13040376,
+      "calculated_uncached_token_cost_usd": 0.2561148
+    },
+    "sift": {
+      "attempts": 11,
+      "usage_records": 11,
+      "prompt_tokens": 311296,
+      "completion_tokens": 22,
+      "recorded_request_cost_usd": 0.04046448,
+      "calculated_uncached_token_cost_usd": 0.0934152
+    }
+  },
+  "recorded_request_cost_usd": 0.17086824,
+  "calculated_uncached_token_cost_usd": 0.34953,
+  "new_unknown_outcome_reserve_usd": 0.06167235,
+  "historical_unknown_outcome_reserve_usd": 2.0457216,
+  "client_cap_usd": 100,
+  "price_usd_per_million": {
+    "uncached_prompt": 0.3,
+    "completion": 1.2
+  },
+  "raw_prompts_answers_or_events_included": false,
+  "note": "Known requests are priced from recorded tokens; the unanswered attempt retains its reservation. No account balance or invoice reconciliation."
+}
