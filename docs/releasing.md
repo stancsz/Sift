@@ -6,6 +6,32 @@ The [draft 0.11.0 release notes](release-notes-0.11.0.md) summarize the shipped
 features, measured trade-off and completed package rehearsal for the publishing
 decision. They are unpublished and do not announce PyPI availability.
 
+## Local stable-version package rehearsal — 2026-10-21
+
+The current source at `e19828a` passed **505 local tests** on Python 3.14.0 in
+152.35 seconds, with 18 third-party Pydantic/LiteLLM warnings. The nine release-selection/workflow checks, included in that suite, also
+passed separately. The required PR smoke remains
+short; PR #52 passed in 49 seconds and its post-merge smoke in 43 seconds.
+
+A separate local snapshot prepares `0.11.0` archives while the checkout remains
+`0.11.0.dev0`. Its 65 tracked inputs match the pinned Git blobs, except the
+snapshot's version line. The wheel and sdist built with setuptools 82.0.1 and
+passed Twine 7.0.0 strict checks. This rehearsal does not create a stable tag,
+exercise the hosted stable-tag/OIDC path, or publish a package. Keep the source
+on its development version until the release gates below are resolved; the
+isolated archives are preparation for that decision.
+
+Independent package QA verified the pinned inputs and hashes, installed both
+archives in separate clean environments, and exercised CLI help and offline
+compaction without optional dependencies. Compaction reduced 12,465 estimated
+tokens to 3,887 under a 4,096 target; insufficient targets failed closed. The
+nine release-guard checks passed independently with exit 0. The 505-test count
+comes from the builder's successful execution receipt, not an independent
+full-suite rerun or reopened raw log. See the [structured local result](results/release-candidate-0.11.0-local-2026-10-21.json)
+for archive hashes, versions, scope and remaining limits.
+
+## Release controls
+
 **Control disposition (2026-10-21):** Under the standing release mandate, the
 coordinator accepted the verified sole-reviewer self-approval, environment admin
 bypass and tag-owner bypass as recovery controls for the solo-maintainer 0.11

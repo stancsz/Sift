@@ -53,26 +53,49 @@ python examples/ollama_compaction_demo.py --model qwen3.5:9b
 
 The demo checks that `x-sift-compacted` is true and that the answer includes both `initialDelaySeconds` values, identifies the readiness probe, and says the old delay did not allow enough time. In one local run, `qwen3.5:9b` returned an answer that passed those checks; `qwen3.5:4b` omitted the previous value and gave the wrong reason. This synthetic check illustrates model-dependent behavior, not general answer quality. For your own client, use the OpenAI-compatible URL `http://127.0.0.1:4011/v1` and the model name your backend expects. For another compatible backend, replace `--base-url`; it must accept `POST /v1/chat/completions` and, when protected, standard Bearer authentication. Pass a protected endpoint's key through `--api-key-env ENV_VAR`, with the secret stored in that environment variable.
 
-To try the standalone proxy without installing or calling a model, use the local deterministic fixture. In one terminal, start Sift with the fixture's loopback address:
+#### No-model local setup
+
+To try the standalone proxy without installing or calling a model, use the local deterministic fixture. Run it from a source checkout with its own virtual environment. If you do not have a checkout yet:
 
 ```sh
-python -m sift.cli serve --base-url http://127.0.0.1:4020/v1 --target 2048 --tokenizer byte-estimate
+git clone https://github.com/stancsz/sift.git
+cd sift
 ```
 
-In a second terminal from the source checkout, run:
+**Terminal 1 — from that checkout, Windows PowerShell:**
+
+```powershell
+py -3 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install .
+.\.venv\Scripts\python.exe -m sift.cli serve --base-url http://127.0.0.1:4020/v1 --target 2048 --tokenizer byte-estimate
+```
+
+**Terminal 1 — from that checkout, macOS/Linux:**
 
 ```sh
-python examples/no_inference_compaction_demo.py
+python3 -m venv .venv
+.venv/bin/python -m pip install .
+.venv/bin/python -m sift.cli serve --base-url http://127.0.0.1:4020/v1 --target 2048 --tokenizer byte-estimate
 ```
 
-The script binds a stub backend to `127.0.0.1:4020`, checks whether Sift forwarded the buried rollout setting, and returns a fixed response. It makes no model call and requires no Ollama install. This verifies local request compaction only; it does not test an inference backend or answer quality.
+**Terminal 2 — open the same checkout directory. Windows PowerShell:**
+
+```powershell
+.\.venv\Scripts\python.exe -m examples.no_inference_compaction_demo
+```
+
+**Terminal 2 — macOS/Linux:**
+
+```sh
+.venv/bin/python -m examples.no_inference_compaction_demo
+```
+
+Each command uses the checkout's `.venv` explicitly; activation is not required. The demo runs as a module from the repository root so its example imports resolve. It binds a stub backend to `127.0.0.1:4020`, checks whether Sift forwarded the buried rollout setting, and returns a fixed response. It makes no model call and requires no Ollama install. This verifies local request compaction only; it does not test an inference backend or answer quality.
 
 #### 10-minute first-run task (no model)
 
 1. Open the [Sift homepage](https://stancsz.github.io/sift/) and read the first screen for 20 seconds. Then explain in your own words what Sift keeps exact, what it may select from older history, when it refuses, and what the published result does not prove.
-2. From the repository root, use the no-inference setup above. If you do not have a checkout yet, first run `git clone https://github.com/stancsz/sift.git` and `cd sift`. Then use two terminals:
-   - Terminal 1, start Sift: `python -m sift.cli serve --base-url http://127.0.0.1:4020/v1 --target 2048 --tokenizer byte-estimate` (Windows: `py -3 -m sift.cli serve --base-url http://127.0.0.1:4020/v1 --target 2048 --tokenizer byte-estimate`).
-   - Terminal 2, run the demo: `python examples/no_inference_compaction_demo.py` (Windows: `py -3 examples/no_inference_compaction_demo.py`).
+2. Follow the checkout, virtual-environment and two-terminal fixture commands above for your platform. Keep both terminals in the same checkout directory, using its explicit `.venv` interpreter.
 3. Confirm the demo exits successfully and prints “Sift compacted the request” and “The loopback fixture found the buried setting.” No model is started or called.
 
 After the demo, try this optional comprehension check privately: what stayed exact, what older content was selected, and what condition makes Sift refuse? What did the deterministic fixture not prove? Do not post your answers in the public issue.

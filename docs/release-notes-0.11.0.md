@@ -14,3 +14,15 @@
 The non-publishing rehearsal on October 20, 2026, built a wheel and source distribution, passed strict Twine metadata checks, and installed both archives without optional dependencies. The CLI help smoke passed for both, and each clean environment confirmed LiteLLM was absent. The run uploaded distribution and checksum artifacts; its publish job was skipped, and no PyPI upload occurred. See [the rehearsal run](https://github.com/stancsz/sift/actions/runs/39475341440).
 
 The candidate changes the default selection target from 24,576 in `v0.10.0` to **32,768 estimated input tokens**. Set a target explicitly for your route, leave room for output, and treat the byte estimate as approximate. The source remains a development candidate; do not treat these checks as a stable release or PyPI availability.
+
+The October 21 local verification of source `e19828a` passed **505 tests** on
+Python 3.14.0 in 152.35 seconds. Its nine release-selection/workflow checks
+also passed separately. An isolated snapshot with only its version changed to `0.11.0` built a
+wheel and sdist that passed strict Twine checks. The checkout remains
+`0.11.0.dev0`; these unpublished archives do not establish that the remaining
+quality, adoption or publishing gates have passed.
+
+Independent package QA checked source correspondence, both clean installs and
+dependency-free CLI use. The full-suite count is from the builder's execution
+receipt; the nine release guards also passed independently. See the [local
+packaging result](results/release-candidate-0.11.0-local-2026-10-21.json).
