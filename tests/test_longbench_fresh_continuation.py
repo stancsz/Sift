@@ -205,3 +205,59 @@ def test_completion_usage_over_request_cap_stops_with_known_cost_persisted(
     assert result["accounting"]["continuation_settled_budget_usd"] == pytest.approx(0.000378)
     assert result["accounting"]["continuation_unknown_reserve_usd"] == 0
 
+
+def test_main_claim_and_initial_output_handoff_use_cap_and_block_replay(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    jobs = _jobs()
+    temp_root = tmp_path / "safe-state"
+    temp_root.mkdir()
+    claim_path = temp_root / "continuation.claim.json"
+    output_path = temp_root / "continuation.json"
+    monkeypatch.setattr(continuation, "ROOT", temp_root)
+    monkeypatch.setattr(continuation, "CLAIM_PATH", claim_path)
+    monkeypatch.setattr(continuation, "OUTPUT_PATH", output_path)
+    monkeypatch.setenv("OPENROUTER_API_KEY", "synthetic-only-key")
+
+    monkeypatch.setattr(continuation.fresh, "load_and_validate_fresh_manifest", lambda _path: {})
+    monkeypatch.setattr(continuation, "_load_prefix", lambda: (
+        _prefix(jobs), continuation.PREFIX_SHA256))
+    monkeypatch.setattr(continuation.fresh, "_load_base_and_jobs",
+                        lambda *_args: ({}, jobs, {}))
+    live_route = {"input_usd_per_million": 0.30, "output_usd_per_million": 1.20,
+                  "endpoint_model_id": continuation.legacy.MODEL,
+                  "route_tag": "minimax/fp8", "max_prompt_tokens": 524288}
+    monkeypatch.setattr(continuation.legacy, "live_account_route_preflight",
+                        lambda *_args, **_kwargs: live_route)
+
+    handoffs = 0
+
+    def stop_before_requests(actual_jobs, report, api_key, route):
+        nonlocal handoffs
+        handoffs += 1
+        assert len(actual_jobs) == 2064
+        assert actual_jobs[23]["case_id"] == jobs[23]["case_id"]
+        assert api_key == "synthetic-only-key"
+        assert route is live_route
+        assert report["spend_cap_usd"] == 100.0
+        assert claim_path.is_file()
+        assert output_path.is_file()
+        assert json.loads(claim_path.read_text(encoding="utf-8"))["spend_cap_usd"] == 100.0
+        initial = json.loads(output_path.read_text(encoding="utf-8"))
+        assert initial["status"] == "claimed_no_request_yet"
+        assert initial["actual_dispatch_started"] is False
+        assert initial["spend_cap_usd"] == 100.0
+        return {"status": "completed", "attempts": [], "accounting": {}}
+
+    monkeypatch.setattr(continuation, "dispatch_remaining", stop_before_requests)
+    args = ["--dataset", "synthetic-data", "--tokenizer", "synthetic-tokenizer",
+            "--template", "synthetic-template", "--dispatch", "--spend-cap-usd", "100",
+            "--confirm-no-unsettled-requests", "--assume-none-if-prior-reports-missing",
+            "--authorize-unverified-provider-billing"]
+    assert continuation.main(args) == 0
+    capsys.readouterr()
+    assert handoffs == 1
+
+    with pytest.raises(continuation.ContinuationError, match="already exists"):
+        continuation.main(args)
+    assert handoffs == 1
+

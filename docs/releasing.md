@@ -6,6 +6,15 @@ The [draft 0.11.0 release notes](release-notes-0.11.0.md) summarize the shipped
 features, measured trade-off and completed package rehearsal for the publishing
 decision. They are unpublished and do not announce PyPI availability.
 
+**Control disposition (2026-10-21):** Under the standing release mandate, the
+coordinator accepted the verified sole-reviewer self-approval, environment admin
+bypass and tag-owner bypass as recovery controls for the solo-maintainer 0.11
+process. An independent read-only review confirmed this resolves the documented
+accept-or-change decision. No settings changed; these controls do not provide
+independent human approval. Protected-main checks, stable tag/version/ancestry
+validation, full release checks and authenticated PyPI publisher verification
+remain required. This disposition does not resolve the quality or adoption gates.
+
 ## One-time PyPI setup
 
 The `sift-context` project does not exist on PyPI yet. Configure a pending Trusted Publisher for its first upload with:

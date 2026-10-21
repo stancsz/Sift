@@ -1,9 +1,9 @@
-"""Exercise LongMemEval's pinned prompt-building path with synthetic images only.
+"""Exercise the pinned LongMemEval prompt path with synthetic images only.
 
-This is a smoke check, not an evaluation. It calls the upstream
-``build_prompt_row`` from a separately checked out harness source file, while
-stubbing upstream registry/scoring imports and processor token counting.
-It never loads benchmark data or calls a model.
+This bounded smoke calls upstream ``build_prompt_row`` and the actual pinned
+Qwen reader processor on generated fixtures. It stubs unused registry/scoring
+imports only. It loads tokenizer/processor metadata, never model weights or
+benchmark data, and never calls a model.
 """
 
 from __future__ import annotations
@@ -12,6 +12,7 @@ import argparse
 import base64
 import hashlib
 import importlib.util
+import os
 import pathlib
 import struct
 import sys
@@ -20,6 +21,18 @@ import types
 import zlib
 
 PINNED_HARNESS_GIT_BLOB = "6a7182440a2cdd3ace6286dd966f7953fc383e8e"
+READER_MODEL = "Qwen/Qwen3.5-9B"
+READER_REVISION = "c202236235762e1c871ad0ccb60c8ee5ba337b9a"
+READER_METADATA_SHA256 = {
+    "chat_template.jinja": "a4aee8afcf2e0711942cf848899be66016f8d14a889ff9ede07bca099c28f715",
+    "config.json": "d0883072e01861ed0b2d47be3c16c36a8e81c224c7ffaa310c6558fb3f932b05",
+    "merges.txt": "a9d356d7bdf1ef4949e3e748e95b8e10ad9d4e2e838eddc38a0a7b6b94d1db8d",
+    "preprocessor_config.json": "27225450ac9c6529872ee1924fcb0962ff5634834f817040f444118116f4e516",
+    "tokenizer.json": "5f9e4d4901a92b997e463c1f46055088b6cca5ca61a6522d1b9f64c4bb81cb42",
+    "tokenizer_config.json": "316230d6a809701f4db5ea8f8fc862bc3a6f3229c937c174e674ff3ca0a64ac8",
+    "video_preprocessor_config.json": "7768af27c1fafa9cc9011c1dc20067e03f8915e03b63504550e11d5066986d13",
+    "vocab.json": "ce99b4cb2983d118806ce0a8b777a35b093e2000a503ebde25853284c9dfa003",
+}
 
 
 def _png_chunk(kind: bytes, data: bytes) -> bytes:
@@ -27,11 +40,11 @@ def _png_chunk(kind: bytes, data: bytes) -> bytes:
     return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", crc)
 
 
-def _one_pixel_png() -> bytes:
+def _tiny_png() -> bytes:
     return (
         b"\x89PNG\r\n\x1a\n"
-        + _png_chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0))
-        + _png_chunk(b"IDAT", zlib.compress(b"\x00\x20\x40\x60"))
+        + _png_chunk(b"IHDR", struct.pack(">IIBBBBB", 2, 1, 8, 2, 0, 0, 0))
+        + _png_chunk(b"IDAT", zlib.compress(b"\x00\x20\x40\x60\x80\xa0\xc0"))
         + _png_chunk(b"IEND", b"")
     )
 
@@ -101,11 +114,39 @@ def _load_harness(path: pathlib.Path):
     return harness
 
 
+def _verify_reader_metadata(path: pathlib.Path) -> None:
+    if not path.is_dir():
+        raise SystemExit(f"Pinned reader metadata directory is missing: {path}")
+    visible_files = {item.name for item in path.iterdir() if item.is_file() and not item.name.startswith(".")}
+    if visible_files != set(READER_METADATA_SHA256):
+        raise SystemExit("Reader snapshot must contain only the eight pinned processor/tokenizer metadata files")
+    for name, expected in READER_METADATA_SHA256.items():
+        digest = hashlib.sha256((path / name).read_bytes()).hexdigest()
+        if digest != expected:
+            raise SystemExit(f"Pinned reader metadata hash mismatch: {name}")
+    if any(any(path.rglob(pattern)) for pattern in ("*.safetensors", "*.bin", "*.pt", "*.gguf")):
+        raise SystemExit("Reader snapshot unexpectedly contains model weights")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("harness", type=pathlib.Path, help="path to pinned evaluation/harness.py")
+    parser.add_argument(
+        "--processor-dir",
+        type=pathlib.Path,
+        help="local metadata-only snapshot of the pinned official Qwen reader processor",
+    )
     args = parser.parse_args()
     root = pathlib.Path(__file__).resolve().parents[1]
+    scratch = root / "tmp" / "longmemeval-synthetic-harness"
+    processor_dir = args.processor_dir or scratch / f"qwen3.5-9b-{READER_REVISION}"
+    _verify_reader_metadata(processor_dir)
+    # Keep all Hugging Face state in the bounded scratch directory and ensure
+    # the actual processor load cannot reach the network or fetch model weights.
+    os.environ["HF_HOME"] = str(scratch / "hf-cache")
+    os.environ["HF_HUB_OFFLINE"] = "1"
+    os.environ["TRANSFORMERS_OFFLINE"] = "1"
+    sys.path.insert(0, str(scratch / "site-packages"))
     sys.path.insert(0, str(root))
 
     try:
@@ -113,28 +154,19 @@ def main() -> None:
     except ImportError as exc:
         raise SystemExit("Pillow is required to decode the synthetic screenshot fixtures") from exc
 
+    try:
+        from transformers import AutoProcessor
+    except ImportError as exc:
+        raise SystemExit("The existing transformers runtime is required; this smoke installs nothing") from exc
+    processor = AutoProcessor.from_pretrained(str(processor_dir), local_files_only=True)
     harness = _load_harness(args.harness)
-
-    class TokenIds:
-        shape = (1, 1)
-
-    class Processor:
-        def apply_chat_template(self, messages, **kwargs):
-            assert kwargs == {"tokenize": False, "add_generation_prompt": False}
-            assert messages and messages[0]["role"] == "user"
-            return "synthetic-only token counter input"
-
-        def __call__(self, *, text, images, return_tensors):
-            assert text == "synthetic-only token counter input"
-            assert images and all(image.mode == "RGB" for image in images)
-            assert return_tensors == "pt"
-            return {"input_ids": TokenIds()}
-
-    harness.get_memory_context_processor = lambda: Processor()
+    harness.get_memory_context_processor = lambda: processor
     from benchmarks.longmemeval_v2_sift_adapter import SiftMemory
 
-    image_bytes = _one_pixel_png()
-    with tempfile.TemporaryDirectory(prefix="sift-longmemeval-smoke-") as temp_dir:
+    image_bytes = _tiny_png()
+    fixture_root = scratch / "fixtures"
+    fixture_root.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="sift-longmemeval-smoke-", dir=fixture_root) as temp_dir:
         fixture_dir = pathlib.Path(temp_dir)
         state_image = fixture_dir / "state.png"
         question_image = fixture_dir / "question.png"
@@ -176,9 +208,15 @@ def main() -> None:
             system_prompt="Synthetic test only. Do not call a model.",
             memory_context_max_tokens=4096,
         )
+        actual_count = harness.count_memory_context_tokens(
+            row["memory_context"],
+            harness.load_memory_context_images(row["memory_context"]),
+        )
 
     assert row["memory_context"]
-    assert row["memory_context_token_count"] == 1
+    assert row["memory_context_token_count"] == actual_count
+    assert row["memory_context_token_count"] > 1
+    assert row["memory_context_original_token_count"] == actual_count
     assert "25 seconds" in row["memory_context"][0]["value"]
     user_content = row["messages"][1]["content"]
     image_parts = [part for part in user_content if part.get("type") == "image_url"]
@@ -190,7 +228,8 @@ def main() -> None:
         "image_path": str(question_image),
     }
     print("pinned_official_harness_prompt_build=PASS")
-    print("synthetic_images=2; context_token_counter=stubbed; model_calls=0; benchmark_data=0")
+    print(f"reader_processor={READER_MODEL}@{READER_REVISION}; processor_class={type(processor).__name__}")
+    print(f"reader_context_tokens={actual_count}; synthetic_images=2; model_weights=0; model_calls=0; benchmark_data=0")
 
 
 if __name__ == "__main__":
