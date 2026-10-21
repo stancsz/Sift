@@ -7,6 +7,47 @@ usage or LiteLLM's per-request spend logs for the billable totals. Sift's
 estimated token counts are useful for its input limit, but are not a provider
 invoice.
 
+## Recorded LongBench cost
+
+The completed 344-question study used three repeats per arm. Its published
+aggregate records the following successful-request usage and cost:
+
+| | Without Sift | With Sift | Total |
+|---|---:|---:|---:|
+| Provider prompt tokens | 66,007,295 | 26,628,470 | 92,635,765 |
+| Recorded usage-receipt cost | $8.94 | $3.69 | **$12.63** |
+| Our uncached input-only calculation | $19.80 | $7.99 | **$27.79** |
+
+Our calculation is `prompt tokens × $0.30 / 1,000,000`, using the dated
+MiniMax route price. It excludes output tokens because the published aggregate
+does not contain their total. The lower receipt costs reflect the provider's
+cache-sensitive accounting. See the [published aggregate](results/longbench-v2-minimax-344-aggregate-2026-10-20.json)
+and [rate snapshot](evals/longbench-v2-openrouter-minimax-m3-endpoints-2026-10-20T1651Z.json).
+
+The six selected tracked experiments below report **$35.96** in usage-receipt
+costs altogether. This subtotal covers these experiments, rather than every
+project call or an account invoice; shared benchmark questions are separate
+requests in separately scheduled runs.
+
+| Experiment | Recorded cost |
+|---|---:|
+| [344 questions, three repeats per arm](results/longbench-v2-minimax-344-aggregate-2026-10-20.json) | $12.63 |
+| [100 questions, 600 receipt-backed requests](results/longbench-v2-minimax-600-2026-10-17.json) | $4.52 |
+| [503-question incomplete run, all valid receipts](results/longbench-v2-minimax-m3-fullsuite-progress-2026-10-17.md) | $18.08 |
+| [Field-pruning pilot, 36 requests](evals/longbench-v2-field-pruning-pilot-2026-10-17.md) | $0.11 |
+| [Initial screen, 48 requests](evals/longbench-v2-minimax-m3-results-2026-10-16.md) | $0.51 |
+| [Relation-binding study, 36 fresh requests](evals/longbench-v2-minimax-relation-stage1-v3-analysis-corrected-2026-10-17.md) | $0.11 |
+| **Selected study subtotal** | **$35.96** |
+
+The 503-run matched-pair subset and reused historical baselines are already
+inside their parent records and are not added again. Subscription probes priced
+at illustrative API rates are excluded from this spend subtotal.
+
+Separately, $2.05 is reserved for 13 historical requests without usage receipts;
+that reserve is not counted as money spent. The newly authorized 344 × 3 × 2
+run has a $41.87 conservative schedule estimate and a $100 client cap. Account
+balances and invoice reconciliation are not needed for these calculations.
+
 ## Synthetic retrieval probe: 950K-token archive
 
 We compacted one synthetic archive with Sift and sent the resulting request

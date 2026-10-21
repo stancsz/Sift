@@ -2,6 +2,10 @@
 
 Sift is not yet published to PyPI. The `0.11.0.dev0` source remains a preview until its quality, compatibility, and adoption gates in the [roadmap](../ROADMAP.md) are resolved.
 
+The [draft 0.11.0 release notes](release-notes-0.11.0.md) summarize the shipped
+features, measured trade-off and completed package rehearsal for the publishing
+decision. They are unpublished and do not announce PyPI availability.
+
 ## One-time PyPI setup
 
 The `sift-context` project does not exist on PyPI yet. Configure a pending Trusted Publisher for its first upload with:
