@@ -50,7 +50,7 @@ Independent review passed **39 focused tests**, strict-type/alias/collision prob
 python -m pytest tests/test_longmemeval_v2_minimax_request_policy.py -q
 ```
 
-This closes request construction only. The helper creates no SDK/HTTP client and does not validate endpoint acceptance, live token limits, returned usage, budget or authorization. Actual transport/receipt enforcement and remaining full harness/file/scoring integration are still required before freezing a public-run protocol. This does not establish full harness compatibility, official leaderboard compatibility, real endpoint acceptance, or quality.
+This closes request construction only. That pure helper creates no SDK/HTTP client and does not validate endpoint acceptance, live token limits, returned usage, budget or authorization. The generated main and optional transport probes below cover additional bounded paths; they do not establish full harness compatibility, official leaderboard compatibility, real endpoint acceptance, or quality.
 
 ### Generated main, file and deterministic-scoring flows (2026-10-21)
 
@@ -93,14 +93,56 @@ truthfully returned the missing-Agents-SDK diagnostic with exit 2.
 No source/data/package download or inference occurs in this command. External
 connections are blocked by the probe. This closes these generated sequential
 file/main/scoring paths only; parallel mode, save/load, LLM judges, real data,
-provider transport and endpoint usage enforcement remain unverified.
+real-provider endpoint acceptance and usage remain unverified.
+
+### Optional SDK transport and returned-usage checks (2026-10-21)
+
+`benchmarks/longmemeval_v2_minimax_transport.py` provides an optional explicit
+client factory with the upstream `chat.completions.create`/`close` surface. SDK
+imports are lazy. It pins the external destination to OpenRouter, disables SDK
+retries and HTTP redirects, and applies the existing model/provider request
+policy. Test mode accepts only a literal loopback URL and public fixture key.
+Strict raw JSON checks precede SDK coercion, enforcing the returned model,
+provider, text-response shape and caller-declared integer usage caps.
+
+The helper computes an uncached Decimal token-rate estimate using the dated
+rate snapshot. Optional `usage.cost` and
+`usage.cost_details.upstream_inference_cost` are recorded separately; they are
+never combined into a reported total. Missing/null amounts stay unknown, so
+they do not gate our own calculation. This follows the [official response
+example](https://openrouter.ai/docs/api/api-reference/chat/create-a-chat-completion),
+which includes a null upstream cost. The fields have distinct meanings in
+[OpenRouter's usage reference](https://openrouter.ai/docs/cookbook/administration/usage-accounting).
+No account or invoice lookup occurs.
+
+Actual installed OpenAI SDK versions 2.54.0 and 3.36.0 were exercised against
+generated local HTTP responses, including request serialization, optional
+costs, malformed JSON/usage, redirects/errors, disconnects and cancellation.
+After a dispatched failure, the wrapper stops further calls and closes its
+owned SDK; this also covers the pinned upstream's missing failure-path cleanup.
+Queued re-entry cannot send another request through that stopped client.
+The fixture usage and costs are synthetic, not MiniMax results or receipts.
+
+Independent review checked both SDK versions, the nullable-cost extension and
+additional malformed-response, queued-call, cancellation and cleanup cases.
+It also called the actual pinned upstream reader helper through SDK 3.36 to a
+loopback fixture, verifying all 17 source pins and the real registry imports.
+The development policy/transport suite has 52 checks per SDK version. See the
+[structured transport result](../results/longmemeval-v2-minimax-transport-2026-10-21.json)
+for the exact verification scope.
+
+This is per-request enforcement. Creating another client bypasses its local
+failure latch; it is not a persistent run claim, aggregate budget, dispatch
+authorization or real endpoint acceptance check. The factory creates no
+automatic dispatch entrypoint. A prospective public run still requires a
+frozen protocol, live route/rate review and separately authorized numeric cap.
 
 ## Known gaps and next gate
 
 - **Access-rights screen (2026-10-20):** The official GitHub repository carries an Apache-2.0 license, and the official Hugging Face dataset card declares the data Apache-2.0. This records the maintainers' published license and supports planning only; it does not authorize data access/use or establish rights in embedded third-party web screenshots. No data has been downloaded. [Repository license](https://github.com/xiaowu0162/LongMemEval-V2/blob/main/LICENSE) · [Dataset card](https://huggingface.co/datasets/xiaowu0162/longmemeval-v2)
 - The pinned trajectory preparer requires a non-empty screenshot path for every state. The smoke confirms image decoding and prompt handoff for synthetic fixtures only; it does not validate real dataset paths or image-dependent answer coverage. The benchmark publishes its questions and trajectories, so any eventual run is a public-benchmark reproduction, not evidence of generalization to a blind set.
 - The upstream trajectories contain screenshot paths. This prototype associates images with selected text-bearing states, but Sift ranks text only and may miss image-only evidence. A future full-data trial must fail or report unsupported image-dependent cases explicitly; it must not silently drop them.
-- The adapter uses an approximate size counter, not the reader tokenizer. The prompt-building helper and generated main flows now use the real reader processor downstream. Real-data truncation/normalization, parallel mode, LLM judging, actual transport/receipt enforcement, latency, cost and task accuracy remain unverified; generated deterministic scoring does not establish those capabilities.
+- The adapter uses an approximate size counter, not the reader tokenizer. The prompt-building helper and generated main flows now use the real reader processor downstream. Real-data truncation/normalization, parallel mode, LLM judging, real-endpoint acceptance/usage, trial-wide budget enforcement, latency, cost and task accuracy remain unverified; generated deterministic scoring and local SDK transport checks do not establish those capabilities.
 - LongMemEval-V2's leaderboard validator requires its documented Qwen reader and GPT judge. A MiniMax-M3 run would be a local reproduction and requires a separate numeric spend cap; the current $100 authorization covers fresh LongBench, not LongMemEval.
 - AppWorld and GAIA remain uncleared for a paired, independently controlled held-out run. A credible agent-task holdout still needs a prospectively fixed task set and an independent custodian/evaluator boundary.
 

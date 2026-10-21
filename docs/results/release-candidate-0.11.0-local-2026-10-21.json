@@ -1,0 +1,106 @@
+{
+  "schema": "sift.local_release_candidate.v1",
+  "status": "independently_checked_unpublished_local_packaging_candidate",
+  "source_commit": "e19828a40a3dbbeb652bcdc7bd2fedade5fefd16",
+  "checkout_version": "0.11.0.dev0",
+  "isolated_snapshot_version": "0.11.0",
+  "build_inputs": [
+    "pyproject.toml",
+    "README.md",
+    "LICENSE",
+    "src/**",
+    "tests/**"
+  ],
+  "snapshot_changes": [
+    "pyproject.toml project.version only"
+  ],
+  "src_test_files_verified_against_git_blobs": 62,
+  "src_test_content_changes_from_checkout": 0,
+  "src_test_hash_manifest_sha256": "57cbea88d503404cf80a1325d6f137f72ee48bcf810eb093671ec6fb1c393715",
+  "candidate_inputs_archive_sha256": "d39ee4c8e4bfd274758b5daa23c7a42b5d900c6e038d7d1f336b51e18ea31caa",
+  "tools": {
+    "build": "1.5.0",
+    "setuptools": "82.0.1",
+    "wheel": "0.47.0",
+    "twine": "7.0.0",
+    "packaging": "26.3",
+    "pip": "25.2"
+  },
+  "artifacts": [
+    {
+      "file": "sift_context-0.11.0-py3-none-any.whl",
+      "bytes": 50255,
+      "sha256": "5b0bbb89ea7e87946d0b802b254b0f3722b15f05acd11439d92808ed6ad95a6e"
+    },
+    {
+      "file": "sift_context-0.11.0.tar.gz",
+      "bytes": 158048,
+      "sha256": "b9b76509a015f41b3594f6c590275f8eef1fcd999a1348f083202d4c8e6e6b62"
+    }
+  ],
+  "local_verification": {
+    "python": "3.14.0",
+    "focused_release_selection_and_workflow": {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_release_selection.py -q",
+      "passed": 9,
+      "seconds": 0.1,
+      "evidence": "Builder pytest stdout; wrapper later failed on an unrelated tool-availability probe. Independent focused rerun passed with exit 0."
+    },
+    "full_checkout_suite": {
+      "command": ".venv/Scripts/python.exe -m pytest -q",
+      "passed": 505,
+      "warnings": 18,
+      "seconds": 152.35,
+      "warnings_scope": "Third-party Pydantic/LiteLLM warnings",
+      "evidence": "Builder terminal execution receipt: exit 0; copied terminal excerpt retained, complete raw stdout not retained; not independently rerun."
+    },
+    "build": {
+      "command": "tools/Scripts/python.exe -m build --no-isolation --outdir dist source",
+      "wheel_and_sdist": "passed",
+      "source": "exact pinned Git blob inputs; isolated pyproject version edit only"
+    },
+    "twine_strict_check": {
+      "artifacts": 2,
+      "passed": 2,
+      "command": "tools/Scripts/python.exe -m twine check --strict dist/sift_context-0.11.0-py3-none-any.whl dist/sift_context-0.11.0.tar.gz"
+    },
+    "focused_checks_are_subset_of_full_suite": true
+  },
+  "limits": [
+    "The full suite ran on the development checkout, not the isolated stable-version snapshot.",
+    "Only declared tracked build inputs were copied, not the entire repository.",
+    "Local artifacts were not uploaded; no Git tag, PyPI package or GitHub release was created.",
+    "This does not validate hosted stable-tag/OIDC publication or resolve quality, adoption or publisher gates."
+  ],
+  "independent_acceptance": {
+    "status": "READY_for_isolated_unpublished_packaging_scope",
+    "provenance": "65 scoped build inputs checked against e19828a Git bytes; version-line-only candidate difference",
+    "package_checks": [
+      "wheel and sdist hashes/metadata/source correspondence",
+      "clean no-extras wheel install",
+      "clean no-extras sdist build/install",
+      "installed sift serve --help",
+      "offline compact 12465 to 3887 estimated tokens under4096",
+      "active request preserved; undersized targets rejected",
+      "LiteLLM/OpenAI/pytest/requests absent at runtime",
+      "static stable-tag/version/main/dry-run release guards"
+    ],
+    "full_suite_evidence": "builder tool-receipt references and copied terminal excerpts reviewed; not independently rerun or reopened as raw full logs",
+    "independent_focused_release_guards": {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_release_selection.py -q",
+      "exit_code": 0,
+      "stdout_sha256": "edea1fe2e925f38d64cba1ee0f8ba3f25b2723ff28e7e65063c9b7b3e2414e63",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": ".........                                                                [100%]\n9 passed in 0.06s",
+      "scope": "focused local release guards only; not a full-suite rerun"
+    },
+    "provider_requests": 0,
+    "limits": [
+      "no stable-tag/OIDC/publisher exercise",
+      "not stable release acceptance",
+      "quality/adoption/publisher gates remain open",
+      "checkout remains0.11.0.dev0",
+      "all installs only in QA scratch"
+    ]
+  }
+}

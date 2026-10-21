@@ -18,9 +18,9 @@ Where do first-time developers get stuck or misunderstand what Sift does, and wh
 
 ## Materials and setup
 
-- Use the merged main source at `76f3baf8ad71a7259fd97c34ba0059ac2ce31a27` for the standalone CLI and fixture, and freeze the exact README/site instructions shown to participants. Record the commit SHA, operating system, Python version, and install time. Do not collect Ollama/model details because no model is used.
+- Use a merged source revision containing the checkout-local virtual-environment and module-invocation instructions below (runtime/package baseline `e19828a40a3dbbeb652bcdc7bd2fedade5fefd16`). Before any session, freeze the exact source commit and README/site revisions shown to that participant. Record the commit SHA, operating system, Python version, and install time. Do not collect Ollama/model details because no model is used.
 - **Reviewed homepage screen:** `https://stancsz.github.io/sift/`, deployed Pages source commit `76f3baf8ad71a7259fd97c34ba0059ac2ce31a27`, rendered at 1280×800 and 390×844 CSS pixels on 2026-10-20. Sol's image-backed final review and an independent mobile review cleared the screen: the headline names long agent histories, the mechanism and caveat are visible, and the first-screen evidence pairs 59.66% fewer provider prompt tokens with a −5.25 pp task-majority score vs Full, sample counts, and exposed-question limitations. The “Try it locally” action and trust row fit on mobile. Live mobile layout has no horizontal overflow. This is the screen frozen for the 20-second comprehension task. If any page file changes before a session, review the new rendered revision before showing it.
-- Use the documented LiteLLM-free command and `examples/no_inference_compaction_demo.py` from the repository root. If the participant has no checkout, first have them run `git clone https://github.com/stancsz/sift.git` and `cd sift`. In terminal 1, run `python -m sift.cli serve --base-url http://127.0.0.1:4020/v1 --target 2048 --tokenizer byte-estimate` (Windows: `py -3 -m sift.cli serve --base-url http://127.0.0.1:4020/v1 --target 2048 --tokenizer byte-estimate`). In terminal 2, run `python examples/no_inference_compaction_demo.py` (Windows: `py -3 examples/no_inference_compaction_demo.py`). It binds a deterministic stub to loopback, confirms whether the buried deployment setting survived compaction, and returns fixed text. A successful run prints that Sift compacted the request and that the fixture found the buried setting. This checks the actual Sift request path without model inference; it is not evidence of general answer quality or Ollama compatibility. Participants may read the Ollama instructions, but must not run an Ollama request.
+- Use the [README's platform-specific no-inference setup](../../README.md#no-model-local-setup): clone if needed, create/install the checkout-local `.venv`, and use that explicit interpreter in both terminals without activation. Start `sift.cli serve` in terminal 1 and run `-m examples.no_inference_compaction_demo` from the same repository root in terminal 2. This avoids relying on a globally installed Sift or incidental import paths. The fixture binds to loopback, checks whether the buried deployment setting survived compaction, and returns fixed text. A successful run prints that Sift compacted the request and that the fixture found the buried setting. This checks the actual Sift request path without model inference; it is not evidence of general answer quality or Ollama compatibility. Participants may read the Ollama instructions, but must not run an Ollama request.
 - Reset to a clean local environment for each session where practical. Record setup failures separately from Sift behavior and do not silently help one participant through a blocker that others must solve alone.
 - Obtain consent to take notes. Do not audio/video record unless separately agreed.
 
@@ -45,12 +45,23 @@ For each session, record only:
 
 Do not retain raw session prompts or any identifying notes. Summarize internal results using structured marks and paraphrased themes with participant counts; report all three denominators, including incomplete sessions. Never record verbatim explanations or publish individual rows. With only three participants, publish group-level results only when the summary cannot reasonably identify anyone; otherwise keep it internal unless each participant separately opts in to publication of an anonymized aggregate.
 
+## Engineering verification
+
+**Engineering check (2026-10-21):** An independent fresh Windows environment
+verified the revised README sequence without activation, global Sift or
+inherited Python paths. The previous direct-script invocation failed on its
+example import; the documented module invocation passed the real proxy and
+deterministic fixture, reducing 4,613 estimated units to 1,982 while retaining
+the buried setting. POSIX instructions received text review only. This is
+engineering verification, not a volunteer session or adoption result. See the
+[scoped result](../results/no-inference-first-run-2026-10-21.json).
+
 ## Decision rules
 
 - A blocker or misunderstanding repeated by at least two of the first three participants is a must-fix candidate. Reproduce it locally, repair it, and rerun the affected step with an independent reviewer before broadening distribution.
-- A single failure within ten minutes is a signal to inspect setup conditions and instructions, not an automatic product failure; the small sample and local model downloads can dominate elapsed time.
+- A single failure within ten minutes is a signal to inspect setup conditions and instructions, not an automatic product failure; the small sample and Python, virtual-environment, or package setup can dominate elapsed time.
 - If two or more participants independently explain the core benefit correctly and complete the no-inference demo, treat that as evidence that the tested onboarding and compaction path work for this small recruited sample only. It is not adoption, model quality, cost savings, Ollama compatibility, or general usability proof.
-- If results split or setup conditions differ materially, run up to two additional sessions only after reviewing the discrepancy; preserve the initial three-session results and explain the selection.
+- If results split or setup conditions differ materially, preserve the results and review the discrepancy. The current authorization is at most three sessions total; any additional sessions require separate authorization before recruitment or execution.
 - Do not change product positioning based on praise or hypothetical intent alone. Look for a specific workflow where the retained context changes what the participant would ask the downstream agent to do next.
 
 ## Report and next action

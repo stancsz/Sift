@@ -1,0 +1,51 @@
+{
+  "schema": "sift.longmemeval.minimax_transport.v1",
+  "status": "independently_verified_optional_sdk_loopback_contract",
+  "model": "minimax/minimax-m3",
+  "sdk_versions": [
+    "2.54.0",
+    "3.36.0"
+  ],
+  "httpx_version": "0.28.1",
+  "development_combined_policy_transport_tests": {
+    "per_sdk_passed": 52,
+    "existing_policy_tests": 39,
+    "new_transport_methods": 13
+  },
+  "independent_checks": {
+    "baseline_per_sdk_passed": 51,
+    "final_nullable_method_per_sdk_passed": 1,
+    "additional_strict_raw_json_type_cases": 4,
+    "additional_null_unknown_cost_shapes": 3,
+    "queued_calls_after_invalid_response": 8,
+    "wire_requests_before_failure_latch": 1,
+    "cleanup_and_cancellation_probes": "passed",
+    "actual_pinned_upstream_reader_to_sdk336_loopback": "passed",
+    "upstream_source_files_hash_verified": 17,
+    "real_registry_backend_count": 6,
+    "optional_import_without_sdk_or_httpx": "passed"
+  },
+  "cost_basis": {
+    "primary": "Own uncached Decimal arithmetic from returned token counts and caller rates; default dated 2026-10-20 snapshot.",
+    "openrouter_optional_field": "usage.cost",
+    "upstream_optional_field": "usage.cost_details.upstream_inference_cost",
+    "missing_or_null_optional_amounts": "unknown, not zero",
+    "reported_fields_combined": false
+  },
+  "provider_inference_requests": 0,
+  "fixture_scope": "Generated local HTTP responses; synthetic usage/costs are not provider receipts.",
+  "limits": [
+    "No real OpenRouter/MiniMax endpoint acceptance or provider attestation.",
+    "Per-request caller caps and per-client failure latch only; new clients bypass that latch.",
+    "No persistent run claim, aggregate budget, dispatch authorization or full benchmark runner integration.",
+    "No benchmark data, model weights or quality result."
+  ],
+  "reviewed_working_file_sha256": {
+    "helper": "a5fa07044bf8ab9c9a4d338196fbb38d0a63419169708f2bcbb6ee6167e468df",
+    "test": "ab332488cfecff2724ce1bfcc940d12a16182b09985b128ec8c0ec80a4eeb5fa"
+  },
+  "git_blob_content_sha256": {
+    "helper": "a5fa07044bf8ab9c9a4d338196fbb38d0a63419169708f2bcbb6ee6167e468df",
+    "test": "ab332488cfecff2724ce1bfcc940d12a16182b09985b128ec8c0ec80a4eeb5fa"
+  }
+}
