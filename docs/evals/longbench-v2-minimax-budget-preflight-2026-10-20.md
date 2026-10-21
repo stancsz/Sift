@@ -1,5 +1,11 @@
 # MiniMax LongBench budget preflight — 2026-10-20
 
+## Current instruction and execution — 2026-10-21
+
+The user said: “I don't need you to do real account calculation. I just need you to summarize the money spent, that's it, and using our own calculation. Unblock the goal as much as possible.” This supersedes the earlier verify-coverage-first choice. Balance verification, account login and invoice reconciliation are no longer evaluation gates. Report token counts and rate arithmetic, keeping recorded receipt costs distinct from estimated or reserved amounts.
+
+The goal is active. The existing fresh runner supports this instruction with `--authorize-unverified-provider-billing`; an independent read-only review confirmed no code change is required. The new schedule reserve is $41.86563525, plus the retained $2.0457216 historical unknown-outcome reserve, for $43.91135685 within the separately authorized $100 cap. Fixed claim and output paths were absent and no other local LongBench runner was live before launch. One process was launched as exec session `22523`, with the existing missing-report assumption, no-unsettled confirmation and live route/price checks. Its launch alone does not establish any completed model requests; poll the actual handle and retain its terminal result. Do not start another dispatch while it is running or replay the one-use claim. Historical gate notes below describe earlier instructions.
+
 ## Authorization and requested scope
 
 The user separately authorized up to **$100 USD** for a fresh LongBench-v2 cohort of 344 questions, three repeats in each of two arms (2,064 requests). This cap applies to the new run; historical spend and unknown-attempt reserves from the completed study remain separately recorded. The user also authorized up to three inference-free opt-in first-run sessions. No participant contact has occurred.
