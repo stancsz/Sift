@@ -2,7 +2,24 @@
 
 Read-only audit of current repository and public package state after PR #20 merged. No settings were changed and no release or PyPI upload was attempted.
 
-## Findings
+## Current control disposition — 2026-10-21
+
+Authenticated GitHub rechecks after PR #48 confirmed that `main` requires a PR
+and Core smoke with admin enforcement, linear history and no force push/deletion;
+the `pypi` environment permits its sole reviewer to self-approve and admins to
+bypass; and tag ruleset `25458147` retains the owner's `always` bypass. No settings
+were changed.
+
+The coordinator accepts those recovery paths for the solo-maintainer 0.11
+process under the user's standing release mandate. Independent read-only review
+confirmed that this resolves goal action 3's explicit choice to accept or change
+the controls. It does not establish independent human approval. The exact stable
+tag/version/main-ancestry checks, full release verification and authenticated
+pending Trusted Publisher check remain required. Quality, compatibility and
+adoption disposition remain open. Older unresolved-control wording below is
+historical and superseded by this decision; the factual bypass caveats remain.
+
+## Initial findings
 
 | Control | Result | Evidence |
 |---|---|---|

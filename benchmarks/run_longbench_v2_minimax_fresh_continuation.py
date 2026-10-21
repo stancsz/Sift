@@ -453,7 +453,8 @@ def main(argv: list[str] | None = None) -> int:
                "stopped_request_reserve_usd": PREFIX_UNKNOWN_RESERVE_USD,
                "remaining_jobs": len(remaining),
                "remaining_worst_case_reserve_usd": round(remaining_cost, 8),
-               "cap_usd": cap, "total_coverage_usd": round(total_coverage, 8),
+               "cap_usd": cap, "spend_cap_usd": cap,
+               "total_coverage_usd": round(total_coverage, 8),
                "manifest_canonical_sha256": fresh.FRESH_MANIFEST_CANONICAL_SHA256,
                "fixed_output": OUTPUT_PATH.relative_to(ROOT).as_posix()}
     if not args.dispatch:
