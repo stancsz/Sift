@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 import sys
 import subprocess
+import shutil
 
 import pytest
 
@@ -305,8 +306,7 @@ def test_cli_writes_only_aggregate_and_refuses_overwrite(evidence: list[dict], t
         analyzer.main(args)
 
 
-def test_real_tracked_manifest_pins_and_order_are_self_consistent() -> None:
-    root = Path(__file__).resolve().parents[1]
+def _assert_real_manifest_pins_and_order(root: Path) -> None:
     fresh = json.loads((root / "docs/evals/longbench-v2-minimax-fresh-344-manifest-2026-10-20.json").read_bytes())
     base_bytes = (root / "docs/evals/longbench-v2-minimax-344-manifest-current-main-2026-10-20.json").read_bytes()
     base = json.loads(base_bytes)
@@ -315,6 +315,67 @@ def test_real_tracked_manifest_pins_and_order_are_self_consistent() -> None:
     assert analyzer.paired.canonical_hash(base["jobs"]) == analyzer.SCHEDULE_SHA
     assert len(base["jobs"]) == 2064
     assert len(base["cases"]) == 344
+
+
+def test_real_tracked_manifest_pins_and_order_are_self_consistent() -> None:
+    _assert_real_manifest_pins_and_order(Path(__file__).resolve().parents[1])
+
+
+@pytest.mark.parametrize("autocrlf", ["false", "true"])
+def test_frozen_manifest_checkout_pin_is_independent_of_autocrlf(tmp_path: Path, autocrlf: str) -> None:
+    """Exercise Git checkout conversion on this host; not an OS-emulation test."""
+    if shutil.which("git") is None:
+        pytest.skip("Git is required for the checkout materialization regression")
+    root = Path(__file__).resolve().parents[1]
+    relative = "docs/evals/longbench-v2-minimax-344-manifest-current-main-2026-10-20.json"
+    fresh_relative = "docs/evals/longbench-v2-minimax-fresh-344-manifest-2026-10-20.json"
+    blob = subprocess.check_output(["git", "show", f"HEAD:{relative}"], cwd=root)
+    assert digest(blob) == "1277778a0c1375bb50cb773e7cf983d4d72f47097f2eda14be6078b8f4859acb"
+    assert b"\r\n" not in blob
+    # A tiny commit-free repository/index gives real checkout behavior without
+    # changing the parent repository's index, configuration, or frozen manifest.
+    repository = tmp_path / "isolated-index"
+    repository.mkdir()
+    subprocess.run(["git", "init", "--quiet", str(repository)], check=True, capture_output=True)
+    (repository / ".gitattributes").write_bytes((root / ".gitattributes").read_bytes())
+    for path, body in ((relative, blob), (fresh_relative, (root / fresh_relative).read_bytes())):
+        destination = repository / path
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(body)
+
+    def git(*args: str) -> bytes:
+        return subprocess.check_output(["git", "-c", f"core.autocrlf={autocrlf}",
+            "-c", "core.safecrlf=false", "-C", str(repository), *args], stderr=subprocess.PIPE)
+
+    git("add", "--", ".gitattributes", relative, fresh_relative)
+    assert git("show", f":{relative}") == blob  # The tracked object remains LF.
+    without_rule_sha = None
+    if autocrlf == "false":
+        attributes = (repository / ".gitattributes").read_bytes()
+        exact_rule = f"{relative} text eol=crlf".encode()
+        (repository / ".gitattributes").write_bytes(b"\n".join(
+            line for line in attributes.splitlines() if line != exact_rule) + b"\n")
+        git("add", "--", ".gitattributes")
+        control = tmp_path / "without-rule-checkout"
+        control.mkdir()
+        git("checkout-index", "--all", "--force", f"--prefix={control.as_posix()}/")
+        without_rule_sha = digest((control / relative).read_bytes())
+        assert without_rule_sha == digest(blob) != analyzer.BASE_SHA
+        (repository / ".gitattributes").write_bytes(attributes)
+        git("add", "--", ".gitattributes")
+    checkout = tmp_path / "materialized-checkout"
+    checkout.mkdir()
+    git("checkout-index", "--all", "--force", f"--prefix={checkout.as_posix()}/")
+    materialized = (checkout / relative).read_bytes()
+    assert materialized == blob.replace(b"\n", b"\r\n")
+    assert digest(materialized) == analyzer.BASE_SHA
+    _assert_real_manifest_pins_and_order(checkout)
+    print(json.dumps({"core.autocrlf": autocrlf, "git_blob_sha256": digest(blob),
+                      "materialized_sha256": digest(materialized),
+                      "crlf_line_count": materialized.count(b"\r\n"),
+                      "without_rule_materialized_sha256": without_rule_sha,
+                      "pin_and_order_check": "passed", "host": sys.platform,
+                      "scope": "isolated real Git checkout; not Linux execution"}, sort_keys=True))
 
 
 def test_malformed_private_cli_input_has_no_traceback_or_canary(tmp_path: Path) -> None:

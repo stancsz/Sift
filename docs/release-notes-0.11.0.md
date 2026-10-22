@@ -9,6 +9,14 @@
 - **Make local verification the broad path.** The full test suite and offline comparison can run locally; required pull-request CI stays a short Python 3.12 Core smoke. The release rehearsal also ran all **417 tests** and the offline comparison on hosted Python 3.12.
 - **Retain the measured LongBench trade-off.** On an exposed 344-question LongBench v2 cohort, Sift used **59.66% fewer provider-reported prompt tokens** than full context, while task-majority accuracy was **5.25 percentage points lower** (42.27% Full versus 37.03% Sift; task-cluster 95% interval −10.20 to −0.29 pp). The questions and labels were public and exposed during development. This is not blind evidence, quality parity, or coding-agent task-success evidence. Receipt costs are cache-sensitive and are not invoice totals.
 
+A fresh-request repeat on the same exposed 344-question cohort finished all
+2,064 attempts, with 2,059 usage records and 339 complete paired questions.
+It found 59.56% fewer recorded prompt tokens and task-majority scores of
+41.89% Full versus 40.12% Sift (−1.77 pp; 95% interval −6.49 to +2.95).
+Our own uncached calculation totals $27.6854307; five unknown attempts were not
+retried. This is a public-cohort repeat, not proof of quality parity or improvement.
+See the [final report](results/longbench-v2-minimax-fresh-344-2026-10-21.md).
+
 ## Packaging and release checks
 
 The non-publishing rehearsal on October 20, 2026, built a wheel and source distribution, passed strict Twine metadata checks, and installed both archives without optional dependencies. The CLI help smoke passed for both, and each clean environment confirmed LiteLLM was absent. The run uploaded distribution and checksum artifacts; its publish job was skipped, and no PyPI upload occurred. See [the rehearsal run](https://github.com/stancsz/sift/actions/runs/39475341440).

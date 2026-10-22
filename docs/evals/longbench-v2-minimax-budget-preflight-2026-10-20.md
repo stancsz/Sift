@@ -1,6 +1,27 @@
 # MiniMax LongBench budget preflight — 2026-10-20
 
-## Current instruction and execution — 2026-10-21
+## Final disposition — 2026-10-21
+
+The fresh run is terminal: all 2,064 scheduled attempts were attempted, with
+2,059 confirmed responses/usage records and five unconfirmed attempts. PID
+25244 was absent and no request was in flight before final analysis. No unknown
+request was retried and neither one-use claim may be replayed.
+
+Our calculation is **$19.7126211 Full + $7.9728096 Sift = $27.6854307** from
+recorded prompt/completion tokens at $0.30/$1.20 per million. Separate provider
+amounts total $12.3491511. Current unknown reserve $0.19543245 and historical
+reserve $2.0457216 are not spend; own cost plus both is $29.92658475 within the
+separate $100 cap. No balance/invoice reconciliation was needed.
+
+The strict terminal analyzer succeeded; independent public-aggregate review
+checked coverage/cost arithmetic and fixed provenance references. Its review
+cannot authenticate raw continuation choices/usage or regenerate task-level
+bootstrap rows absent from the public artifact. See the [final report](../results/longbench-v2-minimax-fresh-344-2026-10-21.md)
+and [aggregate](../results/longbench-v2-minimax-fresh-344-aggregate-2026-10-21.json).
+The exact-path CRLF checkout rule preserves the original frozen manifest byte hash; the Git blob remains LF. Forty local focused checks passed, with independent targeted checkout/pin review. See the final report for the two hashes and verification scope.
+Historical launch/gate checkpoints below are not instructions to dispatch again.
+
+## Instruction and execution history — 2026-10-21
 
 The user said: “I don't need you to do real account calculation. I just need you to summarize the money spent, that's it, and using our own calculation. Unblock the goal as much as possible.” This supersedes the earlier verify-coverage-first choice. Balance verification, account login and invoice reconciliation are no longer evaluation gates. Report token counts and rate arithmetic, keeping recorded receipt costs distinct from estimated or reserved amounts.
 

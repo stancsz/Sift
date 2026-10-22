@@ -1,0 +1,154 @@
+{
+  "coverage": {
+    "complete_paired_six_request_tasks": 339,
+    "confirmed_response_attempts": 2059,
+    "continuation_attempts": 2041,
+    "incomplete_paired_tasks": 5,
+    "prefix_attempts": 23,
+    "scheduled_attempts": 2064,
+    "scheduled_tasks": 344,
+    "unknown_or_failed_attempts": 5
+  },
+  "evidence_class": "public_exposed_development_cohort_not_blind_holdout",
+  "integrity_limits": [
+    "Frozen manifests commit the ordered request hashes and expected keys; requests are not reconstructed.",
+    "The exact stopped prefix is byte-pinned and its completed streams are reparsed.",
+    "Continuation choices, transport flags, token usage, and optional provider costs are runner-recorded; raw streams and raw usage receipts were not retained, so they cannot be independently revalidated.",
+    "Continuation content hash identifies this final snapshot; it is not a precommitted response hash or provider signature.",
+    "The continuation report does not record its execution source hash; source identity cannot be proved from this report alone.",
+    "Provider-reported costs are not invoices or account balances; own uncached amounts are token-rate calculations. Missing provider costs are not invented.",
+    "Unknown attempts stay in scheduled denominators and retain reserves; complete paired quality uses only tasks with all six confirmed responses.",
+    "The public task cohort was exposed previously; these results do not establish blind validation, parity, or multi-turn agent benefits."
+  ],
+  "provenance": {
+    "base_manifest_sha256": "eaddd0d337111c6ab3c36d3f4a68dae4f002c94964de39beec620280f9c657c2",
+    "continuation_sha256": "09f6034c364717b6a6c3288cf99956a022e8d9a1fc7339545d08429cde5041a1",
+    "fresh_manifest_canonical_sha256": "881e896141de69ec4d2c9b8134f724faf0e7bb2736ea640e33e08181f35a8d5a",
+    "ordered_frozen_schedule_sha256": "52814e20912f272da4d0fd3b1b8668d25b120f4e3800f29cff500bb491239f1f",
+    "prefix_sha256": "c3669172ba0a29062fc3d217ebbd49946e82f19ff4d9ba353a9151364244fdc7"
+  },
+  "quality": {
+    "all_scheduled_unknowns_counted_incorrect": {
+      "arms": {
+        "full": {
+          "confirmed_responses": 1029,
+          "correct_requests": 436,
+          "correct_task_majorities": 144,
+          "request_accuracy": 0.42248062015503873,
+          "requests": 1032,
+          "task_majority_accuracy": 0.4186046511627907,
+          "tasks": 344,
+          "valid_stopped_choices": 969
+        },
+        "sift": {
+          "confirmed_responses": 1030,
+          "correct_requests": 413,
+          "correct_task_majorities": 137,
+          "request_accuracy": 0.4001937984496124,
+          "requests": 1032,
+          "task_majority_accuracy": 0.39825581395348836,
+          "tasks": 344,
+          "valid_stopped_choices": 987
+        }
+      },
+      "request_accuracy_sift_minus_full": {
+        "bootstrap_samples": 20000,
+        "bootstrap_seed": 20261018,
+        "ci95_high": 0.013565891472868219,
+        "ci95_low": -0.05813953488372093,
+        "estimate": -0.022286821705426355,
+        "method": "percentile bootstrap resampling tasks as clusters",
+        "n_tasks": 344
+      },
+      "task_majority_accuracy_sift_minus_full": {
+        "bootstrap_samples": 20000,
+        "bootstrap_seed": 20261018,
+        "ci95_high": 0.02616279069767442,
+        "ci95_low": -0.06686046511627906,
+        "estimate": -0.020348837209302327,
+        "method": "percentile bootstrap resampling tasks as clusters",
+        "n_tasks": 344
+      }
+    },
+    "complete_paired_observed_tasks": {
+      "arms": {
+        "full": {
+          "confirmed_responses": 1017,
+          "correct_requests": 431,
+          "correct_task_majorities": 142,
+          "request_accuracy": 0.42379547689282204,
+          "requests": 1017,
+          "task_majority_accuracy": 0.41887905604719766,
+          "tasks": 339,
+          "valid_stopped_choices": 959
+        },
+        "sift": {
+          "confirmed_responses": 1017,
+          "correct_requests": 410,
+          "correct_task_majorities": 136,
+          "request_accuracy": 0.4031465093411996,
+          "requests": 1017,
+          "task_majority_accuracy": 0.40117994100294985,
+          "tasks": 339,
+          "valid_stopped_choices": 974
+        }
+      },
+      "request_accuracy_sift_minus_full": {
+        "bootstrap_samples": 20000,
+        "bootstrap_seed": 20261018,
+        "ci95_high": 0.014749262536873156,
+        "ci95_low": -0.05604719764011799,
+        "estimate": -0.020648967551622415,
+        "method": "percentile bootstrap resampling tasks as clusters",
+        "n_tasks": 339
+      },
+      "task_majority_accuracy_sift_minus_full": {
+        "bootstrap_samples": 20000,
+        "bootstrap_seed": 20261018,
+        "ci95_high": 0.029498525073746312,
+        "ci95_low": -0.06489675516224189,
+        "estimate": -0.017699115044247787,
+        "method": "percentile bootstrap resampling tasks as clusters",
+        "n_tasks": 339
+      }
+    }
+  },
+  "schema": "sift.longbench.minimax.fresh344.aggregate.v1",
+  "status": "complete_schedule_aggregate_analysis",
+  "usage_and_cost": {
+    "arms": {
+      "full": {
+        "completion_tokens": 3078,
+        "own_uncached_cost_usd": 19.7126211,
+        "prompt_tokens": 65696425,
+        "provider_reported_cost_attempts": 1029,
+        "provider_reported_cost_usd": 8.651705100000001,
+        "scheduled_attempts": 1032,
+        "unknown_outcome_held_reserve_usd": 0.16593255,
+        "usage_recorded_attempts": 1029
+      },
+      "sift": {
+        "completion_tokens": 2661,
+        "own_uncached_cost_usd": 7.9728096,
+        "prompt_tokens": 26565388,
+        "provider_reported_cost_attempts": 1030,
+        "provider_reported_cost_usd": 3.697446,
+        "scheduled_attempts": 1032,
+        "unknown_outcome_held_reserve_usd": 0.029499899999999996,
+        "usage_recorded_attempts": 1030
+      }
+    },
+    "conservative_budget_coverage_usd": 29.92658475000003,
+    "current_run_unknown_held_reserve_usd": 0.19543245,
+    "historical_held_reserve_usd": 2.0457216,
+    "own_uncached_total_usd": 27.685430699999998,
+    "own_uncached_usd_per_million": {
+      "input": 0.3,
+      "output": 1.2
+    },
+    "provider_reported_total_usd": 12.3491511,
+    "recorded_own_uncached_cost_reduction_fraction": 0.5955479710407461,
+    "recorded_prompt_token_reduction_fraction": 0.5956341916626361,
+    "reduction_scope": "recorded usage only; unknown usage remains unquantified; arm coverage may differ"
+  }
+}

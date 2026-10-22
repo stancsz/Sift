@@ -13,3 +13,5 @@ tests/test_run_longbench_v2_minimax_600.py text eol=lf
 docs/evals/longbench-v2-minimax-stage1-100-current-2026-10-19.json text eol=lf
 docs/evals/longbench-v2-minimax-600-runner-2026-10-19.md text eol=lf
 docs/evals/longbench-v2-minimax-field-pruning-pilot-preflight-2026-10-17.json -text whitespace=cr-at-eol
+# This frozen manifest's predeclared byte pin uses CRLF on every benchmark host.
+docs/evals/longbench-v2-minimax-344-manifest-current-main-2026-10-20.json text eol=crlf
