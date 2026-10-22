@@ -195,6 +195,17 @@ The task-majority 95% question-cluster bootstrap interval for Sift minus Full is
 
 [Protocol, limits, and analysis method](docs/evaluation.md#broader-longbench-v2-cohort-344-questions-completed)
 
+### Fresh repeat on the same public cohort
+
+Fresh requests on the same exposed 344 questions completed all 2,064 scheduled
+attempts, with 2,059 usage records and no retries of the five unconfirmed
+attempts. On 339 complete paired questions, task-majority scores were **41.89%
+Full vs 40.12% Sift** (−1.77 pp; 95% interval −6.49 to +2.95). Across known
+usage, Sift used **59.56% fewer prompt tokens**. Our uncached input/output
+calculation totals **$27.69 from unrounded costs** ($19.71 Full; $7.97 Sift). This repeat does not prove
+parity, blind generalization or improvement over the earlier result.
+[Coverage, money and provenance](docs/results/longbench-v2-minimax-fresh-344-2026-10-21.md).
+
 ### Synthetic retrieval probe: 950K-token archive
 
 We compacted one synthetic archive estimated at **950,401 input tokens** to a Sift forwarding estimate of 32,698. The run record reports that both Sifted requests matched one planted fact. The public result omits raw replies, so readers cannot independently verify that answer.

@@ -3,11 +3,40 @@
 Sift makes no model calls. It selects a smaller request on CPU. To compare what
 you pay, run the same accepted work with and without Sift through the same
 provider, model, settings, output limit, and cache conditions. Use provider
-usage or LiteLLM's per-request spend logs for the billable totals. Sift's
+usage and dated rates for our calculation; show optional provider-reported
+amounts separately. Sift's
 estimated token counts are useful for its input limit, but are not a provider
 invoice.
 
-## Recorded LongBench cost
+## Fresh LongBench repeat: our calculation
+
+Fresh requests on the same exposed 344-question cohort, three repeats per arm,
+finished all 2,064 scheduled attempts. There are 2,059 usage records; five
+unconfirmed attempts were not retried.
+
+| Known usage | Without Sift | With Sift | Total |
+|---|---:|---:|---:|
+| Prompt tokens | 65,696,425 | 26,565,388 | 92,261,813 |
+| Completion tokens | 3,078 | 2,661 | 5,739 |
+| Our uncached input/output calculation | **$19.71** | **$7.97** | **$27.69** |
+| Separate provider-reported amounts | $8.65 | $3.70 | $12.35 |
+
+Exact own total: **$27.6854307**, using `input × $0.30/M + output × $1.20/M`.
+This calculation uses recorded tokens and frozen rates; it is not an invoice.
+Sift used 59.56% fewer prompt tokens across known usage, whose arm coverage
+is 1,029 Full versus 1,030 Sift records. Quality is part of the comparison:
+on 339 complete paired questions, task-majority scores were 41.89% Full and
+40.12% Sift (−1.77 pp, 95% interval −6.49 to +2.95). This does not establish parity.
+See the [completed report](results/longbench-v2-minimax-fresh-344-2026-10-21.md)
+and [aggregate](results/longbench-v2-minimax-fresh-344-aggregate-2026-10-21.json).
+
+The current five unknown attempts retain **$0.19543245** and the historical
+reserve remains **$2.0457216**. Neither is money spent. Own cost plus both
+reserves is **$29.92658475**, within the separate $100 authorization. The prefix
+is included in these totals; do not add its $0.35 calculation or $0.17 recorded
+amount again. No balance or invoice reconciliation is needed.
+
+## Earlier LongBench study (2026-10-20)
 
 The completed 344-question study used three repeats per arm. Its published
 aggregate records the following successful-request usage and cost:
@@ -24,43 +53,30 @@ does not contain their total. The lower receipt costs reflect the provider's
 cache-sensitive accounting. See the [published aggregate](results/longbench-v2-minimax-344-aggregate-2026-10-20.json)
 and [rate snapshot](evals/longbench-v2-openrouter-minimax-m3-endpoints-2026-10-20T1651Z.json).
 
-The six selected tracked experiments below report **$35.96** in usage-receipt
-costs altogether. This subtotal covers these experiments, rather than every
+The seven selected tracked experiments below report **$48.31** in recorded
+provider amounts altogether. This subtotal covers these experiments, rather than every
 project call or an account invoice; shared benchmark questions are separate
 requests in separately scheduled runs.
 
 | Experiment | Recorded cost |
 |---|---:|
+| [Fresh 344-question repeat, 2,059 usage records](results/longbench-v2-minimax-fresh-344-aggregate-2026-10-21.json) | $12.35 |
 | [344 questions, three repeats per arm](results/longbench-v2-minimax-344-aggregate-2026-10-20.json) | $12.63 |
 | [100 questions, 600 receipt-backed requests](results/longbench-v2-minimax-600-2026-10-17.json) | $4.52 |
 | [503-question incomplete run, all valid receipts](results/longbench-v2-minimax-m3-fullsuite-progress-2026-10-17.md) | $18.08 |
 | [Field-pruning pilot, 36 requests](evals/longbench-v2-field-pruning-pilot-2026-10-17.md) | $0.11 |
 | [Initial screen, 48 requests](evals/longbench-v2-minimax-m3-results-2026-10-16.md) | $0.51 |
 | [Relation-binding study, 36 fresh requests](evals/longbench-v2-minimax-relation-stage1-v3-analysis-corrected-2026-10-17.md) | $0.11 |
-| **Selected study subtotal** | **$35.96** |
+| **Selected study subtotal** | **$48.31** |
 
 The 503-run matched-pair subset and reused historical baselines are already
 inside their parent records and are not added again. Subscription probes priced
 at illustrative API rates are excluded from this spend subtotal.
 
-Separately, $2.05 is reserved for 13 historical requests without usage receipts;
-that reserve is not counted as money spent. The newly authorized 344 × 3 × 2
-run has a $41.87 conservative schedule estimate and a $100 client cap. Account
-balances and invoice reconciliation are not needed for these calculations.
-
-The fresh run's first segment on October 21 attempted 23 requests before a connection error.
-The 22 requests with usage records cost **$0.17** by receipts; our uncached
-input/output calculation is **$0.35** (`1,164,672 × $0.30/M + 107 × $1.20/M`).
-The unanswered request retains a **$0.0617** reservation. These are additional
-to the six-study subtotal above; recorded costs including this prefix total
-**$36.13 at that prefix checkpoint**. See the [sanitized prefix summary](results/longbench-v2-minimax-fresh-344-prefix-2026-10-21.json).
-
-The reviewed continuation is now processing the previously unattempted jobs.
-The prefix figures above exclude that running segment. Final reporting will use
-`input tokens × $0.30/M + output tokens × $1.20/M` for our uncached calculation,
-with recorded provider costs shown separately. Unknown-outcome reserves are
-budget allowances, never added to money spent. Account balances and invoices
-are not a prerequisite for completing this study or publishing its summary.
+The selected subtotal uses recorded provider fields consistently and is not
+added to the fresh run's own uncached calculation. The older six-study subtotal
+was $35.96192684; adding the fresh recorded $12.3491511 gives $48.31107794.
+The historical and current unknown reserves above remain separate from spend.
 
 ## Synthetic retrieval probe: 950K-token archive
 
@@ -152,22 +168,24 @@ fixed arm order, and a shared warm/mixed local Qwen cache. Provider API spend
 was $0 in all three arms; the task did not measure Astra costs. Sift had fewer
 client-reported input-plus-cache tokens than full context, but its mean TTFT
 and task time were higher in this single run. Treat this as a cache-reuse
-diagnostic, not a measured saving. See the [pilot report](evals/native-research-pilot-2026-10-15.md)
-and [machine-readable results](results/native-research-pilot-2026-10-15.json).
+diagnostic, not a measured saving. The original pilot artifacts are not included in this public checkout; this
+historical summary cannot be independently reproduced from them here.
 
 A later single-arm least-privilege IAM stress run sent 53 local Qwen requests;
 Sift compacted 45 and reduced summed estimated request input by 73.4%. The run
 timed out at 1,200 seconds and failed independent acceptance, so it has no
 cost-per-accepted-task result and cannot support a savings claim. Full context
 could not fit the same 134,913-token request on the 32K backend. API spend was
-$0, and hardware cost was not measured. See the [stress-run record](results/least-privilege-audit-sift-stress-2026-10-16.json).
+$0, and hardware cost was not measured. The original stress-run artifact is not included in this public checkout; the
+historical summary above is not a reproducible public result.
 
 A second public operations-log development screen failed on all three arms:
 recency and Sift ended at Claude Code's reported 32 MB conversation limit,
 while full context exceeded local Qwen's 32,768-token window. Local API spend
 was $0, but no arm produced an accepted task, so cost per accepted task and
 any saving are unavailable. Electricity and hardware cost were not measured.
-See the [incident screen](results/native-incident-reconstruction-development-2026-10-16.json).
+The original incident-screen artifact is not included in this public checkout;
+its historical summary is not a reproducible public result.
 
 The frozen LongBench v2 diagnostic used local Qwen, so its API spend was also
 $0 and it does not provide an Astra invoice. On the 16 above-target cases,

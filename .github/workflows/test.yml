@@ -46,6 +46,11 @@ jobs:
       - run: node tests/test_site_demo.js
       - run: python -m pytest tests/test_ollama_compaction_demo.py -q
       - run: python -m pytest tests/test_no_inference_compaction_demo.py -q
+      - name: Check frozen benchmark manifest checkout
+        run: >-
+          python -m pytest -q
+          tests/test_analyze_longbench_v2_minimax_fresh_344.py::test_real_tracked_manifest_pins_and_order_are_self_consistent
+          tests/test_analyze_longbench_v2_minimax_fresh_344.py::test_frozen_manifest_checkout_pin_is_independent_of_autocrlf
 
   full-suite:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'

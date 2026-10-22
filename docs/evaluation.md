@@ -6,7 +6,7 @@ Sift is still a preview. These checks show what it currently does on selected te
 
 On the PR #22 candidate (`1de9640`, same source content as merged `main` `6fcec84`), the full local suite passed **393 tests on Python 3.13.11 in 113.25 seconds**, with 18 dependency warnings, using `uv run --extra test --extra litellm --extra client-smoke python -m pytest -q`. The added LiteLLM SDK smoke uses loopback fixtures only, proves an old setting survives compaction, and has telemetry and cleanup safeguards. PR #22's [Python 3.12 core smoke](https://github.com/stancsz/sift/actions/runs/39430043370) passed in 46 seconds; its full-matrix job was skipped by design. The pull-request smoke installs the `test` extra; the scheduled/manual full-suite job also installs `litellm`. The four-version suite and offline comparison are weekly/manual. Earlier full suites passed on Python 3.11.14, 3.12, 3.13, and 3.14; an isolated Ubuntu/Python 3.12 container at code-bearing PR head `6b317c8` passed 370 tests in 83.59 seconds and its offline authored comparison returned 100/100 Sift hits and 0/100 head/tail hits. These are software checks, not model-quality evidence. The earlier [failure #39077270041](https://github.com/stancsz/sift/actions/runs/39077270041) came from a workflow that omitted the pytest extra and a test that opened an untracked LongBench result file.
 
-On the Python source at `29457b9` (PR #27; unchanged by docs-only PRs #28–31; current `main` is `ee9a126`), a fresh Python 3.14.0 run passed **397 tests in 211.28 seconds**, with 18 dependency warnings. `src/`, `tests/`, and `pyproject.toml` at `ee9a126` match that tested source exactly. `python benchmarks/compare.py` passed offline with 100 cases, 100 Sift hits, 0 head/tail hits, and 0.461 CPU seconds. PRs #28–31's Core smoke passed in 43, 44, 48 and 48 seconds; their post-merge main smokes passed in 51, 51, 48 and 43 seconds. The full four-version CI matrix remains weekly/manual.
+On the Python source at `29457b9` (PR #27; unchanged by docs-only PRs #28–31; recorded integration is `ee9a126`), a fresh Python 3.14.0 run passed **397 tests in 211.28 seconds**, with 18 dependency warnings. `src/`, `tests/`, and `pyproject.toml` at `ee9a126` match that tested source exactly. `python benchmarks/compare.py` passed offline with 100 cases, 100 Sift hits, 0 head/tail hits, and 0.461 CPU seconds. PRs #28–31's Core smoke passed in 43, 44, 48 and 48 seconds; their post-merge main smokes passed in 51, 51, 48 and 43 seconds. The full four-version CI matrix remains weekly/manual.
 
 PR #22's LiteLLM smoke includes a buried `initialDelaySeconds=25` fact and asserts that it survives compaction in the forwarded request. It disables/restores LiteLLM telemetry, blocks non-loopback socket connections, and closes fixture servers after partial construction or startup. The focused compatibility file passed 2 tests in 8.49 seconds; the LiteLLM path makes no model or external network request. The existing OpenAI SDK tool-cycle smoke remains loopback-only, while its separately recorded Ollama round-trip is the only live local inference-client path. An independent reviewer also reran the split-run analyzer tests (10 passed) and reproduced the private LongBench summary inputs locally without inference; that confirms the analyzer accounting, not the public task answers independently.
 
@@ -14,7 +14,7 @@ The manual [synthetic quarantine workflow](https://github.com/stancsz/sift/actio
 
 ## LongBench v2
 
-Both studies use public questions that were exposed during development. Neither is a blind holdout or an agent-loop completion benchmark.
+These studies use public questions that were exposed during development. Neither is a blind holdout or an agent-loop completion benchmark.
 
 ### Matched 600-response study
 
@@ -65,16 +65,44 @@ This analysis is offline and makes no model requests. It emits aggregate statist
 - [Current route snapshot](evals/longbench-v2-openrouter-minimax-m3-endpoints-2026-10-20T0750Z.json)
 - [Sanitized aggregate result and private source-report hashes](results/longbench-v2-minimax-344-aggregate-2026-10-20.json)
 
+### Fresh repeat on the same 344-question cohort (completed)
+
+A separately authorized fresh-request run repeated the exposed cohort three times
+per arm. All 2,064 slots were attempted; 2,059 responses have usage and five
+unconfirmed attempts were not retried. On 339 complete six-request question
+clusters, Full scored 142/339 task majorities (41.89%) and Sift 136/339 (40.12%):
+**−1.77 pp**, task-cluster 95% interval **−6.49 to +2.95 pp**. The scheduled
+344-question view, counting unknowns incorrect, is 144/344 versus 137/344
+(−2.03 pp). Neither interval establishes parity or noninferiority.
+
+Across recorded usage, Sift used **59.56% fewer prompt tokens**. Our own uncached
+input/output calculation is **$19.7126211 Full + $7.9728096 Sift = $27.6854307**;
+provider-reported amounts total $12.3491511 separately. Five current unknown
+attempts retain $0.19543245, excluded from spend. Complete-pair quality and all
+known-usage cost have different coverage, made explicit in the report.
+
+This is fresh API measurement on the same exposed public questions, not a
+held-out cohort. Preserve the earlier −5.25 pp result; the smaller point gap in
+this repeat is not demonstrated selector improvement. The strict analyzer
+validated the terminal schedule and accounting. Independent review recomputed
+aggregate arithmetic and checked fixed source references; raw continuation
+responses/receipts and the task-level bootstrap were not independently regenerated.
+
+- [Completed report, scoring/coverage and provenance limits](results/longbench-v2-minimax-fresh-344-2026-10-21.md)
+- [Aggregate-only result](results/longbench-v2-minimax-fresh-344-aggregate-2026-10-21.json)
+
+The exact-path CRLF checkout rule preserves the frozen input hash while Git retains its original LF blob. Forty local focused checks passed; independent targeted review checked the actual pin and both Git configurations. The short Ubuntu smoke selects those three checkout checks; the broad matrix remains weekly/manual. See the report's serialization disclosure.
+
 ### 950K-token Subroute cost probe (one request per model)
 
-A synthetic archive of 950,401 locally estimated input tokens was compacted to 32,698 estimated tokens. Sifted requests were then sent through an isolated Subroute staging instance to GPT-6 Astra and Gemini 4 Argon. Both returned the queried fact. Astra's Subroute usage ledger recorded 32,502 input and 6 output tokens; Gemini reported 37,003 input and 41 output tokens. The different input counts reflect each model's tokenizer and request framing.
+A synthetic archive of 950,401 locally estimated input tokens was compacted to 32,698 estimated tokens. Sifted requests were then sent through an isolated Subroute staging instance to GPT-6 Astra and Gemini 4 Argon. The run record reports both matched the planted fact, but the published artifact omits raw replies, so that result cannot be independently verified. Astra's Subroute usage ledger recorded 32,502 input and 6 output tokens; Gemini reported 37,003 input and 41 output tokens. The different input counts reflect each model's tokenizer and request framing.
 
 The full-context requests were rejected by the current subscription adapters before inference. Therefore, the “without Sift” amounts below are uncached public API rate equivalents for 950,401 input tokens plus the observed output length; they are not measured full-context calls. “With Sift” applies the same public rates to actual Subroute usage receipts. Neither amount is a subscription charge or provider invoice.
 
-| Model | No-Sift API-rate equivalent | Sifted usage receipt | With-Sift API-rate equivalent | Modeled reduction |
-|---|---:|---:|---:|---:|
-| GPT-6 Astra | $19.008470 | 32,502 input / 6 output | $0.325320 | 98.3% |
-| Gemini 4 Argon | $1.901212 | 37,003 input / 41 output | $0.074416 | 96.1% |
+| Model | Hypothetical no-Sift API-rate equivalent | Observed Sifted usage | Sifted API-rate equivalent |
+|---|---:|---|---:|
+| GPT-6 Astra | $19.008470 | 32,502 input / 6 output | $0.325320 |
+| Gemini 4 Argon | $1.901212 | 37,003 input / 41 output | $0.074416 |
 
 - [Probe method, route limits, and rate assumptions](evals/subroute-950k-token-cost-probe-2026-10-20.md)
 - [Sanitized aggregate results](results/subroute-950k-token-cost-probe-2026-10-20.json)
