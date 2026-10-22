@@ -1,0 +1,48 @@
+{
+  "schema": "sift.longmemeval.full_context.synthetic.v1",
+  "date": "2026-10-21",
+  "status": "independently_accepted_generated_renderer_scope",
+  "implementation": "benchmarks/longmemeval_v2_full_context.py",
+  "implementation_sha256": "7667961dee1906e9ee485935b7abd0b1ea027b71d3ac2817c1c04f0831a249ea",
+  "tests": "tests/test_longmemeval_v2_full_context.py",
+  "tests_sha256": "0ae75cc5a15fbe5f6c118b46e515573df42de3f2a9176e4a88c4a185b22c0da4",
+  "development_checks": {
+    "focused_passed": 16,
+    "elapsed_seconds": 0.18
+  },
+  "independent_checks": {
+    "focused_passed": 16,
+    "elapsed_seconds": 0.2,
+    "exit_code": 0,
+    "additional_probes": [
+      "exact Full/lossless-Sift context equality on three generated mixed-shape states",
+      "insertion and image order, including repeated trajectory IDs/paths",
+      "no retained active query/image",
+      "input/output/config alias isolation",
+      "missing/empty/late-malformed insertions reject atomically"
+    ]
+  },
+  "verification_scope": [
+    "shared accepted Sift state normalization/image resolution",
+    "all inserted state text then all images; no selection, summarization, counting or truncation",
+    "explicit registration surface with a stub registry",
+    "actual hash-pinned upstream build_messages helper with generated PNGs; unused registry/CLI/scoring imports stubbed and restored"
+  ],
+  "upstream_commit": "2cc8c540bdb87fe6761629b585e727e1c4704520",
+  "upstream_harness_sha256": "93fe5855a74ad46d7e8b489cebac24de38a9b30ba7ec1de2dd8708bd4aeebdb6",
+  "local_independent_receipt": "tmp/qa-full-context/acceptance-summary.json",
+  "unverified": [
+    "full harness/real registry integration of this new backend",
+    "reader-compatible counting and input fit",
+    "real data, image rights and coverage",
+    "model/judge/endpoint acceptance and usage",
+    "executable manifest, trial-wide controls and separate spend authority"
+  ],
+  "activity": {
+    "inference_requests": 0,
+    "dataset_access": false,
+    "new_dependencies": false,
+    "accounts_accessed": false
+  },
+  "limits": "Generated component evidence only; not quality, token-fit, real-data or dispatch readiness. No claimed full-suite rerun."
+}
