@@ -41,8 +41,12 @@ them from the selected population or its coverage report.
 same goal/ID/state/URL/action/notes/accessibility-text representation used as
 Sift's input. Join all state text into one context text item and append every
 corresponding screenshot in source order. Apply no selection or summarization.
-This reference renderer still needs implementation and independent fixtures;
-upstream `no_retrieval` returns empty context and is not Full.
+The [reference renderer](../../benchmarks/longmemeval_v2_full_context.py) now has
+independently accepted generated fixtures: all-state retention/order, atomic
+validation and the pinned upstream `build_messages` helper. That helper check
+stubs unused registry/CLI/scoring imports; it does not establish full harness
+integration or token fit. See the [scoped result](../results/longmemeval-v2-full-context-2026-10-21.json).
+Upstream `no_retrieval` returns empty context and is not Full.
 
 **Sift:** use the same normalized state stream and insertion order, append the
 active query for compaction, then render selected/summarized text and the

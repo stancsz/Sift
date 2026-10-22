@@ -139,7 +139,7 @@ frozen protocol, live route/rate review and separately authorized numeric cap.
 
 ## Prospective public protocol (2026-10-21)
 
-The [proposed comparison specification](longmemeval-v2-public-protocol-2026-10-21.md) now records Full/Sift fairness, selection/scheduling, scoring, failures, costs and latency before data use. It does not freeze an executable run or resolve the gaps below. In particular, the upstream empty `no_retrieval` baseline is not Full; implement a true all-state reference renderer and replace the adapter's approximate counter with a reviewed counting contract before activation. Numeric settings, immutable data pins/rights, trial-wide controls and separate spend authority remain unresolved.
+The [proposed comparison specification](longmemeval-v2-public-protocol-2026-10-21.md) now records Full/Sift fairness, selection/scheduling, scoring, failures, costs and latency before data use. It does not freeze an executable run or resolve the gaps below. The upstream empty `no_retrieval` baseline is not Full. A true all-state reference renderer now passes 16 independent focused checks plus retention/order/mutation/atomic-rejection probes; its pinned `build_messages` fixture uses disclosed stubs for unused imports, not full harness integration. See the [scoped renderer result](../results/longmemeval-v2-full-context-2026-10-21.json). Replace the adapter's approximate counter with a reviewed counting contract and establish complete input fit before activation. Numeric settings, immutable data pins/rights, trial-wide controls and separate spend authority remain unresolved.
 
 ## Known gaps and next gate
 
