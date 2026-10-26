@@ -95,7 +95,7 @@ class ResponsesTests(unittest.TestCase):
             {**base, "conversation": "conv_saved"},
             {**base, "input": [{"type": "item_reference", "id": "msg_saved"}]},
             {**base, "input": [{"role": "user", "content": [{"type": "input_image", "image_url": "data:image/png;base64,AA"}]}]},
-            {**base, "input": [{"type": "reasoning", "summary": [], "encrypted_content": "opaque"}]},
+            {**base, "input": [{"type": "reasoning", "summary": [], "encrypted_content": {"opaque": True}}]},
             {**base, "input": [{"type": "reasoning", "summary": None}]},
         ]
         for data in cases:

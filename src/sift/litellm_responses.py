@@ -23,6 +23,19 @@ def _textual(value: Any) -> bool:
     )
 
 
+def _text_tool_catalog(tools: Any) -> bool:
+    def leaf(tool: Any) -> bool:
+        return (isinstance(tool, dict) and tool.get("type") in {"function", "custom"}
+                and isinstance(tool.get("name"), str) and bool(tool["name"]))
+
+    return isinstance(tools, list) and all(
+        leaf(tool) or isinstance(tool, dict) and tool.get("type") == "namespace"
+        and isinstance(tool.get("name"), str) and bool(tool["name"])
+        and isinstance(tool.get("tools"), list) and all(leaf(child) for child in tool["tools"])
+        for tool in tools
+    )
+
+
 def response_selection_view(
     data: dict[str, Any],
 ) -> tuple[list[dict[str, Any]], Callable[[list[dict[str, Any]]], list[dict[str, Any]]]]:
@@ -51,6 +64,8 @@ def response_selection_view(
         kind = item.get("type", "message")
         if kind == "message":
             supported = item.get("role") in {"system", "developer", "user", "assistant"} and _textual(item.get("content"))
+        elif kind == "additional_tools":
+            supported = item.get("role") == "developer" and _text_tool_catalog(item.get("tools"))
         elif kind in {"function_call", "custom_tool_call"}:
             supported = all(isinstance(item.get(field), str) and item[field]
                             for field in ("call_id", "name")) and isinstance(
@@ -59,7 +74,7 @@ def response_selection_view(
             supported = isinstance(item.get("call_id"), str) and bool(item["call_id"]) and _textual(item.get("output"))
         elif kind == "reasoning":
             summary = item.get("summary", [])
-            supported = not item.get("encrypted_content") and isinstance(summary, list) and all(
+            supported = isinstance(item.get("encrypted_content"), (str, type(None))) and isinstance(summary, list) and all(
                 isinstance(block, dict) and block.get("type") == "summary_text"
                 and isinstance(block.get("text"), str) for block in summary
             ) and not item.get("content")
@@ -76,10 +91,15 @@ def response_selection_view(
             if item["call_id"] not in pending_calls:
                 raise HTTPException(422, detail="Sift requires each tool output's call in the supplied history")
             pending_calls.remove(item["call_id"])
-        elif pending_calls and kind == "message" and item["role"] != "assistant":
+        elif pending_calls and (kind == "additional_tools" or kind == "message" and item["role"] != "assistant"):
             raise HTTPException(422, detail="Sift requires pending tool results before a new user or instruction turn")
-        if kind == "reasoning":
-            # Historical reasoning is not evidence; retained items stay exact.
+        if kind == "additional_tools":
+            # Codex's declarative catalog is an immutable instruction anchor.
+            # Inspect a textual copy, then restore the original item verbatim.
+            view = {"role": "developer", "content": json.dumps(item["tools"], ensure_ascii=False)}
+        elif kind == "reasoning":
+            # Historical reasoning (plain or sealed) is not evidence; retained
+            # items stay exact. Provider-owned ciphertext is never decoded.
             view = {"role": "assistant", "content": ""}
         else:
             converted = LiteLLMCompletionResponsesConfig.transform_responses_api_input_to_messages(

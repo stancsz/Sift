@@ -70,9 +70,14 @@ _MESSAGE_KEYS = frozenset({
 class CompactionError(ValueError):
     """An input cannot be represented safely within the target window."""
 
-    def __init__(self, message: str, *, code: str = "invalid") -> None:
+    def __init__(self, message: str, *, code: str = "invalid",
+                 required_tokens: int | None = None, target_tokens: int | None = None,
+                 protected_region: str | None = None) -> None:
         super().__init__(message)
         self.code = code
+        self.required_tokens = required_tokens
+        self.target_tokens = target_tokens
+        self.protected_region = protected_region
 
 
 @dataclass(frozen=True)
@@ -245,6 +250,13 @@ def _text(content: Any, *, allow_none: bool = False) -> str:
 
 def _render(message: dict[str, Any], *, allow_active_reasoning: bool = False) -> str:
     allowed_keys = _MESSAGE_KEYS | ({"reasoning"} if allow_active_reasoning else set())
+    if "reasoning_content" in message:
+        if (message.get("role") != "assistant"
+                or not isinstance(message["reasoning_content"], (str, type(None)))):
+            raise CompactionError("unsupported reasoning_content", code="unsupported_content")
+        # OpenAI-compatible plain reasoning stays exact on retained messages,
+        # but is never promoted to quoted historical evidence.
+        allowed_keys = allowed_keys | {"reasoning_content"}
     if message.keys() - allowed_keys:
         raise CompactionError("unsupported message fields in compacted request", code="unsupported_content")
     if message.get("role") not in {"system", "developer", "user", "assistant", "tool", "function"}:
@@ -2488,12 +2500,20 @@ def compact_messages(
         cycle_starts = [index for index in range(latest_user + 1, len(messages))
                         if _starts_tool_cycle(messages[index], protocol)]
         if not cycle_starts:
-            raise CompactionError("active turn and instructions exceed target", code="active_too_large")
+            raise CompactionError(
+                "active turn and instructions exceed target", code="active_too_large",
+                required_tokens=active_count, target_tokens=target,
+                protected_region="instructions_and_active_turn",
+            )
         tail_start = cycle_starts[-1]
         essential = messages[:instruction_end] + [messages[latest_user]] + messages[tail_start:]
         essential_count = _count(count_tokens, essential)
         if essential_count >= target - 256:
-            raise CompactionError("active task or latest tool cycle exceeds target", code="active_too_large")
+            raise CompactionError(
+                "active task or latest tool cycle exceeds target", code="active_too_large",
+                required_tokens=essential_count, target_tokens=target,
+                protected_region="instructions_task_and_latest_tool_cycle",
+            )
         recent_budget = min(8_192, (target - essential_count) // 2)
         retained_cycles = 1
         for index in reversed(cycle_starts[:-1]):

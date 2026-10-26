@@ -1,0 +1,14 @@
+{
+  "verdict": "READY",
+  "scope": "Source-reviewed upstream preview and two named pre-release pilots only",
+  "independent_cli_thread_id": "01a17a59-e8a9-7690-a408-f2b60779e8f8",
+  "reviewer_execution": ".venv/Scripts/python.exe docs/evals/issue-59/verify_pilots.py",
+  "execution_exit_code": 0,
+  "source_review_focused_tests": "22 passed in the preceding independent CLI source review",
+  "previous_findings": [
+    "Require native read/baseline/edit/final-test provenance: fixed and tested",
+    "Require historical source excerpt rather than agent echo: fixed and tested",
+    "Later-turn workflow ambiguity: resolved; complete repair sequence is required initially, native final tests and hidden checks on follow-ups"
+  ],
+  "unverified": ["Full post-release 27-session matrix", "Universal bug freedom", "Downstream gateway deployment", "PyPI publication"]
+}

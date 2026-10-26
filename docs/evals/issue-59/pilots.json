@@ -1,0 +1,32 @@
+{
+  "scope": "Pre-release pilots. These do not replace the requested post-release 27-session matrix. Source bytes match current release; metadata was .dev0 at session start.",
+  "accepted": true,
+  "sessions": [
+    {
+      "client": "codex",
+      "accepted": true,
+      "active_seconds": 190.579,
+      "turns": 10,
+      "requests": 48,
+      "compactions": 48,
+      "maximum_forwarded_tokens": 32768,
+      "metadata_version": "0.11.0.dev0",
+      "source_matches_release": true,
+      "receipt": "pilot-codex.json.gz",
+      "receipt_sha256": "23678b9789bdcd142a255c204497ab014aa609bdac5c38d886c27645f42f201f"
+    },
+    {
+      "client": "claude",
+      "accepted": true,
+      "active_seconds": 195.541,
+      "turns": 7,
+      "requests": 41,
+      "compactions": 41,
+      "maximum_forwarded_tokens": 32768,
+      "metadata_version": "0.11.0.dev0",
+      "source_matches_release": true,
+      "receipt": "pilot-claude.json.gz",
+      "receipt_sha256": "68ac65446ad2f582de45ade6119169271831c39ba9e4fac935b6790ca7c25056"
+    }
+  ]
+}

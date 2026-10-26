@@ -35,6 +35,34 @@ _PROTOCOLS = {
 }
 
 
+COMPACTION_HTTP_STATUS = {
+    "invalid": 400,
+    "raw_limit": 413, "active_too_large": 413, "input_size_limit": 413,
+    "complete_group_too_large": 413, "field_pruning_growth_limit": 413,
+    "field_pruning_target_exceeded": 413, "query_directed_label_growth_limit": 413,
+    "query_directed_label_target": 413,
+    "unsupported_content": 422, "unsupported_protocol": 422,
+    "late_instruction": 422, "late_instruction_limit": 422,
+    "complete_group_ambiguous": 422, "complete_group_unresolved": 422,
+    "field_pruning_ambiguous": 422, "field_pruning_evidence_missing": 422,
+    "field_pruning_summary_missing": 422, "field_pruning_unsupported": 422,
+    "query_directed_label_ambiguous": 422, "query_directed_label_unresolved": 422,
+    "research_relation_unsupported": 422, "insufficient_budget": 422,
+}
+
+
+def _compaction_http_exception(error: CompactionError) -> HTTPException:
+    headers = {"x-sift-error-code": error.code}
+    for name in ("required_tokens", "target_tokens", "protected_region"):
+        value = getattr(error, name, None)
+        if value is not None:
+            headers[f"x-sift-{name.replace('_', '-')}"] = str(value)
+    return HTTPException(
+        COMPACTION_HTTP_STATUS.get(error.code, 400), detail=f"Sift: {error}",
+        headers=headers,
+    )
+
+
 def _countable_tools(tools: Any) -> list[dict[str, Any]] | None:
     """Work around LiteLLM 1.103.0's missing-array-items counter error.
 
@@ -80,7 +108,7 @@ def compact_proxy_request(
             data, max_characters=max_input_characters, max_nodes=max_input_nodes,
         )
     except CompactionError as error:
-        raise HTTPException(413, detail=f"Sift: {error}") from error
+        raise _compaction_http_exception(error) from error
     response_input = call_type in {"responses", "aresponses"}
     protocol = "openai" if response_input else _PROTOCOLS.get(call_type)
     if protocol is None:
@@ -124,10 +152,22 @@ def compact_proxy_request(
         counting_data = {**data, "tools": chat_tools}
     repaired_tool_count = False
     tool_floor_adjustment: int | None = None
+    reasoning_floor_applied = False
 
     def count(candidate: list[dict[str, Any]]) -> int:
-        nonlocal counting_data, repaired_tool_count, tool_floor_adjustment
+        nonlocal counting_data, repaired_tool_count, tool_floor_adjustment, reasoning_floor_applied
         counted_input = restore(candidate) if restore else data.get("input")
+        if restore:
+            # LiteLLM's public Responses counter ignores Codex's private
+            # additional_tools envelope. Replace it only in this counting
+            # copy with the complete serialized schema as developer text.
+            counted_input = [
+                {"role": "developer", "content": json.dumps(item["tools"], ensure_ascii=False)}
+                if item.get("type") == "additional_tools" else
+                {"role": "assistant", "content": json.dumps(item, ensure_ascii=False)}
+                if item.get("type") == "reasoning" and item.get("encrypted_content") else item
+                for item in counted_input
+            ]
         request_kwargs = {**counting_data, "input": counted_input} if restore else {**counting_data, "messages": candidate}
         try:
             counted = router._count_pre_call_check_tokens(
@@ -164,6 +204,24 @@ def compact_proxy_request(
                     messages=[], input=None, request_kwargs={**counting_data, "tools": None},
                 )
                 tool_floor_adjustment = max(0, schema_tokens - max(0, with_tools - without_tools))
+        reasoning = [msg["reasoning_content"] for msg in candidate
+                     if msg.get("role") == "assistant" and isinstance(msg.get("reasoning_content"), str)
+                     and msg["reasoning_content"]]
+        if reasoning:
+            from litellm import token_counter
+
+            # Some native counters ignore this provider extension. Charge the
+            # larger of their measured contribution and a plain-text floor.
+            stripped = [{key: value for key, value in msg.items() if key != "reasoning_content"}
+                        for msg in candidate]
+            without_reasoning = router._count_pre_call_check_tokens(
+                messages=stripped, input=data.get("input"),
+                request_kwargs={**request_kwargs, "messages": stripped},
+            )
+            floor = sum(token_counter(text=text) for text in reasoning)
+            adjustment = max(0, floor - max(0, counted - without_reasoning))
+            counted += adjustment
+            reasoning_floor_applied = reasoning_floor_applied or adjustment > 0
         return counted + tool_floor_adjustment
 
     try:
@@ -173,13 +231,7 @@ def compact_proxy_request(
             max_input_nodes=max_input_nodes, protocol=protocol,
         )
     except CompactionError as error:
-        status = {
-            "raw_limit": 413, "active_too_large": 413,
-            "input_size_limit": 413,
-            "unsupported_content": 422, "unsupported_protocol": 422,
-            "late_instruction": 422,
-        }.get(error.code, 400)
-        raise HTTPException(status, detail=f"Sift: {error}") from error
+        raise _compaction_http_exception(error) from error
     if restore:
         output = {**data, "input": restore(result.messages) if result.audit["compacted"] else data["input"]}
     else:
@@ -188,7 +240,13 @@ def compact_proxy_request(
     output[key] = {**metadata, "sift": {
         **result.audit, "counting_tool_schema_items_filled": repaired_tool_count,
         "counting_responses_tools_translated": response_input and bool(data.get("tools")),
+        "counting_responses_catalog_serialized": response_input and isinstance(data.get("input"), list)
+        and any(item.get("type") == "additional_tools" for item in data["input"] if isinstance(item, dict)),
+        "counting_responses_sealed_reasoning_serialized": response_input and isinstance(data.get("input"), list)
+        and any(item.get("type") == "reasoning" and bool(item.get("encrypted_content"))
+                for item in data["input"] if isinstance(item, dict)),
         "counting_tool_floor_adjustment": tool_floor_adjustment or 0,
+        "counting_reasoning_content_floor_applied": reasoning_floor_applied,
     }}
     output_limit = data.get("max_output_tokens", data.get("max_completion_tokens", data.get("max_tokens")))
     logging.getLogger("LiteLLM Proxy").info(
@@ -204,7 +262,8 @@ class SiftLiteLLMHook(CustomLogger):
 
     def __init__(self, model_targets: Mapping[str, int], *, raw_limit: int = 1_000_000,
                  max_input_characters: int = DEFAULT_MAX_INPUT_CHARACTERS,
-                 max_input_nodes: int = DEFAULT_MAX_INPUT_NODES) -> None:
+                 max_input_nodes: int = DEFAULT_MAX_INPUT_NODES,
+                 on_overflow: str = "error", max_concurrency: int = 2) -> None:
         super().__init__()
         if not model_targets or any(
             not isinstance(name, str) or not name or type(target) is not int or target <= 0
@@ -214,11 +273,16 @@ class SiftLiteLLMHook(CustomLogger):
         if (type(max_input_characters) is not int or max_input_characters <= 0
                 or type(max_input_nodes) is not int or max_input_nodes <= 0):
             raise ValueError("invalid Sift pre-count limits")
+        if on_overflow not in ("error", "passthrough"):
+            raise ValueError("on_overflow must be 'error' or 'passthrough'")
+        if type(max_concurrency) is not int or max_concurrency <= 0:
+            raise ValueError("max_concurrency must be a positive integer")
         self.model_targets = dict(model_targets)
         self.raw_limit = raw_limit
         self.max_input_characters = max_input_characters
         self.max_input_nodes = max_input_nodes
-        self._slots = threading.BoundedSemaphore(2)
+        self.on_overflow = on_overflow
+        self._slots = threading.BoundedSemaphore(max_concurrency)
 
     async def _compact(self, router: Any, data: dict, *, call_type: str,
                        target: int) -> dict | None:
@@ -274,7 +338,14 @@ class SiftLiteLLMHook(CustomLogger):
         if router is None:
             raise HTTPException(503, detail="Sift token counter is unavailable")
 
-        return await self._compact(router, data, call_type=call_type, target=target)
+        try:
+            return await self._compact(router, data, call_type=call_type, target=target)
+        except HTTPException as error:
+            if (self.on_overflow == "passthrough" and error.status_code == 413
+                    and (error.headers or {}).get("x-sift-error-code") == "active_too_large"):
+                logging.getLogger("LiteLLM Proxy").warning("sift_passthrough code=active_too_large")
+                return None
+            raise
 
     async def async_post_call_response_headers_hook(
         self, data: dict, user_api_key_dict: Any, response: object,

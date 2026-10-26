@@ -1,0 +1,26 @@
+{
+  "accepted": true,
+  "strict_twine_check": true,
+  "artifacts": [
+    {
+      "artifact": "sift_context-0.11.0-py3-none-any.whl",
+      "sha256": "5008fac3001edb6781d2d27e72586003c6c4e98efd9c719c016df4924acd5fa5",
+      "clean_install": true,
+      "version": "0.11.0",
+      "litellm_absent": true,
+      "standalone_cli_help": true,
+      "offline_gold_compaction": true,
+      "source_bytes_match": true
+    },
+    {
+      "artifact": "sift_context-0.11.0.tar.gz",
+      "sha256": "db2d7921cb820040e18e053b3fb8536e5ccc9d33b5d736959574ede9ab06a0b3",
+      "clean_install": true,
+      "version": "0.11.0",
+      "litellm_absent": true,
+      "standalone_cli_help": true,
+      "offline_gold_compaction": true,
+      "source_bytes_match": true
+    }
+  ]
+}

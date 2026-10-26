@@ -1,0 +1,35 @@
+{
+  "scope": "First-turn repair workflow plus later native follow-up regression work. Later turns need not edit already-correct files or force a failing baseline. Full 27-session matrix still pending.",
+  "pilots": [
+    {
+      "client": "codex",
+      "session_id": "01a17a47-2d11-7e53-a3b3-b4ec3bf3451f",
+      "accepted": true,
+      "first_turn_full_workflow": true,
+      "later_turns_require_native_final_and_hidden_tests_not_forced_repeated_edits": true,
+      "all_turns_accepted": true,
+      "same_native_session_every_turn": true,
+      "active_seconds": 190.579,
+      "turns": 10,
+      "sum_duration_matches": true,
+      "source_hashes_match": true,
+      "requests": 48,
+      "all_compacted_with_gold_and_budget": true
+    },
+    {
+      "client": "claude",
+      "session_id": "8648c654-ceb1-41e8-a4d2-11d7efc46461",
+      "accepted": true,
+      "first_turn_full_workflow": true,
+      "later_turns_require_native_final_and_hidden_tests_not_forced_repeated_edits": true,
+      "all_turns_accepted": true,
+      "same_native_session_every_turn": true,
+      "active_seconds": 195.541,
+      "turns": 7,
+      "sum_duration_matches": true,
+      "source_hashes_match": true,
+      "requests": 41,
+      "all_compacted_with_gold_and_budget": true
+    }
+  ]
+}

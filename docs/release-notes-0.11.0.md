@@ -1,6 +1,15 @@
-# Sift 0.11.0 — draft, unpublished
+# Sift 0.11.0 — preview
 
-> **Status:** Draft release notes for the unreleased `0.11.0.dev0` candidate. Sift has not been published to PyPI or as a stable 0.11.0 GitHub release. The tested `v0.10.0` tag remains the latest tagged install.
+> **Status:** GitHub preview release. This is not a PyPI publication or a claim that the roadmap's quality and adoption gates have passed. Package version and tag are `0.11.0` / `v0.11.0`.
+
+## Issue #59 and native client reliability
+
+- Preserve the core error code in `x-sift-error-code`, complete the HTTP status map, and expose diagnostics for both protected-set overflows. Existing detail strings stay intact.
+- Add explicit active-capacity-only `on_overflow="passthrough"`; default rejection, raw/input-size safeguards, unsupported-input rejection, and overload handling remain enforced. Concurrency is configurable with default two.
+- Export `compact_dynamic` and document its reference-profile defaults. It does not silently alter LiteLLM budgets.
+- Fix live OpenCode continuation on plain assistant `reasoning_content`: preserve retained reasoning, exclude old reasoning from excerpts, and charge a counting floor when necessary.
+- Preserve Codex `additional_tools` catalogs and sealed reasoning exactly. Serialized counting copies never reach the provider. Malformed shapes, incomplete tool batches, stateful references, and unsupported media remain rejected.
+- Add the [three-client acceptance campaign](cli-acceptance.md), covering engineering repairs, migration features, and daily expense reports. See issue #59 receipts for actual executed results; a harness's existence is not a passed campaign.
 
 ## Highlights
 
@@ -21,13 +30,13 @@ See the [final report](results/longbench-v2-minimax-fresh-344-2026-10-21.md).
 
 The non-publishing rehearsal on October 20, 2026, built a wheel and source distribution, passed strict Twine metadata checks, and installed both archives without optional dependencies. The CLI help smoke passed for both, and each clean environment confirmed LiteLLM was absent. The run uploaded distribution and checksum artifacts; its publish job was skipped, and no PyPI upload occurred. See [the rehearsal run](https://github.com/stancsz/sift/actions/runs/39475341440).
 
-The candidate changes the default selection target from 24,576 in `v0.10.0` to **32,768 estimated input tokens**. Set a target explicitly for your route, leave room for output, and treat the byte estimate as approximate. The source remains a development candidate; do not treat these checks as a stable release or PyPI availability.
+This preview changes the default selection target from 24,576 in `v0.10.0` to **32,768 estimated input tokens**. Set a target explicitly for your route, leave room for output, and treat the byte estimate as approximate. These checks do not establish PyPI availability or completion of the stable-adoption gates.
 
 The October 21 local verification of source `e19828a` passed **505 tests** on
 Python 3.14.0 in 152.35 seconds. Its nine release-selection/workflow checks
 also passed separately. An isolated snapshot with only its version changed to `0.11.0` built a
-wheel and sdist that passed strict Twine checks. The checkout remains
-`0.11.0.dev0`; these unpublished archives do not establish that the remaining
+wheel and sdist that passed strict Twine checks. That historical checkout remained
+`0.11.0.dev0`; those unpublished archives did not establish that the remaining
 quality, adoption or publishing gates have passed.
 
 Independent package QA checked source correspondence, both clean installs and

@@ -1,0 +1,2403 @@
+diff --git a/README.md b/README.md
+index 70e07fa..f0d8a3a 100644
+--- a/README.md
++++ b/README.md
+@@ -17,19 +17,19 @@ For coding-agent builders with long tool histories, Sift preserves the active re
+ 
+ **[Run the offline trace demo — no model required](https://stancsz.github.io/sift/#try)**
+ 
+-> **Preview release:** install the tested `v0.10.0` tag from GitHub today. It defaults to a 24,576-token target. The newer 32,768-token default is on unreleased `main` (`0.11.0.dev0`). Sift is not yet published to PyPI. See the [release roadmap](ROADMAP.md).
++> **Preview release:** install `v0.11.0` from GitHub. It defaults to a 32,768-token target and fixes machine-readable overflow handling and native CLI continuations. Sift is not yet published to PyPI. This remains a preview; see the [release notes](docs/release-notes-0.11.0.md) and [roadmap](ROADMAP.md).
+ 
+ ## Quick start
+ 
+ ### Standalone CLI (no LiteLLM)
+ 
+-The standalone Chat Completions proxy is on unreleased `main` (`0.11.0.dev0`). It uses only Python's standard library, binds to `127.0.0.1`, preserves tools and streamed responses, and forwards requests only after a client sends them. No LiteLLM install or manual repository checkout is needed to run the CLI. With Python 3.11+ and Git, install the development candidate into a virtual environment:
++The standalone Chat Completions proxy is included in the `v0.11.0` preview. It uses only Python's standard library, binds to `127.0.0.1`, preserves tools and streamed responses, and forwards requests only after a client sends them. No LiteLLM install or manual repository checkout is needed to run the CLI. With Python 3.11+ and Git, install the preview into a virtual environment:
+ 
+ **Windows PowerShell:**
+ 
+ ```powershell
+ py -m venv .venv
+-.\.venv\Scripts\python.exe -m pip install "sift-context @ git+https://github.com/stancsz/sift.git@main"
++.\.venv\Scripts\python.exe -m pip install "sift-context @ git+https://github.com/stancsz/sift.git@v0.11.0"
+ .\.venv\Scripts\python.exe -m sift.cli serve --base-url http://127.0.0.1:11434/v1 --target 4096 --tokenizer byte-estimate
+ ```
+ 
+@@ -37,7 +37,7 @@ py -m venv .venv
+ 
+ ```sh
+ python3 -m venv .venv
+-.venv/bin/python -m pip install "sift-context @ git+https://github.com/stancsz/sift.git@main"
++.venv/bin/python -m pip install "sift-context @ git+https://github.com/stancsz/sift.git@v0.11.0"
+ .venv/bin/sift serve --base-url http://127.0.0.1:11434/v1 --target 4096 --tokenizer byte-estimate
+ ```
+ 
+@@ -111,7 +111,7 @@ To inspect a conversation without starting a proxy or making a network request,
+ Install the tested GitHub release (Python 3.11+). Sift is not yet on PyPI:
+ 
+ ```sh
+-python -m pip install "sift-context[litellm] @ git+https://github.com/stancsz/sift.git@v0.10.0"
++python -m pip install "sift-context[litellm] @ git+https://github.com/stancsz/sift.git@v0.11.0"
+ ```
+ 
+ Create `litellm_callback.py` beside your LiteLLM config. The published release uses a 24,576-token default; set the target for your model route and reserve space for model output.
+@@ -158,7 +158,7 @@ curl http://127.0.0.1:4000/v1/chat/completions \
+ 
+ The response should contain the backend's answer. This short request is below the Sift target and passes through unchanged. To confirm compaction, send a conversation whose estimated input exceeds the configured target and inspect `x-sift-compacted`, `x-sift-estimated-input-tokens`, and `x-sift-estimated-forwarded-tokens`. On Windows PowerShell, use `curl.exe`. Start with the target below your backend's input limit so there is room for output.
+ 
+-The release install above is the fastest supported path. The unreleased `main` branch currently defaults to 32,768 estimated tokens (`0.11.0.dev0`); use it only if you intentionally want the development candidate. See the [full callback details](#litellm-callback-behavior-and-limits) and [direct library example](#use-the-library-directly).
++The tagged preview above is the reproducible install path. Its default target is 32,768 estimated tokens; set route targets explicitly and reserve model output capacity. See the [full callback details](#litellm-callback-behavior-and-limits) and [direct library example](#use-the-library-directly).
+ 
+ ### LongBench v2: 65.8% fewer prompt tokens
+ 
+@@ -242,21 +242,52 @@ An agent may need an old failure, a decision, or a policy ID hidden in thousands
+ 
+ Sift retains exact recent work, ranks older excerpts against the current task, carries neighboring diagnostic lines, and follows bounded identifier links to related facts. Completed groups of four tool cycles use fixed excerpts; each completed group can also contribute one query-independent, signal-bearing excerpt. The current group appends exactly while its reserved budget permits. This limits unnecessary prefix changes during a tool loop.
+ 
+-**Why it helps:** keep an agent's working set small as its history grows, without another model call or a generated summary. The current `main` candidate's default selection target is **32,768 estimated input tokens** and can be changed per request or model route. The published `v0.10.0` release defaults to **24,576**; set a target explicitly when using that release. Sift can inspect up to **1,000,000 estimated input tokens** in CPU memory. The active task and current tool work must fit; if they do not, Sift fails closed with HTTP 413. Reserve output capacity and account for differences between estimated and provider token counts when choosing a target.
++**Why it helps:** keep an agent's working set small as its history grows, without another model call or a generated summary. The `v0.11.0` preview's default selection target is **32,768 estimated input tokens** and can be changed per request or model route. The published `v0.10.0` release defaults to **24,576**; set a target explicitly when using that release. Sift can inspect up to **1,000,000 estimated input tokens** in CPU memory. The active task and current tool work must fit; if they do not, Sift fails closed with HTTP 413. Reserve output capacity and account for differences between estimated and provider token counts when choosing a target.
+ 
+ ## LiteLLM callback behavior and limits
+ 
+ `local-chat` is the resolved public model name in your proxy configuration. Set a target for each model you want compacted. If a routing callback changes the model name, place it before Sift.
+ 
+-The callback supports **Chat Completions, Anthropic Messages, and stateless text Responses** on **LiteLLM Proxy 1.103.0**, pinned by the optional dependency. It uses the proxy's route counter, runs CPU work off the event loop with at most two admitted compactions per hook instance, and adds a server-owned `sift` audit to internal metadata. Excess work receives HTTP 429 with `Retry-After: 1`. Cancelled queued work is skipped; already running Python work retains its slot until it finishes. Configured routes return `x-sift-compacted` and estimated input/forwarded token headers. Requests below target keep their original messages or input and tools.
++The callback supports **Chat Completions, Anthropic Messages, and stateless text Responses** on **LiteLLM Proxy 1.103.0**, pinned by the optional dependency. It uses the proxy's route counter, runs CPU work off the event loop with a configurable admission limit (two by default) per hook instance, and adds a server-owned `sift` audit to internal metadata. Excess work receives HTTP 429 with `Retry-After: 1`. Cancelled queued work is skipped; already running Python work retains its slot until it finishes. Configured routes return `x-sift-compacted` and estimated input/forwarded token headers. Requests below target keep their original messages or input and tools.
++
++Starting with the 0.11.0 preview, core compaction errors converted to `HTTPException` expose their code in `exc.headers["x-sift-error-code"]`, while preserving detail text and chained cause. The status map covers current core/dynamic errors, including `late_instruction_limit` (422) and selection overflows (413). Active-work failures use `active_too_large`; `raw_limit` and `input_size_limit` remain distinct 413 errors.
++
++Set `on_overflow="passthrough"` on `SiftLiteLLMHook` to forward only `active_too_large` requests unchanged. The default, `"error"`, preserves rejection. The full original request must fit the upstream's loaded context with output capacity reserved. This policy never bypasses raw/input-size guards, other selection overflows, unsupported content, or overload. Set `max_concurrency` to a positive integer to change the default two admitted compactions; it bounds CPU work, not provider requests.
++
++The two protected-set overflow paths also expose `x-sift-required-tokens`, `x-sift-target-tokens`, and `x-sift-protected-region`. The count covers the complete protected set. Sift reserves 256 tokens of selection headroom, so rejection can occur before that count reaches the target. Diagnostics contain counts and a region label, not prompt text.
++
++Existing callbacks matching `active turn` must be updated, or replaced with the built-in overflow policy. Upgrading Sift alone cannot change an old callback's string match. A custom callback can use:
++
++```python
++from fastapi import HTTPException
++from sift.litellm_proxy import SiftLiteLLMHook
++
++class PassThroughOn413Hook(SiftLiteLLMHook):
++    async def async_pre_call_hook(self, *args, **kwargs):
++        try:
++            return await super().async_pre_call_hook(*args, **kwargs)
++        except HTTPException as exc:
++            if (exc.status_code == 413 and
++                    (exc.headers or {}).get("x-sift-error-code") == "active_too_large"):
++                return None  # Leave the original request unchanged.
++            raise
++```
++
++Do not pass through every HTTP 413: input-size and raw-limit safeguards must remain fail-closed. Returning `None` leaves the request unchanged and does not make it fit; the deployer remains responsible for upstream context limits and sufficient output capacity.
++
++Sift keeps the latest tool cycle exact; it does not silently truncate an oversized result. Raising the target helps only when the loaded model context has room. The pure [`compact_dynamic` API](docs/dynamic-local-inference.md) is available as `from sift import compact_dynamic`; it does not automatically change the callback's static model targets. Its defaults describe a reference local-inference profile, not universal model limits.
++
++Plain assistant `reasoning_content` from OpenAI-compatible clients is preserved on retained messages and omitted from extracted historical evidence. Other roles and non-text values remain unsupported. The callback charges a text-token floor when the native counter ignores that field.
++
++The [native CLI acceptance harness](docs/cli-acceptance.md) requires real tool continuations, independently checked edits, and a fact retained from compacted history. Its receipts establish those tested paths, not an absence of all bugs or broad task-quality parity.
+ 
+ Before tokenization, Sift bounds the parsed request to **16,777,216 aggregate string characters and 250,000 data nodes** by default. These safety limits are separate from the one-million-token `raw_limit`; both can be raised for trusted workloads through `max_input_characters` and `max_input_nodes`. The LiteLLM callback applies the guard to the complete parsed request, including tool schemas. Because callbacks run after HTTP JSON parsing, configure a request-body limit at the existing ingress or reverse proxy to bound initial memory use. LiteLLM 1.103.0's `max_request_size_mb` is Enterprise-only and is ignored by community installations; do not rely on it for this boundary. [Algorithm and guard behavior](docs/algorithm.md#intake-guards).
+ 
+ The integration uses private LiteLLM counting/conversion methods, so upgrading LiteLLM requires compatibility testing. Counting copies repair missing array `items` and account for tool schema text that this version's formatter skips. Original provider definitions stay exact. Sift leaves provider transport, streaming, retries, and public protocols to LiteLLM. [LiteLLM callback reference](https://docs.litellm.ai/docs/proxy/call_hooks).
+ 
+-The source-slice work on `main` is an unreleased `0.11.0.dev0` candidate. The tagged `v0.10.0` install above remains the tested release; its default target is 24,576, while this candidate defaults to 32,768. The candidate's new retention result is development evidence until fresh validation is complete.
++The `v0.11.0` preview includes the source-slice work and defaults to 32,768 tokens. Its retention results remain development evidence, separate from the native CLI compatibility checks.
+ 
+-Responses input must include complete history. Text messages, function/custom tools, function namespaces, and plain reasoning summaries are supported; stateful references, encrypted reasoning, media, built-in tools, and incomplete tool batches are rejected. For a Chat-only backend, enable LiteLLM's `use_chat_completions_api: true` on that deployment to let its native adapter serve Responses clients. [Adapter contract and audit logging](docs/algorithm.md#litellm-responses-selection-adapter).
++Responses input must include complete history. Text messages, function/custom tools, function namespaces, and plain reasoning summaries are supported. Codex `additional_tools` catalogs and encrypted reasoning items are retained verbatim; serialized copies are used only for counting, and reasoning never becomes historical evidence. Stateful references, media, built-in tools, malformed catalogs, and incomplete tool batches are rejected. For a Chat-only backend, enable LiteLLM's `use_chat_completions_api: true` on that deployment to let its native adapter serve Responses clients. [Adapter contract and audit logging](docs/algorithm.md#litellm-responses-selection-adapter).
+ 
+ ## Use the library directly
+ 
+@@ -277,7 +308,7 @@ forwarded_messages = result.messages
+ audit = result.audit
+ ```
+ 
+-On current `main`, the default target is `DEFAULT_TARGET_TOKENS` (32,768). The published `v0.10.0` release defaults to 24,576. Pass `target` to select a budget explicitly. The hard bound is `forwarded_tokens <= target` according to your supplied counter. The audit includes raw and forwarded counts, omitted estimated tokens, retained prior turns, and selected excerpts. If the active task or latest tool cycle alone exceeds the target, compaction raises `CompactionError`; the LiteLLM callback returns HTTP 413. **Reserve output separately.** Estimated tokens may differ from provider counts, and Sift does not allocate or manage KV cache.
++In the `v0.11.0` preview, the default target is `DEFAULT_TARGET_TOKENS` (32,768). The published `v0.10.0` release defaults to 24,576. Pass `target` to select a budget explicitly. The hard bound is `forwarded_tokens <= target` according to your supplied counter. The audit includes raw and forwarded counts, omitted estimated tokens, retained prior turns, and selected excerpts. If the active task or latest tool cycle alone exceeds the target, compaction raises `CompactionError`; the LiteLLM callback returns HTTP 413. **Reserve output separately.** Estimated tokens may differ from provider counts, and Sift does not allocate or manage KV cache.
+ 
+ ## How Sift handles long histories
+ 
+diff --git a/TECH_DEBT.md b/TECH_DEBT.md
+new file mode 100644
+index 0000000..2e2013b
+--- /dev/null
++++ b/TECH_DEBT.md
+@@ -0,0 +1,7 @@
++# Deferred technical debt
++
++- Historical excerpt indexes on the default selection path are relative to the
++  eligible history span, after immutable leading instructions. Clarify this
++  index coordinate system before external consumers treat it as a full-request
++  index. Issue #59's harness follows the existing behavior; selection/index
++  semantics were not changed as part of its error and client-compatibility fix.
+diff --git a/benchmarks/acceptance_tasks.py b/benchmarks/acceptance_tasks.py
+new file mode 100644
+index 0000000..fc73af3
+--- /dev/null
++++ b/benchmarks/acceptance_tasks.py
+@@ -0,0 +1,122 @@
++"""Synthetic, deterministic tasks for long-session CLI acceptance."""
++import random
++
++TASKS = ("engineering", "migration", "expenses")
++
++_REQ = {
++    "engineering": [
++        "Implement clamp(value, lower=0, upper=100): return value limited to inclusive bounds.",
++        "Accept int/float values, reject bool and non-numeric values with TypeError; reject non-finite numbers with ValueError.",
++        "Raise ValueError when lower exceeds upper.",
++        "Implement clamp_all(iterable, lower=0, upper=100), returning a list and accepting generators.",
++        "Implement clamp_report(iterable, lower=0, upper=100): count/min/max/sum of clamped values; empty gives count=0 and min/max/sum=None/None/0.",
++        "Validate bounds as finite non-bool numbers and reject invalid bounds with TypeError or ValueError.",
++        "Materialize input once; clamp_all and clamp_report must handle one-shot iterators consistently.",
++        "Keep all earlier behavior, including empty inputs and inclusive bounds.",
++    ],
++    "migration": [
++        "Implement normalize_settings(mapping): copy input, strip name, map timeout_ms to timeout_seconds, and supply defaults name='default', timeout_seconds=30.",
++        "Convert nonnegative integer timeout_ms to timeout_seconds by dividing by 1000; reject bool and non-integer values.",
++        "Reject negative timeout values and non-string names; empty stripped name uses the default.",
++        "Reject simultaneous timeout_ms and timeout_seconds keys, even if equal.",
++        "Reject unknown keys; accepted keys are name, timeout_ms, timeout_seconds, retries.",
++        "Validate retries as a nonnegative integer excluding bool; default retries=0.",
++        "Do not mutate inputs; normalized output must be idempotent.",
++        "Implement migrate_many(iterable) preserving order and returning independently normalized dictionaries.",
++    ],
++    "expenses": [
++        "Implement expense_totals(csv_text): parse CSV header category,amount and return category totals as Decimal quantized to 0.01 using HALF_EVEN.",
++        "Strip category whitespace and aggregate categories case-insensitively, preserving first spelling in output.",
++        "Ignore blank rows; parse amounts as Decimal and reject malformed rows/amounts with ValueError.",
++        "Allow negative amounts as refunds; reject non-finite amounts.",
++        "Support optional currency column; reject mixed nonblank currencies.",
++        "Implement expense_report(csv_text) with totals, grand_total (fixed to two decimals), and count of parsed nonblank rows.",
++        "Reject missing required headers and duplicate headers; input is never modified.",
++        "Keep deterministic output ordering by first category appearance and exact Decimal arithmetic.",
++    ],
++}
++
++_INITIAL = {
++    "engineering": "def clamp(value, lower=0, upper=100):\n    return value\n",
++    "migration": "def normalize_settings(settings):\n    return settings\n",
++    "expenses": "def expense_totals(csv_text):\n    return {}\n",
++}
++
++def initial_source(task: str) -> str:
++    if task not in TASKS:
++        raise ValueError("unknown task")
++    return _INITIAL[task]
++
++def _engineering_tests(stage: int, seed: int) -> str:
++    rng = random.Random(seed)
++    probes = [rng.randint(-200, 200) for _ in range(16)]
++    body = """    def test_behavior(self):
++        import task
++        self.assertEqual(task.clamp(-3), 0)
++        self.assertEqual(task.clamp(120), 100)
++        self.assertEqual(task.clamp(7, 5, 9), 7)
++"""
++    if stage >= 1: body += "        for x in (True, '2', None):\n            with self.assertRaises(TypeError): task.clamp(x)\n"
++    if stage >= 2: body += "        with self.assertRaises(ValueError): task.clamp(1, 5, 2)\n"
++    if stage >= 3: body += "        with self.assertRaises(ValueError): task.clamp(float('inf'))\n"
++    if stage >= 4: body += "        self.assertEqual(task.clamp_all([-1, 4, 120]), [0, 4, 100])\n"
++    if stage >= 5: body += "        self.assertEqual(task.clamp_report([]), {'count': 0, 'min': None, 'max': None, 'sum': 0})\n        self.assertEqual(task.clamp_report([2, 8])['sum'], 10)\n"
++    if stage >= 6: body += "        with self.assertRaises((TypeError, ValueError)): task.clamp(1, float('nan'), 4)\n"
++    if stage >= 7: body += "        it = iter([1, 101]); self.assertEqual(task.clamp_all(it), [1, 100])\n"
++    if stage >= 8: body += f"        self.assertEqual(task.clamp_all({probes!r}), [max(0, min(100, x)) for x in {probes!r}])\n"
++    return body
++
++def _migration_tests(stage: int, seed: int) -> str:
++    body = """    def test_behavior(self):
++        import task
++        self.assertEqual(task.normalize_settings({}), {'name': 'default', 'timeout_seconds': 30, 'retries': 0})
++        self.assertEqual(task.normalize_settings({'name': ' X ', 'timeout_seconds': 4}), {'name': 'X', 'timeout_seconds': 4, 'retries': 0})
++"""
++    cases = [
++        "self.assertEqual(task.normalize_settings({'timeout_ms': 2500})['timeout_seconds'], 2.5)",
++        "with self.assertRaises((TypeError, ValueError)): task.normalize_settings({'timeout_ms': True})",
++        "with self.assertRaises(ValueError): task.normalize_settings({'timeout_ms': 1, 'timeout_seconds': 1})",
++        "with self.assertRaises(ValueError): task.normalize_settings({'extra': 1})",
++        "with self.assertRaises((TypeError, ValueError)): task.normalize_settings({'retries': -1})",
++        "d={'name':' A '}; out=task.normalize_settings(d); self.assertEqual(d, {'name':' A '}); self.assertEqual(task.normalize_settings(out), out)",
++        "self.assertEqual(task.migrate_many([{}, {'name':' B '}]), [{'name':'default','timeout_seconds':30,'retries':0},{'name':'B','timeout_seconds':30,'retries':0}])",
++    ]
++    for i, case in enumerate(cases, 1):
++        if stage >= i: body += "        " + case + "\n"
++    if stage >= 8:
++        milliseconds = 1000 + seed % 7000
++        body += f"        self.assertEqual(task.normalize_settings({{'timeout_ms': {milliseconds}}})['timeout_seconds'], {milliseconds / 1000!r})\n"
++    return body
++
++def _expense_tests(stage: int, seed: int) -> str:
++    body = """    def test_behavior(self):
++        import task
++        from decimal import Decimal
++        data = 'category,amount\\nFood,1.005\\nfood,2.00\\nTransit,3.00\\n'
++        self.assertEqual(task.expense_totals(data), {'Food': Decimal('3.00'), 'Transit': Decimal('3.00')})
++"""
++    cases = [
++        "self.assertEqual(task.expense_totals('category,amount\\n A ,1\\na,2\\n'), {'A': Decimal('3.00')})",
++        "self.assertEqual(task.expense_totals('category,amount\\nrefund,-2\\n')['refund'], Decimal('-2.00'))",
++        "with self.assertRaises(ValueError): task.expense_totals('category,amount\\nx,nope\\n')",
++        "with self.assertRaises(ValueError): task.expense_totals('category,amount,currency\\nx,1,USD\\ny,2,CAD\\n')",
++        "r=task.expense_report('category,amount\\nx,1.00\\nx,2.00\\n'); self.assertEqual(r['count'], 2); self.assertEqual(r['grand_total'], Decimal('3.00'))",
++        "with self.assertRaises(ValueError): task.expense_totals('amount\\n1\\n')",
++        "self.assertEqual(list(task.expense_totals('category,amount\\nb,1\\na,2\\n')), ['b','a'])",
++    ]
++    for i, case in enumerate(cases, 1):
++        if stage >= i: body += "        " + case + "\n"
++    if stage >= 8:
++        amount = seed % 89 + 10
++        body += f"        self.assertEqual(task.expense_totals('category,amount\\nedge,{amount}.00\\n')['edge'], Decimal('{amount}.00'))\n"
++        body += "        self.assertEqual(task.expense_totals('category,amount\\nx,1.005\\nx,0.005\\n')['x'], Decimal('1.01'))\n"
++    return body
++
++def stage(task: str, number: int, seed: int) -> dict:
++    if task not in TASKS or not isinstance(number, int) or number < 0 or not isinstance(seed, int):
++        raise ValueError("invalid task, stage, or seed")
++    n = min(number, 8)
++    tests = {"engineering": _engineering_tests, "migration": _migration_tests, "expenses": _expense_tests}[task](n, seed)
++    tests += "    def test_evidence(self):\n        import json\n        from pathlib import Path\n        value = json.loads(Path('evidence.json').read_text())['acceptance_delay_seconds']\n        self.assertIs(type(value), int)\n"
++    return {"requirement": "Stage " + str(number) + ": " + " ".join(_REQ[task][:min(n + 1, 8)]) + " Investigate and update task.py if tests fail, then execute the tests.",
++            "tests": "import unittest\n\nclass Acceptance(unittest.TestCase):\n" + tests + "\nif __name__ == '__main__':\n    unittest.main()\n"}
+diff --git a/benchmarks/cli_acceptance.py b/benchmarks/cli_acceptance.py
+new file mode 100644
+index 0000000..d701703
+--- /dev/null
++++ b/benchmarks/cli_acceptance.py
+@@ -0,0 +1,496 @@
++"""Opt-in native CLI acceptance through the installed Sift LiteLLM adapter.
++
++Only synthetic fixture data is used. No shared gateway configuration is changed.
++"""
++import argparse
++import asyncio
++from copy import deepcopy
++import hashlib
++from importlib.metadata import version
++import json
++import os
++import re
++from pathlib import Path
++import shutil
++import socket
++import subprocess
++import sys
++import threading
++import time
++from urllib.parse import urlparse
++
++
++def inject_history(data: dict, lines: int = 8000) -> dict:
++    """Add older synthetic evidence without changing current instructions/tools."""
++    result = deepcopy(data)
++    responses = "messages" not in result
++    messages = result["input"] if responses else result["messages"]
++    if isinstance(messages, str):
++        messages = [{"role": "user", "content": messages}]
++        result["input"] = messages
++    index = 0
++    while index < len(messages) and messages[index].get("role") in {"system", "developer"}:
++        index += 1
++    history = [f"routine archive record {n}: completed ordinary build with no changes" for n in range(lines)]
++    history[lines // 2] = "APPROVED deployment setting: acceptance_delay_seconds=37; retain this exact approved value."
++    messages[index:index] = [
++        {"role": "user", "content": "Archived deployment evidence:\n" + "\n".join(history)},
++        {"role": "assistant", "content": "The archived deployment evidence is recorded."},
++    ]
++    return result
++
++
++def native_evidence(client: str, events: list[dict]) -> dict:
++    calls, completed = {}, {}
++    outputs = {}
++    shell_reads = {}
++    terminal = False
++    errors = []
++    for index, event in enumerate(events):
++        if event.get("type") == "error":
++            errors.append(event.get("error", "native error"))
++        if client == "claude":
++            message = event.get("message") or {}
++            for block in message.get("content", []) if isinstance(message, dict) else []:
++                if not isinstance(block, dict):
++                    continue
++                if block.get("type") == "tool_use":
++                    calls[block["id"]] = {"name": block.get("name", ""), "input": block.get("input") or {}, "index": index}
++                if block.get("type") == "tool_result":
++                    completed[block["tool_use_id"]] = not block.get("is_error", False)
++                    outputs[block["tool_use_id"]] = str(block.get("content", ""))
++            if event.get("type") == "result":
++                terminal = event.get("subtype") == "success" and not event.get("is_error", False)
++        elif client == "codex":
++            item = event.get("item") or {}
++            if event.get("type") == "item.completed" and item.get("type") == "command_execution":
++                key = item["id"]
++                command, output = item.get("command", ""), item.get("aggregated_output", "")
++                calls[key] = {"name": "Bash", "input": {"command": command}, "index": index}
++                completed[key] = item.get("exit_code") == 0
++                outputs[key] = output
++                # The native CLI exposes file reads as command executions.
++                if completed[key] and re.search(r"Get-Content|\bcat\b|read_text", command):
++                    for filename in ("task.py", "test_task.py", "expenses.csv"):
++                        if re.search(r"(?<![\w.])" + re.escape(filename) + r"(?![\w.])", command):
++                            shell_reads.setdefault(filename, index)
++            if event.get("type") == "item.completed" and item.get("type") == "file_change":
++                key = item["id"]
++                calls[key] = {"name": "Edit", "input": {"paths": [c.get("path", "") for c in item.get("changes", [])]}, "index": index}
++                completed[key] = item.get("status") == "completed"
++            if event.get("type") == "turn.completed":
++                terminal = True
++            if event.get("type") == "turn.failed":
++                terminal = False
++                errors.append("turn.failed")
++        else:
++            part = event.get("part") or {}
++            if event.get("type") == "tool_use" and part.get("type") == "tool":
++                call_id = part.get("callID", part.get("id"))
++                calls[call_id] = {"name": part.get("tool", ""), "input": (part.get("state") or {}).get("input") or {}, "index": index}
++                state = part.get("state") or {}
++                if state.get("status") in {"completed", "error"}:
++                    exit_code = (state.get("metadata") or {}).get("exit")
++                    completed[call_id] = state.get("status") == "completed" and exit_code in (None, 0)
++                    outputs[call_id] = str(state.get("output", ""))
++            if event.get("type") == "step_finish":
++                terminal = part.get("reason") == "stop"
++    successful = [calls[key]["name"] for key, ok in completed.items() if ok and key in calls]
++    read_files, written_files, first_writes, baselines, finals = dict(shell_reads), {}, {}, [], []
++    for key, call in calls.items():
++        name, arguments, index = call["name"].lower(), call["input"], call["index"]
++        paths = arguments.get("paths") or [arguments.get("file_path", arguments.get("filePath", arguments.get("path", "")))]
++        for path in paths:
++            filename = str(path).replace("\\", "/").rsplit("/", 1)[-1]
++            if completed.get(key):
++                if name == "read" and filename in {"task.py", "test_task.py", "expenses.csv"}:
++                    read_files.setdefault(filename, index)
++                if name in {"write", "edit"} and filename in {"task.py", "evidence.json", "daily-report.json"}:
++                    written_files[filename] = index
++                    first_writes.setdefault(filename, index)
++        command = arguments.get("command", "")
++        if isinstance(command, str):
++            wrapper = re.fullmatch(r'''["'].*?(?:pwsh|powershell)\.exe["']\s+(?:-NoProfile\s+)?-Command\s+(["'])(.*)\1''', command, re.I | re.S)
++            if wrapper:
++                command = wrapper.group(2).strip()
++        if name in {"bash", "powershell"} and isinstance(command, str) and re.fullmatch(
++            r'\s*(?:&\s*)?(?:"[^"\r\n]+"|[^\s;&|]+)\s+-m\s+unittest\s+-q\s*', command,
++        ):
++            output = outputs.get(key, "")
++            if key in completed and not completed[key] and "FAILED" in output:
++                baselines.append(index)
++            if completed.get(key) and "Ran 2 tests" in output and re.search(r"\bOK\b", output):
++                finals.append(index)
++    required_reads, required_writes = {"task.py", "test_task.py"}, {"task.py", "evidence.json"}
++    ordered = (required_reads <= set(read_files) and required_writes <= set(written_files)
++               and any(max(read_files[name] for name in required_reads) < baseline
++                       < min(first_writes[name] for name in required_writes)
++                       and max(written_files[name] for name in required_writes) < final
++                       for baseline in baselines for final in finals))
++    return {"terminal_success": terminal and not errors, "calls": len(calls),
++            "completed": len(completed), "successful_tools": successful,
++            "unmatched_results": len(set(completed) - set(calls)), "native_errors": len(errors),
++            "read_files": sorted(read_files), "written_files": sorted(written_files),
++            "baseline_failed": bool(baselines), "final_passed": bool(finals), "workflow_ordered": bool(ordered)}
++
++
++def historical_gold_retained(messages: list[dict], source_index: int) -> bool:
++    """Require the injected source's excerpt, never a later agent echo."""
++    marker = f"[message {source_index} user] "
++    for message in messages:
++        content = message.get("content")
++        if isinstance(content, list):
++            content = "\n".join(block.get("text", "") for block in content if isinstance(block, dict)
++                                and block.get("type") in {"text", "input_text"})
++        if (message.get("role") == "user" and isinstance(content, str)
++                and content.startswith("Earlier conversation, lossily excerpted")):
++            if any(line.startswith(marker) and "acceptance_delay_seconds=37" in line for line in content.splitlines()):
++                return True
++    return False
++
++
++class RouteCounter:
++    def _count_pre_call_check_tokens(self, messages, input, request_kwargs):
++        from litellm import Router
++        return Router._count_pre_call_check_tokens(self, messages, input, request_kwargs)
++
++
++def make_app(upstream: str, key: str, model: str, target: int, audits: list[dict]):
++    import httpx
++    from fastapi import FastAPI, Request
++    from fastapi.responses import StreamingResponse
++    from sift.litellm_proxy import SiftLiteLLMHook
++    app = FastAPI()
++    hook = SiftLiteLLMHook({model: target})
++
++    @app.get("/v1/models")
++    async def models():
++        return {"object": "list", "data": [{"id": model, "object": "model"}]}
++
++    @app.post("/v1/{endpoint:path}")
++    async def forward(endpoint: str, request: Request):
++        from fastapi import HTTPException
++        if endpoint not in {"messages", "chat/completions", "responses"}:
++            raise HTTPException(404, "Unsupported acceptance protocol")
++        original = await request.json()
++        data = inject_history(original)
++        data["model"] = model
++        call_type = {"messages": "anthropic_messages", "responses": "aresponses"}.get(endpoint, "acompletion")
++        original_messages = original.get("messages", original.get("input", []))
++        if isinstance(original_messages, str):
++            original_messages = [{"role": "user", "content": original_messages}]
++        shapes = [{"role": m.get("role", m.get("type")), "keys": sorted(m),
++                   **({"type": m["type"]} if "type" in m else {})} for m in original_messages]
++        try:
++            compacted = await hook._compact(RouteCounter(), data, call_type=call_type, target=target)
++        except HTTPException as error:
++            audits.append({"protocol": call_type, "input_shapes": shapes,
++                           "sift_error": (error.headers or {}).get("x-sift-error-code"),
++                           "status": error.status_code})
++            raise
++        audit = compacted.pop("metadata", {}).get("sift", {})
++        # LiteLLM may choose a different internal metadata bucket.
++        audit = compacted.pop("litellm_metadata", {}).get("sift", audit)
++        output_messages = compacted.get("messages", compacted.get("input", []))
++        # The default core's excerpt indexes are relative to the eligible
++        # historical span, after the immutable instruction prefix. Our
++        # injected archive is always the first message in that span.
++        history_index = 0
++        original_sealed = [item for item in original_messages
++                           if item.get("type") == "reasoning" and item.get("encrypted_content")]
++        retained_sealed = [item for item in output_messages
++                           if item.get("type") == "reasoning" and item.get("encrypted_content")]
++        last_user = max((i for i, item in enumerate(original_messages) if item.get("role") == "user"), default=-1)
++        active_sealed = [item for item in original_messages[last_user + 1:]
++                         if item.get("type") == "reasoning" and item.get("encrypted_content")]
++        entry = {**audit, "protocol": call_type, "input_shapes": shapes,
++                       "gold_retained": historical_gold_retained(output_messages, history_index),
++                       "sealed_items_retained": len(retained_sealed),
++                       "sealed_items_unchanged": all(item in original_sealed for item in retained_sealed),
++                       "latest_active_sealed_retained": not active_sealed or active_sealed[-1] in retained_sealed,
++                       "catalogs_unchanged": [item for item in original_messages if item.get("type") == "additional_tools"]
++                       == [item for item in output_messages if item.get("type") == "additional_tools"],
++                       "tool_results": sum(m.get("role") == "tool" or m.get("type") in {"function_call_output", "custom_tool_call_output"} or any(
++                           isinstance(b, dict) and b.get("type") == "tool_result"
++                           for b in (m.get("content") if isinstance(m.get("content"), list) else [])
++                       ) for m in original_messages)}
++        audits.append(entry)
++        headers = {"Authorization": f"Bearer {key}", "x-api-key": key,
++                   "anthropic-version": request.headers.get("anthropic-version", "2023-06-01")}
++        client = httpx.AsyncClient(timeout=httpx.Timeout(90, connect=10), follow_redirects=False)
++        try:
++            response = await client.send(client.build_request(
++                "POST", upstream.rstrip("/") + "/" + endpoint, json=compacted, headers=headers,
++            ), stream=True)
++        except BaseException:
++            await client.aclose()
++            raise
++        entry["upstream_status"] = response.status_code
++
++        async def body():
++            try:
++                async for chunk in response.aiter_raw():
++                    yield chunk
++            finally:
++                await response.aclose()
++                await client.aclose()
++
++        return StreamingResponse(body(), status_code=response.status_code,
++                                 media_type=response.headers.get("content-type", "application/json"))
++    return app
++
++
++def executable(client: str) -> str:
++    if client == "codex":
++        # Resolve the native binary behind the user's CLI, not a different
++        # Desktop alpha binary that may also be present on PATH.
++        shim = shutil.which("codex.cmd" if os.name == "nt" else "codex")
++        if not shim:
++            raise ValueError("codex is not installed")
++        if os.name != "nt":
++            return shim
++        matches = list((Path(shim).parent / "node_modules/@openai/codex").glob("**/codex.exe"))
++        if len(matches) != 1:
++            raise ValueError("Cannot uniquely resolve the native binary behind codex.cmd")
++        return str(matches[0])
++    candidate = shutil.which(client + ".cmd" if os.name == "nt" else client)
++    if not candidate:
++        raise ValueError(f"{client} is not installed")
++    if os.name == "nt":
++        package = "opencode-ai" if client == "opencode" else "@anthropic-ai/claude-code"
++        native = Path(candidate).parent / "node_modules" / package / "bin" / (client + ".exe")
++        if not native.is_file():
++            raise ValueError(f"Native client binary missing: {native}")
++        return str(native)
++    return candidate
++
++
++def child_command(client: str, exe: str, home: Path, base: str, model: str, prompt: str,
++                  *, persist: bool = False, session_id: str | None = None):
++    env = {name: value for name, value in os.environ.items()
++           if not name.startswith(("OPENAI_", "ANTHROPIC_", "CLAUDE_", "OPENCODE_", "CODEX_"))
++           and not any(word in name.upper() for word in ("KEY", "TOKEN", "SECRET"))}
++    home.mkdir(exist_ok=persist)
++    env.update({"HOME": str(home), "USERPROFILE": str(home),
++                "XDG_CONFIG_HOME": str(home / "config"), "XDG_DATA_HOME": str(home / "data"),
++                "XDG_CACHE_HOME": str(home / "cache"), "XDG_STATE_HOME": str(home / "state")})
++    if client == "claude":
++        env.update({"CLAUDE_CONFIG_DIR": str(home), "ANTHROPIC_API_KEY": "sift-loopback-only",
++                    "ANTHROPIC_BASE_URL": base.removesuffix("/v1"), "ANTHROPIC_MODEL": model,
++                    "CLAUDE_CODE_DISABLE_1M_CONTEXT": "1", "CLAUDE_CODE_MAX_CONTEXT_TOKENS": "256000",
++                    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "4096", "MAX_THINKING_TOKENS": "512",
++                    "CLAUDE_CODE_MAX_RETRIES": "0", "API_TIMEOUT_MS": "90000"})
++        for tier in ("SONNET", "OPUS", "HAIKU"):
++            env[f"ANTHROPIC_DEFAULT_{tier}_MODEL"] = model
++        command = [exe, "-p", "--bare", "--setting-sources", "", "--strict-mcp-config",
++                "--mcp-config", '{"mcpServers":{}}', "--model", model,
++                "--tools", "Read,Edit,Bash,PowerShell", "--allowedTools", "Read,Edit,Bash,PowerShell",
++                "--permission-mode", "dontAsk", "--max-turns", "15", "--output-format", "stream-json",
++                "--verbose"]
++        command += ["--resume", session_id] if session_id else ([] if persist else ["--no-session-persistence"])
++        return command + [prompt], env
++    if client == "codex":
++        # Windows' native restricted-token runner needs the real OS user
++        # profile. Isolate Codex state with CODEX_HOME instead of pretending
++        # that a fixture directory is a Windows user profile.
++        env["USERPROFILE"] = os.environ.get("USERPROFILE", str(Path.home()))
++        env["HOME"] = os.environ.get("HOME") or env["USERPROFILE"]
++        # Reuse the already-provisioned Windows sandbox runtime; fresh homes
++        # cannot launch its restricted-token helper on this host. Config is
++        # ignored below and provider/catalog settings remain process-local.
++        runtime_home = Path(env["USERPROFILE"]) / ".codex" if os.name == "nt" else home
++        env.update({"CODEX_HOME": str(runtime_home), "SIFT_LOCAL_KEY": "sift-loopback-only"})
++        catalog = home / "models.json"
++        if not catalog.exists():
++            bundled = json.loads(subprocess.check_output([exe, "debug", "models", "--bundled"], env=env, timeout=15))
++            template = next((entry for entry in bundled["models"] if entry["slug"] == "gpt-5.6-luna"), bundled["models"][0])
++            default = deepcopy(template)
++            default.update(slug=model, display_name=model)
++            bundled["models"].append(default)
++            catalog.write_text(json.dumps(bundled), encoding="utf-8")
++        settings = {
++            "model_provider": "sift_acceptance", "model_catalog_json": str(catalog),
++            "model_context_window": 256000, "model_auto_compact_token_limit": 240000,
++            "approval_policy": "never", "features.shell_tool": True, "features.apps": False,
++            "sandbox_mode": "workspace-write",
++            "features.plugins": False, "features.multi_agent": False,
++            "model_providers.sift_acceptance.name": "Sift acceptance",
++            "model_providers.sift_acceptance.base_url": base,
++            "model_providers.sift_acceptance.env_key": "SIFT_LOCAL_KEY",
++            "model_providers.sift_acceptance.wire_api": "responses",
++            "model_providers.sift_acceptance.requires_openai_auth": False,
++            "model_providers.sift_acceptance.supports_websockets": False,
++            "model_providers.sift_acceptance.request_max_retries": 0,
++            "model_providers.sift_acceptance.stream_max_retries": 0,
++        }
++        if os.name == "nt":
++            settings["windows.sandbox"] = "unelevated"
++        command = [exe, "--cd", str(home.parent / "workspace"), "exec", "--ignore-user-config", "--ignore-rules"]
++        if session_id:
++            command += ["resume", session_id]
++        else:
++            command += ["--skip-git-repo-check", "--sandbox", "workspace-write"]
++        command += ["--json", "--model", model]
++        for name, value in settings.items():
++            command += ["-c", name + "=" + json.dumps(value)]
++        return command + [prompt], env
++    config = {"$schema": "https://opencode.ai/config.json", "model": f"sift/{model}",
++              "small_model": f"sift/{model}", "enabled_providers": ["sift"],
++              "provider": {"sift": {"npm": "@ai-sdk/openai-compatible", "name": "Sift acceptance",
++                  "options": {"baseURL": base, "apiKey": "sift-loopback-only"},
++                  "models": {model: {"name": model, "limit": {"context": 256000, "output": 4096}}}}},
++              "permission": {"*": "deny", "read": "allow", "edit": "allow", "write": "allow",
++                             "bash": "allow", "glob": "allow", "grep": "allow"}}
++    env.update({"OPENCODE_CONFIG_CONTENT": json.dumps(config), "OPENCODE_CONFIG_DIR": str(home),
++                "OPENCODE_DISABLE_DEFAULT_PLUGINS": "true"})
++    command = [exe, "run", "--pure", "--format", "json", "--model", f"sift/{model}"]
++    if session_id:
++        command += ["--session", session_id]
++    return command + [prompt], env
++
++
++def codex_sandbox_readiness(exe, root, workspace, env):
++    from types import SimpleNamespace
++    from benchmarks.agents import sandbox_preflight
++    return sandbox_preflight(SimpleNamespace(windows_sandbox="unelevated", timeout=20), exe, root, workspace, env)
++
++
++def run(args) -> dict:
++    import uvicorn
++    parsed = urlparse(args.upstream_base_url)
++    if parsed.scheme != "http" or parsed.hostname != "127.0.0.1" or parsed.port != 4000 or parsed.path != "/v1":
++        raise ValueError("Live acceptance is restricted to http://127.0.0.1:4000/v1")
++    key = os.environ[args.api_key_env]
++    output = args.output_dir.resolve()
++    output.mkdir(parents=True, exist_ok=False)
++    workspace = output / "workspace"
++    workspace.mkdir()
++    (workspace / "task.py").write_text("def clamp(value):\n    return value\n", encoding="utf-8")
++    (workspace / "evidence.json").write_text("{}\n", encoding="utf-8")
++    (workspace / "test_task.py").write_text(
++        "import json, unittest\nfrom pathlib import Path\nfrom task import clamp\n"
++        "class Checks(unittest.TestCase):\n"
++        "    def test_bounds(self):\n        self.assertEqual([clamp(x) for x in [-5,0,3,100,105]], [0,0,3,100,100])\n"
++        "    def test_evidence(self):\n        self.assertIsInstance(json.loads(Path('evidence.json').read_text())['acceptance_delay_seconds'], int)\n",
++        encoding="utf-8")
++    gold_hash = hashlib.sha256((workspace / "test_task.py").read_bytes()).hexdigest()
++    baseline = subprocess.run([sys.executable, "-m", "unittest", "-q"], cwd=workspace, capture_output=True, text=True)
++    prompt = ("You are the leaf coding agent in an isolated synthetic acceptance workspace. Do not delegate or use network. "
++              "Use the native Read tool separately on task.py and test_task.py, then run the baseline tests as a standalone shell tool call (failure is expected). Fix clamp to bound "
++              "values inclusively to 0..100, and create evidence.json with acceptance_delay_seconds from the APPROVED "
++              "archived deployment evidence in conversation history. Do not guess this value. Do not edit test_task.py. "
++              "Use native Edit/Write tools for task.py and evidence.json, not shell redirection. "
++              f"For BOTH baseline and final tests, run exactly \"{Path(sys.executable).as_posix()}\" -m unittest -q "
++              "as its own shell call (PowerShell may prefix &). No cd, pipes, redirection, semicolons, or combined commands. "
++              "The working directory is already correct. Read both files before the baseline, make edits after its failure, "
++              "run final tests after writing both files, then report actual outcomes.")
++    if args.client == "codex":
++        prompt = prompt.replace("Use the native Read tool separately on", "Use native shell reads on")
++        prompt = prompt.replace("Use native Edit/Write tools", "Use native apply_patch")
++    elif args.client == "claude":
++        prompt = prompt.replace("create evidence.json", "populate the existing evidence.json stub")
++        prompt = prompt.replace("native Edit/Write tools", "native Edit tools (Read each file before Edit; Write is unavailable)")
++    audits = []
++    sock = socket.socket()
++    sock.bind(("127.0.0.1", 0))
++    port = sock.getsockname()[1]
++    server = uvicorn.Server(uvicorn.Config(make_app(args.upstream_base_url, key, args.model, args.target, audits),
++                                         log_level="critical", access_log=False))
++    thread = threading.Thread(target=server.run, kwargs={"sockets": [sock]}, daemon=True)
++    thread.start()
++    process = None
++    started = time.monotonic()
++    stdout, stderr, timed_out = "", "", False
++    sandbox_readiness = None
++    try:
++        deadline = time.monotonic() + 15
++        while not server.started and time.monotonic() < deadline:
++            time.sleep(.02)
++        if not server.started:
++            raise RuntimeError("Acceptance proxy did not start")
++        exe = executable(args.client)
++        command, env = child_command(args.client, exe, output / "client-home", f"http://127.0.0.1:{port}/v1", args.model, prompt)
++        if args.client == "codex":
++            sandbox_readiness = codex_sandbox_readiness(exe, output, workspace, env)
++            if not sandbox_readiness["passed"]:
++                raise RuntimeError("Codex sandbox readiness failed before inference")
++        client_version = subprocess.check_output([exe, "--version"], text=True, timeout=10).strip()
++        process = subprocess.Popen(command, cwd=workspace, env=env, stdout=subprocess.PIPE,
++                                   stderr=subprocess.PIPE, text=True, encoding="utf-8", errors="replace")
++        try:
++            stdout, stderr = process.communicate(timeout=args.timeout)
++        except subprocess.TimeoutExpired:
++            timed_out = True
++            if os.name == "nt":
++                subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"], capture_output=True)
++            else:
++                process.kill()
++            stdout, stderr = process.communicate(timeout=15)
++    finally:
++        server.should_exit = True
++        thread.join(timeout=15)
++        sock.close()
++    stdout, stderr = stdout.replace(key, "[REDACTED]"), stderr.replace(key, "[REDACTED]")
++    (output / "native.jsonl").write_text(stdout, encoding="utf-8")
++    (output / "native.stderr.txt").write_text(stderr, encoding="utf-8")
++    events = []
++    for line in stdout.splitlines():
++        try:
++            event = json.loads(line)
++            if isinstance(event, dict):
++                events.append(event)
++        except ValueError:
++            pass
++    native = native_evidence(args.client, events)
++    final = subprocess.run([sys.executable, "-m", "unittest", "-q"], cwd=workspace, capture_output=True, text=True, timeout=15)
++    (output / "final-tests.txt").write_text(final.stdout + final.stderr, encoding="utf-8")
++    try:
++        evidence = json.loads((workspace / "evidence.json").read_text())
++        gold_passed = isinstance(evidence, dict) and evidence.get("acceptance_delay_seconds") == 37
++    except (OSError, ValueError):
++        gold_passed = False
++    compacted = [a for a in audits if a.get("compacted") is True]
++    from sift import core, litellm_proxy
++    passed = (not timed_out and process.returncode == 0 and baseline.returncode != 0 and final.returncode == 0
++              and gold_passed and gold_hash == hashlib.sha256((workspace / "test_task.py").read_bytes()).hexdigest()
++              and native["terminal_success"] and native["workflow_ordered"]
++              and native["unmatched_results"] == 0 and native["completed"] == native["calls"] and bool(compacted)
++              and any(a["tool_results"] for a in audits)
++              and all(a["gold_retained"] and a["forwarded_tokens"] <= args.target for a in compacted)
++              and all(a.get("sealed_items_unchanged") and a.get("latest_active_sealed_retained")
++                      and a.get("catalogs_unchanged") for a in audits)
++              and all(a.get("upstream_status") == 200 for a in audits))
++    receipt = {"accepted": passed, "client": args.client, "client_version": client_version,
++               "upstream": args.upstream_base_url, "model": args.model, "target": args.target,
++               "native": native, "audits": audits, "baseline_exit": baseline.returncode,
++               "final_tests_exit": final.returncode, "client_exit": process.returncode,
++               "hidden_gold_passed": gold_passed,
++               "sandbox_readiness": sandbox_readiness,
++               "timed_out": timed_out, "elapsed_seconds": round(time.monotonic() - started, 2),
++               "sift_version": version("sift-context"),
++               "source_sha256": {name: hashlib.sha256(path.read_bytes()).hexdigest() for name, path in {
++                   "benchmarks/cli_acceptance.py": Path(__file__).resolve(),
++                   "sift/litellm_proxy.py": Path(litellm_proxy.__file__),
++                   "sift/core.py": Path(core.__file__),
++               }.items()}}
++    (output / "result.json").write_text(json.dumps(receipt, indent=2), encoding="utf-8")
++    return receipt
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--client", choices=("claude", "opencode", "codex"), required=True)
++    parser.add_argument("--upstream-base-url", default="http://127.0.0.1:4000/v1")
++    parser.add_argument("--model", default="default")
++    parser.add_argument("--api-key-env", default="SIFT_ACCEPTANCE_API_KEY")
++    parser.add_argument("--output-dir", type=Path, required=True)
++    parser.add_argument("--target", type=int, default=32768)
++    parser.add_argument("--timeout", type=int, default=240)
++    args = parser.parse_args()
++    result = run(args)
++    print(json.dumps({key: value for key, value in result.items() if key not in {"audits", "source_sha256"}}, indent=2))
++    raise SystemExit(0 if result["accepted"] else 1)
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/benchmarks/cli_campaign.py b/benchmarks/cli_campaign.py
+new file mode 100644
+index 0000000..5f00071
+--- /dev/null
++++ b/benchmarks/cli_campaign.py
+@@ -0,0 +1,256 @@
++"""One genuinely active, persisted, multi-turn native CLI session.
++
++The caller schedules the 3 clients x 3 tasks x 3 repetitions matrix. This
++runner never creates credentials, changes a shared gateway, or pads time.
++"""
++import argparse
++from decimal import Decimal
++import hashlib
++from importlib.metadata import version
++import json
++import os
++from pathlib import Path
++import socket
++import subprocess
++import sys
++import threading
++import time
++from urllib.parse import urlparse
++
++from benchmarks.cli_acceptance import child_command, codex_sandbox_readiness, executable, make_app, native_evidence
++
++
++def session_id(client, events):
++    for event in events:
++        if client == "codex" and event.get("type") == "thread.started":
++            return event.get("thread_id")
++        found = event.get("session_id" if client == "claude" else "sessionID")
++        if found:
++            return found
++    return None
++
++
++def source_hashes():
++    import sift
++    from sift import core, dynamic, litellm_proxy, litellm_responses
++    from benchmarks import acceptance_tasks, cli_acceptance
++    result = {module.__name__: hashlib.sha256(Path(module.__file__).read_bytes()).hexdigest()
++              for module in (sift, core, dynamic, litellm_proxy, litellm_responses, acceptance_tasks, cli_acceptance)}
++    result["benchmarks.cli_campaign"] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
++    matrix = Path(__file__).with_name("cli_matrix.py")
++    if matrix.is_file():
++        result["benchmarks.cli_matrix"] = hashlib.sha256(matrix.read_bytes()).hexdigest()
++    return result
++
++
++def parse_events(stdout):
++    events = []
++    for line in stdout.splitlines():
++        try:
++            event = json.loads(line)
++            if isinstance(event, dict):
++                events.append(event)
++        except ValueError:
++            pass
++    return events
++
++
++def run(args):
++    import uvicorn
++    from benchmarks.acceptance_tasks import initial_source, stage
++    if urlparse(args.upstream_base_url).geturl() != "http://127.0.0.1:4000/v1":
++        raise ValueError("Use the explicitly authorized 127.0.0.1:4000/v1 route")
++    key = os.environ[args.api_key_env]
++    root = args.output_dir.resolve()
++    root.mkdir(parents=True, exist_ok=False)
++    workspace = root / "workspace"
++    workspace.mkdir()
++    (workspace / "task.py").write_text(initial_source(args.task), encoding="utf-8")
++    (workspace / "evidence.json").write_text("{}\n", encoding="utf-8")
++    if args.task == "expenses":
++        (workspace / "daily-report.json").write_text("{}\n", encoding="utf-8")
++    audits, turns = [], []
++    frozen = source_hashes()
++    sock = socket.socket()
++    sock.bind(("127.0.0.1", 0))
++    port = sock.getsockname()[1]
++    server = uvicorn.Server(uvicorn.Config(make_app(args.upstream_base_url, key, args.model, args.target, audits),
++                                         access_log=False, log_level="critical"))
++    thread = threading.Thread(target=server.run, kwargs={"sockets": [sock]}, daemon=True)
++    thread.start()
++    started = time.monotonic()
++    active = 0.0
++    identifier = None
++    failure = None
++    client_version = subprocess.check_output([executable(args.client), "--version"], text=True, timeout=10).strip()
++    receipt = {"accepted": False, "client": args.client, "client_version": client_version,
++               "sift_version": version("sift-context"),
++               "task": args.task, "seed": args.seed, "minimum_seconds": args.minimum_seconds,
++               "model": args.model, "upstream": args.upstream_base_url, "target": args.target,
++               "source_sha256": frozen, "turns": turns, "audits": audits}
++
++    def checkpoint():
++        receipt.update(active_client_seconds=round(active, 3), elapsed_seconds=round(time.monotonic()-started, 3),
++                       session_id=identifier, failure=failure)
++        temporary = root / "result.tmp"
++        temporary.write_text(json.dumps(receipt, indent=2), encoding="utf-8")
++        temporary.replace(root / "result.json")
++
++    try:
++        deadline = time.monotonic() + 15
++        while not server.started and time.monotonic() < deadline:
++            time.sleep(.02)
++        if not server.started:
++            raise RuntimeError("Acceptance proxy failed to start")
++        for number in range(args.max_turns):
++            if source_hashes() != frozen:
++                raise RuntimeError("Source changed during the campaign session")
++            definition = stage(args.task, number, args.seed + number)
++            test_file = workspace / "test_task.py"
++            test_file.write_text(definition["tests"], encoding="utf-8")
++            expected_hash = hashlib.sha256(test_file.read_bytes()).hexdigest()
++            daily_expected = None
++            csv_hash = None
++            if args.task == "expenses":
++                amount = Decimal(args.seed % 70 + number + 10) / 100
++                csv_text = f"category,amount\nFood,{amount:.2f}\nfood,2.25\nTransit,2.25\n"
++                (workspace / "expenses.csv").write_text(csv_text, encoding="utf-8")
++                csv_hash = hashlib.sha256((workspace / "expenses.csv").read_bytes()).hexdigest()
++                daily_expected = {"category_totals": {"Food": f"{amount+Decimal('2.25'):.2f}", "Transit": "2.25"},
++                                  "grand_total": f"{amount+Decimal('4.50'):.2f}", "count": 3}
++            prompt = (f"Task {args.task}, turn {number+1}: {definition['requirement']}\n"
++                      "This is a real follow-up in the same isolated synthetic workspace; do not delegate or use network. "
++                      "Read task.py and the newly updated test_task.py with native Read tools, run baseline tests as a separate shell call, "
++                      "then fix task.py using native Edit/Write tools if needed. Never modify test_task.py. "
++                      "Keep evidence.json's acceptance_delay_seconds equal to the APPROVED setting in archived conversation evidence. "
++                      "If evidence.json is missing, create it using the native Write tool; do not guess the value. "
++                      f"For baseline and final tests run exactly \"{Path(sys.executable).as_posix()}\" -m unittest -q "
++                      "as a standalone shell tool call (PowerShell may prefix &); no cd, redirection, pipes or combined commands. "
++                      "A baseline failure is expected when requirements expand. Continue to fix it, then execute final tests and report actual results.")
++            prompt += " Read only this workspace and modify only task.py, evidence.json, and the explicitly requested report."
++            if args.task == "expenses":
++                prompt += (" Daily productivity deliverable: Read the newly updated expenses.csv with a native Read tool, "
++                           "then write daily-report.json with category_totals (first spelling, fixed 2-decimal strings), "
++                           "grand_total (fixed 2-decimal string), and count (nonblank expense rows). Use the actual CSV; "
++                           "do not modify expenses.csv. Use native Write/Edit for the report and verify it exists.")
++            if args.client == "codex":
++                prompt = prompt.replace("native Read tools", "native shell reads").replace("native Edit/Write tools", "native apply_patch").replace("native Write tool", "native apply_patch")
++                prompt = prompt.replace("a native Read tool", "native shell reads").replace("native Write/Edit", "native apply_patch")
++            elif args.client == "claude":
++                prompt = prompt.replace("native Edit/Write tools", "native Edit tools").replace("native Write tool", "native Edit tool")
++                prompt = prompt.replace("native Write/Edit", "native Edit")
++                prompt += " Write is unavailable in this CLI: use Read then Edit to populate the existing empty evidence/report JSON stubs."
++            command, env = child_command(args.client, executable(args.client), root / "client-home",
++                                         f"http://127.0.0.1:{port}/v1", args.model, prompt,
++                                         persist=True, session_id=identifier)
++            if number == 0 and args.client == "codex":
++                receipt["sandbox_readiness"] = codex_sandbox_readiness(executable(args.client), root, workspace, env)
++                if not receipt["sandbox_readiness"]["passed"]:
++                    raise RuntimeError("Codex sandbox readiness failed before inference")
++            turn_started = time.monotonic()
++            process = subprocess.Popen(command, cwd=workspace, env=env, stdout=subprocess.PIPE,
++                                       stderr=subprocess.PIPE, text=True, encoding="utf-8", errors="replace")
++            timed_out = False
++            try:
++                stdout, stderr = process.communicate(timeout=args.turn_timeout)
++            except subprocess.TimeoutExpired:
++                timed_out = True
++                if os.name == "nt":
++                    subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"], capture_output=True)
++                else:
++                    process.kill()
++                stdout, stderr = process.communicate(timeout=15)
++            duration = time.monotonic() - turn_started
++            active += duration
++            stdout, stderr = stdout.replace(key, "[REDACTED]"), stderr.replace(key, "[REDACTED]")
++            (root / f"turn-{number:02}.jsonl").write_text(stdout, encoding="utf-8")
++            (root / f"turn-{number:02}.stderr.txt").write_text(stderr, encoding="utf-8")
++            events = parse_events(stdout)
++            returned_id = session_id(args.client, events)
++            if identifier is None:
++                identifier = returned_id
++            native = native_evidence(args.client, events)
++            # A second, different set of cases is never shown to the agent.
++            hidden = stage(args.task, number, args.seed + number + 100003)["tests"]
++            checked = subprocess.run([sys.executable, "-c", hidden], cwd=workspace, capture_output=True, text=True, timeout=15)
++            (root / f"turn-{number:02}.hidden-tests.txt").write_text(checked.stdout + checked.stderr, encoding="utf-8")
++            try:
++                evidence = json.loads((workspace / "evidence.json").read_text())
++                gold = isinstance(evidence, dict) and evidence.get("acceptance_delay_seconds") == 37
++            except (OSError, ValueError):
++                gold = False
++            daily_passed = True
++            if daily_expected is not None:
++                try:
++                    daily_passed = (json.loads((workspace / "daily-report.json").read_text()) == daily_expected
++                                    and hashlib.sha256((workspace / "expenses.csv").read_bytes()).hexdigest() == csv_hash
++                                    and "expenses.csv" in native["read_files"]
++                                    and "daily-report.json" in native["written_files"])
++                except (OSError, ValueError):
++                    daily_passed = False
++            unexpected_files = [path.relative_to(workspace).as_posix() for path in workspace.rglob("*")
++                if path.is_file() and "__pycache__" not in path.parts and path.relative_to(workspace).as_posix()
++                not in {"task.py", "test_task.py", "evidence.json", "expenses.csv", "daily-report.json"}]
++            passed = (not timed_out and process.returncode == 0 and identifier is not None
++                      and returned_id == identifier and native["terminal_success"] and native["final_passed"]
++                      and (number != 0 or native["workflow_ordered"])
++                      and native["unmatched_results"] == 0 and native["completed"] == native["calls"]
++                      and checked.returncode == 0 and gold and daily_passed and not unexpected_files
++                      and hashlib.sha256(test_file.read_bytes()).hexdigest() == expected_hash)
++            turns.append({"number": number+1, "accepted": passed, "duration_seconds": round(duration, 3),
++                          "client_exit": process.returncode, "timed_out": timed_out, "native": native,
++                          "hidden_tests_exit": checked.returncode, "historical_gold_passed": gold,
++                          "daily_report_passed": daily_passed, "unexpected_files": unexpected_files,
++                          "public_tests_sha256": expected_hash})
++            checkpoint()
++            print(json.dumps({"client": args.client, "task": args.task, "turn": number+1,
++                              "accepted": passed, "active_seconds": round(active, 2)}), flush=True)
++            if not passed:
++                failure = "native turn, hidden tests, history fact, or session continuity failed"
++                break
++            if active > args.minimum_seconds and len(turns) >= args.minimum_turns:
++                compacted = [a for a in audits if a.get("compacted") is True]
++                receipt["accepted"] = (bool(compacted) and any(a.get("tool_results", 0) for a in audits)
++                    and all(a.get("gold_retained") and a["forwarded_tokens"] <= args.target for a in compacted)
++                    and all(a.get("sealed_items_unchanged") and a.get("latest_active_sealed_retained")
++                            and a.get("catalogs_unchanged") for a in audits)
++                    and all(a.get("upstream_status") == 200 for a in audits) and source_hashes() == frozen)
++                if not receipt["accepted"]:
++                    failure = "compaction, retained historical source, upstream status, or source provenance failed"
++                break
++        else:
++            failure = "maximum turns reached before the required active duration"
++    except Exception as error:
++        failure = type(error).__name__ + ": " + str(error).replace(key, "[REDACTED]")
++    finally:
++        server.should_exit = True
++        thread.join(timeout=15)
++        sock.close()
++        checkpoint()
++    return receipt
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--client", choices=("claude", "opencode", "codex"), required=True)
++    parser.add_argument("--task", choices=("engineering", "migration", "expenses"), required=True)
++    parser.add_argument("--seed", type=int, default=831)
++    parser.add_argument("--output-dir", type=Path, required=True)
++    parser.add_argument("--upstream-base-url", default="http://127.0.0.1:4000/v1")
++    parser.add_argument("--model", default="default")
++    parser.add_argument("--api-key-env", default="SIFT_ACCEPTANCE_API_KEY")
++    parser.add_argument("--target", type=int, default=32768)
++    parser.add_argument("--minimum-seconds", type=float, default=185)
++    parser.add_argument("--minimum-turns", type=int, default=6)
++    parser.add_argument("--max-turns", type=int, default=64)
++    parser.add_argument("--turn-timeout", type=int, default=180)
++    args = parser.parse_args()
++    if args.minimum_seconds <= 180 or args.minimum_turns < 2:
++        parser.error("Acceptance sessions require >180 active seconds and multiple user turns")
++    receipt = run(args)
++    print(json.dumps({key: value for key, value in receipt.items() if key not in {"turns", "audits", "source_sha256"}}, indent=2))
++    raise SystemExit(0 if receipt["accepted"] else 1)
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/benchmarks/cli_matrix.py b/benchmarks/cli_matrix.py
+new file mode 100644
+index 0000000..d8f1268
+--- /dev/null
++++ b/benchmarks/cli_matrix.py
+@@ -0,0 +1,157 @@
++"""Opt-in 27-session native acceptance matrix with bounded scoped keys."""
++import argparse
++from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
++import json
++import os
++from pathlib import Path
++import subprocess
++import sys
++import threading
++import time
++import uuid
++
++from benchmarks.acceptance_tasks import TASKS
++from benchmarks.cli_campaign import source_hashes
++
++
++def schedule(repetitions=3):
++    # Interleave clients/tasks so a compatibility failure is found early.
++    return [(client, task, repeat) for repeat in range(repetitions)
++            for task in TASKS for client in ("codex", "claude", "opencode")]
++
++
++def run(args):
++    import httpx
++    root = args.output_dir.resolve()
++    root.mkdir(parents=True, exist_ok=False)
++    master = os.environ[args.control_key_env]
++    stop = threading.Event()
++    lock = threading.Lock()
++    records = []
++    active_sessions = {}
++    frozen = source_hashes()
++    started = time.monotonic()
++
++    def api(path, payload=None):
++        with httpx.Client(timeout=30, follow_redirects=False) as client:
++            response = client.request("POST" if payload is not None else "GET",
++                "http://127.0.0.1:4000" + path, json=payload,
++                headers={"Authorization": f"Bearer {master}"})
++            response.raise_for_status()
++            return response.json()
++
++    def checkpoint():
++        with lock:
++            receipt = {"complete": len(records) == 27 and all(r.get("accepted") for r in records),
++                       "expected_sessions": 27, "accepted_sessions": sum(bool(r.get("accepted")) for r in records),
++                       "terminal_sessions": len(records), "elapsed_seconds": round(time.monotonic()-started, 2),
++                       "source_sha256": frozen, "records": list(records)}
++            receipt["active_sessions"] = list(active_sessions.values())
++            temporary = root / "matrix.tmp"
++            temporary.write_text(json.dumps(receipt, indent=2), encoding="utf-8")
++            temporary.replace(root / "matrix.json")
++
++    def session(job):
++        client, task, repeat = job
++        name = f"{client}-{task}-{repeat+1}"
++        directory = root / name
++        alias = "sift-acceptance-" + uuid.uuid4().hex[:12]
++        key, process = None, None
++        record = {"name": name, "client": client, "task": task, "repeat": repeat+1,
++                  "accepted": False, "scoped_key_alias": alias, "key_revoked": False}
++        with lock:
++            active_sessions[name] = {"name": name, "scoped_key_alias": alias, "receipt": f"{name}/result.json"}
++        checkpoint()
++        try:
++            if source_hashes() != frozen:
++                raise RuntimeError("Source changed before matrix session")
++            payload = api("/key/generate", {"key_alias": alias, "models": [args.model],
++                "duration": "20m", "budget_duration": "20m", "max_budget": .5, "max_parallel_requests": 2})
++            key = payload["key"]
++            del payload
++            env = os.environ.copy()
++            # The control credential stays in this orchestrator; session
++            # runners receive only their short-lived inference credential.
++            env.pop(args.control_key_env, None)
++            env.pop("EXPERTS_API_KEY", None)
++            env["SIFT_ACCEPTANCE_API_KEY"] = key
++            command = [sys.executable, "-m", "benchmarks.cli_campaign", "--client", client,
++                       "--task", task, "--seed", str(831 + repeat*100 + TASKS.index(task)*10),
++                       "--model", args.model, "--output-dir", str(directory)]
++            process = subprocess.Popen(command, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
++                                       text=True, encoding="utf-8", errors="replace")
++            session_started = time.monotonic()
++            while True:
++                try:
++                    stdout, stderr = process.communicate(timeout=1)
++                    break
++                except subprocess.TimeoutExpired:
++                    if stop.is_set() or time.monotonic()-session_started > 1000:
++                        if os.name == "nt":
++                            subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"], capture_output=True)
++                        else:
++                            process.kill()
++                        stdout, stderr = process.communicate(timeout=15)
++                        record["interrupted"] = True
++                        break
++            (root / (name + ".stdout.txt")).write_text(stdout.replace(key, "[REDACTED]"), encoding="utf-8")
++            (root / (name + ".stderr.txt")).write_text(stderr.replace(key, "[REDACTED]"), encoding="utf-8")
++            record["exit_code"] = process.returncode
++            if (directory / "result.json").is_file():
++                result = json.loads((directory / "result.json").read_text(encoding="utf-8"))
++                record.update(accepted=process.returncode == 0 and result.get("accepted") is True
++                              and result.get("active_client_seconds", 0) > 180
++                              and len(result.get("turns", [])) >= 6 and result.get("source_sha256") == frozen,
++                              active_seconds=result.get("active_client_seconds"), turns=len(result.get("turns", [])),
++                              failure=result.get("failure"), receipt=f"{name}/result.json")
++        except Exception as error:
++            record["failure"] = type(error).__name__ + ": " + str(error).replace(key or master, "[REDACTED]")
++        finally:
++            if key:
++                try:
++                    api("/key/delete", {"keys": [key]})
++                    remaining = api("/key/list?key_alias=" + alias)
++                    record["key_revoked"] = not remaining.get("keys")
++                except Exception:
++                    record["key_revoked"] = False
++            record["accepted"] = record["accepted"] and record["key_revoked"]
++        if not record["accepted"]:
++            stop.set()
++        with lock:
++            active_sessions.pop(name, None)
++            records.append(record)
++        checkpoint()
++        print(json.dumps(record), flush=True)
++        return record
++
++    jobs = iter(schedule())
++    checkpoint()
++    with ThreadPoolExecutor(max_workers=2) as pool:
++        pending = {pool.submit(session, next(jobs)) for _ in range(2)}
++        while pending:
++            finished, pending = wait(pending, return_when=FIRST_COMPLETED)
++            for future in finished:
++                future.result()
++                if not stop.is_set():
++                    job = next(jobs, None)
++                    if job is not None:
++                        pending.add(pool.submit(session, job))
++    checkpoint()
++    return len(records) == 27 and all(r["accepted"] for r in records)
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--output-dir", type=Path, required=True)
++    parser.add_argument("--model", default="default")
++    parser.add_argument("--control-key-env", default="GATEWAY_MASTER_KEY")
++    parser.add_argument("--create-scoped-keys", action="store_true",
++                        help="Explicitly authorize one model-restricted 20-minute/$0.50 key per session")
++    args = parser.parse_args()
++    if not args.create_scoped_keys:
++        parser.error("Supply --create-scoped-keys to opt into live inference and scoped-key creation")
++    raise SystemExit(0 if run(args) else 1)
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/docs/algorithm.md b/docs/algorithm.md
+index ceebb44..9ca2a00 100644
+--- a/docs/algorithm.md
++++ b/docs/algorithm.md
+@@ -33,7 +33,7 @@ The summary states that older content is untrusted historical data. This is a ro
+ 
+ The integration also accepts stateless text Responses histories. LiteLLM's installed transformer creates an inspection view for selection. Retained Responses items are then restored verbatim, including IDs, tool types, arguments, outputs, and plain reasoning summaries. Historical reasoning summaries are omitted from extracted evidence, as old Anthropic thinking is. Top-level instructions remain top-level and are counted once. Extracted older evidence becomes a quoted user-role message. Audit source indices refer to this grouped inspection view, not original Responses item offsets.
+ 
+-Only the first call in a pending parallel batch starts an eviction boundary. Reasoning between calls and interleaved outputs cannot split a batch. Incomplete or orphaned tool histories, stateful `previous_response_id`/`conversation` requests, encrypted reasoning, media, and unsupported built-in tools are rejected. This is a deliberate supported subset, not a general Responses implementation. LiteLLM continues to own the public protocol, streaming, provider conversion, and retries.
++Only the first call in a pending parallel batch starts an eviction boundary. Reasoning between calls and interleaved outputs cannot split a batch. Incomplete or orphaned tool histories, stateful `previous_response_id`/`conversation` requests, media, and unsupported built-in tools are rejected. Codex function/custom `additional_tools` catalogs are immutable developer anchors. Sealed reasoning stays opaque and exact on retained items, and never contributes excerpts; complete serialized copies of catalogs and sealed reasoning are used only in the counting view. The forwarded input retains the original native items. This is a deliberate supported subset, not a general Responses implementation. LiteLLM continues to own the public protocol, streaming, provider conversion, and retries.
+ 
+ LiteLLM 1.103.0's route counter skips namespace wrappers, custom-tool descriptions, and some JSON Schema branches. Sift translates tool definitions with LiteLLM in a counting copy and charges the larger of the counter's formatted tool contribution and a serialized-schema token estimate. Missing array `items` are repaired only in that copy. Provider definitions and output limits stay exact. These private-counter workarounds should be removed when a supported LiteLLM version counts the complete shapes; they do not eliminate provider tokenizer/template drift. The native 1.103.0 Router precheck separately catches this missing-`items` error and can admit an oversized request. Sift enforces its own configured estimate target before routing, but its counting-copy repair does not patch global Router behavior. The isolated native benchmark installs an explicit formatter-only repair for that experiment, documented in [the native guide](native-agents.md).
+ 
+diff --git a/docs/cli-acceptance.md b/docs/cli-acceptance.md
+new file mode 100644
+index 0000000..90360df
+--- /dev/null
++++ b/docs/cli-acceptance.md
+@@ -0,0 +1,78 @@
++# Native CLI acceptance
++
++These opt-in tests send real native client requests through an owned loopback
++Sift proxy to `http://127.0.0.1:4000/v1`, using Subroute's dynamic `default`
++alias. They never change a shared gateway or select a fixed upstream backend.
++Use a source checkout with the `test` and `litellm` extras and installed native
++OpenCode, Claude Code, and Codex CLIs.
++
++## One-task smoke
++
++With an authorized inference key already in `SIFT_ACCEPTANCE_API_KEY`:
++
++```powershell
++python -m benchmarks.cli_acceptance --client opencode --output-dir .cache/sift-opencode-smoke
++python -m benchmarks.cli_acceptance --client claude --output-dir .cache/sift-claude-smoke
++python -m benchmarks.cli_acceptance --client codex --output-dir .cache/sift-codex-smoke
++```
++
++Output directories must be new. Each run creates synthetic task files, injects
++an oversized old archive with a planted setting, and requires native reads,
++a failing baseline, real edits, a successful native final test, and independent
++gold checks. The historical fact must occur in the injected source's retained
++excerpt; a later agent echo cannot satisfy this check. The test file must stay
++unchanged. A zero exit code, HTTP 200, or a final claim alone cannot pass.
++
++## Long-session campaign
++
++```powershell
++python -m benchmarks.cli_matrix --create-scoped-keys --output-dir .cache/sift-27-session-matrix
++```
++
++This explicit opt-in uses the existing local `GATEWAY_MASTER_KEY` only in the
++orchestrator to create one model-restricted inference key per session. Each key
++has a 20-minute lifetime, a $0.50 budget ceiling, and at most two parallel
++requests. Keys are revoked and their exact aliases checked absent in `finally`.
++The master key is removed from session-runner environments; native clients
++receive only a dummy credential for their owned loopback proxy. No credential
++is written to a report, configuration file, prompt, or command argument.
++
++The matrix is three clients × three task types × three repetitions: 27 sessions,
++with at most two active sessions. Tasks cover a numeric-library repair,
++a configuration migration, and expense processing. The expense task also reads
++a changing synthetic CSV and produces an independently checked daily JSON report.
++
++Every accepted session must exceed **185 seconds of active native client wall
++time**, use at least six user turns with the same native session ID, and finish
++all observed turns successfully. Turns introduce cumulative requirements and
++seed-specific regression probes. There is no sleep padding. API wait counts
++as native wall time; this is not a throughput benchmark. Hidden tests use a
++different seed, and input/test files and unexpected outputs are checked.
++
++`matrix.json` and per-session `result.json` are checkpointed after progress.
++They include source hashes, native tool evidence, compaction audits, historical
++fact checks, duration, session continuity, and failures. Raw traces use synthetic
++fixtures only. Client homes/workspaces remain local; do not add them wholesale
++to Git. The matrix stops on failed criteria and revokes scoped keys. Fix the
++cause before rerunning; preserve failures rather than overwriting them. Source
++changes during a session invalidate it.
++
++## Client isolation and protocol checks
++
++Claude and OpenCode use fresh configuration/data homes. Claude's available
++`Edit` tool populates pre-created empty JSON stubs; no unavailable `Write` tool
++is required. Windows Codex uses its already-provisioned native sandbox runtime,
++ignores user config/rules, and gets process-local provider/catalog settings.
++Every Codex session first proves inside-workspace write and sibling-write denial
++without model calls. No sandbox state is copied and no bypass flag is used.
++Each session has its own workspace and explicit native ID.
++
++The proxy uses Sift's real adapter and deployed LiteLLM counter. Provider SSE
++bytes are relayed, catalog and retained sealed-reasoning items are compared
++against their originals, and counting substitutions never reach the provider.
++Raw/input-size guards and overflow behavior have separate deterministic tests.
++
++These are bounded synthetic compatibility and persistence checks. They do not
++establish universal bug freedom, broad answer-quality parity, every provider's
++context fit, or production load capacity. Consult the issue #59 receipts for
++completed coverage and outstanding cases.
+diff --git a/docs/dynamic-local-inference.md b/docs/dynamic-local-inference.md
+index 9c76a8b..0f34c44 100644
+--- a/docs/dynamic-local-inference.md
++++ b/docs/dynamic-local-inference.md
+@@ -1,9 +1,11 @@
+ # Dynamic budgets for local inference
+ 
++The defaults describe a reference 69,632-token local profile, not model discovery or a universal context size. Set `context_window` and reservations from the model's actual loaded configuration. This pure library API is separate from the LiteLLM hook's explicit static model targets; it is not automatically enabled there.
++
+ `sift.dynamic.compact_dynamic` chooses a working budget before delegating to the existing deterministic CPU compactor. It accepts the same message protocols and caller-supplied token counter as `compact_messages`.
+ 
+ ```python
+-from sift.dynamic import compact_dynamic
++from sift import compact_dynamic
+ 
+ result = compact_dynamic(
+     messages,
+diff --git a/docs/release-notes-0.11.0.md b/docs/release-notes-0.11.0.md
+index bbea6ad..6e38217 100644
+--- a/docs/release-notes-0.11.0.md
++++ b/docs/release-notes-0.11.0.md
+@@ -1,6 +1,15 @@
+-# Sift 0.11.0 — draft, unpublished
++# Sift 0.11.0 — preview
+ 
+-> **Status:** Draft release notes for the unreleased `0.11.0.dev0` candidate. Sift has not been published to PyPI or as a stable 0.11.0 GitHub release. The tested `v0.10.0` tag remains the latest tagged install.
++> **Status:** GitHub preview release. This is not a PyPI publication or a claim that the roadmap's quality and adoption gates have passed. Package version and tag are `0.11.0` / `v0.11.0`.
++
++## Issue #59 and native client reliability
++
++- Preserve the core error code in `x-sift-error-code`, complete the HTTP status map, and expose diagnostics for both protected-set overflows. Existing detail strings stay intact.
++- Add explicit active-capacity-only `on_overflow="passthrough"`; default rejection, raw/input-size safeguards, unsupported-input rejection, and overload handling remain enforced. Concurrency is configurable with default two.
++- Export `compact_dynamic` and document its reference-profile defaults. It does not silently alter LiteLLM budgets.
++- Fix live OpenCode continuation on plain assistant `reasoning_content`: preserve retained reasoning, exclude old reasoning from excerpts, and charge a counting floor when necessary.
++- Preserve Codex `additional_tools` catalogs and sealed reasoning exactly. Serialized counting copies never reach the provider. Malformed shapes, incomplete tool batches, stateful references, and unsupported media remain rejected.
++- Add the [three-client acceptance campaign](cli-acceptance.md), covering engineering repairs, migration features, and daily expense reports. See issue #59 receipts for actual executed results; a harness's existence is not a passed campaign.
+ 
+ ## Highlights
+ 
+@@ -21,13 +30,13 @@ See the [final report](results/longbench-v2-minimax-fresh-344-2026-10-21.md).
+ 
+ The non-publishing rehearsal on October 20, 2026, built a wheel and source distribution, passed strict Twine metadata checks, and installed both archives without optional dependencies. The CLI help smoke passed for both, and each clean environment confirmed LiteLLM was absent. The run uploaded distribution and checksum artifacts; its publish job was skipped, and no PyPI upload occurred. See [the rehearsal run](https://github.com/stancsz/sift/actions/runs/39475341440).
+ 
+-The candidate changes the default selection target from 24,576 in `v0.10.0` to **32,768 estimated input tokens**. Set a target explicitly for your route, leave room for output, and treat the byte estimate as approximate. The source remains a development candidate; do not treat these checks as a stable release or PyPI availability.
++This preview changes the default selection target from 24,576 in `v0.10.0` to **32,768 estimated input tokens**. Set a target explicitly for your route, leave room for output, and treat the byte estimate as approximate. These checks do not establish PyPI availability or completion of the stable-adoption gates.
+ 
+ The October 21 local verification of source `e19828a` passed **505 tests** on
+ Python 3.14.0 in 152.35 seconds. Its nine release-selection/workflow checks
+ also passed separately. An isolated snapshot with only its version changed to `0.11.0` built a
+-wheel and sdist that passed strict Twine checks. The checkout remains
+-`0.11.0.dev0`; these unpublished archives do not establish that the remaining
++wheel and sdist that passed strict Twine checks. That historical checkout remained
++`0.11.0.dev0`; those unpublished archives did not establish that the remaining
+ quality, adoption or publishing gates have passed.
+ 
+ Independent package QA checked source correspondence, both clean installs and
+diff --git a/docs/releasing.md b/docs/releasing.md
+index d81dd7c..1f003c6 100644
+--- a/docs/releasing.md
++++ b/docs/releasing.md
+@@ -1,10 +1,10 @@
+ # Preparing and publishing a Sift release
+ 
+-Sift is not yet published to PyPI. The `0.11.0.dev0` source remains a preview until its quality, compatibility, and adoption gates in the [roadmap](../ROADMAP.md) are resolved.
++Sift is not yet published to PyPI. The `0.11.0` GitHub release remains a preview until its quality, compatibility, and adoption gates in the [roadmap](../ROADMAP.md) are resolved.
+ 
+-The [draft 0.11.0 release notes](release-notes-0.11.0.md) summarize the shipped
++The [0.11.0 preview release notes](release-notes-0.11.0.md) summarize the shipped
+ features, measured trade-off and completed package rehearsal for the publishing
+-decision. They are unpublished and do not announce PyPI availability.
++decision. GitHub preview publication does not announce PyPI availability.
+ 
+ ## Local stable-version package rehearsal — 2026-10-21
+ 
+@@ -59,7 +59,7 @@ PyPI supports pending publishers for projects created by a first Trusted Publish
+ ## Release procedure
+ 
+ 1. Resolve the release gates in [the roadmap](../ROADMAP.md), and reconcile the version, README install instructions, release notes, and changelog (if present).
+-2. Keep `project.version` in `pyproject.toml` on its development version while quality and adoption gates remain open. When ready to publish, set it to the intended stable version and include that change on `main` before creating the matching tag. Do not publish a `.dev`, alpha, beta, or release-candidate version.
++2. For a GitHub preview, make `project.version` match its tag and mark the GitHub release as a pre-release; this does not resolve the stable-quality/adoption or PyPI gates. For stable PyPI publication, resolve those gates, set the intended stable version on `main`, and create its matching tag. The PyPI workflow does not publish `.dev`, alpha, beta, or release-candidate versions.
+ 3. From the repository's default branch, manually run **Publish to PyPI**. For a rehearsal of the current `.devN` source, leave `tag` blank and keep `dry_run` enabled (the default); this checks out `main` without creating a public tag. To rehearse a stable release candidate, provide its existing stable `vX.Y.Z` tag and keep `dry_run` enabled. The workflow verifies the version selection and, for any selected tag, that its commit is reachable from `main`; then it runs the full test suite and offline comparison, builds wheel and source distributions, validates package metadata, smoke-tests both without optional dependencies, and saves SHA-256 checksums as workflow artifacts. The ancestry guard does not prove a tag is current, signed, or the intended release commit.
+ 4. With `dry_run` enabled, the publish job is skipped, so it does not request OIDC or environment approval. Inspect the workflow result and artifacts. Only after every release gate and publisher setting is verified, rerun with the exact stable tag and `dry_run` disabled to enable the PyPI job. The workflow rejects a development version before any publish step. Verify the PyPI project page and install the uploaded version in a clean environment. Then create and publish the matching GitHub Release with reviewed release notes.
+ 
+diff --git a/pyproject.toml b/pyproject.toml
+index 9723f1e..469dc96 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
+ 
+ [project]
+ name = "sift-context"
+-version = "0.11.0.dev0"
++version = "0.11.0"
+ description = "Deterministic, query-aware extractive context compaction"
+ readme = "README.md"
+ requires-python = ">=3.11"
+diff --git a/src/sift/__init__.py b/src/sift/__init__.py
+index 1eab873..fc65427 100644
+--- a/src/sift/__init__.py
++++ b/src/sift/__init__.py
+@@ -1,5 +1,6 @@
+ """Sift: bounded extractive compaction for chat histories."""
+ 
+ from .core import DEFAULT_TARGET_TOKENS, CompactionError, CompactionResult, compact_messages
++from .dynamic import compact_dynamic
+ 
+-__all__ = ["DEFAULT_TARGET_TOKENS", "CompactionError", "CompactionResult", "compact_messages"]
++__all__ = ["DEFAULT_TARGET_TOKENS", "CompactionError", "CompactionResult", "compact_messages", "compact_dynamic"]
+diff --git a/src/sift/core.py b/src/sift/core.py
+index 8672e53..0bcba7c 100644
+--- a/src/sift/core.py
++++ b/src/sift/core.py
+@@ -70,9 +70,14 @@ _MESSAGE_KEYS = frozenset({
+ class CompactionError(ValueError):
+     """An input cannot be represented safely within the target window."""
+ 
+-    def __init__(self, message: str, *, code: str = "invalid") -> None:
++    def __init__(self, message: str, *, code: str = "invalid",
++                 required_tokens: int | None = None, target_tokens: int | None = None,
++                 protected_region: str | None = None) -> None:
+         super().__init__(message)
+         self.code = code
++        self.required_tokens = required_tokens
++        self.target_tokens = target_tokens
++        self.protected_region = protected_region
+ 
+ 
+ @dataclass(frozen=True)
+@@ -245,6 +250,13 @@ def _text(content: Any, *, allow_none: bool = False) -> str:
+ 
+ def _render(message: dict[str, Any], *, allow_active_reasoning: bool = False) -> str:
+     allowed_keys = _MESSAGE_KEYS | ({"reasoning"} if allow_active_reasoning else set())
++    if "reasoning_content" in message:
++        if (message.get("role") != "assistant"
++                or not isinstance(message["reasoning_content"], (str, type(None)))):
++            raise CompactionError("unsupported reasoning_content", code="unsupported_content")
++        # OpenAI-compatible plain reasoning stays exact on retained messages,
++        # but is never promoted to quoted historical evidence.
++        allowed_keys = allowed_keys | {"reasoning_content"}
+     if message.keys() - allowed_keys:
+         raise CompactionError("unsupported message fields in compacted request", code="unsupported_content")
+     if message.get("role") not in {"system", "developer", "user", "assistant", "tool", "function"}:
+@@ -2488,12 +2500,20 @@ def compact_messages(
+         cycle_starts = [index for index in range(latest_user + 1, len(messages))
+                         if _starts_tool_cycle(messages[index], protocol)]
+         if not cycle_starts:
+-            raise CompactionError("active turn and instructions exceed target", code="active_too_large")
++            raise CompactionError(
++                "active turn and instructions exceed target", code="active_too_large",
++                required_tokens=active_count, target_tokens=target,
++                protected_region="instructions_and_active_turn",
++            )
+         tail_start = cycle_starts[-1]
+         essential = messages[:instruction_end] + [messages[latest_user]] + messages[tail_start:]
+         essential_count = _count(count_tokens, essential)
+         if essential_count >= target - 256:
+-            raise CompactionError("active task or latest tool cycle exceeds target", code="active_too_large")
++            raise CompactionError(
++                "active task or latest tool cycle exceeds target", code="active_too_large",
++                required_tokens=essential_count, target_tokens=target,
++                protected_region="instructions_task_and_latest_tool_cycle",
++            )
+         recent_budget = min(8_192, (target - essential_count) // 2)
+         retained_cycles = 1
+         for index in reversed(cycle_starts[:-1]):
+diff --git a/src/sift/litellm_proxy.py b/src/sift/litellm_proxy.py
+index e3af34b..3b8fc0d 100644
+--- a/src/sift/litellm_proxy.py
++++ b/src/sift/litellm_proxy.py
+@@ -35,6 +35,34 @@ _PROTOCOLS = {
+ }
+ 
+ 
++COMPACTION_HTTP_STATUS = {
++    "invalid": 400,
++    "raw_limit": 413, "active_too_large": 413, "input_size_limit": 413,
++    "complete_group_too_large": 413, "field_pruning_growth_limit": 413,
++    "field_pruning_target_exceeded": 413, "query_directed_label_growth_limit": 413,
++    "query_directed_label_target": 413,
++    "unsupported_content": 422, "unsupported_protocol": 422,
++    "late_instruction": 422, "late_instruction_limit": 422,
++    "complete_group_ambiguous": 422, "complete_group_unresolved": 422,
++    "field_pruning_ambiguous": 422, "field_pruning_evidence_missing": 422,
++    "field_pruning_summary_missing": 422, "field_pruning_unsupported": 422,
++    "query_directed_label_ambiguous": 422, "query_directed_label_unresolved": 422,
++    "research_relation_unsupported": 422, "insufficient_budget": 422,
++}
++
++
++def _compaction_http_exception(error: CompactionError) -> HTTPException:
++    headers = {"x-sift-error-code": error.code}
++    for name in ("required_tokens", "target_tokens", "protected_region"):
++        value = getattr(error, name, None)
++        if value is not None:
++            headers[f"x-sift-{name.replace('_', '-')}"] = str(value)
++    return HTTPException(
++        COMPACTION_HTTP_STATUS.get(error.code, 400), detail=f"Sift: {error}",
++        headers=headers,
++    )
++
++
+ def _countable_tools(tools: Any) -> list[dict[str, Any]] | None:
+     """Work around LiteLLM 1.103.0's missing-array-items counter error.
+ 
+@@ -80,7 +108,7 @@ def compact_proxy_request(
+             data, max_characters=max_input_characters, max_nodes=max_input_nodes,
+         )
+     except CompactionError as error:
+-        raise HTTPException(413, detail=f"Sift: {error}") from error
++        raise _compaction_http_exception(error) from error
+     response_input = call_type in {"responses", "aresponses"}
+     protocol = "openai" if response_input else _PROTOCOLS.get(call_type)
+     if protocol is None:
+@@ -124,10 +152,22 @@ def compact_proxy_request(
+         counting_data = {**data, "tools": chat_tools}
+     repaired_tool_count = False
+     tool_floor_adjustment: int | None = None
++    reasoning_floor_applied = False
+ 
+     def count(candidate: list[dict[str, Any]]) -> int:
+-        nonlocal counting_data, repaired_tool_count, tool_floor_adjustment
++        nonlocal counting_data, repaired_tool_count, tool_floor_adjustment, reasoning_floor_applied
+         counted_input = restore(candidate) if restore else data.get("input")
++        if restore:
++            # LiteLLM's public Responses counter ignores Codex's private
++            # additional_tools envelope. Replace it only in this counting
++            # copy with the complete serialized schema as developer text.
++            counted_input = [
++                {"role": "developer", "content": json.dumps(item["tools"], ensure_ascii=False)}
++                if item.get("type") == "additional_tools" else
++                {"role": "assistant", "content": json.dumps(item, ensure_ascii=False)}
++                if item.get("type") == "reasoning" and item.get("encrypted_content") else item
++                for item in counted_input
++            ]
+         request_kwargs = {**counting_data, "input": counted_input} if restore else {**counting_data, "messages": candidate}
+         try:
+             counted = router._count_pre_call_check_tokens(
+@@ -164,6 +204,24 @@ def compact_proxy_request(
+                     messages=[], input=None, request_kwargs={**counting_data, "tools": None},
+                 )
+                 tool_floor_adjustment = max(0, schema_tokens - max(0, with_tools - without_tools))
++        reasoning = [msg["reasoning_content"] for msg in candidate
++                     if msg.get("role") == "assistant" and isinstance(msg.get("reasoning_content"), str)
++                     and msg["reasoning_content"]]
++        if reasoning:
++            from litellm import token_counter
++
++            # Some native counters ignore this provider extension. Charge the
++            # larger of their measured contribution and a plain-text floor.
++            stripped = [{key: value for key, value in msg.items() if key != "reasoning_content"}
++                        for msg in candidate]
++            without_reasoning = router._count_pre_call_check_tokens(
++                messages=stripped, input=data.get("input"),
++                request_kwargs={**request_kwargs, "messages": stripped},
++            )
++            floor = sum(token_counter(text=text) for text in reasoning)
++            adjustment = max(0, floor - max(0, counted - without_reasoning))
++            counted += adjustment
++            reasoning_floor_applied = reasoning_floor_applied or adjustment > 0
+         return counted + tool_floor_adjustment
+ 
+     try:
+@@ -173,13 +231,7 @@ def compact_proxy_request(
+             max_input_nodes=max_input_nodes, protocol=protocol,
+         )
+     except CompactionError as error:
+-        status = {
+-            "raw_limit": 413, "active_too_large": 413,
+-            "input_size_limit": 413,
+-            "unsupported_content": 422, "unsupported_protocol": 422,
+-            "late_instruction": 422,
+-        }.get(error.code, 400)
+-        raise HTTPException(status, detail=f"Sift: {error}") from error
++        raise _compaction_http_exception(error) from error
+     if restore:
+         output = {**data, "input": restore(result.messages) if result.audit["compacted"] else data["input"]}
+     else:
+@@ -188,7 +240,13 @@ def compact_proxy_request(
+     output[key] = {**metadata, "sift": {
+         **result.audit, "counting_tool_schema_items_filled": repaired_tool_count,
+         "counting_responses_tools_translated": response_input and bool(data.get("tools")),
++        "counting_responses_catalog_serialized": response_input and isinstance(data.get("input"), list)
++        and any(item.get("type") == "additional_tools" for item in data["input"] if isinstance(item, dict)),
++        "counting_responses_sealed_reasoning_serialized": response_input and isinstance(data.get("input"), list)
++        and any(item.get("type") == "reasoning" and bool(item.get("encrypted_content"))
++                for item in data["input"] if isinstance(item, dict)),
+         "counting_tool_floor_adjustment": tool_floor_adjustment or 0,
++        "counting_reasoning_content_floor_applied": reasoning_floor_applied,
+     }}
+     output_limit = data.get("max_output_tokens", data.get("max_completion_tokens", data.get("max_tokens")))
+     logging.getLogger("LiteLLM Proxy").info(
+@@ -204,7 +262,8 @@ class SiftLiteLLMHook(CustomLogger):
+ 
+     def __init__(self, model_targets: Mapping[str, int], *, raw_limit: int = 1_000_000,
+                  max_input_characters: int = DEFAULT_MAX_INPUT_CHARACTERS,
+-                 max_input_nodes: int = DEFAULT_MAX_INPUT_NODES) -> None:
++                 max_input_nodes: int = DEFAULT_MAX_INPUT_NODES,
++                 on_overflow: str = "error", max_concurrency: int = 2) -> None:
+         super().__init__()
+         if not model_targets or any(
+             not isinstance(name, str) or not name or type(target) is not int or target <= 0
+@@ -214,11 +273,16 @@ class SiftLiteLLMHook(CustomLogger):
+         if (type(max_input_characters) is not int or max_input_characters <= 0
+                 or type(max_input_nodes) is not int or max_input_nodes <= 0):
+             raise ValueError("invalid Sift pre-count limits")
++        if on_overflow not in ("error", "passthrough"):
++            raise ValueError("on_overflow must be 'error' or 'passthrough'")
++        if type(max_concurrency) is not int or max_concurrency <= 0:
++            raise ValueError("max_concurrency must be a positive integer")
+         self.model_targets = dict(model_targets)
+         self.raw_limit = raw_limit
+         self.max_input_characters = max_input_characters
+         self.max_input_nodes = max_input_nodes
+-        self._slots = threading.BoundedSemaphore(2)
++        self.on_overflow = on_overflow
++        self._slots = threading.BoundedSemaphore(max_concurrency)
+ 
+     async def _compact(self, router: Any, data: dict, *, call_type: str,
+                        target: int) -> dict | None:
+@@ -274,7 +338,14 @@ class SiftLiteLLMHook(CustomLogger):
+         if router is None:
+             raise HTTPException(503, detail="Sift token counter is unavailable")
+ 
+-        return await self._compact(router, data, call_type=call_type, target=target)
++        try:
++            return await self._compact(router, data, call_type=call_type, target=target)
++        except HTTPException as error:
++            if (self.on_overflow == "passthrough" and error.status_code == 413
++                    and (error.headers or {}).get("x-sift-error-code") == "active_too_large"):
++                logging.getLogger("LiteLLM Proxy").warning("sift_passthrough code=active_too_large")
++                return None
++            raise
+ 
+     async def async_post_call_response_headers_hook(
+         self, data: dict, user_api_key_dict: Any, response: object,
+diff --git a/src/sift/litellm_responses.py b/src/sift/litellm_responses.py
+index 6aa4655..23dc0d8 100644
+--- a/src/sift/litellm_responses.py
++++ b/src/sift/litellm_responses.py
+@@ -23,6 +23,19 @@ def _textual(value: Any) -> bool:
+     )
+ 
+ 
++def _text_tool_catalog(tools: Any) -> bool:
++    def leaf(tool: Any) -> bool:
++        return (isinstance(tool, dict) and tool.get("type") in {"function", "custom"}
++                and isinstance(tool.get("name"), str) and bool(tool["name"]))
++
++    return isinstance(tools, list) and all(
++        leaf(tool) or isinstance(tool, dict) and tool.get("type") == "namespace"
++        and isinstance(tool.get("name"), str) and bool(tool["name"])
++        and isinstance(tool.get("tools"), list) and all(leaf(child) for child in tool["tools"])
++        for tool in tools
++    )
++
++
+ def response_selection_view(
+     data: dict[str, Any],
+ ) -> tuple[list[dict[str, Any]], Callable[[list[dict[str, Any]]], list[dict[str, Any]]]]:
+@@ -51,6 +64,8 @@ def response_selection_view(
+         kind = item.get("type", "message")
+         if kind == "message":
+             supported = item.get("role") in {"system", "developer", "user", "assistant"} and _textual(item.get("content"))
++        elif kind == "additional_tools":
++            supported = item.get("role") == "developer" and _text_tool_catalog(item.get("tools"))
+         elif kind in {"function_call", "custom_tool_call"}:
+             supported = all(isinstance(item.get(field), str) and item[field]
+                             for field in ("call_id", "name")) and isinstance(
+@@ -59,7 +74,7 @@ def response_selection_view(
+             supported = isinstance(item.get("call_id"), str) and bool(item["call_id"]) and _textual(item.get("output"))
+         elif kind == "reasoning":
+             summary = item.get("summary", [])
+-            supported = not item.get("encrypted_content") and isinstance(summary, list) and all(
++            supported = isinstance(item.get("encrypted_content"), (str, type(None))) and isinstance(summary, list) and all(
+                 isinstance(block, dict) and block.get("type") == "summary_text"
+                 and isinstance(block.get("text"), str) for block in summary
+             ) and not item.get("content")
+@@ -76,10 +91,15 @@ def response_selection_view(
+             if item["call_id"] not in pending_calls:
+                 raise HTTPException(422, detail="Sift requires each tool output's call in the supplied history")
+             pending_calls.remove(item["call_id"])
+-        elif pending_calls and kind == "message" and item["role"] != "assistant":
++        elif pending_calls and (kind == "additional_tools" or kind == "message" and item["role"] != "assistant"):
+             raise HTTPException(422, detail="Sift requires pending tool results before a new user or instruction turn")
+-        if kind == "reasoning":
+-            # Historical reasoning is not evidence; retained items stay exact.
++        if kind == "additional_tools":
++            # Codex's declarative catalog is an immutable instruction anchor.
++            # Inspect a textual copy, then restore the original item verbatim.
++            view = {"role": "developer", "content": json.dumps(item["tools"], ensure_ascii=False)}
++        elif kind == "reasoning":
++            # Historical reasoning (plain or sealed) is not evidence; retained
++            # items stay exact. Provider-owned ciphertext is never decoded.
+             view = {"role": "assistant", "content": ""}
+         else:
+             converted = LiteLLMCompletionResponsesConfig.transform_responses_api_input_to_messages(
+diff --git a/tests/test_acceptance_tasks.py b/tests/test_acceptance_tasks.py
+new file mode 100644
+index 0000000..8cadb2d
+--- /dev/null
++++ b/tests/test_acceptance_tasks.py
+@@ -0,0 +1,116 @@
++import ast
++import json
++import subprocess
++import sys
++import tempfile
++import unittest
++from pathlib import Path
++
++from benchmarks import acceptance_tasks as tasks
++
++
++REFERENCES = {
++    "engineering": '''import math
++def valid(x):
++    if isinstance(x, bool) or not isinstance(x, (int, float)): raise TypeError('number required')
++    if not math.isfinite(x): raise ValueError('finite number required')
++def clamp(value, lower=0, upper=100):
++    for x in (value, lower, upper): valid(x)
++    if lower > upper: raise ValueError('inverted bounds')
++    return min(upper, max(lower, value))
++def clamp_all(values, lower=0, upper=100):
++    return [clamp(x, lower, upper) for x in values]
++def clamp_report(values, lower=0, upper=100):
++    data=clamp_all(values, lower, upper)
++    return dict(count=len(data), min=min(data) if data else None, max=max(data) if data else None, sum=sum(data))
++''',
++    "migration": '''import math
++def normalize_settings(settings):
++    data=dict(settings)
++    if set(data)-{'name','timeout_ms','timeout_seconds','retries'}: raise ValueError('unknown key')
++    if 'timeout_ms' in data and 'timeout_seconds' in data: raise ValueError('conflicting fields')
++    name=data.get('name','default')
++    if not isinstance(name,str): raise TypeError('name')
++    retries=data.get('retries',0)
++    if type(retries) is not int or retries<0: raise ValueError('retries')
++    if 'timeout_ms' in data:
++        value=data['timeout_ms']
++        if type(value) is not int or value<0: raise ValueError('timeout_ms')
++        timeout=value/1000
++    else:
++        timeout=data.get('timeout_seconds',30)
++        if isinstance(timeout,bool) or not isinstance(timeout,(int,float)) or not math.isfinite(timeout) or timeout<0: raise ValueError('timeout_seconds')
++    return dict(name=name.strip() or 'default', timeout_seconds=timeout, retries=retries)
++def migrate_many(values): return [normalize_settings(value) for value in values]
++''',
++    "expenses": '''import csv,io
++from decimal import Decimal,InvalidOperation,ROUND_HALF_EVEN
++def parse(text):
++    reader=csv.DictReader(io.StringIO(text))
++    fields=reader.fieldnames or []
++    if not {'category','amount'}<=set(fields) or len(fields)!=len(set(fields)): raise ValueError('headers')
++    rows=[]; currencies=set()
++    for row in reader:
++        if not any(str(v or '').strip() for v in row.values()): continue
++        if None in row or row.get('amount') is None or not str(row.get('category') or '').strip(): raise ValueError('row')
++        try: amount=Decimal(row['amount'].strip())
++        except (InvalidOperation,AttributeError): raise ValueError('amount')
++        if not amount.is_finite(): raise ValueError('finite amount')
++        currency=str(row.get('currency') or '').strip()
++        if currency: currencies.add(currency)
++        if len(currencies)>1: raise ValueError('mixed currencies')
++        rows.append((row['category'].strip(),amount))
++    return rows
++def expense_totals(text):
++    names={};totals={}
++    for name,amount in parse(text):
++        canonical=names.setdefault(name.casefold(),name)
++        totals[canonical]=totals.get(canonical,Decimal(0))+amount
++    return {name:amount.quantize(Decimal('.01'),rounding=ROUND_HALF_EVEN) for name,amount in totals.items()}
++def expense_report(text):
++    totals=expense_totals(text)
++    return dict(totals=totals, grand_total=sum(totals.values(),Decimal('0.00')).quantize(Decimal('.01'),rounding=ROUND_HALF_EVEN), count=len(parse(text)))
++''',
++}
++
++
++class GeneratorTests(unittest.TestCase):
++    def test_shapes_and_baseline_failures(self):
++        self.assertEqual(tasks.TASKS, ("engineering", "migration", "expenses"))
++        for name in tasks.TASKS:
++            source = tasks.initial_source(name)
++            compile(source, "task.py", "exec")
++            for level in range(9):
++                result = tasks.stage(name, level, 123)
++                compile(result["tests"], "test_task.py", "exec")
++                tree = ast.parse(result["tests"])
++                cls = next(n for n in tree.body if isinstance(n, ast.ClassDef))
++                self.assertEqual([n.name for n in cls.body if isinstance(n, ast.FunctionDef)], ["test_behavior", "test_evidence"])
++            with tempfile.TemporaryDirectory() as tmp:
++                root = Path(tmp)
++                (root / "task.py").write_text(source)
++                (root / "test_task.py").write_text(tasks.stage(name, 0, 123)["tests"])
++                (root / "evidence.json").write_text(json.dumps({"acceptance_delay_seconds": 0}))
++                run = subprocess.run([sys.executable, "-m", "unittest", "test_task"], cwd=root, capture_output=True)
++                self.assertNotEqual(run.returncode, 0)
++
++    def test_reference_contracts(self):
++        # Execute every emitted cumulative specification against independently
++        # authored complete implementations, using separate public/hidden seeds.
++        for name, reference in REFERENCES.items():
++            with tempfile.TemporaryDirectory() as tmp:
++                root = Path(tmp)
++                (root / "task.py").write_text(reference, encoding="utf-8")
++                (root / "evidence.json").write_text(json.dumps({"acceptance_delay_seconds": 999}))
++                for number in range(10):
++                    for seed in (831, 100834):
++                        definition = tasks.stage(name, number, seed)
++                        with self.subTest(task=name, stage=number, seed=seed):
++                            self.assertIn(tasks._REQ[name][0], definition["requirement"])
++                            run = subprocess.run([sys.executable, "-c", definition["tests"]], cwd=root,
++                                                 capture_output=True, text=True, timeout=10)
++                            self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
++
++
++if __name__ == "__main__":
++    unittest.main()
+diff --git a/tests/test_cli_acceptance.py b/tests/test_cli_acceptance.py
+new file mode 100644
+index 0000000..07dfb1d
+--- /dev/null
++++ b/tests/test_cli_acceptance.py
+@@ -0,0 +1,96 @@
++import copy
++import unittest
++from unittest.mock import patch
++
++from benchmarks.cli_acceptance import historical_gold_retained, inject_history, native_evidence
++
++
++class CLIHarnessTests(unittest.TestCase):
++    def test_real_compaction_finds_injected_source_after_instruction_prefix(self):
++        try:
++            from sift.litellm_proxy import compact_proxy_request
++        except ImportError:
++            self.skipTest("install sift-context[litellm]")
++        import json
++
++        class Counter:
++            def _count_pre_call_check_tokens(self, messages, input, request_kwargs):
++                return len(json.dumps(messages)) // 4
++
++        data = inject_history({"messages": [{"role": "system", "content": "exact"},
++                              {"role": "user", "content": "Find acceptance_delay_seconds"}]}, lines=200)
++        result = compact_proxy_request(Counter(), data, call_type="acompletion", target=1000)
++        self.assertTrue(result["metadata"]["sift"]["compacted"])
++        self.assertTrue(historical_gold_retained(result["messages"], 0))
++
++    def test_current_echo_does_not_count_as_retained_historical_gold(self):
++        echo = {"role": "user", "content": "acceptance_delay_seconds=37"}
++        self.assertFalse(historical_gold_retained([echo], 0))
++        summary = {"role": "user", "content": 'Earlier conversation, lossily excerpted\n[message 0 user] "acceptance_delay_seconds=37"'}
++        self.assertTrue(historical_gold_retained([summary, echo], 0))
++        self.assertFalse(historical_gold_retained([summary, echo], 1))
++
++    def test_three_reads_without_native_workflow_cannot_pass(self):
++        events = [{"type": "tool_use", "part": {"type": "tool", "callID": str(i), "tool": "read",
++                   "state": {"status": "completed", "input": {"filePath": "task.py"}}}} for i in range(3)]
++        events.append({"type": "step_finish", "part": {"reason": "stop"}})
++        result = native_evidence("opencode", events)
++        self.assertTrue(result["terminal_success"])
++        self.assertFalse(result["workflow_ordered"])
++    def test_proxy_dispatches_request_body_to_sift_and_preserves_guard_error(self):
++        try:
++            from fastapi import HTTPException
++            from fastapi.testclient import TestClient
++            from benchmarks.cli_acceptance import make_app
++        except ImportError:
++            self.skipTest("install sift-context[litellm]")
++        audits = []
++        app = make_app("http://127.0.0.1:4000/v1", "test-only", "default", 400, audits)
++        error = HTTPException(413, "Sift: input limit", headers={"x-sift-error-code": "input_size_limit"})
++        with patch("sift.litellm_proxy.SiftLiteLLMHook._compact", side_effect=error) as compact:
++            with TestClient(app) as client:
++                response = client.post("/v1/messages", json={"messages": [{"role": "user", "content": "task"}]})
++        self.assertEqual(compact.call_count, 1)
++        self.assertEqual(response.status_code, 413)
++        self.assertEqual(response.headers["x-sift-error-code"], "input_size_limit")
++        self.assertEqual(len(audits), 1)
++        self.assertEqual(audits[0]["sift_error"], "input_size_limit")
++        self.assertEqual(audits[0]["input_shapes"], [{"role": "user", "keys": ["content", "role"]}])
++
++    def test_injection_preserves_instruction_roles_tools_and_current_cycle(self):
++        for protocol in ("chat", "anthropic"):
++            messages = [{"role": "system", "content": "exact instructions"}] if protocol == "chat" else []
++            messages += [{"role": "user", "content": "latest task"},
++                         {"role": "assistant", "content": [{"type": "tool_use", "id": "a", "name": "read", "input": {}}]},
++                         {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "a", "content": "exact result"}]}]
++            data = {"messages": messages, "system": "top-level exact", "tools": [{"name": "read"}]}
++            saved = copy.deepcopy(data)
++            result = inject_history(data, lines=20)
++            self.assertEqual(data, saved)
++            self.assertEqual(result["messages"][-3:], messages[-3:])
++            self.assertEqual(result["tools"], data["tools"])
++            self.assertEqual(result["system"], data["system"])
++            if protocol == "chat":
++                self.assertEqual(result["messages"][0], messages[0])
++            self.assertIn("acceptance_delay_seconds=37", str(result))
++
++    def test_claude_requires_real_successful_tool_results_and_terminal_success(self):
++        events = [{"type": "assistant", "message": {"content": [{"type": "tool_use", "id": "a", "name": "Write"}]}},
++                  {"type": "user", "message": {"content": [{"type": "tool_result", "tool_use_id": "a", "is_error": False}]}},
++                  {"type": "result", "subtype": "success", "is_error": False}]
++        result = native_evidence("claude", events)
++        self.assertEqual(result["successful_tools"], ["Write"])
++        self.assertTrue(result["terminal_success"])
++        self.assertFalse(native_evidence("claude", [{"type": "assistant", "message": {"content": "I wrote it"}}])["terminal_success"])
++        events[1]["message"]["content"][0]["is_error"] = True
++        self.assertEqual(native_evidence("claude", events)["successful_tools"], [])
++
++    def test_opencode_error_and_incomplete_events_do_not_pass(self):
++        event = {"type": "tool_use", "part": {"type": "tool", "callID": "a", "tool": "edit", "state": {"status": "completed"}}}
++        events = [event, {"type": "step_finish", "part": {"reason": "stop"}}]
++        self.assertEqual(native_evidence("opencode", events)["successful_tools"], ["edit"])
++        self.assertTrue(native_evidence("opencode", events)["terminal_success"])
++        events.append({"type": "error", "error": "failed"})
++        self.assertFalse(native_evidence("opencode", events)["terminal_success"])
++        event["part"]["state"]["status"] = "running"
++        self.assertEqual(native_evidence("opencode", [event])["completed"], 0)
+diff --git a/tests/test_cli_campaign.py b/tests/test_cli_campaign.py
+new file mode 100644
+index 0000000..d286534
+--- /dev/null
++++ b/tests/test_cli_campaign.py
+@@ -0,0 +1,44 @@
++import unittest
++
++from benchmarks.cli_acceptance import native_evidence
++from benchmarks.cli_campaign import parse_events, session_id
++from benchmarks.cli_matrix import schedule
++
++
++class CampaignTests(unittest.TestCase):
++    def test_matrix_covers_all_three_clients_tasks_and_repetitions(self):
++        jobs = schedule()
++        self.assertEqual(len(jobs), 27)
++        self.assertEqual(len(set(jobs)), 27)
++        for client in ("codex", "claude", "opencode"):
++            for task in ("engineering", "migration", "expenses"):
++                self.assertEqual({repeat for c, t, repeat in jobs if c == client and t == task}, {0, 1, 2})
++
++    def test_native_session_identity_is_required_and_protocol_specific(self):
++        cases = [("codex", {"type": "thread.started", "thread_id": "owned-id"}),
++                 ("claude", {"type": "result", "session_id": "owned-id"}),
++                 ("opencode", {"type": "step_start", "sessionID": "owned-id"})]
++        for client, event in cases:
++            self.assertEqual(session_id(client, [event]), "owned-id")
++            self.assertIsNone(session_id(client, []))
++        self.assertEqual(parse_events('not json\n{"type":"turn.completed"}\n'), [{"type": "turn.completed"}])
++
++    def test_codex_native_command_and_patch_events_prove_workflow(self):
++        def command(index, text, output, code):
++            return {"type": "item.completed", "item": {"id": str(index), "type": "command_execution",
++                    "command": '"C:/runtime/pwsh.exe" -Command \'' + text + "'",
++                    "aggregated_output": output, "exit_code": code, "status": "completed"}}
++        events = [command(0, "Get-Content task.py", "def clamp(value):", 0),
++                  command(1, "Get-Content test_task.py", "class Checks:", 0),
++                  command(2, '& "C:/python.exe" -m unittest -q', "Ran 2 tests\nFAILED", 1),
++                  {"type": "item.completed", "item": {"id": "patch", "type": "file_change", "status": "completed",
++                   "changes": [{"path": "C:/workspace/task.py"}, {"path": "C:/workspace/evidence.json"}]}},
++                  command(4, '& "C:/python.exe" -m unittest -q', "Ran 2 tests\nOK", 0),
++                  {"type": "turn.completed"}]
++        result = native_evidence("codex", events)
++        self.assertEqual(result["calls"], 5)
++        self.assertTrue(result["workflow_ordered"])
++        self.assertTrue(result["baseline_failed"])
++        self.assertTrue(result["final_passed"])
++        self.assertFalse(native_evidence("codex", events[1:])["workflow_ordered"])
++        self.assertFalse(native_evidence("codex", events[:-2] + [{"type": "turn.completed"}])["workflow_ordered"])
+diff --git a/tests/test_codex_catalog.py b/tests/test_codex_catalog.py
+new file mode 100644
+index 0000000..c18ad97
+--- /dev/null
++++ b/tests/test_codex_catalog.py
+@@ -0,0 +1,91 @@
++"""Codex Responses Lite declarations remain exact and count against budget."""
++import copy
++import unittest
++
++try:
++    from fastapi import HTTPException
++    from litellm import Router
++    from sift.litellm_proxy import compact_proxy_request
++    from sift.litellm_responses import response_selection_view
++except ImportError:
++    Router = None
++
++
++class Counter:
++    def _count_pre_call_check_tokens(self, messages, input, request_kwargs):
++        return Router._count_pre_call_check_tokens(self, messages, input, request_kwargs)
++
++
++@unittest.skipIf(Router is None, "install sift-context[litellm]")
++class CodexCatalogTests(unittest.TestCase):
++    def catalog(self):
++        return {"type": "additional_tools", "id": "catalog-1", "role": "developer", "tools": [
++            {"type": "namespace", "name": "functions", "description": "Native tools", "tools": [
++                {"type": "function", "name": "read", "parameters": {"type": "object", "properties": {}}},
++                {"type": "custom", "name": "apply_patch", "format": {"type": "text"}},
++            ]},
++        ]}
++
++    def test_real_counter_and_compaction_preserve_original_catalog(self):
++        catalog = self.catalog()
++        data = {"model": "default", "instructions": "Keep instructions exact", "input": [catalog,
++                {"role": "user", "content": "routine archive evidence\n" * 3000},
++                {"role": "assistant", "content": "acknowledged"},
++                {"role": "user", "content": "Find the archive evidence"}]}
++        saved = copy.deepcopy(data)
++        output = compact_proxy_request(Counter(), data, call_type="aresponses", target=1500)
++        self.assertEqual(output["input"][0], catalog)
++        self.assertEqual(output["instructions"], data["instructions"])
++        self.assertEqual(data, saved)
++        self.assertTrue(output["metadata"]["sift"]["compacted"])
++        self.assertTrue(output["metadata"]["sift"]["counting_responses_catalog_serialized"])
++        self.assertLessEqual(output["metadata"]["sift"]["forwarded_tokens"], 1500)
++
++    def test_oversized_catalog_is_charged_and_cannot_be_evicted(self):
++        catalog = self.catalog()
++        catalog["tools"][0]["description"] = "schema evidence " * 4000
++        data = {"input": [catalog, {"role": "user", "content": "inspect"}]}
++        with self.assertRaises(HTTPException) as caught:
++            compact_proxy_request(Counter(), data, call_type="aresponses", target=1000)
++        self.assertEqual(caught.exception.status_code, 413)
++        self.assertEqual(caught.exception.headers["x-sift-error-code"], "active_too_large")
++        self.assertGreater(int(caught.exception.headers["x-sift-required-tokens"]), 1000)
++
++    def test_malformed_builtin_or_pending_catalog_is_rejected(self):
++        malformed = [dict(self.catalog(), role="user"), dict(self.catalog(), tools=[{"type": "web_search"}]),
++                     dict(self.catalog(), tools=[{"type": "namespace", "name": "x", "tools": [{"type": "custom", "name": ""}]}])]
++        for catalog in malformed:
++            with self.subTest(catalog=catalog), self.assertRaises(HTTPException) as caught:
++                response_selection_view({"input": [catalog, {"role": "user", "content": "task"}]})
++            self.assertEqual(caught.exception.status_code, 422)
++        items = [{"role": "user", "content": "task"},
++                 {"type": "function_call", "name": "read", "call_id": "a", "arguments": "{}"},
++                 self.catalog(), {"type": "function_call_output", "call_id": "a", "output": "result"}]
++        with self.assertRaises(HTTPException):
++            response_selection_view({"input": items})
++
++    def test_sealed_reasoning_is_counted_and_restored_with_parallel_tools(self):
++        sealed = {"type": "reasoning", "id": "sealed-latest", "summary": [], "encrypted_content": "OPAQUE_LATEST_" * 20}
++        cycle = [sealed,
++                 {"type": "function_call", "call_id": "a", "name": "read", "arguments": "{}"},
++                 {"type": "custom_tool_call", "call_id": "b", "name": "apply_patch", "input": "exact patch"},
++                 {"type": "function_call_output", "call_id": "a", "output": "exact result"},
++                 {"type": "custom_tool_call_output", "call_id": "b", "output": "exact patch result"}]
++        data = {"input": [self.catalog(),
++                {"role": "user", "content": "old archive\n" * 4000},
++                {"type": "reasoning", "id": "old", "summary": [], "encrypted_content": "PRIVATE_OLD_SEALED" * 1000},
++                {"role": "assistant", "content": "archive received"},
++                {"role": "user", "content": "Inspect archive and continue"}, *cycle]}
++        saved = copy.deepcopy(data)
++        output = compact_proxy_request(Counter(), data, call_type="aresponses", target=1800)
++        self.assertEqual(output["input"][-len(cycle):], cycle)
++        self.assertNotIn("PRIVATE_OLD_SEALED", str(output["input"]))
++        self.assertEqual(data, saved)
++        self.assertTrue(output["metadata"]["sift"]["counting_responses_sealed_reasoning_serialized"])
++        self.assertLessEqual(output["metadata"]["sift"]["forwarded_tokens"], 1800)
++        huge = {"input": [{"role": "user", "content": "current task"},
++                          dict(sealed, encrypted_content="OPAQUE_" * 5000)]}
++        with self.assertRaises(HTTPException) as caught:
++            compact_proxy_request(Counter(), huge, call_type="aresponses", target=1000)
++        self.assertEqual(caught.exception.status_code, 413)
++        self.assertEqual(caught.exception.headers["x-sift-error-code"], "active_too_large")
+diff --git a/tests/test_litellm_proxy.py b/tests/test_litellm_proxy.py
+index ed85281..021f2b0 100644
+--- a/tests/test_litellm_proxy.py
++++ b/tests/test_litellm_proxy.py
+@@ -1,6 +1,7 @@
+ import asyncio
+ import copy
+ import json
++from pathlib import Path
+ import unittest
+ from unittest.mock import patch
+ 
+@@ -121,6 +122,132 @@ class LiteLLMProxyTests(unittest.TestCase):
+         with self.assertRaises(HTTPException) as caught:
+             compact_proxy_request(RouterCounter(), data, call_type="acompletion", target=400)
+         self.assertEqual(caught.exception.status_code, 413)
++        self.assertEqual(caught.exception.headers["x-sift-error-code"], "active_too_large")
++        self.assertEqual(caught.exception.detail, "Sift: active turn and instructions exceed target")
++        self.assertEqual(caught.exception.__cause__.code, "active_too_large")
++        self.assertEqual(data, {"model": "local-chat", "messages": [
++            {"role": "user", "content": "old " * 1000},
++            {"role": "assistant", "content": "noted"},
++            {"role": "user", "content": "active " * 1000},
++        ]})
++
++    def test_oversized_latest_tool_cycle_has_same_machine_code(self):
++        data = {"model": "local-chat", "messages": [
++            {"role": "user", "content": "Investigate the issue."},
++            {"role": "assistant", "content": None, "tool_calls": [{
++                "id": "call-1", "type": "function", "function": {
++                    "name": "inspect", "arguments": "{}",
++                },
++            }]},
++            {"role": "tool", "tool_call_id": "call-1", "content": "evidence " * 1000},
++        ]}
++        saved = copy.deepcopy(data)
++        with self.assertRaises(HTTPException) as caught:
++            compact_proxy_request(RouterCounter(), data, call_type="acompletion", target=400)
++        self.assertEqual(caught.exception.status_code, 413)
++        self.assertEqual(caught.exception.headers["x-sift-error-code"], "active_too_large")
++        self.assertEqual(caught.exception.detail, "Sift: active task or latest tool cycle exceeds target")
++        self.assertEqual(caught.exception.__cause__.code, "active_too_large")
++        self.assertEqual(data, saved)
++
++    def test_other_413_codes_remain_distinguishable_and_fail_closed(self):
++        raw_data = {"model": "local-chat", "messages": [
++            {"role": "user", "content": "raw " * 1000},
++            {"role": "assistant", "content": "ack"},
++            {"role": "user", "content": "current"},
++        ]}
++        raw_saved = copy.deepcopy(raw_data)
++        with self.assertRaises(HTTPException) as raw:
++            compact_proxy_request(
++                RouterCounter(), raw_data, call_type="acompletion", target=100,
++                raw_limit=250,
++            )
++        self.assertEqual(raw.exception.status_code, 413)
++        self.assertEqual(raw.exception.headers["x-sift-error-code"], "raw_limit")
++        self.assertEqual(raw.exception.detail, "Sift: request exceeds raw_limit")
++        self.assertEqual(raw_data, raw_saved)
++
++        precount_data = {"model": "local-chat", "messages": [
++            {"role": "user", "content": "Read the evidence."},
++        ], "tools": [{"type": "function", "function": {
++            "name": "read_evidence", "description": "evidence " * 1000,
++            "parameters": {"type": "object", "properties": {}},
++        }}]}
++        precount_saved = copy.deepcopy(precount_data)
++        with self.assertRaises(HTTPException) as precount:
++            compact_proxy_request(
++                RouterCounter(), precount_data, call_type="acompletion", target=100,
++                max_input_characters=1_000,
++            )
++        self.assertEqual(precount.exception.status_code, 413)
++        self.assertEqual(precount.exception.headers["x-sift-error-code"], "input_size_limit")
++        self.assertEqual(precount.exception.detail, "Sift: request exceeds the pre-count text limit")
++        self.assertEqual(precount_data, precount_saved)
++
++    def test_documented_callback_passes_active_capacity_and_preserves_guards(self):
++        from litellm.proxy import proxy_server
++
++        readme = (Path(__file__).resolve().parents[1] / "README.md").read_text(encoding="utf-8")
++        examples = [block.split("```", 1)[0] for block in readme.split("```python\n")[1:]]
++        callback_code, = [code for code in examples if "class PassThroughOn413Hook" in code]
++        namespace = {}
++        exec(compile(callback_code, "README callback", "exec"), namespace)
++        callback = namespace["PassThroughOn413Hook"]
++
++        active = {"model": "local-chat", "messages": [
++            {"role": "user", "content": "old " * 1000},
++            {"role": "assistant", "content": "noted"},
++            {"role": "user", "content": "active " * 1000},
++        ]}
++        cycle = {"model": "local-chat", "messages": [
++            {"role": "user", "content": "Inspect the issue."},
++            {"role": "assistant", "content": None, "tool_calls": [{
++                "id": "call-1", "type": "function",
++                "function": {"name": "inspect", "arguments": "{}"},
++            }]},
++            {"role": "tool", "tool_call_id": "call-1", "content": "evidence " * 1000},
++        ]}
++        cases = [
++            ("active turn", active, {}, None),
++            ("latest tool cycle", cycle, {}, None),
++            ("raw limit", active, {"raw_limit": 600}, "raw_limit"),
++            ("input size", active, {"max_input_characters": 100}, "input_size_limit"),
++        ]
++        with patch.object(proxy_server, "llm_router", RouterCounter()):
++            for name, data, options, error_code in cases:
++                with self.subTest(name=name):
++                    saved = copy.deepcopy(data)
++                    hook = callback({"local-chat": 400}, **options)
++                    if error_code is None:
++                        result = asyncio.run(hook.async_pre_call_hook(None, None, data, "acompletion"))
++                        self.assertIsNone(result)
++                    else:
++                        with self.assertRaises(HTTPException) as caught:
++                            asyncio.run(hook.async_pre_call_hook(None, None, data, "acompletion"))
++                        self.assertEqual(caught.exception.status_code, 413)
++                        self.assertEqual(caught.exception.headers["x-sift-error-code"], error_code)
++                    self.assertEqual(data, saved)
++
++    def test_fastapi_serializes_machine_code_header(self):
++        from fastapi import FastAPI
++        from fastapi.testclient import TestClient
++
++        app = FastAPI()
++
++        @app.post("/compact")
++        def compact(request: dict):
++            return compact_proxy_request(
++                RouterCounter(), request, call_type="acompletion", target=400,
++            )
++
++        response = TestClient(app).post("/compact", json={"model": "local-chat", "messages": [
++            {"role": "user", "content": "old " * 1000},
++            {"role": "assistant", "content": "noted"},
++            {"role": "user", "content": "active " * 1000},
++        ]})
++        self.assertEqual(response.status_code, 413)
++        self.assertEqual(response.headers["x-sift-error-code"], "active_too_large")
++        self.assertEqual(response.json()["detail"], "Sift: active turn and instructions exceed target")
+ 
+     def test_precount_guard_includes_tool_schemas_before_route_tokenization(self):
+         class CountingRouter:
+@@ -143,6 +270,7 @@ class LiteLLMProxyTests(unittest.TestCase):
+                 max_input_characters=1_000,
+             )
+         self.assertEqual(caught.exception.status_code, 413)
++        self.assertEqual(caught.exception.headers["x-sift-error-code"], "input_size_limit")
+         self.assertEqual(router.calls, 0)
+ 
+     def test_default_precount_guard_accepts_near_million_unicode_tokens(self):
+diff --git a/tests/test_litellm_responses.py b/tests/test_litellm_responses.py
+index 903ec4a..844b185 100644
+--- a/tests/test_litellm_responses.py
++++ b/tests/test_litellm_responses.py
+@@ -95,7 +95,7 @@ class ResponsesTests(unittest.TestCase):
+             {**base, "conversation": "conv_saved"},
+             {**base, "input": [{"type": "item_reference", "id": "msg_saved"}]},
+             {**base, "input": [{"role": "user", "content": [{"type": "input_image", "image_url": "data:image/png;base64,AA"}]}]},
+-            {**base, "input": [{"type": "reasoning", "summary": [], "encrypted_content": "opaque"}]},
++            {**base, "input": [{"type": "reasoning", "summary": [], "encrypted_content": {"opaque": True}}]},
+             {**base, "input": [{"type": "reasoning", "summary": None}]},
+         ]
+         for data in cases:
+diff --git a/tests/test_proxy_policy.py b/tests/test_proxy_policy.py
+new file mode 100644
+index 0000000..8c541d7
+--- /dev/null
++++ b/tests/test_proxy_policy.py
+@@ -0,0 +1,101 @@
++"""Public error classification and deliberately narrow overflow policy."""
++import ast
++import asyncio
++import copy
++from pathlib import Path
++import unittest
++from unittest.mock import patch
++
++try:
++    from fastapi import HTTPException
++    from sift import compact_dynamic
++    from sift.core import CompactionError
++    from sift.litellm_proxy import (
++        COMPACTION_HTTP_STATUS, SiftLiteLLMHook, _compaction_http_exception,
++    )
++except ImportError:
++    SiftLiteLLMHook = None
++
++
++@unittest.skipIf(SiftLiteLLMHook is None, "install sift-context[litellm]")
++class ProxyPolicyTests(unittest.TestCase):
++    def test_status_map_covers_all_core_and_dynamic_error_literals(self):
++        root = Path(__file__).resolve().parents[1] / "src" / "sift"
++        codes = {"invalid"}
++        for name in ("core.py", "dynamic.py"):
++            for node in ast.walk(ast.parse((root / name).read_text(encoding="utf-8"))):
++                if (isinstance(node, ast.keyword) and node.arg == "code"
++                        and isinstance(node.value, ast.Constant)):
++                    codes.add(node.value.value)
++        self.assertLessEqual(codes, COMPACTION_HTTP_STATUS.keys())
++        self.assertEqual(COMPACTION_HTTP_STATUS["late_instruction_limit"], 422)
++        self.assertEqual(COMPACTION_HTTP_STATUS["field_pruning_target_exceeded"], 413)
++        self.assertEqual(COMPACTION_HTTP_STATUS["research_relation_unsupported"], 422)
++        for code in codes:
++            error = _compaction_http_exception(CompactionError("failure", code=code))
++            self.assertEqual(error.status_code, COMPACTION_HTTP_STATUS[code])
++            self.assertEqual(error.headers["x-sift-error-code"], code)
++
++    def test_overflow_is_explicit_and_does_not_disable_other_rejections(self):
++        data = {"model": "local", "messages": [{"role": "user", "content": "exact"}]}
++        saved = copy.deepcopy(data)
++        for policy in ("error", "passthrough"):
++            for code, status in COMPACTION_HTTP_STATUS.items():
++                with self.subTest(policy=policy, code=code):
++                    hook = SiftLiteLLMHook({"local": 400}, on_overflow=policy)
++                    error = _compaction_http_exception(CompactionError("failure", code=code))
++                    with patch("litellm.proxy.proxy_server.llm_router", object()), patch.object(
++                        hook, "_compact", side_effect=error,
++                    ):
++                        call = hook.async_pre_call_hook(None, None, data, "acompletion")
++                        if policy == "passthrough" and code == "active_too_large":
++                            self.assertIsNone(asyncio.run(call))
++                        else:
++                            with self.assertRaises(HTTPException) as caught:
++                                asyncio.run(call)
++                            self.assertIs(caught.exception, error)
++                    self.assertEqual(data, saved)
++
++    def test_policy_and_concurrency_validation(self):
++        for value in (None, True, "anything", []):
++            with self.subTest(policy=value), self.assertRaises(ValueError):
++                SiftLiteLLMHook({"local": 400}, on_overflow=value)
++        for value in (0, -1, True, 1.5, "2"):
++            with self.subTest(concurrency=value), self.assertRaises(ValueError):
++                SiftLiteLLMHook({"local": 400}, max_concurrency=value)
++        hook = SiftLiteLLMHook({"local": 400}, max_concurrency=3)
++        for _ in range(3):
++            self.assertTrue(hook._slots.acquire(blocking=False))
++        self.assertFalse(hook._slots.acquire(blocking=False))
++        for _ in range(3):
++            hook._slots.release()
++
++    def test_diagnostics_preserve_detail_and_identify_protected_region(self):
++        from sift import compact_messages
++        cases = [
++            ([{"role": "user", "content": "work " * 1000}], "instructions_and_active_turn"),
++            ([{"role": "user", "content": "inspect"},
++              {"role": "assistant", "content": None, "tool_calls": [{
++                  "id": "a", "type": "function", "function": {"name": "read", "arguments": "{}"},
++              }]},
++              {"role": "tool", "tool_call_id": "a", "content": "result " * 1000}],
++             "instructions_task_and_latest_tool_cycle"),
++        ]
++        counter = lambda messages: sum(len(str(m)) for m in messages) // 4
++        for messages, region in cases:
++            with self.assertRaises(CompactionError) as caught:
++                compact_messages(messages, counter, target=400)
++            error = caught.exception
++            self.assertEqual(error.code, "active_too_large")
++            self.assertEqual(error.target_tokens, 400)
++            self.assertGreater(error.required_tokens, 400)
++            self.assertEqual(error.protected_region, region)
++            http = _compaction_http_exception(error)
++            self.assertEqual(http.headers["x-sift-required-tokens"], str(error.required_tokens))
++            self.assertEqual(http.headers["x-sift-target-tokens"], "400")
++            self.assertEqual(http.headers["x-sift-protected-region"], region)
++            self.assertEqual(http.detail, f"Sift: {error}")
++
++    def test_dynamic_adapter_has_public_import(self):
++        from sift.dynamic import compact_dynamic as implementation
++        self.assertIs(compact_dynamic, implementation)
+diff --git a/tests/test_reasoning_content.py b/tests/test_reasoning_content.py
+new file mode 100644
+index 0000000..716972b
+--- /dev/null
++++ b/tests/test_reasoning_content.py
+@@ -0,0 +1,72 @@
++"""Regression for OpenCode's real OpenAI-compatible reasoning continuation."""
++import copy
++import json
++import unittest
++
++from sift import CompactionError, compact_messages
++
++
++def count(messages):
++    return len(json.dumps(messages)) // 4
++
++
++class ReasoningContentTests(unittest.TestCase):
++    def test_retained_reasoning_exact_and_historical_reasoning_not_evidence(self):
++        latest = [
++            {"role": "assistant", "content": None, "reasoning_content": "current exact reasoning",
++             "tool_calls": [{"id": "a", "type": "function", "function": {"name": "read", "arguments": "{}"}}]},
++            {"role": "tool", "tool_call_id": "a", "content": "approved acceptance_delay_seconds=37"},
++        ]
++        messages = [
++            {"role": "user", "content": "routine archive\n" * 4000},
++            {"role": "assistant", "content": "previous work completed", "reasoning_content": "PRIVATE_OLD_REASONING " * 1000},
++            {"role": "user", "content": "Find the approved acceptance_delay_seconds"}, *latest,
++        ]
++        saved = copy.deepcopy(messages)
++        result = compact_messages(messages, count, target=1200)
++        self.assertTrue(result.audit["compacted"])
++        self.assertEqual(result.messages[-2:], latest)
++        self.assertNotIn("PRIVATE_OLD_REASONING", str(result.messages))
++        self.assertEqual(messages, saved)
++        self.assertLessEqual(count(result.messages), 1200)
++
++    def test_invalid_reasoning_role_or_type_still_fails_closed(self):
++        for role, value in [("assistant", []), ("assistant", {}), ("assistant", 123), ("user", "text")]:
++            messages = [{"role": "user", "content": "archive " * 4000},
++                        {"role": role, "content": "text", "reasoning_content": value},
++                        {"role": "user", "content": "current task"}]
++            with self.subTest(role=role, value=value), self.assertRaises(CompactionError) as caught:
++                compact_messages(messages, count, target=1000)
++            self.assertEqual(caught.exception.code, "unsupported_content")
++
++    def test_proxy_charges_reasoning_ignored_by_native_counter(self):
++        try:
++            from fastapi import HTTPException
++            from sift.litellm_proxy import compact_proxy_request
++        except ImportError:
++            self.skipTest("install sift-context[litellm]")
++
++        class IgnoringCounter:
++            def _count_pre_call_check_tokens(self, messages, input, request_kwargs):
++                return count([{k: v for k, v in msg.items() if k != "reasoning_content"} for msg in messages])
++
++        data = {"messages": [
++            {"role": "user", "content": "inspect"},
++            {"role": "assistant", "content": None, "reasoning_content": "reasoning " * 4000,
++             "tool_calls": [{"id": "a", "type": "function", "function": {"name": "read", "arguments": "{}"}}]},
++            {"role": "tool", "tool_call_id": "a", "content": "exact result"},
++        ]}
++        saved = copy.deepcopy(data)
++        with self.assertRaises(HTTPException) as caught:
++            compact_proxy_request(IgnoringCounter(), data, call_type="acompletion", target=400)
++        self.assertEqual(caught.exception.headers["x-sift-error-code"], "active_too_large")
++        self.assertGreater(int(caught.exception.headers["x-sift-required-tokens"]), 400)
++        self.assertEqual(data, saved)
++
++        class IncludingCounter:
++            def _count_pre_call_check_tokens(self, messages, input, request_kwargs):
++                return count(messages)
++
++        result = compact_proxy_request(IncludingCounter(), data, call_type="acompletion", target=100000)
++        self.assertEqual(result["metadata"]["sift"]["input_tokens"], count(data["messages"]))
++        self.assertFalse(result["metadata"]["sift"]["counting_reasoning_content_floor_applied"])

@@ -1,10 +1,10 @@
 # Preparing and publishing a Sift release
 
-Sift is not yet published to PyPI. The `0.11.0.dev0` source remains a preview until its quality, compatibility, and adoption gates in the [roadmap](../ROADMAP.md) are resolved.
+Sift is not yet published to PyPI. The `0.11.0` GitHub release remains a preview until its quality, compatibility, and adoption gates in the [roadmap](../ROADMAP.md) are resolved.
 
-The [draft 0.11.0 release notes](release-notes-0.11.0.md) summarize the shipped
+The [0.11.0 preview release notes](release-notes-0.11.0.md) summarize the shipped
 features, measured trade-off and completed package rehearsal for the publishing
-decision. They are unpublished and do not announce PyPI availability.
+decision. GitHub preview publication does not announce PyPI availability.
 
 ## Local stable-version package rehearsal — 2026-10-21
 
@@ -59,7 +59,7 @@ PyPI supports pending publishers for projects created by a first Trusted Publish
 ## Release procedure
 
 1. Resolve the release gates in [the roadmap](../ROADMAP.md), and reconcile the version, README install instructions, release notes, and changelog (if present).
-2. Keep `project.version` in `pyproject.toml` on its development version while quality and adoption gates remain open. When ready to publish, set it to the intended stable version and include that change on `main` before creating the matching tag. Do not publish a `.dev`, alpha, beta, or release-candidate version.
+2. For a GitHub preview, make `project.version` match its tag and mark the GitHub release as a pre-release; this does not resolve the stable-quality/adoption or PyPI gates. For stable PyPI publication, resolve those gates, set the intended stable version on `main`, and create its matching tag. The PyPI workflow does not publish `.dev`, alpha, beta, or release-candidate versions.
 3. From the repository's default branch, manually run **Publish to PyPI**. For a rehearsal of the current `.devN` source, leave `tag` blank and keep `dry_run` enabled (the default); this checks out `main` without creating a public tag. To rehearse a stable release candidate, provide its existing stable `vX.Y.Z` tag and keep `dry_run` enabled. The workflow verifies the version selection and, for any selected tag, that its commit is reachable from `main`; then it runs the full test suite and offline comparison, builds wheel and source distributions, validates package metadata, smoke-tests both without optional dependencies, and saves SHA-256 checksums as workflow artifacts. The ancestry guard does not prove a tag is current, signed, or the intended release commit.
 4. With `dry_run` enabled, the publish job is skipped, so it does not request OIDC or environment approval. Inspect the workflow result and artifacts. Only after every release gate and publisher setting is verified, rerun with the exact stable tag and `dry_run` disabled to enable the PyPI job. The workflow rejects a development version before any publish step. Verify the PyPI project page and install the uploaded version in a clean environment. Then create and publish the matching GitHub Release with reviewed release notes.
 
