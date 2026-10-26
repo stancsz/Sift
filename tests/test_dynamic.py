@@ -1,5 +1,6 @@
 import json
 import unittest
+from unittest.mock import Mock
 from sift import CompactionError
 from sift.dynamic import compact_dynamic
 
@@ -20,6 +21,17 @@ def topic_history():
     return history
 
 
+def history_of_raw_size(raw_tokens):
+    """A history whose native estimate reaches at least `raw_tokens`."""
+    history = [message("system", "Keep recorded facts exact.")]
+    block = "PAYMENT invoice billing PAYMENT_FACT settled; " * 200
+    while estimate(history) < raw_tokens:
+        history.append(message("user", block))
+        history.append(message("assistant", "Recorded."))
+    history.append(message("user", "What PAYMENT facts are recorded?"))
+    return history
+
+
 class DynamicCompactionTests(unittest.TestCase):
     def test_small_input_is_noop_with_budget_audit(self):
         source = [message("system", "policy"), message("user", "hello")]
@@ -31,12 +43,14 @@ class DynamicCompactionTests(unittest.TestCase):
         self.assertEqual(result.audit["output_reserve"], 4096)
         self.assertEqual(result.audit["fixed_tokens"], 0)
 
-    def test_target_prefers_preferred_within_budget(self):
+    def test_medium_history_uses_floor_and_preserves_task(self):
         history = topic_history()
         result = compact_dynamic(history, estimate, context_window=69632)
         self.assertTrue(result.audit["compacted"])
-        self.assertEqual(result.audit["target_tokens"], 32768)
-        self.assertLessEqual(result.audit["forwarded_tokens"], 32768)
+        self.assertEqual(result.audit["target_tokens"], 24576)
+        self.assertLessEqual(result.audit["forwarded_tokens"], 24576)
+        self.assertEqual(result.messages[0], history[0])
+        self.assertEqual(result.messages[-1], history[-1])
         self.assertGreater(result.audit["input_tokens"], result.audit["forwarded_tokens"])
 
     def test_max_target_bounds_preferred(self):
@@ -47,7 +61,7 @@ class DynamicCompactionTests(unittest.TestCase):
         self.assertEqual(result.audit["target_tokens"], 20000)
 
     def test_available_budget_bounds_target(self):
-        history = topic_history()
+        history = history_of_raw_size(300_000)
         result = compact_dynamic(history, estimate, context_window=30000,
                                  output_reserve=0, min_target=1000,
                                  max_target=60000, preferred_target=32768)
@@ -122,8 +136,8 @@ class DynamicCompactionTests(unittest.TestCase):
                                  context_window=69632, preferred_target=1200,
                                  max_target=2000, min_target=400)
         self.assertTrue(result.audit["compacted"])
-        self.assertEqual(result.audit["target_tokens"], 1200)
-        self.assertLessEqual(result.audit["forwarded_tokens"], 1200)
+        self.assertEqual(result.audit["target_tokens"], 400)
+        self.assertLessEqual(result.audit["forwarded_tokens"], 400)
         self.assertEqual(result.messages[-1]["role"], "user")
         tool_ids = set()
         used_ids = set()
@@ -135,7 +149,50 @@ class DynamicCompactionTests(unittest.TestCase):
                         tool_ids.add(block["tool_use_id"])
                     if block.get("type") == "tool_use":
                         used_ids.add(block["id"])
-        self.assertTrue(tool_ids <= used_ids)
+        self.assertEqual(tool_ids, used_ids)
+
+    def test_requests_choose_different_budgets_without_configuration_changes(self):
+        results = [compact_dynamic(history_of_raw_size(size), estimate,
+                    context_window=69888, fixed_tokens=256)
+                   for size in (80_000, 256_000, 1_000_000)]
+        targets = [r.audit['target_tokens'] for r in results]
+        self.assertEqual(targets[0], 24576)
+        self.assertGreater(targets[1], targets[0])
+        self.assertEqual(targets[2], 65536)
+        for result in results:
+            self.assertLessEqual(result.audit['forwarded_tokens'], result.audit['target_tokens'])
+            self.assertLessEqual(result.audit['forwarded_tokens'] + 4096 + 256, 69888)
+
+    def test_daily_window_and_output_reserve_cap_large_history(self):
+        source = history_of_raw_size(500_000)
+        for reserve, ceiling in ((4096, 36608), (128, 40576)):
+            result = compact_dynamic(source, estimate, context_window=40960,
+                                     output_reserve=reserve, fixed_tokens=256)
+            self.assertEqual(result.audit['target_tokens'], ceiling)
+            self.assertLessEqual(result.audit['forwarded_tokens'] + reserve + 256, 40960)
+            self.assertEqual(result.messages[0], source[0])
+            self.assertEqual(result.messages[-1], source[-1])
+
+    def test_oversized_protected_content_fails_closed(self):
+        source = [message('system', 'policy'), message('user', 'locked ' * 30000)]
+        with self.assertRaises(CompactionError):
+            compact_dynamic(source, estimate, context_window=40960, fixed_tokens=256)
+
+    def test_invalid_ratio_is_rejected(self):
+        for ratio in (True, '8', 0, -1, 0.5, float('nan'), float('inf'), 10**400):
+            with self.subTest(ratio=ratio), self.assertRaises(CompactionError):
+                compact_dynamic([message('user', 'hello')], estimate, compression_ratio=ratio)
+
+    def test_raw_limit_and_invalid_counters_fail_closed(self):
+        for raw in (1_050_001, -1, True, 12.5):
+            with self.subTest(raw=raw), self.assertRaises(CompactionError):
+                compact_dynamic([message('user', 'hello')], lambda _:raw)
+
+    def test_precount_guard_runs_before_native_counter(self):
+        counter = Mock(side_effect=AssertionError('Counter must not run'))
+        with self.assertRaises(CompactionError):
+            compact_dynamic([message('user', 'x' * 16_777_217)], counter)
+        counter.assert_not_called()
 
     def test_anthropic_tool_group_noop_preserves_content(self):
         source = [
