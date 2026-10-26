@@ -1,6 +1,7 @@
 import asyncio
 import copy
 import json
+from pathlib import Path
 import unittest
 from unittest.mock import patch
 
@@ -121,6 +122,132 @@ class LiteLLMProxyTests(unittest.TestCase):
         with self.assertRaises(HTTPException) as caught:
             compact_proxy_request(RouterCounter(), data, call_type="acompletion", target=400)
         self.assertEqual(caught.exception.status_code, 413)
+        self.assertEqual(caught.exception.headers["x-sift-error-code"], "active_too_large")
+        self.assertEqual(caught.exception.detail, "Sift: active turn and instructions exceed target")
+        self.assertEqual(caught.exception.__cause__.code, "active_too_large")
+        self.assertEqual(data, {"model": "local-chat", "messages": [
+            {"role": "user", "content": "old " * 1000},
+            {"role": "assistant", "content": "noted"},
+            {"role": "user", "content": "active " * 1000},
+        ]})
+
+    def test_oversized_latest_tool_cycle_has_same_machine_code(self):
+        data = {"model": "local-chat", "messages": [
+            {"role": "user", "content": "Investigate the issue."},
+            {"role": "assistant", "content": None, "tool_calls": [{
+                "id": "call-1", "type": "function", "function": {
+                    "name": "inspect", "arguments": "{}",
+                },
+            }]},
+            {"role": "tool", "tool_call_id": "call-1", "content": "evidence " * 1000},
+        ]}
+        saved = copy.deepcopy(data)
+        with self.assertRaises(HTTPException) as caught:
+            compact_proxy_request(RouterCounter(), data, call_type="acompletion", target=400)
+        self.assertEqual(caught.exception.status_code, 413)
+        self.assertEqual(caught.exception.headers["x-sift-error-code"], "active_too_large")
+        self.assertEqual(caught.exception.detail, "Sift: active task or latest tool cycle exceeds target")
+        self.assertEqual(caught.exception.__cause__.code, "active_too_large")
+        self.assertEqual(data, saved)
+
+    def test_other_413_codes_remain_distinguishable_and_fail_closed(self):
+        raw_data = {"model": "local-chat", "messages": [
+            {"role": "user", "content": "raw " * 1000},
+            {"role": "assistant", "content": "ack"},
+            {"role": "user", "content": "current"},
+        ]}
+        raw_saved = copy.deepcopy(raw_data)
+        with self.assertRaises(HTTPException) as raw:
+            compact_proxy_request(
+                RouterCounter(), raw_data, call_type="acompletion", target=100,
+                raw_limit=250,
+            )
+        self.assertEqual(raw.exception.status_code, 413)
+        self.assertEqual(raw.exception.headers["x-sift-error-code"], "raw_limit")
+        self.assertEqual(raw.exception.detail, "Sift: request exceeds raw_limit")
+        self.assertEqual(raw_data, raw_saved)
+
+        precount_data = {"model": "local-chat", "messages": [
+            {"role": "user", "content": "Read the evidence."},
+        ], "tools": [{"type": "function", "function": {
+            "name": "read_evidence", "description": "evidence " * 1000,
+            "parameters": {"type": "object", "properties": {}},
+        }}]}
+        precount_saved = copy.deepcopy(precount_data)
+        with self.assertRaises(HTTPException) as precount:
+            compact_proxy_request(
+                RouterCounter(), precount_data, call_type="acompletion", target=100,
+                max_input_characters=1_000,
+            )
+        self.assertEqual(precount.exception.status_code, 413)
+        self.assertEqual(precount.exception.headers["x-sift-error-code"], "input_size_limit")
+        self.assertEqual(precount.exception.detail, "Sift: request exceeds the pre-count text limit")
+        self.assertEqual(precount_data, precount_saved)
+
+    def test_documented_callback_passes_active_capacity_and_preserves_guards(self):
+        from litellm.proxy import proxy_server
+
+        readme = (Path(__file__).resolve().parents[1] / "README.md").read_text(encoding="utf-8")
+        examples = [block.split("```", 1)[0] for block in readme.split("```python\n")[1:]]
+        callback_code, = [code for code in examples if "class PassThroughOn413Hook" in code]
+        namespace = {}
+        exec(compile(callback_code, "README callback", "exec"), namespace)
+        callback = namespace["PassThroughOn413Hook"]
+
+        active = {"model": "local-chat", "messages": [
+            {"role": "user", "content": "old " * 1000},
+            {"role": "assistant", "content": "noted"},
+            {"role": "user", "content": "active " * 1000},
+        ]}
+        cycle = {"model": "local-chat", "messages": [
+            {"role": "user", "content": "Inspect the issue."},
+            {"role": "assistant", "content": None, "tool_calls": [{
+                "id": "call-1", "type": "function",
+                "function": {"name": "inspect", "arguments": "{}"},
+            }]},
+            {"role": "tool", "tool_call_id": "call-1", "content": "evidence " * 1000},
+        ]}
+        cases = [
+            ("active turn", active, {}, None),
+            ("latest tool cycle", cycle, {}, None),
+            ("raw limit", active, {"raw_limit": 600}, "raw_limit"),
+            ("input size", active, {"max_input_characters": 100}, "input_size_limit"),
+        ]
+        with patch.object(proxy_server, "llm_router", RouterCounter()):
+            for name, data, options, error_code in cases:
+                with self.subTest(name=name):
+                    saved = copy.deepcopy(data)
+                    hook = callback({"local-chat": 400}, **options)
+                    if error_code is None:
+                        result = asyncio.run(hook.async_pre_call_hook(None, None, data, "acompletion"))
+                        self.assertIsNone(result)
+                    else:
+                        with self.assertRaises(HTTPException) as caught:
+                            asyncio.run(hook.async_pre_call_hook(None, None, data, "acompletion"))
+                        self.assertEqual(caught.exception.status_code, 413)
+                        self.assertEqual(caught.exception.headers["x-sift-error-code"], error_code)
+                    self.assertEqual(data, saved)
+
+    def test_fastapi_serializes_machine_code_header(self):
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+
+        app = FastAPI()
+
+        @app.post("/compact")
+        def compact(request: dict):
+            return compact_proxy_request(
+                RouterCounter(), request, call_type="acompletion", target=400,
+            )
+
+        response = TestClient(app).post("/compact", json={"model": "local-chat", "messages": [
+            {"role": "user", "content": "old " * 1000},
+            {"role": "assistant", "content": "noted"},
+            {"role": "user", "content": "active " * 1000},
+        ]})
+        self.assertEqual(response.status_code, 413)
+        self.assertEqual(response.headers["x-sift-error-code"], "active_too_large")
+        self.assertEqual(response.json()["detail"], "Sift: active turn and instructions exceed target")
 
     def test_precount_guard_includes_tool_schemas_before_route_tokenization(self):
         class CountingRouter:
@@ -143,6 +270,7 @@ class LiteLLMProxyTests(unittest.TestCase):
                 max_input_characters=1_000,
             )
         self.assertEqual(caught.exception.status_code, 413)
+        self.assertEqual(caught.exception.headers["x-sift-error-code"], "input_size_limit")
         self.assertEqual(router.calls, 0)
 
     def test_default_precount_guard_accepts_near_million_unicode_tokens(self):

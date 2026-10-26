@@ -1,0 +1,169 @@
+Building source distribution...
+running egg_info
+writing src\sift_context.egg-info\PKG-INFO
+writing dependency_links to src\sift_context.egg-info\dependency_links.txt
+writing entry points to src\sift_context.egg-info\entry_points.txt
+writing requirements to src\sift_context.egg-info\requires.txt
+writing top-level names to src\sift_context.egg-info\top_level.txt
+reading manifest file 'src\sift_context.egg-info\SOURCES.txt'
+adding license file 'LICENSE'
+writing manifest file 'src\sift_context.egg-info\SOURCES.txt'
+running sdist
+running egg_info
+writing src\sift_context.egg-info\PKG-INFO
+writing dependency_links to src\sift_context.egg-info\dependency_links.txt
+writing entry points to src\sift_context.egg-info\entry_points.txt
+writing requirements to src\sift_context.egg-info\requires.txt
+writing top-level names to src\sift_context.egg-info\top_level.txt
+reading manifest file 'src\sift_context.egg-info\SOURCES.txt'
+adding license file 'LICENSE'
+writing manifest file 'src\sift_context.egg-info\SOURCES.txt'
+running check
+creating sift_context-0.11.0
+creating sift_context-0.11.0\src\sift
+creating sift_context-0.11.0\src\sift_context.egg-info
+creating sift_context-0.11.0\tests
+copying files to sift_context-0.11.0...
+copying LICENSE -> sift_context-0.11.0
+copying README.md -> sift_context-0.11.0
+copying pyproject.toml -> sift_context-0.11.0
+copying src\sift\__init__.py -> sift_context-0.11.0\src\sift
+copying src\sift\cli.py -> sift_context-0.11.0\src\sift
+copying src\sift\core.py -> sift_context-0.11.0\src\sift
+copying src\sift\dynamic.py -> sift_context-0.11.0\src\sift
+copying src\sift\litellm_proxy.py -> sift_context-0.11.0\src\sift
+copying src\sift\litellm_responses.py -> sift_context-0.11.0\src\sift
+copying src\sift_context.egg-info\PKG-INFO -> sift_context-0.11.0\src\sift_context.egg-info
+copying src\sift_context.egg-info\SOURCES.txt -> sift_context-0.11.0\src\sift_context.egg-info
+copying src\sift_context.egg-info\dependency_links.txt -> sift_context-0.11.0\src\sift_context.egg-info
+copying src\sift_context.egg-info\entry_points.txt -> sift_context-0.11.0\src\sift_context.egg-info
+copying src\sift_context.egg-info\requires.txt -> sift_context-0.11.0\src\sift_context.egg-info
+copying src\sift_context.egg-info\top_level.txt -> sift_context-0.11.0\src\sift_context.egg-info
+copying tests\test_acceptance_corpus.py -> sift_context-0.11.0\tests
+copying tests\test_acceptance_tasks.py -> sift_context-0.11.0\tests
+copying tests\test_agents.py -> sift_context-0.11.0\tests
+copying tests\test_analyze_longbench_v2_minimax_fresh_344.py -> sift_context-0.11.0\tests
+copying tests\test_analyze_longbench_v2_minimax_paired_344.py -> sift_context-0.11.0\tests
+copying tests\test_claude_usage.py -> sift_context-0.11.0\tests
+copying tests\test_cli.py -> sift_context-0.11.0\tests
+copying tests\test_cli_acceptance.py -> sift_context-0.11.0\tests
+copying tests\test_cli_campaign.py -> sift_context-0.11.0\tests
+copying tests\test_codex_catalog.py -> sift_context-0.11.0\tests
+copying tests\test_complete_record_groups.py -> sift_context-0.11.0\tests
+copying tests\test_core.py -> sift_context-0.11.0\tests
+copying tests\test_coverage_reserve.py -> sift_context-0.11.0\tests
+copying tests\test_dynamic.py -> sift_context-0.11.0\tests
+copying tests\test_evidence_retention.py -> sift_context-0.11.0\tests
+copying tests\test_evidence_retention_audit.py -> sift_context-0.11.0\tests
+copying tests\test_freeze_agent_fixture.py -> sift_context-0.11.0\tests
+copying tests\test_fullsuite_live_preflight.py -> sift_context-0.11.0\tests
+copying tests\test_invariants.py -> sift_context-0.11.0\tests
+copying tests\test_litellm_proxy.py -> sift_context-0.11.0\tests
+copying tests\test_litellm_responses.py -> sift_context-0.11.0\tests
+copying tests\test_litellm_runtime.py -> sift_context-0.11.0\tests
+copying tests\test_longbench_audit.py -> sift_context-0.11.0\tests
+copying tests\test_longbench_candidate_trace_metadata.py -> sift_context-0.11.0\tests
+copying tests\test_longbench_field_pruning_analysis_v2.py -> sift_context-0.11.0\tests
+copying tests\test_longbench_field_pruning_pilot.py -> sift_context-0.11.0\tests
+copying tests\test_longbench_fresh_continuation.py -> sift_context-0.11.0\tests
+copying tests\test_longbench_paired_bootstrap.py -> sift_context-0.11.0\tests
+copying tests\test_longbench_prepared_input_cache.py -> sift_context-0.11.0\tests
+copying tests\test_longbench_runner.py -> sift_context-0.11.0\tests
+copying tests\test_longbench_v2_minimax_hybrid_stage2_continuation.py -> sift_context-0.11.0\tests
+copying tests\test_longbench_v2_minimax_hybrid_stage2_corrected_analyzer.py -> sift_context-0.11.0\tests
+copying tests\test_longbench_v2_minimax_hybrid_stage2_runner.py -> sift_context-0.11.0\tests
+copying tests\test_longbench_v3_gate.py -> sift_context-0.11.0\tests
+copying tests\test_longbench_v3_runtime_receipts.py -> sift_context-0.11.0\tests
+copying tests\test_longmemeval_v2_full_context.py -> sift_context-0.11.0\tests
+copying tests\test_longmemeval_v2_minimax_request_policy.py -> sift_context-0.11.0\tests
+copying tests\test_longmemeval_v2_minimax_transport.py -> sift_context-0.11.0\tests
+copying tests\test_longmemeval_v2_sift_adapter.py -> sift_context-0.11.0\tests
+copying tests\test_longmemeval_v2_synthetic_main_smoke.py -> sift_context-0.11.0\tests
+copying tests\test_multi_domain_swarm_fixture.py -> sift_context-0.11.0\tests
+copying tests\test_native_profile.py -> sift_context-0.11.0\tests
+copying tests\test_no_inference_compaction_demo.py -> sift_context-0.11.0\tests
+copying tests\test_ollama_compaction_demo.py -> sift_context-0.11.0\tests
+copying tests\test_openai_sdk_compat.py -> sift_context-0.11.0\tests
+copying tests\test_paired_harm_power.py -> sift_context-0.11.0\tests
+copying tests\test_prefill.py -> sift_context-0.11.0\tests
+copying tests\test_preflight_massive_context.py -> sift_context-0.11.0\tests
+copying tests\test_proxy_policy.py -> sift_context-0.11.0\tests
+copying tests\test_qualify_massive_context.py -> sift_context-0.11.0\tests
+copying tests\test_qualify_massive_context_pair_preflight.py -> sift_context-0.11.0\tests
+copying tests\test_quarantine_rehearsal.py -> sift_context-0.11.0\tests
+copying tests\test_query_directed_labels.py -> sift_context-0.11.0\tests
+copying tests\test_reasoning_content.py -> sift_context-0.11.0\tests
+copying tests\test_recency.py -> sift_context-0.11.0\tests
+copying tests\test_relation_binding_candidate.py -> sift_context-0.11.0\tests
+copying tests\test_relation_binding_public_dev.py -> sift_context-0.11.0\tests
+copying tests\test_relation_matrix_candidate.py -> sift_context-0.11.0\tests
+copying tests\test_release_selection.py -> sift_context-0.11.0\tests
+copying tests\test_research_record_map_bundle.py -> sift_context-0.11.0\tests
+copying tests\test_run_longbench_v2_minimax_600.py -> sift_context-0.11.0\tests
+copying tests\test_run_longbench_v2_minimax_stage1_unknowns.py -> sift_context-0.11.0\tests
+copying tests\test_seed_claude_checkpoint.py -> sift_context-0.11.0\tests
+copying tests\test_site.py -> sift_context-0.11.0\tests
+copying tests\test_structured_evidence.py -> sift_context-0.11.0\tests
+copying src\sift_context.egg-info\SOURCES.txt -> sift_context-0.11.0\src\sift_context.egg-info
+Writing sift_context-0.11.0\setup.cfg
+Creating tar archive
+removing 'sift_context-0.11.0' (and everything under it)
+Building wheel...
+running egg_info
+writing src\sift_context.egg-info\PKG-INFO
+writing dependency_links to src\sift_context.egg-info\dependency_links.txt
+writing entry points to src\sift_context.egg-info\entry_points.txt
+writing requirements to src\sift_context.egg-info\requires.txt
+writing top-level names to src\sift_context.egg-info\top_level.txt
+reading manifest file 'src\sift_context.egg-info\SOURCES.txt'
+adding license file 'LICENSE'
+writing manifest file 'src\sift_context.egg-info\SOURCES.txt'
+running bdist_wheel
+running build
+running build_py
+copying src\sift\cli.py -> build\lib\sift
+copying src\sift\core.py -> build\lib\sift
+copying src\sift\dynamic.py -> build\lib\sift
+copying src\sift\litellm_proxy.py -> build\lib\sift
+copying src\sift\litellm_responses.py -> build\lib\sift
+copying src\sift\__init__.py -> build\lib\sift
+running egg_info
+writing src\sift_context.egg-info\PKG-INFO
+writing dependency_links to src\sift_context.egg-info\dependency_links.txt
+writing entry points to src\sift_context.egg-info\entry_points.txt
+writing requirements to src\sift_context.egg-info\requires.txt
+writing top-level names to src\sift_context.egg-info\top_level.txt
+reading manifest file 'src\sift_context.egg-info\SOURCES.txt'
+adding license file 'LICENSE'
+writing manifest file 'src\sift_context.egg-info\SOURCES.txt'
+installing to build\bdist.win-amd64\wheel
+running install
+running install_lib
+creating build\bdist.win-amd64\wheel
+creating build\bdist.win-amd64\wheel\sift
+copying build\lib\sift\cli.py -> build\bdist.win-amd64\wheel\.\sift
+copying build\lib\sift\core.py -> build\bdist.win-amd64\wheel\.\sift
+copying build\lib\sift\dynamic.py -> build\bdist.win-amd64\wheel\.\sift
+copying build\lib\sift\litellm_proxy.py -> build\bdist.win-amd64\wheel\.\sift
+copying build\lib\sift\litellm_responses.py -> build\bdist.win-amd64\wheel\.\sift
+copying build\lib\sift\__init__.py -> build\bdist.win-amd64\wheel\.\sift
+running install_egg_info
+Copying src\sift_context.egg-info to build\bdist.win-amd64\wheel\.\sift_context-0.11.0-py3.14.egg-info
+running install_scripts
+creating build\bdist.win-amd64\wheel\sift_context-0.11.0.dist-info\WHEEL
+creating 'D:\\github\\Sift\\.cache\\release-0.11.0\\dist\\.tmp-wuiymp7g\\sift_context-0.11.0-py3-none-any.whl' and adding 'build\\bdist.win-amd64\\wheel' to it
+adding 'sift/__init__.py'
+adding 'sift/cli.py'
+adding 'sift/core.py'
+adding 'sift/dynamic.py'
+adding 'sift/litellm_proxy.py'
+adding 'sift/litellm_responses.py'
+adding 'sift_context-0.11.0.dist-info/licenses/LICENSE'
+adding 'sift_context-0.11.0.dist-info/METADATA'
+adding 'sift_context-0.11.0.dist-info/WHEEL'
+adding 'sift_context-0.11.0.dist-info/entry_points.txt'
+adding 'sift_context-0.11.0.dist-info/top_level.txt'
+adding 'sift_context-0.11.0.dist-info/RECORD'
+removing build\bdist.win-amd64\wheel
+Successfully built .cache\release-0.11.0\dist\sift_context-0.11.0.tar.gz
+Successfully built .cache\release-0.11.0\dist\sift_context-0.11.0-py3-none-any.whl

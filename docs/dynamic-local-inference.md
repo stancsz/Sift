@@ -1,9 +1,11 @@
 # Dynamic budgets for local inference
 
+The defaults describe a reference 69,632-token local profile, not model discovery or a universal context size. Set `context_window` and reservations from the model's actual loaded configuration. This pure library API is separate from the LiteLLM hook's explicit static model targets; it is not automatically enabled there.
+
 `sift.dynamic.compact_dynamic` chooses a working budget before delegating to the existing deterministic CPU compactor. It accepts the same message protocols and caller-supplied token counter as `compact_messages`.
 
 ```python
-from sift.dynamic import compact_dynamic
+from sift import compact_dynamic
 
 result = compact_dynamic(
     messages,

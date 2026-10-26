@@ -1,0 +1,18 @@
+{
+  "result": "PASS",
+  "litellm": "1.103.0",
+  "checks": [
+    "single-active: default rejects, README opt-in passes unchanged",
+    "latest-cycle: default rejects, README opt-in passes unchanged",
+    "raw-limit: README callback preserves rejection",
+    "input-size: README callback preserves rejection",
+    "under-target: no-op preserved",
+    "FastAPI: latest-cycle code and unchanged error detail serialize"
+  ],
+  "sha256": {
+    "src/sift/litellm_proxy.py": "8120d6d247f9f334bf65840855443d097257685ea2cf047f2bcb265f8eb38cb0",
+    "tests/test_litellm_proxy.py": "e1d5bddc2a9e20cb4d007627e8058026229525497a081e8d501ae499a38f19a4",
+    "README.md": "596322d5363c9f750122e019bf4deef975d98c870d639630a9ae29318107c232",
+    "docs/evals/issue-59/verify_callback.py": "ff16451a0b4dc9b081715422750e9ce20f9081d3eaf612cf36db5d887b6fa9e9"
+  }
+}
