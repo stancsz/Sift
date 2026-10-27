@@ -46,6 +46,7 @@ jobs:
       - run: node tests/test_site_demo.js
       - run: python -m pytest tests/test_ollama_compaction_demo.py -q
       - run: python -m pytest tests/test_no_inference_compaction_demo.py -q
+      - run: python -m pytest tests/test_cli_test_counts.py -q
       - name: Check frozen benchmark manifest checkout
         run: >-
           python -m pytest -q
