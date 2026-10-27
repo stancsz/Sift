@@ -101,3 +101,9 @@ These are bounded synthetic compatibility and persistence checks. They do not
 establish universal bug freedom, broad answer-quality parity, every provider's
 context fit, or production load capacity. Consult the issue #59 receipts for
 completed coverage and outstanding cases.
+
+The completed 0.11.1 wheel campaign has 27 qualifying sessions from 29 attempts:
+nine per client, three repetitions per client/task pair, 191 persisted user
+turns and 1,128 compactions. Each qualifying session ran 185.720–350.033 active
+seconds with 6–11 turns. One upstream 401 and one client command-form deviation
+remain rejected; fresh retries passed. See the [manifest and independent review](evals/issue-59/README.md).

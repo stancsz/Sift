@@ -1,0 +1,28 @@
+{
+  "accepted": true,
+  "version": "0.11.1",
+  "strict_twine_check": true,
+  "exact_source_modules": 6,
+  "wheel_metadata_readme_matches": true,
+  "sdist_contains_recall_regression": true,
+  "fresh_acceptance_python": "3.13.11",
+  "fresh_wheel_focused_tests": "21 passed in21.81s",
+  "artifacts": [
+    {
+      "artifact": "sift_context-0.11.1-py3-none-any.whl",
+      "sha256": "986f7c457ac256731ec26a3a8297f4594ef3030b61057a6de32f97c95dbcfce9",
+      "clean_no_extras_install": true,
+      "litellm_absent": true,
+      "standalone_cli_help": true,
+      "offline_gold_compaction": true
+    },
+    {
+      "artifact": "sift_context-0.11.1.tar.gz",
+      "sha256": "08198c7e5ce4a534dba549da86f14fff03712b1b46436ccb535925d16685c141",
+      "clean_no_extras_install": true,
+      "litellm_absent": true,
+      "standalone_cli_help": true,
+      "offline_gold_compaction": true
+    }
+  ]
+}

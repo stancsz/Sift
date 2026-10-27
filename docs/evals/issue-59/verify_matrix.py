@@ -26,10 +26,15 @@ def main():
         for name in ("core", "dynamic", "litellm_proxy", "litellm_responses")}, **{
         "benchmarks." + name: "benchmarks/" + name + ".py"
         for name in ("acceptance_tasks", "cli_acceptance", "cli_campaign", "cli_matrix")}}
+    frozen_sources = json.loads(gzip.decompress((directory.parent / "matrix-sources.json.gz").read_bytes()))
+    assert set(frozen_sources) == set(matrix["source_sha256"])
     for name, digest in matrix["source_sha256"].items():
-        raw = (ROOT / paths[name]).read_bytes().replace(b"\r\n", b"\n")
-        assert digest in {hashlib.sha256(value).hexdigest() for value in
-                          (raw, raw.replace(b"\n", b"\r\n"))}, name
+        recorded = frozen_sources[name].encode("utf8")
+        assert hashlib.sha256(recorded).hexdigest() == digest, name
+        # The archived bytes retain mixed Windows line endings. A Git
+        # checkout may normalize them, but no other source change is allowed.
+        current = (ROOT / paths[name]).read_bytes()
+        assert current.replace(b"\r\n", b"\n") == recorded.replace(b"\r\n", b"\n"), name
     summaries = []
     identifiers = set()
     for record in matrix["records"]:

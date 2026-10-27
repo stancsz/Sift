@@ -1,0 +1,52 @@
+{
+  "accepted_sessions": 27,
+  "attempts": 29,
+  "preserved_rejections": [
+    {
+      "case": "claude-engineering-2",
+      "attempt": 1,
+      "reason": "compaction, retained historical source, upstream status, or source provenance failed"
+    },
+    {
+      "case": "claude-migration-3",
+      "attempt": 1,
+      "reason": "native turn, hidden tests, history fact, or session continuity failed"
+    }
+  ],
+  "total_native_user_turns": 191,
+  "total_compactions": 1128,
+  "active_seconds_range": [
+    185.72,
+    350.033
+  ],
+  "total_active_seconds": 5868.678,
+  "turns_range": [
+    6,
+    11
+  ],
+  "all_accepted_transport_clean": true,
+  "all_attempt_keys_revoked": true,
+  "by_client": {
+    "codex": {
+      "sessions": 9,
+      "versions": [
+        "codex-cli 0.154.0"
+      ]
+    },
+    "claude": {
+      "sessions": 9,
+      "versions": [
+        "2.1.251 (Claude Code)"
+      ]
+    },
+    "opencode": {
+      "sessions": 9,
+      "versions": [
+        "1.15.10"
+      ]
+    }
+  },
+  "retained_sealed_item_occurrences": 94,
+  "requests_with_retained_sealed_items": 73,
+  "baseline_archive_matches_v0_11_0_git_sources": true
+}
