@@ -40,6 +40,17 @@ def inject_history(data: dict, lines: int = 8000) -> dict:
     return result
 
 
+def _successful_unittest(output: str) -> bool:
+    """Require a native positive-count unittest summary, not quoted prose."""
+    if not isinstance(output, str):
+        return False
+    output = output.replace('\r\n', '\n')
+    summary = re.search(r'^Ran (\d+) tests?(?: in [0-9.]+s)?[ \t]*$', output, re.M)
+    success = re.search(r'^OK(?: \(skipped=(\d+)\))?[ \t]*$', output, re.M)
+    return bool(summary and success and int(summary.group(1)) > int(success.group(1) or 0)
+                and not re.search(r'\bFAILED\b|\bERROR\b', output))
+
+
 def native_evidence(client: str, events: list[dict]) -> dict:
     calls, completed = {}, {}
     outputs = {}
@@ -119,7 +130,7 @@ def native_evidence(client: str, events: list[dict]) -> dict:
             output = outputs.get(key, "")
             if key in completed and not completed[key] and "FAILED" in output:
                 baselines.append(index)
-            if completed.get(key) and "Ran 2 tests" in output and re.search(r"\bOK\b", output):
+            if completed.get(key) and _successful_unittest(output):
                 finals.append(index)
     required_reads, required_writes = {"task.py", "test_task.py"}, {"task.py", "evidence.json"}
     ordered = (required_reads <= set(read_files) and required_writes <= set(written_files)

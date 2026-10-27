@@ -1,5 +1,12 @@
 # Native CLI acceptance
 
+Successful native unittest summaries accept positive fixture sizes, including
+one, three and four tests and Windows CRLF output; zero-test, failed and
+skipped-only runs do not qualify. Client approval/sandbox settings are unchanged.
+The published 0.11.1 matrix remains bound to its frozen sources; verify that
+historical campaign from the 0.11.1 checkout. This parser repair does not promote
+or rewrite any historical rejected attempt.
+
 These opt-in tests send real native client requests through an owned loopback
 Sift proxy to `http://127.0.0.1:4000/v1`, using Subroute's dynamic `default`
 alias. They never change a shared gateway or select a fixed upstream backend.
