@@ -17,19 +17,19 @@ For coding-agent builders with long tool histories, Sift preserves the active re
 
 **[Run the offline trace demo — no model required](https://stancsz.github.io/sift/#try)**
 
-> **Preview release:** install `v0.11.0` from GitHub. It defaults to a 32,768-token target and fixes machine-readable overflow handling and native CLI continuations. Sift is not yet published to PyPI. This remains a preview; see the [release notes](docs/release-notes-0.11.0.md) and [roadmap](ROADMAP.md).
+> **Preview release:** install `v0.11.1` from GitHub. It defaults to a 32,768-token target and fixes machine-readable overflow handling, native CLI continuations, and historical retention signals. Sift is not yet published to PyPI. This remains a preview; see the [release notes](docs/release-notes-0.11.1.md) and [roadmap](ROADMAP.md).
 
 ## Quick start
 
 ### Standalone CLI (no LiteLLM)
 
-The standalone Chat Completions proxy is included in the `v0.11.0` preview. It uses only Python's standard library, binds to `127.0.0.1`, preserves tools and streamed responses, and forwards requests only after a client sends them. No LiteLLM install or manual repository checkout is needed to run the CLI. With Python 3.11+ and Git, install the preview into a virtual environment:
+The standalone Chat Completions proxy is included in the `v0.11.1` preview. It uses only Python's standard library, binds to `127.0.0.1`, preserves tools and streamed responses, and forwards requests only after a client sends them. No LiteLLM install or manual repository checkout is needed to run the CLI. With Python 3.11+ and Git, install the preview into a virtual environment:
 
 **Windows PowerShell:**
 
 ```powershell
 py -m venv .venv
-.\.venv\Scripts\python.exe -m pip install "sift-context @ git+https://github.com/stancsz/sift.git@v0.11.0"
+.\.venv\Scripts\python.exe -m pip install "sift-context @ git+https://github.com/stancsz/sift.git@v0.11.1"
 .\.venv\Scripts\python.exe -m sift.cli serve --base-url http://127.0.0.1:11434/v1 --target 4096 --tokenizer byte-estimate
 ```
 
@@ -37,7 +37,7 @@ py -m venv .venv
 
 ```sh
 python3 -m venv .venv
-.venv/bin/python -m pip install "sift-context @ git+https://github.com/stancsz/sift.git@v0.11.0"
+.venv/bin/python -m pip install "sift-context @ git+https://github.com/stancsz/sift.git@v0.11.1"
 .venv/bin/sift serve --base-url http://127.0.0.1:11434/v1 --target 4096 --tokenizer byte-estimate
 ```
 
@@ -111,7 +111,7 @@ To inspect a conversation without starting a proxy or making a network request, 
 Install the tested GitHub release (Python 3.11+). Sift is not yet on PyPI:
 
 ```sh
-python -m pip install "sift-context[litellm] @ git+https://github.com/stancsz/sift.git@v0.11.0"
+python -m pip install "sift-context[litellm] @ git+https://github.com/stancsz/sift.git@v0.11.1"
 ```
 
 Create `litellm_callback.py` beside your LiteLLM config. The published release uses a 24,576-token default; set the target for your model route and reserve space for model output.
@@ -242,7 +242,7 @@ An agent may need an old failure, a decision, or a policy ID hidden in thousands
 
 Sift retains exact recent work, ranks older excerpts against the current task, carries neighboring diagnostic lines, and follows bounded identifier links to related facts. Completed groups of four tool cycles use fixed excerpts; each completed group can also contribute one query-independent, signal-bearing excerpt. The current group appends exactly while its reserved budget permits. This limits unnecessary prefix changes during a tool loop.
 
-**Why it helps:** keep an agent's working set small as its history grows, without another model call or a generated summary. The `v0.11.0` preview's default selection target is **32,768 estimated input tokens** and can be changed per request or model route. The published `v0.10.0` release defaults to **24,576**; set a target explicitly when using that release. Sift can inspect up to **1,000,000 estimated input tokens** in CPU memory. The active task and current tool work must fit; if they do not, Sift fails closed with HTTP 413. Reserve output capacity and account for differences between estimated and provider token counts when choosing a target.
+**Why it helps:** keep an agent's working set small as its history grows, without another model call or a generated summary. The `v0.11.1` preview's default selection target is **32,768 estimated input tokens** and can be changed per request or model route. The published `v0.10.0` release defaults to **24,576**; set a target explicitly when using that release. Sift can inspect up to **1,000,000 estimated input tokens** in CPU memory. The active task and current tool work must fit; if they do not, Sift fails closed with HTTP 413. Reserve output capacity and account for differences between estimated and provider token counts when choosing a target.
 
 ## LiteLLM callback behavior and limits
 
@@ -285,7 +285,7 @@ Before tokenization, Sift bounds the parsed request to **16,777,216 aggregate st
 
 The integration uses private LiteLLM counting/conversion methods, so upgrading LiteLLM requires compatibility testing. Counting copies repair missing array `items` and account for tool schema text that this version's formatter skips. Original provider definitions stay exact. Sift leaves provider transport, streaming, retries, and public protocols to LiteLLM. [LiteLLM callback reference](https://docs.litellm.ai/docs/proxy/call_hooks).
 
-The `v0.11.0` preview includes the source-slice work and defaults to 32,768 tokens. Its retention results remain development evidence, separate from the native CLI compatibility checks.
+The `v0.11.1` preview includes the source-slice work and defaults to 32,768 tokens. Its retention results remain development evidence, separate from the native CLI compatibility checks.
 
 Responses input must include complete history. Text messages, function/custom tools, function namespaces, and plain reasoning summaries are supported. Codex `additional_tools` catalogs and encrypted reasoning items are retained verbatim; serialized copies are used only for counting, and reasoning never becomes historical evidence. Stateful references, media, built-in tools, malformed catalogs, and incomplete tool batches are rejected. For a Chat-only backend, enable LiteLLM's `use_chat_completions_api: true` on that deployment to let its native adapter serve Responses clients. [Adapter contract and audit logging](docs/algorithm.md#litellm-responses-selection-adapter).
 
@@ -308,7 +308,7 @@ forwarded_messages = result.messages
 audit = result.audit
 ```
 
-In the `v0.11.0` preview, the default target is `DEFAULT_TARGET_TOKENS` (32,768). The published `v0.10.0` release defaults to 24,576. Pass `target` to select a budget explicitly. The hard bound is `forwarded_tokens <= target` according to your supplied counter. The audit includes raw and forwarded counts, omitted estimated tokens, retained prior turns, and selected excerpts. If the active task or latest tool cycle alone exceeds the target, compaction raises `CompactionError`; the LiteLLM callback returns HTTP 413. **Reserve output separately.** Estimated tokens may differ from provider counts, and Sift does not allocate or manage KV cache.
+In the `v0.11.1` preview, the default target is `DEFAULT_TARGET_TOKENS` (32,768). The published `v0.10.0` release defaults to 24,576. Pass `target` to select a budget explicitly. The hard bound is `forwarded_tokens <= target` according to your supplied counter. The audit includes raw and forwarded counts, omitted estimated tokens, retained prior turns, and selected excerpts. If the active task or latest tool cycle alone exceeds the target, compaction raises `CompactionError`; the LiteLLM callback returns HTTP 413. **Reserve output separately.** Estimated tokens may differ from provider counts, and Sift does not allocate or manage KV cache.
 
 ## How Sift handles long histories
 

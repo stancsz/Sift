@@ -1,0 +1,10 @@
+{
+  "verdict": "READY for the localized bounded-anchor repair",
+  "independent_cli_thread": "01a17ac5-7e36-77a3-b729-f146cf723c85",
+  "independent_focused_result": "39 passed, one pytest cache warning",
+  "generic_baseline_and_repair": "verify_recall.py independently executed against archived released core and current source",
+  "full_suite": "592 passed, 1 skipped, 18 warnings in 139.35s; primary execution, raw log committed",
+  "native_capture_replays": "18 before/after cases retain original source with exact active tails/catalogs and target bounds after repair",
+  "full_matrix_accepted": false,
+  "production_transport_resolved": false
+}

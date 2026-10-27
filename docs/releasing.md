@@ -1,6 +1,15 @@
 # Preparing and publishing a Sift release
 
-Sift is not yet published to PyPI. The `0.11.0` GitHub release remains a preview until its quality, compatibility, and adoption gates in the [roadmap](../ROADMAP.md) are resolved.
+Sift is not yet published to PyPI. The `0.11.1` GitHub release remains a preview until its quality, compatibility, and adoption gates in the [roadmap](../ROADMAP.md) are resolved.
+
+The [0.11.1 patch notes](release-notes-0.11.1.md) describe the historical-anchor
+repair found by native acceptance after 0.11.0. Current execution and package
+receipts are in the [issue #59 record](evals/issue-59/README.md).
+
+The [published v0.11.0 preview](https://github.com/stancsz/sift/releases/tag/v0.11.0)
+is built from main commit `3abbb9af45ebea5194c65a919ccc41a188b60373`.
+Its [current acceptance record](evals/issue-59/README.md) supersedes the older
+candidate snapshot below for package version, source correspondence and tests.
 
 The [0.11.0 preview release notes](release-notes-0.11.0.md) summarize the shipped
 features, measured trade-off and completed package rehearsal for the publishing

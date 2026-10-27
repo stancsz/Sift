@@ -1,0 +1,221 @@
+{
+  "verified": true,
+  "sessions": [
+    {
+      "name": "codex-expenses-1",
+      "turns": 6,
+      "active_seconds": 188.521,
+      "requests": 44,
+      "transport_clean": true,
+      "recovered_provider_disconnects": 0
+    },
+    {
+      "name": "claude-expenses-1",
+      "turns": 6,
+      "active_seconds": 273.118,
+      "requests": 53,
+      "transport_clean": true,
+      "recovered_provider_disconnects": 0
+    },
+    {
+      "name": "opencode-expenses-1",
+      "turns": 6,
+      "active_seconds": 267.777,
+      "requests": 49,
+      "transport_clean": true,
+      "recovered_provider_disconnects": 0
+    },
+    {
+      "name": "codex-engineering-1",
+      "turns": 11,
+      "active_seconds": 193.837,
+      "requests": 47,
+      "transport_clean": true,
+      "recovered_provider_disconnects": 0
+    },
+    {
+      "name": "claude-engineering-1",
+      "turns": 7,
+      "active_seconds": 185.913,
+      "requests": 40,
+      "transport_clean": true,
+      "recovered_provider_disconnects": 0
+    },
+    {
+      "name": "opencode-engineering-1",
+      "turns": 7,
+      "active_seconds": 207.154,
+      "requests": 39,
+      "transport_clean": true,
+      "recovered_provider_disconnects": 0
+    },
+    {
+      "name": "codex-migration-1",
+      "turns": 9,
+      "active_seconds": 188.081,
+      "requests": 41,
+      "transport_clean": true,
+      "recovered_provider_disconnects": 0
+    },
+    {
+      "name": "claude-migration-1",
+      "turns": 7,
+      "active_seconds": 198.63,
+      "requests": 40,
+      "transport_clean": true,
+      "recovered_provider_disconnects": 0
+    },
+    {
+      "name": "opencode-migration-1",
+      "turns": 8,
+      "active_seconds": 205.604,
+      "requests": 41,
+      "transport_clean": true,
+      "recovered_provider_disconnects": 0
+    },
+    {
+      "name": "codex-expenses-2",
+      "turns": 6,
+      "active_seconds": 197.151,
+      "requests": 51,
+      "transport_clean": true,
+      "recovered_provider_disconnects": 0
+    },
+    {
+      "name": "opencode-expenses-2",
+      "turns": 6,
+      "active_seconds": 235.117,
+      "requests": 46,
+      "transport_clean": true,
+      "recovered_provider_disconnects": 0
+    },
+    {
+      "name": "claude-expenses-2",
+      "turns": 6,
+      "active_seconds": 315.459,
+      "requests": 52,
+      "transport_clean": true,
+      "recovered_provider_disconnects": 0
+    },
+    {
+      "name": "codex-engineering-2",
+      "turns": 10,
+      "active_seconds": 193.977,
+      "requests": 44,
+      "transport_clean": true,
+      "recovered_provider_disconnects": 0
+    },
+    {
+      "name": "opencode-engineering-2",
+      "turns": 7,
+      "active_seconds": 203.239,
+      "requests": 37,
+      "transport_clean": true,
+      "recovered_provider_disconnects": 0
+    },
+    {
+      "name": "codex-migration-2",
+      "turns": 9,
+      "active_seconds": 192.141,
+      "requests": 43,
+      "transport_clean": true,
+      "recovered_provider_disconnects": 0
+    },
+    {
+      "name": "claude-engineering-2",
+      "turns": 6,
+      "active_seconds": 201.527,
+      "requests": 35,
+      "transport_clean": true,
+      "recovered_provider_disconnects": 0
+    },
+    {
+      "name": "opencode-migration-2",
+      "turns": 6,
+      "active_seconds": 203.658,
+      "requests": 33,
+      "transport_clean": true,
+      "recovered_provider_disconnects": 0
+    },
+    {
+      "name": "claude-migration-2",
+      "turns": 6,
+      "active_seconds": 230.835,
+      "requests": 38,
+      "transport_clean": true,
+      "recovered_provider_disconnects": 0
+    },
+    {
+      "name": "codex-expenses-3",
+      "turns": 7,
+      "active_seconds": 195.681,
+      "requests": 42,
+      "transport_clean": true,
+      "recovered_provider_disconnects": 0
+    },
+    {
+      "name": "claude-expenses-3",
+      "turns": 6,
+      "active_seconds": 350.033,
+      "requests": 54,
+      "transport_clean": true,
+      "recovered_provider_disconnects": 0
+    },
+    {
+      "name": "opencode-expenses-3",
+      "turns": 6,
+      "active_seconds": 272.124,
+      "requests": 44,
+      "transport_clean": true,
+      "recovered_provider_disconnects": 0
+    },
+    {
+      "name": "codex-engineering-3",
+      "turns": 10,
+      "active_seconds": 191.639,
+      "requests": 43,
+      "transport_clean": true,
+      "recovered_provider_disconnects": 0
+    },
+    {
+      "name": "claude-engineering-3",
+      "turns": 7,
+      "active_seconds": 216.467,
+      "requests": 38,
+      "transport_clean": true,
+      "recovered_provider_disconnects": 0
+    },
+    {
+      "name": "opencode-engineering-3",
+      "turns": 6,
+      "active_seconds": 188.096,
+      "requests": 31,
+      "transport_clean": true,
+      "recovered_provider_disconnects": 0
+    },
+    {
+      "name": "codex-migration-3",
+      "turns": 8,
+      "active_seconds": 185.72,
+      "requests": 38,
+      "transport_clean": true,
+      "recovered_provider_disconnects": 0
+    },
+    {
+      "name": "claude-migration-3",
+      "turns": 6,
+      "active_seconds": 185.951,
+      "requests": 32,
+      "transport_clean": true,
+      "recovered_provider_disconnects": 0
+    },
+    {
+      "name": "opencode-migration-3",
+      "turns": 6,
+      "active_seconds": 201.228,
+      "requests": 33,
+      "transport_clean": true,
+      "recovered_provider_disconnects": 0
+    }
+  ]
+}

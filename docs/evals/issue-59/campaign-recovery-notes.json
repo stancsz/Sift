@@ -1,0 +1,22 @@
+{
+  "case": "claude-engineering-2",
+  "failed_attempt": 1,
+  "verdict_preserved": "failed",
+  "upstream_status": 401,
+  "gateway_evidence": "LiteLLM AuthenticationError: Missing Anthropic API Key during fallback; matching HTTP401 /v1/messages event",
+  "sift_source_retention_and_task_turns": "passed; session rejected by the unknown/unrecovered upstream-error gate",
+  "scoped_key_revoked": true,
+  "recovery_check": "Default Messages route returned HTTP200 with an exact unique marker",
+  "recovery_action": "Explicit unchanged-source checkpoint resume; retain14 qualifying sessions and rerun failed/pending cases in fresh workspaces",
+  "provider_or_gateway_configuration_changed": false,
+  "production_transport_resolved": false,
+  "elapsed_seconds_note": "Controller elapsed_seconds resets at explicit resume; per-session active native times are authoritative",
+  "additional_protocol_rejection": {
+    "case": "claude-migration-3",
+    "failed_attempt": 1,
+    "reason": "Client used combined cd; python commands despite prescribed standalone test calls",
+    "native_task_hidden_tests_and_source_checks": "passed; strict native command-form gate rejected",
+    "scoped_key_revoked": true,
+    "recovery_action": "One explicit fresh-session rerun with unchanged strict criteria; failed attempt preserved"
+  }
+}

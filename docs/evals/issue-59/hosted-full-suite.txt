@@ -1,0 +1,4 @@
+Full suite (Python 3.11)	Run python -m pytest tests -q	2026-10-26T22:52:16.4874270Z 581 passed, 1 skipped, 18 warnings in 117.19s (0:01:57)
+Full suite (Python 3.13)	Run python -m pytest tests -q	2026-10-26T22:52:08.0017371Z 581 passed, 1 skipped, 18 warnings in 107.65s (0:01:47)
+Full suite (Python 3.14)	Run python -m pytest tests -q	2026-10-26T22:52:11.1212774Z 581 passed, 1 skipped, 18 warnings in 108.60s (0:01:48)
+Full suite (Python 3.12)	Run python -m pytest tests -q	2026-10-26T22:51:27.6582013Z 581 passed, 1 skipped, 18 warnings in 80.27s (0:01:20)

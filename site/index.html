@@ -116,7 +116,7 @@ cd sift
 python examples/ollama_compaction_demo.py --model qwen3.5:9b</code></pre><div class="code-panel-foot"><span>Confirms x-sift-compacted: true · synthetic demo</span><span>NO LITELLM</span></div></div>
       <div class="code-panel" id="panel-callback" role="tabpanel" aria-labelledby="tab-callback" hidden><div class="code-panel-head"><span class="terminal-dot"></span> PYTHON / LITELLM</div><pre><code><span class="code-dim"># install the tested release</span>
 python -m pip install \
-  "sift-context[litellm] @ git+https://github.com/stancsz/sift.git@v0.10.0"
+  "sift-context[litellm] @ git+https://github.com/stancsz/sift.git@v0.11.1"
 
 <span class="code-dim"># add to your LiteLLM callback module</span>
 from sift.litellm_proxy import SiftLiteLLMHook

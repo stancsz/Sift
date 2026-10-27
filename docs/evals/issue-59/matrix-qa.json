@@ -1,0 +1,12 @@
+{
+  "verdict": "READY for the 27-session packaged-wheel artifact acceptance",
+  "independent_cli_thread": "01a17b07-8c8d-7f13-a401-0d42d4aa2d14",
+  "command": "D:/github/Sift/.venv/Scripts/python.exe docs/evals/issue-59/verify_matrix.py",
+  "execution_exit_code": 0,
+  "accepted_sessions": 27,
+  "total_attempts": 29,
+  "rejections_preserved": 2,
+  "all_attempt_keys_revoked": true,
+  "source_integrity": "Frozen raw source hashes plus checkout equivalence allowing only Git newline normalization",
+  "scope_limits": ["Production transport reliability", "Downstream deployment", "PyPI publication", "Every provider's opaque reasoning semantics", "Universal bug freedom"]
+}

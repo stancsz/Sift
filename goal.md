@@ -6,6 +6,18 @@ Continue the user's full Sift improvement and release-readiness objective. The l
 
 ## Current constraint
 
+Issue #59 upstream acceptance (2026-10-26): the owner selected Sift `main`
+as the production target. [PR #60](https://github.com/stancsz/sift/pull/60)
+delivered machine-readable errors and client compatibility; follow-up
+[PR #61](https://github.com/stancsz/sift/pull/61) prepares 0.11.1 with bounded
+historical source/diagnostic retention. Its source passed 592 tests on Python
+3.11–3.14 and independent focused review. The packaged-wheel campaign accepted
+27 long sessions across all three clients/tasks, with 191 user turns and
+1,128 compactions; two rejected attempts remain preserved. See the
+[current acceptance record](docs/evals/issue-59/README.md). No downstream
+service changed. These receipts do not resolve the broader stable/PyPI,
+held-out quality or adoption criteria below; this larger goal remains active.
+
 The earlier exposed 344-question study showed 59.66% fewer prompt tokens and a
 −5.25 pp task-majority gap (95% interval −10.20 to −0.29). The fresh repeat is
 now terminal: **2,064 attempts, 2,059 usage records, 339 complete paired questions**.

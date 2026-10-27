@@ -1,0 +1,30 @@
+{
+  "policy": "Separate native functional acceptance from clean upstream transport",
+  "production_transport_resolved": false,
+  "prior_failures_reclassified": false,
+  "council_decision_changed": false,
+  "council_recommendation": "Support proposed separation; preserve fatal and unknown errors as failures",
+  "primary": {"model": "codex-gpt-6.1-sol-advisor", "prompt_tokens": 862, "completion_tokens": 262, "request_id": "gen-1793057271-L7aBQyUukYm8g10tpaHC"},
+  "council": {"model": "experts/gemini-4-argon-advisor", "prompt_tokens": 640, "completion_tokens": 307, "request_id": "gen-1793057265-bA6hv9hgnzik7C1BJz0J"},
+  "independent_qa": {
+    "verdict": "NOT READY for initial substring classifier; final verdict supersedes preliminary READY",
+    "thread_id": "01a17a8d-05cd-73f1-b48e-0ca37b7147d0",
+    "tests": "15 passed, 1 pytest cache-path warning in 4.22s; cost-map fetch warning did not fail tests",
+    "finding": "Unrelated diagnostic-field markers can misclassify an unknown error",
+    "repair": "Parse structured error/message with APIConnectionError prefix and specific disconnect signature; negative counterexample and truncated-JSON regressions added",
+    "broader_readiness_claimed": false
+  },
+  "first_repair_review": {
+    "verdict": "NOT READY",
+    "thread_id": "01a17a90-86f1-7482-bcb5-a161b444f799",
+    "finding": "Missing proof that a specific classified failed request actually recovered",
+    "repair": "Require a later identical endpoint/payload fingerprint with HTTP200, received after the failed response finishes"
+  },
+  "final_repair_review": {
+    "verdict": "READY for limited classifier and functional-gate repair",
+    "thread_id": "01a17a93-73a8-7b30-b74e-0ede269b4184",
+    "tests": "16 passed, 1 pytest cache warning; exact native output is in the final QA trace",
+    "full_campaign_accepted": false,
+    "production_transport_resolved": false
+  }
+}

@@ -1,0 +1,314 @@
+{
+  "verified": true,
+  "scope": "Source-aligned synthetic capture replay; not the full native campaign",
+  "raw_native_inputs": "Task-owned local cache only; generic public regression is verify_recall.py",
+  "captured_requests": [
+    {
+      "captured_fixture_sha256": "529fb0498c4016b1ed8eb9367c610e161b14e261c5a00a9c8c189ccd94b0bff7",
+      "before": {
+        "gold_retained": false,
+        "forwarded_tokens": 32582,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      },
+      "after": {
+        "gold_retained": true,
+        "forwarded_tokens": 32610,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      }
+    },
+    {
+      "captured_fixture_sha256": "9c86373fbce81d9d4dd548bec6846d5ec3840c6c1f0cbce733c721e7ce1198ff",
+      "before": {
+        "gold_retained": false,
+        "forwarded_tokens": 32470,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      },
+      "after": {
+        "gold_retained": true,
+        "forwarded_tokens": 32498,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      }
+    },
+    {
+      "captured_fixture_sha256": "16b0b5a746d38be060a3b0c279d4d2ce26e271c2eabcc48159ab111b90e0b8cf",
+      "before": {
+        "gold_retained": false,
+        "forwarded_tokens": 32679,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      },
+      "after": {
+        "gold_retained": true,
+        "forwarded_tokens": 32707,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      }
+    },
+    {
+      "captured_fixture_sha256": "a872730b0bb974cc6e069989c597b984781a27d63ccdef69507ed0e3a4685f87",
+      "before": {
+        "gold_retained": false,
+        "forwarded_tokens": 32760,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      },
+      "after": {
+        "gold_retained": true,
+        "forwarded_tokens": 32601,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      }
+    },
+    {
+      "captured_fixture_sha256": "de32fe4572ff3e0dfc7431284c1d6c0f295db673d87d23ed3ed829d64e2b8e9e",
+      "before": {
+        "gold_retained": false,
+        "forwarded_tokens": 32713,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      },
+      "after": {
+        "gold_retained": true,
+        "forwarded_tokens": 32741,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      }
+    },
+    {
+      "captured_fixture_sha256": "665e0feb76da50cea99635b1e22a6505043e636b1640a11c6f94e573794a97eb",
+      "before": {
+        "gold_retained": false,
+        "forwarded_tokens": 32673,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      },
+      "after": {
+        "gold_retained": true,
+        "forwarded_tokens": 32701,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      }
+    },
+    {
+      "captured_fixture_sha256": "51ddbf93d93b5376ba471f9c2e0c30e9d469744100a04b7d8f522ba580feb1bd",
+      "before": {
+        "gold_retained": false,
+        "forwarded_tokens": 32615,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      },
+      "after": {
+        "gold_retained": true,
+        "forwarded_tokens": 32643,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      }
+    },
+    {
+      "captured_fixture_sha256": "50469d01a5ac7bcc1bb145f6afbfc770c8de5b7aa5a9f5c735fcefeadcc6e094",
+      "before": {
+        "gold_retained": false,
+        "forwarded_tokens": 32450,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      },
+      "after": {
+        "gold_retained": true,
+        "forwarded_tokens": 32504,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      }
+    },
+    {
+      "captured_fixture_sha256": "e8d6075fbafe675ebac34e9335a416a7482615d3bee6213e788f983a5cccd642",
+      "before": {
+        "gold_retained": false,
+        "forwarded_tokens": 32611,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      },
+      "after": {
+        "gold_retained": true,
+        "forwarded_tokens": 32665,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      }
+    },
+    {
+      "captured_fixture_sha256": "0d0c64c24523ab9a1adbba80a548e8e8f15b0aebaf1583e1f607902031e41d32",
+      "before": {
+        "gold_retained": false,
+        "forwarded_tokens": 32604,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      },
+      "after": {
+        "gold_retained": true,
+        "forwarded_tokens": 32658,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      }
+    },
+    {
+      "captured_fixture_sha256": "217b7d45b6eedef5fce408a8791722e13325f1a0380acf77db02dc01aa1da205",
+      "before": {
+        "gold_retained": false,
+        "forwarded_tokens": 32595,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      },
+      "after": {
+        "gold_retained": true,
+        "forwarded_tokens": 32649,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      }
+    },
+    {
+      "captured_fixture_sha256": "710da5c6347efaf52563a47af071a3cd179528d7ae4158335812e555d5f9d964",
+      "before": {
+        "gold_retained": false,
+        "forwarded_tokens": 32540,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      },
+      "after": {
+        "gold_retained": true,
+        "forwarded_tokens": 32594,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      }
+    },
+    {
+      "captured_fixture_sha256": "dc4e69837fca9b8c24312f0e74626c07c696a168aa523cf5a0f6797519c95f47",
+      "before": {
+        "gold_retained": false,
+        "forwarded_tokens": 32639,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      },
+      "after": {
+        "gold_retained": true,
+        "forwarded_tokens": 32693,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      }
+    },
+    {
+      "captured_fixture_sha256": "0e26a65d9f7ffda95bf8a2e7f0e8f9f4bba0ca7647bda955afbbf8b30c13a261",
+      "before": {
+        "gold_retained": false,
+        "forwarded_tokens": 32703,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      },
+      "after": {
+        "gold_retained": true,
+        "forwarded_tokens": 32757,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      }
+    },
+    {
+      "captured_fixture_sha256": "ac0360e9d53617405ed147c2cd3b659e56696a9c32583c177f46e6d0713dc15c",
+      "before": {
+        "gold_retained": false,
+        "forwarded_tokens": 32692,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      },
+      "after": {
+        "gold_retained": true,
+        "forwarded_tokens": 32746,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      }
+    },
+    {
+      "captured_fixture_sha256": "56469b018ba3b79fd5a49d4c80f0c5754ce04c3dcde6b77676f1f9aab2c338e4",
+      "before": {
+        "gold_retained": false,
+        "forwarded_tokens": 32436,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      },
+      "after": {
+        "gold_retained": true,
+        "forwarded_tokens": 32490,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      }
+    },
+    {
+      "captured_fixture_sha256": "99fe00e9a8441a689ac65c810dc71682a00abe6bbccbe646f853ba94370ca009",
+      "before": {
+        "gold_retained": false,
+        "forwarded_tokens": 32551,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      },
+      "after": {
+        "gold_retained": true,
+        "forwarded_tokens": 32605,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      }
+    },
+    {
+      "captured_fixture_sha256": "76620598128eb3d13dfed0dc9e413a887019be2eda1de516d3a15aeb790ab53a",
+      "before": {
+        "gold_retained": false,
+        "forwarded_tokens": 32588,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      },
+      "after": {
+        "gold_retained": true,
+        "forwarded_tokens": 32642,
+        "within_target": true,
+        "active_tail_exact": true,
+        "catalogs_exact": true
+      }
+    }
+  ],
+  "capture_key_revoked": true
+}

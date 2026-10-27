@@ -1,0 +1,30 @@
+{
+  "release": "https://github.com/stancsz/sift/releases/tag/v0.11.0",
+  "pull_request": "https://github.com/stancsz/sift/pull/60",
+  "main_commit": "3abbb9af45ebea5194c65a919ccc41a188b60373",
+  "full_ci": "https://github.com/stancsz/sift/actions/runs/40415374396",
+  "full_ci_conclusion": "success",
+  "full_ci_python": [
+    "3.11",
+    "3.12",
+    "3.13",
+    "3.14"
+  ],
+  "wheel_sha256": "5008fac3001edb6781d2d27e72586003c6c4e98efd9c719c016df4924acd5fa5",
+  "campaign_import_path": "D:\\github\\Sift\\.cache\\release-0.11.0\\acceptance-env\\Lib\\site-packages\\sift",
+  "installed_wheel_modules_exact": 6,
+  "focused_wheel_tests": "12 passed in 26.59s",
+  "dependency_versions": {
+    "sift-context": "0.11.0",
+    "litellm": "1.103.0",
+    "openai": "2.54.0",
+    "fastapi": "0.162.0",
+    "httpx": "0.28.1",
+    "uvicorn": "0.54.0",
+    "tiktoken": "0.14.0"
+  },
+  "production_target": "Sift main",
+  "downstream_service_changed": false,
+  "pypi_published": false,
+  "tag_control": "Existing configured owner bypass; no settings changed; no independent tag approval claimed"
+}

@@ -1,0 +1,9 @@
+{
+  "verdict": "READY",
+  "scope": "Scheduler recovery only; not the full live campaign or production readiness",
+  "independent_cli_thread": "01a17a83-8d58-7303-8d5a-8b0031933335",
+  "command": "D:/github/Sift/.venv/Scripts/python.exe -m pytest tests/test_cli_campaign.py tests/test_cli_acceptance.py -q",
+  "result": "13 passed, 1 pytest cache-path warning in 4.69s",
+  "exit_code": 0,
+  "material_findings": []
+}

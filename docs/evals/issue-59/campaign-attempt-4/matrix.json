@@ -1,0 +1,113 @@
+{
+  "complete": false,
+  "expected_sessions": 27,
+  "accepted_sessions": 2,
+  "terminal_sessions": 3,
+  "elapsed_seconds": 526.98,
+  "source_sha256": {
+    "sift": "f60ed7e806a2177ea331eae06042dcc533b0e8c05c3bacd461caee2d778dd218",
+    "sift.core": "7ccfa75028e32fcc2ac748c2b073422850db0fc7b8f9fb88dc690cc62d9ad748",
+    "sift.dynamic": "f544cd630937be9734f7fed446c18ca5b5d2bf14b92e4d615108b2e507f62428",
+    "sift.litellm_proxy": "8120d6d247f9f334bf65840855443d097257685ea2cf047f2bcb265f8eb38cb0",
+    "sift.litellm_responses": "97a44289defb706b5957e2062576a7bfbdc71a89ba1c3617c56e89da1918890c",
+    "benchmarks.acceptance_tasks": "da4c1d5d94399ada78813e5e25ddc40c55a73c69ae48d709470e90d15d90fae5",
+    "benchmarks.cli_acceptance": "125823faac60dbaf358f230b7deba6308525efdc4ec7a75da030ba7923caa1f0",
+    "benchmarks.cli_campaign": "f36762850a945eea748ecc49a9929cabb3655bcf5ab01ec00af65141f291452d",
+    "benchmarks.cli_matrix": "1c0c437a9d9a2727f1b3601275ef8f179ec9228c152e3659d243f810226e6887"
+  },
+  "records": [
+    {
+      "name": "claude-expenses-1",
+      "client": "claude",
+      "task": "expenses",
+      "repeat": 1,
+      "accepted": true,
+      "scoped_key_alias": "sift-acceptance-73b32bb4b2bd",
+      "key_revoked": true,
+      "attempt": 1,
+      "exit_code": 0,
+      "active_seconds": 319.465,
+      "turns": 6,
+      "failure": null,
+      "receipt": "claude-expenses-1-attempt-1/result.json"
+    },
+    {
+      "name": "opencode-expenses-1",
+      "client": "opencode",
+      "task": "expenses",
+      "repeat": 1,
+      "accepted": false,
+      "scoped_key_alias": "sift-acceptance-0bdac8f4c398",
+      "key_revoked": true,
+      "attempt": 1,
+      "exit_code": 1,
+      "active_seconds": 343.614,
+      "turns": 6,
+      "failure": "compaction, retained historical source, upstream status, or source provenance failed",
+      "receipt": "opencode-expenses-1-attempt-1/result.json"
+    },
+    {
+      "name": "codex-expenses-1",
+      "client": "codex",
+      "task": "expenses",
+      "repeat": 1,
+      "accepted": true,
+      "scoped_key_alias": "sift-acceptance-d8ec2b0c2bb1",
+      "key_revoked": true,
+      "attempt": 1,
+      "exit_code": 0,
+      "active_seconds": 194.405,
+      "turns": 6,
+      "failure": null,
+      "receipt": "codex-expenses-1-attempt-1/result.json"
+    }
+  ],
+  "attempts": [
+    {
+      "name": "claude-expenses-1",
+      "client": "claude",
+      "task": "expenses",
+      "repeat": 1,
+      "accepted": true,
+      "scoped_key_alias": "sift-acceptance-73b32bb4b2bd",
+      "key_revoked": true,
+      "attempt": 1,
+      "exit_code": 0,
+      "active_seconds": 319.465,
+      "turns": 6,
+      "failure": null,
+      "receipt": "claude-expenses-1-attempt-1/result.json"
+    },
+    {
+      "name": "opencode-expenses-1",
+      "client": "opencode",
+      "task": "expenses",
+      "repeat": 1,
+      "accepted": false,
+      "scoped_key_alias": "sift-acceptance-0bdac8f4c398",
+      "key_revoked": true,
+      "attempt": 1,
+      "exit_code": 1,
+      "active_seconds": 343.614,
+      "turns": 6,
+      "failure": "compaction, retained historical source, upstream status, or source provenance failed",
+      "receipt": "opencode-expenses-1-attempt-1/result.json"
+    },
+    {
+      "name": "codex-expenses-1",
+      "client": "codex",
+      "task": "expenses",
+      "repeat": 1,
+      "accepted": true,
+      "scoped_key_alias": "sift-acceptance-d8ec2b0c2bb1",
+      "key_revoked": true,
+      "attempt": 1,
+      "exit_code": 0,
+      "active_seconds": 194.405,
+      "turns": 6,
+      "failure": null,
+      "receipt": "codex-expenses-1-attempt-1/result.json"
+    }
+  ],
+  "active_sessions": []
+}

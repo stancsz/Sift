@@ -1,0 +1,27 @@
+{
+  "verified": true,
+  "scope": "Generic source-history regressions, not live matrix acceptance",
+  "results": {
+    "released_0_11_0": {
+      "tests": 5,
+      "failures": 8,
+      "errors": 0,
+      "failed_cases": [
+        "test_old_source_fact_survives_verbose_task_echoes (tests.test_issue59_history_recall.HistoryRecallTests.test_old_source_fact_survives_verbose_task_echoes)",
+        "test_retention_signal_survives_topic_changes_at_different_positions_and_budgets (tests.test_issue59_history_recall.HistoryRecallTests.test_retention_signal_survives_topic_changes_at_different_positions_and_budgets) (position=10, target=1200)",
+        "test_retention_signal_survives_topic_changes_at_different_positions_and_budgets (tests.test_issue59_history_recall.HistoryRecallTests.test_retention_signal_survives_topic_changes_at_different_positions_and_budgets) (position=10, target=1600)",
+        "test_retention_signal_survives_topic_changes_at_different_positions_and_budgets (tests.test_issue59_history_recall.HistoryRecallTests.test_retention_signal_survives_topic_changes_at_different_positions_and_budgets) (position=150, target=1200)",
+        "test_retention_signal_survives_topic_changes_at_different_positions_and_budgets (tests.test_issue59_history_recall.HistoryRecallTests.test_retention_signal_survives_topic_changes_at_different_positions_and_budgets) (position=150, target=1600)",
+        "test_retention_signal_survives_topic_changes_at_different_positions_and_budgets (tests.test_issue59_history_recall.HistoryRecallTests.test_retention_signal_survives_topic_changes_at_different_positions_and_budgets) (position=290, target=1200)",
+        "test_retention_signal_survives_topic_changes_at_different_positions_and_budgets (tests.test_issue59_history_recall.HistoryRecallTests.test_retention_signal_survives_topic_changes_at_different_positions_and_budgets) (position=290, target=1600)",
+        "test_source_signal_and_prior_diagnostic_survive_together (tests.test_issue59_history_recall.HistoryRecallTests.test_source_signal_and_prior_diagnostic_survive_together)"
+      ]
+    },
+    "current": {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "failed_cases": []
+    }
+  }
+}
