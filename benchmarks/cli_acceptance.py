@@ -125,7 +125,7 @@ def native_evidence(client: str, events: list[dict]) -> dict:
             if wrapper:
                 command = wrapper.group(2).strip()
         if name in {"bash", "powershell"} and isinstance(command, str) and re.fullmatch(
-            r'\s*(?:&\s*)?(?:"[^"\r\n]+"|[^\s;&|]+)\s+-m\s+unittest\s+-q\s*', command,
+            r'\s*(?:&\s*)?(?:"[^"\r\n]+"|\\+"[^"\r\n]+\\+"|[^\s;&|]+)\s+-m\s+unittest\s+-q\s*', command,
         ):
             output = outputs.get(key, "")
             if key in completed and not completed[key] and "FAILED" in output:

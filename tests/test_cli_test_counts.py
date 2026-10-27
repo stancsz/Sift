@@ -19,3 +19,12 @@ def test_positive_native_counts(count,newline):
     'The output was "Ran 3 tests in 0.001s" and "OK"', '"Ran 3 tests in 0.001s\\n\\nOK\\n"'])
 def test_non_success_is_not_promoted(output):
     assert not _successful_unittest(output)
+
+
+def test_escaped_native_windows_executable_is_a_real_baseline():
+    command=r'"C:\PowerShell\pwsh.exe" -Command "& \\"C:\\Program Files\\Python\\python.exe\\" -m unittest -q"'
+    events=[{'type':'item.completed','item':{'id':'baseline','type':'command_execution','command':command,
+        'aggregated_output':'Ran 3 tests\r\nFAILED (failures=1)\r\n','exit_code':1,'status':'failed'}}]
+    assert native_evidence('codex',events)['baseline_failed']
+    events[0]['item']['command']=command.replace('-q','-q; Write-Output quoted')
+    assert not native_evidence('codex',events)['baseline_failed']
