@@ -1,11 +1,44 @@
 import copy
 import unittest
-from unittest.mock import patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
-from benchmarks.cli_acceptance import historical_gold_retained, inject_history, native_evidence
+from benchmarks.cli_acceptance import classify_upstream_error, historical_gold_retained, inject_history, make_app, native_evidence
 
 
 class CLIHarnessTests(unittest.TestCase):
+    def test_only_specific_provider_disconnect_is_classified(self):
+        error = b'{"error":"litellm.APIConnectionError: OpenrouterException - Connection closed."}'
+        self.assertEqual(classify_upstream_error(500, error), "provider_connection_closed")
+        structured = b'{"error":{"message":"litellm.APIConnectionError: APIConnectionError: OpenrouterException - Connection closed.","type":"server_error"}}'
+        self.assertEqual(classify_upstream_error(500, structured), "provider_connection_closed")
+        for status, body in [(200, error), (413, error), (429, error), (503, error),
+                             (500, b"Connection closed."), (500, b"context_length_exceeded"),
+                             (500, b'{"error":"unknown","diagnostic":"OpenrouterException APIConnectionError Connection closed."}'),
+                             (500, b'{"error":"quoted litellm.APIConnectionError: OpenrouterException - Connection closed."}'),
+                             (500, structured[:-5])]:
+            self.assertIsNone(classify_upstream_error(status, body))
+
+    def test_error_stream_is_unchanged_and_classified_across_chunk_boundaries(self):
+        from fastapi.testclient import TestClient
+        error = b'{"error":"litellm.APIConnectionError: OpenrouterException - Connection closed."}'
+        response = MagicMock(status_code=500, headers={"content-type": "application/json"})
+        async def chunks():
+            for start in range(0, len(error), 7):
+                yield error[start:start+7]
+        response.aiter_raw = chunks
+        response.aclose = AsyncMock()
+        upstream = MagicMock(send=AsyncMock(return_value=response), aclose=AsyncMock())
+        audits = []
+        with patch("httpx.AsyncClient", return_value=upstream), \
+             patch("sift.litellm_proxy.SiftLiteLLMHook._compact", new=AsyncMock(return_value={"messages": []})):
+            with TestClient(make_app("http://127.0.0.1:4000/v1", "synthetic", "default", 32768, audits)) as client:
+                result = client.post("/v1/chat/completions", json={"messages": []})
+        self.assertEqual(result.status_code, 500)
+        self.assertEqual(result.content, error)
+        self.assertEqual(audits[0]["upstream_transport_error"], "provider_connection_closed")
+        response.aclose.assert_awaited_once()
+        upstream.aclose.assert_awaited_once()
+
     def test_real_compaction_finds_injected_source_after_instruction_prefix(self):
         try:
             from sift.litellm_proxy import compact_proxy_request

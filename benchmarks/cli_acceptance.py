@@ -149,13 +149,29 @@ def historical_gold_retained(messages: list[dict], source_index: int) -> bool:
     return False
 
 
+def classify_upstream_error(status: int, body: bytes):
+    if status != 500:
+        return None
+    try:
+        payload = json.loads(body)
+    except (ValueError, UnicodeError):
+        return None
+    error = payload.get("error") if isinstance(payload, dict) else None
+    message = error.get("message") if isinstance(error, dict) else error
+    if (isinstance(message, str)
+            and message.startswith(("litellm.APIConnectionError:", "APIConnectionError:"))
+            and "OpenrouterException - Connection closed." in message):
+        return "provider_connection_closed"
+    return None
+
+
 class RouteCounter:
     def _count_pre_call_check_tokens(self, messages, input, request_kwargs):
         from litellm import Router
         return Router._count_pre_call_check_tokens(self, messages, input, request_kwargs)
 
 
-def make_app(upstream: str, key: str, model: str, target: int, audits: list[dict]):
+def make_app(upstream: str, key: str, model: str, target: int, audits: list[dict], capture_directory: Path | None = None):
     import httpx
     from fastapi import FastAPI, Request
     from fastapi.responses import StreamingResponse
@@ -170,6 +186,7 @@ def make_app(upstream: str, key: str, model: str, target: int, audits: list[dict
     @app.post("/v1/{endpoint:path}")
     async def forward(endpoint: str, request: Request):
         from fastapi import HTTPException
+        received_at = time.monotonic()
         if endpoint not in {"messages", "chat/completions", "responses"}:
             raise HTTPException(404, "Unsupported acceptance protocol")
         original = await request.json()
@@ -204,6 +221,8 @@ def make_app(upstream: str, key: str, model: str, target: int, audits: list[dict
         active_sealed = [item for item in original_messages[last_user + 1:]
                          if item.get("type") == "reasoning" and item.get("encrypted_content")]
         entry = {**audit, "protocol": call_type, "input_shapes": shapes,
+                       "request_received_at": received_at,
+                       "request_sha256": hashlib.sha256((endpoint + "\0" + json.dumps(original, sort_keys=True)).encode("utf8")).hexdigest(),
                        "gold_retained": historical_gold_retained(output_messages, history_index),
                        "sealed_items_retained": len(retained_sealed),
                        "sealed_items_unchanged": all(item in original_sealed for item in retained_sealed),
@@ -215,6 +234,13 @@ def make_app(upstream: str, key: str, model: str, target: int, audits: list[dict
                            for b in (m.get("content") if isinstance(m.get("content"), list) else [])
                        ) for m in original_messages)}
         audits.append(entry)
+        if capture_directory is not None and not entry["gold_retained"]:
+            # Task-owned synthetic diagnostics only; never copy this raw
+            # native fixture into a public report without minimizing it.
+            capture_directory.mkdir(parents=True, exist_ok=True)
+            (capture_directory / (entry["request_sha256"] + ".json")).write_text(json.dumps({
+                "original": original, "compacted": compacted, "target": target,
+                "call_type": call_type, "audit": entry}, ensure_ascii=False), encoding="utf8")
         headers = {"Authorization": f"Bearer {key}", "x-api-key": key,
                    "anthropic-version": request.headers.get("anthropic-version", "2023-06-01")}
         client = httpx.AsyncClient(timeout=httpx.Timeout(90, connect=10), follow_redirects=False)
@@ -228,10 +254,15 @@ def make_app(upstream: str, key: str, model: str, target: int, audits: list[dict
         entry["upstream_status"] = response.status_code
 
         async def body():
+            error_prefix = bytearray()
             try:
                 async for chunk in response.aiter_raw():
+                    if response.status_code != 200:
+                        error_prefix.extend(chunk[:max(0, 8192-len(error_prefix))])
                     yield chunk
             finally:
+                entry["upstream_transport_error"] = classify_upstream_error(response.status_code, bytes(error_prefix))
+                entry["response_finished_at"] = time.monotonic()
                 await response.aclose()
                 await client.aclose()
 

@@ -1,0 +1,83 @@
+{
+  "complete": false,
+  "expected_sessions": 27,
+  "accepted_sessions": 0,
+  "terminal_sessions": 2,
+  "elapsed_seconds": 99.62,
+  "source_sha256": {
+    "sift": "f60ed7e806a2177ea331eae06042dcc533b0e8c05c3bacd461caee2d778dd218",
+    "sift.core": "7ccfa75028e32fcc2ac748c2b073422850db0fc7b8f9fb88dc690cc62d9ad748",
+    "sift.dynamic": "f544cd630937be9734f7fed446c18ca5b5d2bf14b92e4d615108b2e507f62428",
+    "sift.litellm_proxy": "8120d6d247f9f334bf65840855443d097257685ea2cf047f2bcb265f8eb38cb0",
+    "sift.litellm_responses": "97a44289defb706b5957e2062576a7bfbdc71a89ba1c3617c56e89da1918890c",
+    "benchmarks.acceptance_tasks": "da4c1d5d94399ada78813e5e25ddc40c55a73c69ae48d709470e90d15d90fae5",
+    "benchmarks.cli_acceptance": "862605e879f9169bbc2cc9f3332e4d0010eebe45230810a3b42832a1d6fe192f",
+    "benchmarks.cli_campaign": "7ca0df34613c477c5d45cce352d0a9167110347569c264f83a053b4d4e571df8",
+    "benchmarks.cli_matrix": "1c0c437a9d9a2727f1b3601275ef8f179ec9228c152e3659d243f810226e6887"
+  },
+  "records": [
+    {
+      "name": "claude-expenses-1",
+      "client": "claude",
+      "task": "expenses",
+      "repeat": 1,
+      "accepted": false,
+      "scoped_key_alias": "sift-acceptance-a8f6a6844004",
+      "key_revoked": true,
+      "attempt": 1,
+      "exit_code": 1,
+      "active_seconds": 60.835,
+      "turns": 2,
+      "failure": null,
+      "receipt": "claude-expenses-1-attempt-1/result.json"
+    },
+    {
+      "name": "opencode-expenses-1",
+      "client": "opencode",
+      "task": "expenses",
+      "repeat": 1,
+      "accepted": false,
+      "scoped_key_alias": "sift-acceptance-67b8f1b2b2c0",
+      "key_revoked": true,
+      "attempt": 1,
+      "exit_code": 1,
+      "active_seconds": 67.274,
+      "turns": 1,
+      "failure": null,
+      "receipt": "opencode-expenses-1-attempt-1/result.json"
+    }
+  ],
+  "attempts": [
+    {
+      "name": "claude-expenses-1",
+      "client": "claude",
+      "task": "expenses",
+      "repeat": 1,
+      "accepted": false,
+      "scoped_key_alias": "sift-acceptance-a8f6a6844004",
+      "key_revoked": true,
+      "attempt": 1,
+      "exit_code": 1,
+      "active_seconds": 60.835,
+      "turns": 2,
+      "failure": null,
+      "receipt": "claude-expenses-1-attempt-1/result.json"
+    },
+    {
+      "name": "opencode-expenses-1",
+      "client": "opencode",
+      "task": "expenses",
+      "repeat": 1,
+      "accepted": false,
+      "scoped_key_alias": "sift-acceptance-67b8f1b2b2c0",
+      "key_revoked": true,
+      "attempt": 1,
+      "exit_code": 1,
+      "active_seconds": 67.274,
+      "turns": 1,
+      "failure": null,
+      "receipt": "opencode-expenses-1-attempt-1/result.json"
+    }
+  ],
+  "active_sessions": []
+}

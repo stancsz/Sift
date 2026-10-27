@@ -1,0 +1,10 @@
+{
+  "decision": "Explicit unchanged-source checkpoint resume; preserve failures and all acceptance gates",
+  "decision_changed": false,
+  "reason": "Council supported the proposed recovery; independent acceptance is still required",
+  "primary": {"model": "codex-gpt-6.1-sol-advisor", "prompt_tokens": 783, "completion_tokens": 222, "request_id": "gen-1793056390-DlEWZxkuUd1yatGLr4h8"},
+  "council": {"model": "experts/gemini-4-argon-advisor", "prompt_tokens": 573, "completion_tokens": 362, "request_id": "gen-1793056387-KbMp0PgBTqPUW7lasFww"},
+  "development_checks": "12 passed in 4.68s, including rejection of changed sources, active sessions and unrevoked keys",
+  "recovery_probe": "Exact default route returned HTTP 200 with requested unique marker",
+  "failed_attempts_preserved": "campaign-attempt-2/matrix.json"
+}

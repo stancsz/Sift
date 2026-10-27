@@ -55,6 +55,24 @@ def parse_events(stdout):
     return events
 
 
+def recovered_disconnect_count(audits):
+    count = 0
+    for index, audit in enumerate(audits):
+        if audit.get("upstream_status") == 200:
+            continue
+        fingerprint = audit.get("request_sha256")
+        finished = audit.get("response_finished_at")
+        if not (audit.get("upstream_status") == 500 and fingerprint
+                and audit.get("upstream_transport_error") == "provider_connection_closed"
+                and isinstance(finished, (int, float))
+                and any(later.get("upstream_status") == 200 and later.get("request_sha256") == fingerprint
+                        and later.get("request_received_at", -1) >= finished
+                        for later in audits[index+1:])):
+            return None
+        count += 1
+    return count
+
+
 def run(args):
     import uvicorn
     from benchmarks.acceptance_tasks import initial_source, stage
@@ -74,7 +92,7 @@ def run(args):
     sock = socket.socket()
     sock.bind(("127.0.0.1", 0))
     port = sock.getsockname()[1]
-    server = uvicorn.Server(uvicorn.Config(make_app(args.upstream_base_url, key, args.model, args.target, audits),
+    server = uvicorn.Server(uvicorn.Config(make_app(args.upstream_base_url, key, args.model, args.target, audits, root / "failures"),
                                          access_log=False, log_level="critical"))
     thread = threading.Thread(target=server.run, kwargs={"sockets": [sock]}, daemon=True)
     thread.start()
@@ -140,6 +158,10 @@ def run(args):
                 prompt = prompt.replace("native Edit/Write tools", "native Edit tools").replace("native Write tool", "native Edit tool")
                 prompt = prompt.replace("native Write/Edit", "native Edit")
                 prompt += " Write is unavailable in this CLI: use Read then Edit to populate the existing empty evidence/report JSON stubs."
+            prompt += (" Required order: (1) read task.py and test_task.py, (2) execute the standalone baseline test command, "
+                       "(3) only after that result, edit task.py, evidence.json or the report, (4) execute the standalone final test command. "
+                       "Do not make any edit before the baseline, even when the fix is obvious. "
+                       "When using Bash, omit the PowerShell & prefix.")
             command, env = child_command(args.client, executable(args.client), root / "client-home",
                                          f"http://127.0.0.1:{port}/v1", args.model, prompt,
                                          persist=True, session_id=identifier)
@@ -210,11 +232,13 @@ def run(args):
                 break
             if active > args.minimum_seconds and len(turns) >= args.minimum_turns:
                 compacted = [a for a in audits if a.get("compacted") is True]
+                receipt["transport_clean"] = all(a.get("upstream_status") == 200 for a in audits)
+                receipt["recovered_provider_disconnects"] = recovered_disconnect_count(audits)
                 receipt["accepted"] = (bool(compacted) and any(a.get("tool_results", 0) for a in audits)
                     and all(a.get("gold_retained") and a["forwarded_tokens"] <= args.target for a in compacted)
                     and all(a.get("sealed_items_unchanged") and a.get("latest_active_sealed_retained")
                             and a.get("catalogs_unchanged") for a in audits)
-                    and all(a.get("upstream_status") == 200 for a in audits) and source_hashes() == frozen)
+                    and receipt["recovered_provider_disconnects"] is not None and source_hashes() == frozen)
                 if not receipt["accepted"]:
                     failure = "compaction, retained historical source, upstream status, or source provenance failed"
                 break

@@ -2194,21 +2194,39 @@ def _diagnostic_candidates(old: list[dict[str, Any]], offset: int,
     return output
 
 
-def _stable_anchor(old: list[dict[str, Any]], offset: int) -> _Candidate | None:
-    """Choose one query-independent historical excerpt that survives topic shifts."""
+def _stable_anchors(old: list[dict[str, Any]], offset: int) -> list[_Candidate]:
+    """Keep a diagnostic and one independent first-source signal across topic shifts."""
     diagnostics = _diagnostic_candidates(old, offset, limit=1)
-    if diagnostics:
-        return diagnostics[0]
     if not old:
-        return None
-    candidates = _candidates(old[:1], set(), Counter(), 1)
+        return diagnostics
+    candidates, coverage = _candidates(old[:1], set(), Counter(), 1, with_coverage=True)
     if not candidates:
-        return None
-    item = candidates[0]
+        return diagnostics
+    if diagnostics and (coverage is None or coverage.prefix):
+        return diagnostics
+    item = coverage if coverage is not None and not coverage.prefix else candidates[0]
     if item.prefix:
-        return None
-    return _Candidate(item.message_index + offset, item.part_index,
-                      item.role, item.text, item.score, item.center, item.prefix)
+        return diagnostics
+    source = _Candidate(item.message_index + offset, item.part_index,
+                        item.role, item.text, item.score, item.center, item.prefix)
+    if diagnostics and source.message_index == diagnostics[0].message_index and source.center in diagnostics[0].text:
+        return diagnostics
+    return diagnostics + [source]
+
+
+def _bounded_anchors(
+    anchors: list[_Candidate], prefix: list[dict[str, Any]], preserved: list[dict[str, Any]],
+    count_tokens: TokenCounter, target: int,
+) -> tuple[dict[str, str] | None, list[_Candidate]]:
+    baseline = _count(count_tokens, prefix + preserved)
+    while anchors:
+        summary = _summary(anchors)
+        count = _count(count_tokens, prefix + [summary] + preserved)
+        if count - baseline <= target // 8 and count <= target - 256:
+            return summary, anchors
+        # Diagnostics keep their existing priority when both signals cannot fit.
+        anchors = anchors[:-1]
+    return None, []
 
 
 def _summary(candidates: list[_Candidate]) -> dict[str, str]:
@@ -2543,13 +2561,12 @@ def compact_messages(
             messages[latest_user + 1:tail_start], latest_user + 1, limit=1)
         baseline_message = _summary(baseline) if baseline else None
         old_before = messages[instruction_end:latest_user]
-        prior_anchor = _stable_anchor(old_before, instruction_end)
+        prior_anchors = _stable_anchors(old_before, instruction_end)
         prior_options = [
             _Candidate(item.message_index + instruction_end, item.part_index,
                        item.role, item.text, item.score, item.center, item.prefix)
             for item in _linked_candidates(old_before, task_query)
         ]
-        prior_anchor_message = _summary([prior_anchor]) if prior_anchor else None
         task_prefix = messages[:instruction_end] + [messages[latest_user]]
         task_count = _count(count_tokens, task_prefix)
         if baseline_message and _count(
@@ -2558,20 +2575,13 @@ def compact_messages(
             baseline = []
             baseline_message = None
         base = task_prefix + ([baseline_message] if baseline_message else []) + messages[tail_start:]
+        prior_anchor_message, prior_anchors = _bounded_anchors(
+            prior_anchors, messages[:instruction_end], base[instruction_end:], count_tokens, target)
         if prior_anchor_message:
-            anchor_tokens = _count(
-                count_tokens,
-                messages[:instruction_end] + [prior_anchor_message] + base[instruction_end:],
-            ) - _count(count_tokens, base)
-            if anchor_tokens > target // 8 or _count(
-                count_tokens,
-                messages[:instruction_end] + [prior_anchor_message] + base[instruction_end:],
-            ) > target - 256:
-                prior_anchor_message = None
-        if prior_anchor_message and prior_anchor:
+            anchor_keys = {(item.message_index, item.part_index) for item in prior_anchors}
             remaining_options = [item for item in prior_options if (
                 item.message_index, item.part_index
-            ) != (prior_anchor.message_index, prior_anchor.part_index)]
+            ) not in anchor_keys]
             if remaining_options:
                 prior_options = remaining_options
         base = (messages[:instruction_end]
@@ -2702,7 +2712,7 @@ def compact_messages(
             if trial[1] <= target:
                 best = trial
                 selected_count = (prior_count + len(baseline) + stable_count + middle
-                                  + int(prior_anchor_message is not None))
+                                  + len(prior_anchors))
                 low = middle + 1
             else:
                 high = middle - 1
@@ -2737,24 +2747,17 @@ def compact_messages(
     old = messages[instruction_end:recent_start]
     preserved = messages[recent_start:]
     query = _render(messages[latest_user])
-    anchor = _stable_anchor(old, 0)
+    anchors = _stable_anchors(old, 0)
     options = _linked_candidates(old, query)
     if not options:
         raise CompactionError("no extractable historical content", code="active_too_large")
     prefix = messages[:instruction_end]
-    anchor_message = _summary([anchor]) if anchor else None
+    anchor_message, anchors = _bounded_anchors(anchors, prefix, preserved, count_tokens, target)
     if anchor_message:
-        anchor_tokens = _count(
-            count_tokens, prefix + [anchor_message] + preserved
-        ) - _count(count_tokens, prefix + preserved)
-        if anchor_tokens > target // 8 or _count(
-            count_tokens, prefix + [anchor_message] + preserved
-        ) > target - 256:
-            anchor_message = None
-    if anchor_message and anchor:
+        anchor_keys = {(item.message_index, item.part_index) for item in anchors}
         remaining_options = [item for item in options if (
             item.message_index, item.part_index
-        ) != (anchor.message_index, anchor.part_index)]
+        ) not in anchor_keys]
         if remaining_options:
             options = remaining_options
 
@@ -2784,6 +2787,6 @@ def compact_messages(
         "preserved_recent_turns": retained,
         "preserved_recent_tool_cycles": 0,
         "stable_prefix_excerpts": int(anchor_message is not None),
-        "selected_excerpts": high + int(anchor_message is not None),
+        "selected_excerpts": high + len(anchors),
         "method": "query_aware_extract",
     })

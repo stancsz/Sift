@@ -57,6 +57,13 @@ to Git. The matrix stops on failed criteria and revokes scoped keys. Fix the
 cause before rerunning; preserve failures rather than overwriting them. Source
 changes during a session invalidate it.
 
+After inspecting a failure and resolving its cause, explicitly rerun the same
+command with `--resume`. Resume requires identical source hashes, no unresolved
+active sessions and revoked prior keys. It keeps qualifying completed sessions,
+starts fresh workspaces for failed/pending cases, and preserves every attempt
+in `matrix.json`. It does not automatically retry failures or erase their
+receipts. A provider failure is reported separately from Sift behavior.
+
 ## Client isolation and protocol checks
 
 Claude and OpenCode use fresh configuration/data homes. Claude's available
@@ -71,6 +78,24 @@ The proxy uses Sift's real adapter and deployed LiteLLM counter. Provider SSE
 bytes are relayed, catalog and retained sealed-reasoning items are compared
 against their originals, and counting substitutions never reach the provider.
 Raw/input-size guards and overflow behavior have separate deterministic tests.
+
+Functional acceptance and transport cleanliness are separate. A completed
+native session may qualify after its client recovers an HTTP 500 whose JSON
+`error` string or `error.message` starts with `APIConnectionError:` (optionally
+prefixed `litellm.`) and contains `OpenrouterException - Connection closed.`.
+Only the first 8192 error bytes are inspected; malformed/truncated JSON or
+markers in unrelated fields do not qualify. The proxy records only that classification, relays the
+error bytes/status unchanged and adds no retry. Its receipt then exposes
+`transport_clean=false` and `recovered_provider_disconnects`; this does not
+resolve production transport reliability. Unknown errors, fatal native turns,
+and any failed functional/Sift check still reject the session. Earlier
+campaigns used a stricter all-HTTP-200 gate; their original failures remain
+preserved rather than retrospectively relabeled.
+
+Each allowed disconnect must match a later HTTP 200 with the same hash of the
+native endpoint and request payload, received after the error response finished.
+An earlier or concurrent success, unrelated payload, or missing completion
+timestamp cannot establish recovery. Only hashes and monotonic times are saved.
 
 These are bounded synthetic compatibility and persistence checks. They do not
 establish universal bug freedom, broad answer-quality parity, every provider's

@@ -1,0 +1,83 @@
+{
+  "complete": false,
+  "expected_sessions": 27,
+  "accepted_sessions": 1,
+  "terminal_sessions": 2,
+  "elapsed_seconds": 234.14,
+  "source_sha256": {
+    "sift": "f60ed7e806a2177ea331eae06042dcc533b0e8c05c3bacd461caee2d778dd218",
+    "sift.core": "ecd99cf4ca6c6e8ca90953e16efd6f56aa48c63e5a6b38663a4da7d9cffa3eec",
+    "sift.dynamic": "f544cd630937be9734f7fed446c18ca5b5d2bf14b92e4d615108b2e507f62428",
+    "sift.litellm_proxy": "8120d6d247f9f334bf65840855443d097257685ea2cf047f2bcb265f8eb38cb0",
+    "sift.litellm_responses": "97a44289defb706b5957e2062576a7bfbdc71a89ba1c3617c56e89da1918890c",
+    "benchmarks.acceptance_tasks": "da4c1d5d94399ada78813e5e25ddc40c55a73c69ae48d709470e90d15d90fae5",
+    "benchmarks.cli_acceptance": "78e18f507be75527dc80a8805163cad6e82ae96030ae5ce9696139703e6e7917",
+    "benchmarks.cli_campaign": "35b9fa10a5ea604731da058c95a5702a87d23429aa01a9d97f293b3cb42f917f",
+    "benchmarks.cli_matrix": "2f71dae66f20984292f7ee265ab39c02643e2b53e5ed6607f4e06b0dc5e4d193"
+  },
+  "records": [
+    {
+      "name": "codex-expenses-1",
+      "client": "codex",
+      "task": "expenses",
+      "repeat": 1,
+      "accepted": false,
+      "scoped_key_alias": "sift-acceptance-06be7a0c56b7",
+      "key_revoked": true,
+      "attempt": 1,
+      "exit_code": 1,
+      "active_seconds": 195.91,
+      "turns": 6,
+      "failure": "compaction, retained historical source, upstream status, or source provenance failed",
+      "receipt": "codex-expenses-1-attempt-1/result.json"
+    },
+    {
+      "name": "claude-expenses-1",
+      "client": "claude",
+      "task": "expenses",
+      "repeat": 1,
+      "accepted": true,
+      "scoped_key_alias": "sift-acceptance-b186919bb2a7",
+      "key_revoked": true,
+      "attempt": 1,
+      "exit_code": 0,
+      "active_seconds": 227.619,
+      "turns": 6,
+      "failure": null,
+      "receipt": "claude-expenses-1-attempt-1/result.json"
+    }
+  ],
+  "attempts": [
+    {
+      "name": "codex-expenses-1",
+      "client": "codex",
+      "task": "expenses",
+      "repeat": 1,
+      "accepted": false,
+      "scoped_key_alias": "sift-acceptance-06be7a0c56b7",
+      "key_revoked": true,
+      "attempt": 1,
+      "exit_code": 1,
+      "active_seconds": 195.91,
+      "turns": 6,
+      "failure": "compaction, retained historical source, upstream status, or source provenance failed",
+      "receipt": "codex-expenses-1-attempt-1/result.json"
+    },
+    {
+      "name": "claude-expenses-1",
+      "client": "claude",
+      "task": "expenses",
+      "repeat": 1,
+      "accepted": true,
+      "scoped_key_alias": "sift-acceptance-b186919bb2a7",
+      "key_revoked": true,
+      "attempt": 1,
+      "exit_code": 0,
+      "active_seconds": 227.619,
+      "turns": 6,
+      "failure": null,
+      "receipt": "claude-expenses-1-attempt-1/result.json"
+    }
+  ],
+  "active_sessions": []
+}

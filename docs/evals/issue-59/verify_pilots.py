@@ -31,6 +31,21 @@ def main():
             # Git may change line endings on checkout; no other differences
             # are accepted by this cross-platform artifact verifier.
             variants = (raw, raw.replace(b"\r\n", b"\n"), raw.replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
+            if name in {"benchmarks.cli_campaign", "benchmarks.cli_matrix"}:
+                # These pilots predate the explicitly documented workflow
+                # prompt clarification; verify that exact archived harness.
+                archived = gzip.decompress((directory / "campaign-attempt-1" /
+                                            (name.split(".")[-1] + ".py.gz")).read_bytes())
+                variants += (archived, archived.replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
+            if name == "benchmarks.cli_acceptance":
+                archived = gzip.decompress((directory / "campaign-attempt-4" / "cli_acceptance.py.gz").read_bytes())
+                variants += (archived, archived.replace(b"\r\n", b"\n"),
+                             archived.replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
+            if name.startswith("sift"):
+                released = json.loads(gzip.decompress((directory / "release-0.11.0-sources.json.gz").read_bytes()))
+                source_path = "sift/__init__.py" if name == "sift" else name.replace(".", "/") + ".py"
+                archived = released[source_path].encode("utf8")
+                variants += (archived, archived.replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
             assert digest in {hashlib.sha256(value).hexdigest() for value in variants}, name
         for turn in receipt["turns"]:
             events = [row["event"] for row in records if row["turn"] == turn["number"]]
@@ -52,7 +67,7 @@ def main():
         summaries.append({"client": client, "verified": True, "turns": len(receipt["turns"]),
                           "active_seconds": receipt["active_client_seconds"], "requests": len(receipt["audits"]),
                           "source_and_native_traces_verified": True})
-    print(json.dumps({"verified": True, "scope": "Two pre-release pilots only; full 27-session matrix pending", "pilots": summaries}, indent=2))
+    print(json.dumps({"verified": True, "scope": "Two historical 0.11.0 pilots only; current-release matrix is separate", "pilots": summaries}, indent=2))
 
 
 if __name__ == "__main__":
